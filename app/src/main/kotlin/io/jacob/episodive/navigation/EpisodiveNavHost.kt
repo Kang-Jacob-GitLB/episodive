@@ -42,7 +42,7 @@ fun EpisodiveNavHost(
             onRegisterNestedNavController = { navController ->
                 appState.registerNestedNavController(BottomBarDestination.SEARCH, navController)
             },
-//            navigateToPlaceDetail = { navigateToPlaceDetail(it) },
+            navigateToPodcast = { navigateToPodcast(it) },
 //            navigateToStoryDetail = { navigateToStoryDetail(it) },
             onShowSnackbar = onShowSnackbar
         ) { nestedNavController ->

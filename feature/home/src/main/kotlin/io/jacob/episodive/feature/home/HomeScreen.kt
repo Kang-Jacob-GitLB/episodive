@@ -41,6 +41,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
 import io.jacob.episodive.core.designsystem.component.LoadingWheel
+import io.jacob.episodive.core.designsystem.component.PodcastItem
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.component.SubSectionHeader
@@ -464,53 +465,12 @@ private fun FollowedPodcastsSection(
                 key = { followedPodcasts[it].podcast.id }
             ) { index ->
                 val followedPodcast = followedPodcasts[index]
-                FollowedPodcastItem(
-                    followedPodcast = followedPodcast,
+                PodcastItem(
+                    podcast = followedPodcast.podcast,
                     onClick = { onFollowedPodcastClick(followedPodcast) }
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun FollowedPodcastItem(
-    modifier: Modifier = Modifier,
-    followedPodcast: FollowedPodcast,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = modifier
-            .width(140.dp)
-            .clickable { onClick() },
-    ) {
-        StateImage(
-            modifier = Modifier
-                .size(140.dp)
-                .clip(RoundedCornerShape(16.dp)),
-            imageUrl = followedPodcast.podcast.image,
-            contentDescription = followedPodcast.podcast.title,
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = followedPodcast.podcast.title,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = "${followedPodcast.podcast.episodeCount} ${stringResource(R.string.feature_home_episodes)}",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 

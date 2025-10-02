@@ -22,13 +22,13 @@ fun NavController.navigateToSearch(navOptions: NavOptions) =
     navigate(route = SearchBaseRoute, navOptions)
 
 private fun NavGraphBuilder.searchScreen(
-//    onPlaceClick: (Place) -> Unit,
+    onPodcatClick: (Long) -> Unit,
 //    onStoryClick: (Story) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     composable<SearchRoute> {
         SearchRoute(
-//            onPlaceClick = onPlaceClick,
+            onPodcastClick = onPodcatClick,
 //            onStoryClick = onStoryClick,
             onShowSnackbar = onShowSnackbar
         )
@@ -38,7 +38,7 @@ private fun NavGraphBuilder.searchScreen(
 @Composable
 private fun SearchNavHost(
     navController: NavHostController,
-//    navigateToPlaceDetail: NavController.(Place) -> Unit,
+    navigateToPodcast: NavController.(Long) -> Unit,
 //    navigateToStoryDetail: NavController.(Story) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
@@ -48,7 +48,7 @@ private fun SearchNavHost(
         startDestination = SearchRoute
     ) {
         searchScreen(
-//            onPlaceClick = { navController.navigateToPlaceDetail(it) },
+            onPodcatClick = { navController.navigateToPodcast(it) },
 //            onStoryClick = { navController.navigateToStoryDetail(it) },
             onShowSnackbar = onShowSnackbar,
         )
@@ -59,7 +59,7 @@ private fun SearchNavHost(
 
 fun NavGraphBuilder.searchSection(
     onRegisterNestedNavController: (NavHostController) -> Unit,
-//    navigateToPlaceDetail: NavController.(Place) -> Unit,
+    navigateToPodcast: NavController.(Long) -> Unit,
 //    navigateToStoryDetail: NavController.(Story) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
@@ -73,7 +73,7 @@ fun NavGraphBuilder.searchSection(
 
         SearchNavHost(
             navController = navController,
-//            navigateToPlaceDetail = navigateToPlaceDetail,
+            navigateToPodcast = navigateToPodcast,
 //            navigateToStoryDetail = navigateToStoryDetail,
             onShowSnackbar = onShowSnackbar,
             destination = destination

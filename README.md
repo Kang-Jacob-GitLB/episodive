@@ -47,7 +47,8 @@ Podcast Index Api 활용한 팟캐스트 앱
   - /search/byterm (q, max)
   - /episodes/byfeedid (id, max)
   - 결과
-    - [ ] 검색 팟캐스트 리스트 (vertical)
+      - [ ] 검색 히스토리 (vertical)
+      - [ ] 검색 팟캐스트 리스트 (vertical)
     - [ ] 검색 에피소드 리스트 (vertical)
 - [ ] 카테고리 리스트 (horizontal)
 - [ ] 최근 에피소드 리스트 (horizontal)
