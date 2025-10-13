@@ -36,6 +36,7 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
             is EpisodeQuery.FeedUrl -> remoteDataSource.getEpisodesByFeedUrl(query.feedUrl)
             is EpisodeQuery.PodcastGuid -> remoteDataSource.getEpisodesByPodcastGuid(query.podcastGuid)
             is EpisodeQuery.Live -> remoteDataSource.getLiveEpisodes()
+            is EpisodeQuery.Random -> remoteDataSource.getRandomEpisodes()
             is EpisodeQuery.Recent -> remoteDataSource.getRecentEpisodes()
             else -> emptyList()
         }

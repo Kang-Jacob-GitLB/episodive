@@ -27,7 +27,12 @@ sealed interface EpisodeQuery : CacheableQuery {
 
     data object Live : EpisodeQuery {
         override val key = "live"
-        override val timeToLive = 2.minutes
+        override val timeToLive = 10.minutes
+    }
+
+    data object Random : EpisodeQuery {
+        override val key = "random"
+        override val timeToLive = 10.minutes
     }
 
     data object Recent : EpisodeQuery {

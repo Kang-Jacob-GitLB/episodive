@@ -52,7 +52,7 @@ fun StateImage(
 
     val imageLoader = rememberAsyncImagePainter(
         model = ImageRequest.Builder(LocalContext.current)
-            .data(imageUrl)
+            .data(imageUrl.replace("http://", "https://"))
             .addHeader("User-Agent", "Episodive/1.0")
             .crossfade(true)
             .size(300)

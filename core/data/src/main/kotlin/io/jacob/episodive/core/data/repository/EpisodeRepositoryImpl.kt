@@ -17,12 +17,9 @@ import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.LikedEpisode
 import io.jacob.episodive.core.model.PlayedEpisode
-import io.jacob.episodive.core.model.mapper.toCommaString
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
-import io.jacob.episodive.core.network.mapper.toEpisodes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import kotlin.time.Clock
@@ -124,15 +121,15 @@ class EpisodeRepositoryImpl @Inject constructor(
         language: String?,
         includeCategories: List<Category>,
         excludeCategories: List<Category>
-    ): Flow<List<Episode>> = flow {
-        val episodes = remoteDataSource.getRandomEpisodes(
-            max = max,
-            language = language,
-            includeCategories = includeCategories.toCommaString(),
-            excludeCategories = excludeCategories.toCommaString()
-        ).toEpisodes()
+    ): Flow<List<Episode>> {
+        val query = EpisodeQuery.Random
 
-        emit(episodes)
+        return Cacher(
+            remoteUpdater = remoteUpdater.create(query),
+            sourceFactory = {
+                localDataSource.getEpisodesByCacheKey(query.key)
+            }
+        ).flow.map { it.toEpisodes() }
     }
 
     override fun getRecentEpisodes(
