@@ -1,6 +1,6 @@
 package io.jacob.episodive.core.data.util.query
 
-import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
 sealed interface EpisodeQuery : CacheableQuery {
@@ -12,17 +12,17 @@ sealed interface EpisodeQuery : CacheableQuery {
 
     data class FeedId(val feedId: Long, val max: Int) : EpisodeQuery {
         override val key = "feedId:$feedId"
-        override val timeToLive = 24.hours
+        override val timeToLive = 1.days
     }
 
     data class FeedUrl(val feedUrl: String) : EpisodeQuery {
         override val key = "feedUrl:$feedUrl"
-        override val timeToLive = 24.hours
+        override val timeToLive = 1.days
     }
 
     data class PodcastGuid(val podcastGuid: String) : EpisodeQuery {
         override val key = "podcastGuid:$podcastGuid"
-        override val timeToLive = 24.hours
+        override val timeToLive = 1.days
     }
 
     data object Live : EpisodeQuery {
@@ -42,6 +42,6 @@ sealed interface EpisodeQuery : CacheableQuery {
 
     data class EpisodeId(val episodeId: Long) : EpisodeQuery {
         override val key = "episodeId:$episodeId"
-        override val timeToLive = 24.hours
+        override val timeToLive = 1.days
     }
 }

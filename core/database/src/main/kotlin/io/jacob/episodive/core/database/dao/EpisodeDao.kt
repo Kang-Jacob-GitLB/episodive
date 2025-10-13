@@ -52,7 +52,7 @@ interface EpisodeDao {
     @Query("SELECT * FROM episodes")
     fun getEpisodes(): Flow<List<EpisodeEntity>>
 
-    @Query("SELECT * FROM episodes WHERE cacheKey = :cacheKey")
+    @Query("SELECT * FROM episodes WHERE cacheKey = :cacheKey ORDER BY datePublished DESC")
     fun getEpisodesByCacheKey(cacheKey: String): Flow<List<EpisodeEntity>>
 
     @Query(
