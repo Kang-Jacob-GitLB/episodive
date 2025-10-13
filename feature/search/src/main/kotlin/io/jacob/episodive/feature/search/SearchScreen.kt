@@ -1,14 +1,12 @@
 package io.jacob.episodive.feature.search
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
@@ -23,10 +21,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
 import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
-import io.jacob.episodive.core.designsystem.component.PodcastItem
-import io.jacob.episodive.core.designsystem.component.SectionHeader
+import io.jacob.episodive.core.designsystem.component.PodcastsSection
 import io.jacob.episodive.core.designsystem.component.StateImage
-import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Episode
@@ -94,32 +90,13 @@ private fun SearchScreen(
 //        onPodcastClick = onPodcastClick,
 //        onEpisodeClick = onEpisodeClick,
         contentOnCollapse = {
-
             val podcasts = searchResult.podcasts
-            SectionHeader(
-                modifier = modifier,
+            PodcastsSection(
                 title = "Podcasts",
-                actionIcon = EpisodiveIcons.KeyboardArrowRight,
-//                    actionIconContentDescription = title,
-//                    onActionClick = onMore
-            ) {
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(
-                        count = podcasts.size,
-                        key = { podcasts[it].id }
-                    ) { index ->
-                        val podcast = podcasts[index]
-                        PodcastItem(
-                            podcast = podcast,
-                            onClick = {}
-                        )
-                    }
-                }
-            }
+                podcasts = podcasts,
+                onMore = { /* TODO */ },
+                onPodcastClick = onPodcastClick
+            )
         },
         contentOnExpand = { scrollState ->
             LazyColumn(state = scrollState) {

@@ -16,30 +16,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.jacob.episodive.core.designsystem.R
-import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
-import io.jacob.episodive.core.model.Podcast
-import io.jacob.episodive.core.testing.model.podcastTestDataList
+import io.jacob.episodive.core.model.Feed
+import io.jacob.episodive.core.model.mapper.toFeedsFromTrending
+import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
+
 
 @Composable
-fun PodcastsSection(
+fun FeedsSection(
     modifier: Modifier = Modifier,
     title: String,
-    podcasts: List<Podcast>,
-    onMore: () -> Unit,
-    onPodcastClick: (Podcast) -> Unit,
+    feeds: List<Feed>,
+    onFeedClick: (Feed) -> Unit,
 ) {
     SectionHeader(
         modifier = modifier,
         title = title,
-        actionIcon = EpisodiveIcons.KeyboardArrowRight,
-        actionIconContentDescription = title,
-        onActionClick = onMore
     ) {
         LazyRow(
             modifier = Modifier
@@ -48,13 +43,13 @@ fun PodcastsSection(
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
             items(
-                count = podcasts.size,
-                key = { podcasts[it].id }
+                count = feeds.size,
+                key = { feeds[it].id }
             ) { index ->
-                val podcast = podcasts[index]
-                PodcastItem(
-                    podcast = podcast,
-                    onClick = { onPodcastClick(podcast) }
+                val feed = feeds[index]
+                FeedItem(
+                    feed = feed,
+                    onClick = { onFeedClick(feed) }
                 )
             }
         }
@@ -62,9 +57,9 @@ fun PodcastsSection(
 }
 
 @Composable
-fun PodcastItem(
+fun FeedItem(
     modifier: Modifier = Modifier,
-    podcast: Podcast,
+    feed: Feed,
     onClick: () -> Unit,
 ) {
     Column(
@@ -77,14 +72,14 @@ fun PodcastItem(
             modifier = Modifier
                 .size(140.dp)
                 .clip(RoundedCornerShape(16.dp)),
-            imageUrl = podcast.image,
-            contentDescription = podcast.title,
+            imageUrl = feed.image ?: "",
+            contentDescription = feed.title,
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = podcast.title,
+            text = feed.title,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
@@ -94,7 +89,7 @@ fun PodcastItem(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = "${podcast.episodeCount} ${stringResource(R.string.core_designsystem_episodes)}",
+            text = feed.author ?: "",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -105,13 +100,12 @@ fun PodcastItem(
 
 @DevicePreviews
 @Composable
-private fun PodcastsSectionPreview() {
+private fun FeedsSectionPreview() {
     EpisodiveTheme {
-        PodcastsSection(
-            title = "Podcasts",
-            podcasts = podcastTestDataList,
-            onMore = {},
-            onPodcastClick = {},
+        FeedsSection(
+            title = "Feeds",
+            feeds = trendingFeedTestDataList.toFeedsFromTrending(),
+            onFeedClick = {}
         )
     }
 }
