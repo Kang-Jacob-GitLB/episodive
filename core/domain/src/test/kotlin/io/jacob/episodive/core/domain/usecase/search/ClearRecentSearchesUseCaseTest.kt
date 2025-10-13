@@ -2,7 +2,12 @@ package io.jacob.episodive.core.domain.usecase.search
 
 import io.jacob.episodive.core.domain.repository.RecentSearchRepository
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.coVerifySequence
+import io.mockk.confirmVerified
+import io.mockk.just
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Rule
