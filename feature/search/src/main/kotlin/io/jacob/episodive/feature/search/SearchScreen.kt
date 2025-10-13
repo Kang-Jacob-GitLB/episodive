@@ -1,23 +1,10 @@
 package io.jacob.episodive.feature.search
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,13 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.jacob.episodive.core.designsystem.component.EpisodeItem
-import io.jacob.episodive.core.designsystem.component.EpisodesSection
-import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
-import io.jacob.episodive.core.designsystem.component.FeedsSection
-import io.jacob.episodive.core.designsystem.component.LoadingWheel
-import io.jacob.episodive.core.designsystem.component.PodcastsSection
-import io.jacob.episodive.core.designsystem.component.SectionHeader
+import io.jacob.episodive.core.designsystem.component.*
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
@@ -105,12 +86,14 @@ private fun SearchScreen(
     onRecentSearchClick: (String) -> Unit = {},
     onRemoveRecentSearch: (String) -> Unit = {},
     onClearRecentSearches: () -> Unit = {},
+    isExpanded: Boolean = false,
 ) {
     EpisodiveSearchBar(
         modifier = modifier,
         query = query,
         onQueryChange = onQueryChange,
         onSearch = onSearch,
+        isExpanded = isExpanded,
         contentOnCollapse = {
             SearchContentsOnCollapse(
                 modifier = Modifier,
@@ -361,7 +344,7 @@ private fun ErrorScreen(
 
 @DevicePreviews
 @Composable
-private fun SearchScreenPreview() {
+private fun SearchScreenOnCollapsePreview() {
     EpisodiveTheme {
         SearchScreen(
             query = "test",
@@ -374,6 +357,46 @@ private fun SearchScreenPreview() {
             ),
             feeds = trendingFeedTestDataList.toFeedsFromTrending(),
             episodes = episodeTestDataList,
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun SearchScreenOnExpandPreview() {
+    EpisodiveTheme {
+        SearchScreen(
+            query = "test",
+            onQueryChange = {},
+            onSearch = {},
+            recentSearches = listOf("test1", "test2", "test3", "test4", "test5"),
+            searchResult = SearchResult(
+                podcasts = podcastTestDataList.take(3),
+                episodes = episodeTestDataList,
+            ),
+            feeds = trendingFeedTestDataList.toFeedsFromTrending(),
+            episodes = episodeTestDataList,
+            isExpanded = true,
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun SearchScreenOnExpandRecentSearchPreview() {
+    EpisodiveTheme {
+        SearchScreen(
+            query = "test",
+            onQueryChange = {},
+            onSearch = {},
+            recentSearches = listOf("test1", "test2", "test3", "test4", "test5"),
+            searchResult = SearchResult(
+                podcasts = emptyList(),
+                episodes = emptyList(),
+            ),
+            feeds = trendingFeedTestDataList.toFeedsFromTrending(),
+            episodes = episodeTestDataList,
+            isExpanded = true,
         )
     }
 }

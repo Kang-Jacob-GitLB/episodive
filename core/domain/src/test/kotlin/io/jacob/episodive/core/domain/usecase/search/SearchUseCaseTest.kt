@@ -13,7 +13,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -35,7 +35,7 @@ class SearchUseCaseTest {
     }
 
     @Test
-    fun `Given dependencies, when invoke called, then repositories called`() =
+    fun `Given dependencies, When invoke called, Then repositories called`() =
         runTest {
             // Given
             coEvery {
@@ -53,13 +53,13 @@ class SearchUseCaseTest {
                 val result = awaitItem()
 
                 // Then
-                Assert.assertEquals(2, result.podcasts.size)
+                assertEquals(2, result.podcasts.size)
                 result.podcasts.forEachIndexed { index, podcast ->
-                    Assert.assertEquals(podcastTestDataList[index], podcast)
+                    assertEquals(podcastTestDataList[index], podcast)
                 }
-                Assert.assertEquals(10, result.episodes.size)
+                assertEquals(10, result.episodes.size)
                 result.episodes.forEachIndexed { index, episode ->
-                    Assert.assertEquals(episodeTestDataList[index], episode)
+                    assertEquals(episodeTestDataList[index], episode)
                 }
 
                 awaitComplete()
