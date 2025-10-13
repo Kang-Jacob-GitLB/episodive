@@ -3,6 +3,16 @@
 # Episodive
 Podcast Index Api 활용한 팟캐스트 앱
 
+# 화면
+
+|       화면       | 스크린샷                                                                                                                                                                                                                                                                                                                                        |
+|:--------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **OnBoarding** | <img src="docs/images/screenshot-onboarding-1-initial.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-onboarding-2-categories.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-onboarding-3-podcasts.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-onboarding-4-complete.png" width="200"> |
+|    **Home**    | <img src="docs/images/screenshot-home.png" width="200">                                                                                                                                                                                                                                                                                     |
+|   **Search**   | <img src="docs/images/screenshot-search-1-discover.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-search-2-history.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-search-3-result.png" width="200">                                                                                                       |
+|  **Podcast**   | <img src="docs/images/screenshot-podcast.png" width="200">                                                                                                                                                                                                                                                                                  |
+|   **Player**   | <img src="docs/images/screenshot-player.png" width="200">                                                                                                                                                                                                                                                                                   |
+
 # 설계
 
 ## 온보딩
@@ -43,15 +53,16 @@ Podcast Index Api 활용한 팟캐스트 앱
   - CNN, 뇌부자들, JTBC, BBC, ...
 
 ### 검색
-- [ ] 검색창
+
+- [x] 검색창
   - /search/byterm (q, max)
   - /episodes/byfeedid (id, max)
   - 결과
-      - [ ] 검색 히스토리 (vertical)
-      - [ ] 검색 팟캐스트 리스트 (vertical)
-    - [ ] 검색 에피소드 리스트 (vertical)
+      - [x] 검색 히스토리 (vertical)
+      - [x] 검색 팟캐스트 리스트 (vertical)
+      - [x] 검색 에피소드 리스트 (vertical)
 - [ ] 카테고리 리스트 (horizontal)
-- [ ] 최근 에피소드 리스트 (horizontal)
+- [x] 최근 에피소드 리스트 (horizontal)
   - /recent/episodes
   - 상세
     - [ ] 최근 팟캐스트 리스트 (horizontal)
