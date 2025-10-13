@@ -22,7 +22,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
-import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
 import io.jacob.episodive.core.designsystem.component.PodcastItem
 import io.jacob.episodive.core.designsystem.component.SectionHeader
@@ -86,100 +85,97 @@ private fun SearchScreen(
     onPodcastClick: (Podcast) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
 ) {
-    EpisodiveGradientBackground {
-
-        EpisodiveSearchBar(
-            modifier = modifier,
-            query = query,
-            onQueryChange = onQueryChange,
-            onSearch = onSearch,
+    EpisodiveSearchBar(
+        modifier = modifier,
+        query = query,
+        onQueryChange = onQueryChange,
+        onSearch = onSearch,
 //        searchResult = searchResult,
 //        onPodcastClick = onPodcastClick,
 //        onEpisodeClick = onEpisodeClick,
-            contentOnCollapse = {
+        contentOnCollapse = {
 
-                val podcasts = searchResult.podcasts
-                SectionHeader(
-                    modifier = modifier,
-                    title = "Podcasts",
-                    actionIcon = EpisodiveIcons.KeyboardArrowRight,
+            val podcasts = searchResult.podcasts
+            SectionHeader(
+                modifier = modifier,
+                title = "Podcasts",
+                actionIcon = EpisodiveIcons.KeyboardArrowRight,
 //                    actionIconContentDescription = title,
 //                    onActionClick = onMore
+            ) {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    LazyRow(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(
-                            count = podcasts.size,
-                            key = { podcasts[it].id }
-                        ) { index ->
-                            val podcast = podcasts[index]
-                            PodcastItem(
-                                podcast = podcast,
-                                onClick = {}
-                            )
-                        }
-                    }
-                }
-            },
-            contentOnExpand = { scrollState ->
-                LazyColumn(state = scrollState) {
                     items(
-                        count = searchResult.podcasts.size,
-                        key = { searchResult.podcasts[it].id },
+                        count = podcasts.size,
+                        key = { podcasts[it].id }
                     ) { index ->
-                        val podcast = searchResult.podcasts[index]
-                        ListItem(
-                            headlineContent = { Text(podcast.title) },
-                            supportingContent = { Text("podcast • ${podcast.author}") },
-                            leadingContent = {
-                                StateImage(
-                                    imageUrl = podcast.image,
-                                    contentDescription = podcast.title,
-                                    modifier = Modifier
-                                        .size(30.dp)
-                                        .clip(RoundedCornerShape(8.dp)),
-                                )
-                            },
-//                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                            modifier = Modifier
-                                .clickable {
-                                    onPodcastClick(podcast)
-                                }
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                        val podcast = podcasts[index]
+                        PodcastItem(
+                            podcast = podcast,
+                            onClick = {}
                         )
-                    }
-
-                    item {
-                        EpisodesSection(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            title = "Episodes",
-                            episodes = emptyList(),
-                            onEpisodeClick = {}
-                        )
-                    }
-
-                    items(
-                        count = searchResult.episodes.size,
-                        key = { searchResult.episodes[it].id },
-                    ) { index ->
-                        val episode = searchResult.episodes[index]
-
-                        EpisodeItem(
-                            episode = episode,
-                            onClick = { onEpisodeClick(episode) }
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
             }
-        )
-    }
+        },
+        contentOnExpand = { scrollState ->
+            LazyColumn(state = scrollState) {
+                items(
+                    count = searchResult.podcasts.size,
+                    key = { searchResult.podcasts[it].id },
+                ) { index ->
+                    val podcast = searchResult.podcasts[index]
+                    ListItem(
+                        headlineContent = { Text(podcast.title) },
+                        supportingContent = { Text("podcast • ${podcast.author}") },
+                        leadingContent = {
+                            StateImage(
+                                imageUrl = podcast.image,
+                                contentDescription = podcast.title,
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                            )
+                        },
+//                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        modifier = Modifier
+                            .clickable {
+                                onPodcastClick(podcast)
+                            }
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+                }
+
+                item {
+                    EpisodesSection(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        title = "Episodes",
+                        episodes = emptyList(),
+                        onEpisodeClick = {}
+                    )
+                }
+
+                items(
+                    count = searchResult.episodes.size,
+                    key = { searchResult.episodes[it].id },
+                ) { index ->
+                    val episode = searchResult.episodes[index]
+
+                    EpisodeItem(
+                        episode = episode,
+                        onClick = { onEpisodeClick(episode) }
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            }
+        }
+    )
 }
 
 @DevicePreviews

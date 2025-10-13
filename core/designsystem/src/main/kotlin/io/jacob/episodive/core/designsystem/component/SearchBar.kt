@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.designsystem.component
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -66,6 +67,11 @@ fun EpisodiveSearchBar(
     val focusRequester = remember { FocusRequester() }
     val scrollState = rememberLazyListState()
 
+    val horizontalPadding by animateDpAsState(
+        targetValue = if (expanded) 0.dp else 16.dp,
+        label = "padding"
+    )
+
     LaunchedEffect(scrollState.isScrollInProgress) {
         if (scrollState.isScrollInProgress) {
             keyboardController?.hide()
@@ -74,12 +80,11 @@ fun EpisodiveSearchBar(
 
     Column(
         modifier.fillMaxSize(),
-//        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         SearchBar(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontalPadding)
                 .focusRequester(focusRequester),
             shape = RoundedCornerShape(16.dp),
             inputField = {
