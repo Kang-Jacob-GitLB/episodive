@@ -1,4 +1,4 @@
-package io.jacob.episodive.core.domain.usecase
+package io.jacob.episodive.core.domain.usecase.search
 
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.PodcastRepository
@@ -21,7 +21,10 @@ class SearchUseCase @Inject constructor(
                 } else {
                     combine(
                         podcasts.map { podcast ->
-                            episodeRepository.getEpisodesByFeedId(podcast.id, max = 5)
+                            episodeRepository.getEpisodesByFeedId(
+                                feedId = podcast.id,
+                                max = 5,
+                            )
                         }
                     ) { episodeArrays ->
                         val episodes = episodeArrays.flatMap { it }

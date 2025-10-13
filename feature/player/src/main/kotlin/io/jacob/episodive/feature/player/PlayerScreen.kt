@@ -482,7 +482,6 @@ private fun PlayerScreenPreview() {
             progress = Progress(1000.seconds, 2000.seconds, 3000.seconds),
             isPlaying = true,
             isLike = false,
-//            dominantColor = Color.DarkGray,
         )
     }
 }

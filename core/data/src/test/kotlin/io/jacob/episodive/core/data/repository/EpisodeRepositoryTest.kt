@@ -23,7 +23,9 @@ import io.mockk.unmockkStatic
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -92,7 +94,7 @@ class EpisodeRepositoryTest {
         runTest {
             // Given
             val feedId = 123L
-            val expectedQuery = EpisodeQuery.FeedId(feedId)
+            val expectedQuery = EpisodeQuery.FeedId(feedId, 10)
 
             coEvery {
                 remoteUpdater.create(expectedQuery)
@@ -228,19 +230,27 @@ class EpisodeRepositoryTest {
     fun `Given parameters, When getRandomEpisodes, Then calls remoteDataSource directly`() =
         runTest {
             // Given
+            val query = EpisodeQuery.Random
+
             coEvery {
-                remoteDataSource.getRandomEpisodes(any(), any(), any(), any())
-            } returns mockk(relaxed = true)
+                remoteUpdater.create(query)
+            } returns mockk<EpisodeRemoteUpdater>(relaxed = true)
+            coEvery {
+                localDataSource.getEpisodesByCacheKey(query.key)
+            } returns flowOf(episodeEntities)
 
             // When
             repository.getRandomEpisodes().test {
-                awaitItem()
+                val result = awaitItem()
+
+                // Then
+                assertEquals(episodeTestDataList.size, result.size)
+                assertEquals(episodeTestDataList, result)
                 awaitComplete()
             }
-
-            // Then
-            coVerify {
-                remoteDataSource.getRandomEpisodes(any(), any(), any(), any())
+            coVerifySequence {
+                remoteUpdater.create(query)
+                localDataSource.getEpisodesByCacheKey(query.key)
             }
         }
 

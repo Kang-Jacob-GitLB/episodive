@@ -88,6 +88,7 @@ class PlayerViewModel @Inject constructor(
         }
     }.catch { e ->
         emit(PlayerState.Error(e.message ?: "Unknown error"))
+        e.printStackTrace()
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),

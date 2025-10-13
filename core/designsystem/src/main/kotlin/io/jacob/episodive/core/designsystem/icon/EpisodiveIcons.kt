@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.ShortText
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
@@ -55,6 +56,7 @@ object EpisodiveIcons {
     val BarChart = Icons.Rounded.BarChart
     val Check = Icons.Rounded.Check
     val Close = Icons.Rounded.Close
+    val DeleteSweep = Icons.Outlined.DeleteSweep
     val ErrorOutline = Icons.Rounded.ErrorOutline
     val Favorite = Icons.Rounded.Favorite
     val FavoriteBorder = Icons.Outlined.FavoriteBorder

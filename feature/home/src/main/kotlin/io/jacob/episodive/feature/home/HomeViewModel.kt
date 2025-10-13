@@ -81,6 +81,7 @@ class HomeViewModel @Inject constructor(
         ) as HomeState
     }.catch { e ->
         emit(HomeState.Error(e.message ?: "An unknown error occurred"))
+        e.printStackTrace()
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),

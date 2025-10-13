@@ -1,4 +1,4 @@
-package io.jacob.episodive.core.domain.usecase
+package io.jacob.episodive.core.domain.usecase.search
 
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
@@ -35,7 +35,7 @@ class SearchUseCaseTest {
     }
 
     @Test
-    fun `Given dependencies, when invoke called, then repositories called`() =
+    fun `Given dependencies, When invoke called, Then repositories called`() =
         runTest {
             // Given
             coEvery {
