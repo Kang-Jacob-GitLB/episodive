@@ -1,6 +1,8 @@
 package io.jacob.episodive.core.designsystem.component
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -36,9 +39,17 @@ fun FeedsSection(
         modifier = modifier,
         title = title,
     ) {
+        val lazyListState = rememberLazyListState()
+        val flingBehavior = rememberSnapFlingBehavior(
+            lazyListState = lazyListState,
+            snapPosition = SnapPosition.Start,
+        )
+
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth(),
+            state = lazyListState,
+            flingBehavior = flingBehavior,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {

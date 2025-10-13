@@ -2,6 +2,7 @@ package io.jacob.episodive.feature.home
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -139,7 +140,8 @@ private fun HomeScreen(
                 ) {
                     LazyColumn(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxSize(),
+                        contentPadding = PaddingValues(vertical = 16.dp),
                     ) {
                         item {
                             FeedsSection(
