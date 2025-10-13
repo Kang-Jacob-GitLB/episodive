@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.SearchUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetRecentEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.feed.GetTrendingFeedsUseCase
+import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
@@ -33,6 +34,7 @@ class SearchViewModel @Inject constructor(
     private val searchUseCase: SearchUseCase,
     private val getRecentEpisodesUseCase: GetRecentEpisodesUseCase,
     private val getTrendingFeedsUseCase: GetTrendingFeedsUseCase,
+    private val playEpisodeUseCase: PlayEpisodeUseCase,
 ) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
 
@@ -82,47 +84,51 @@ class SearchViewModel @Inject constructor(
     private fun handleActions() = viewModelScope.launch {
         _action.collect { action ->
             when (action) {
-                is SearchAction.QueryChanged -> {
-                    _searchQuery.value = action.query
-                }
-
-                is SearchAction.ClickSearch -> {
-                    _searchQuery.value = action.query
-                }
-
-                is SearchAction.ClearQuery -> {
-                    _searchQuery.value = ""
-                }
-
-                is SearchAction.ClickRecentSearch -> {
-                    _searchQuery.value = action.query
-                }
-
-                is SearchAction.RemoveRecentSearch -> {
-                    // Implement removal from search history if needed
-                }
-
-                is SearchAction.ClearRecentSearches -> {
-                    // Implement clearing of search history if needed
-                }
-
-                is SearchAction.ClickCategory -> {
-                    _effect.emit(SearchEffect.NavigateToCategory(action.category))
-                }
-
-                is SearchAction.ClickPodcast -> {
-                    _effect.emit(SearchEffect.NavigateToPodcast(action.podcast))
-                }
-
-                is SearchAction.ClickEpisode -> {
-                    _effect.emit(SearchEffect.NavigateToEpisode(action.episode))
-                }
+                is SearchAction.QueryChanged -> changeQuery(action.query)
+                is SearchAction.ClickSearch -> changeQuery(action.query)
+                is SearchAction.ClearQuery -> clearQuery()
+                is SearchAction.ClickRecentSearch -> changeQuery(action.query)
+                is SearchAction.RemoveRecentSearch -> removeRecentSearch(action.query)
+                is SearchAction.ClearRecentSearches -> clearRecentSearches()
+                is SearchAction.ClickCategory -> clickCategory(action.category)
+                is SearchAction.ClickPodcast -> clickPodcast(action.podcast)
+                is SearchAction.ClickEpisode -> clickEpisode(action.episode)
             }
         }
     }
 
     fun sendAction(action: SearchAction) = viewModelScope.launch {
         _action.emit(action)
+    }
+
+    private fun changeQuery(query: String) = viewModelScope.launch {
+        _searchQuery.emit(query)
+    }
+
+
+    private fun clearQuery() = viewModelScope.launch {
+        _searchQuery.emit("")
+    }
+
+    private fun removeRecentSearch(query: String) {
+        // Implement removal from search history if needed
+    }
+
+    private fun clearRecentSearches() {
+        // Implement clearing of search history if needed
+    }
+
+    private fun clickCategory(category: Category) = viewModelScope.launch {
+        _effect.emit(SearchEffect.NavigateToCategory(category))
+    }
+
+    private fun clickPodcast(podcast: Podcast) = viewModelScope.launch {
+        _effect.emit(SearchEffect.NavigateToPodcast(podcast))
+    }
+
+    private fun clickEpisode(episode: Episode) = viewModelScope.launch {
+        playEpisodeUseCase(episode)
+//        _effect.emit(SearchEffect.NavigateToEpisode(episode))
     }
 }
 

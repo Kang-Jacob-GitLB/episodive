@@ -1,6 +1,8 @@
 package io.jacob.episodive.feature.search
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -11,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -19,6 +22,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
 import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
 import io.jacob.episodive.core.designsystem.component.FeedsSection
+import io.jacob.episodive.core.designsystem.component.LoadingWheel
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
@@ -45,17 +49,14 @@ fun SearchRoute(
         viewModel.effect.collect { effect ->
             when (effect) {
                 is SearchEffect.NavigateToCategory -> {}
-                is SearchEffect.NavigateToPodcast -> {
-                    onPodcastClick(effect.podcast.id)
-                }
-
+                is SearchEffect.NavigateToPodcast -> onPodcastClick(effect.podcast.id)
                 is SearchEffect.NavigateToEpisode -> {}
             }
         }
     }
 
     when (val s = state) {
-        is SearchState.Loading -> {}
+        is SearchState.Loading -> LoadingScreen()
         is SearchState.Success -> {
             SearchScreen(
                 modifier = modifier,
@@ -70,7 +71,7 @@ fun SearchRoute(
             )
         }
 
-        is SearchState.Error -> {}
+        is SearchState.Error -> ErrorScreen(message = s.message)
     }
 }
 
@@ -230,6 +231,33 @@ private fun SearchResultsOnExpand(
         item {
             Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
         }
+    }
+}
+
+@Composable
+private fun LoadingScreen(
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        LoadingWheel()
+    }
+}
+
+@Composable
+private fun ErrorScreen(
+    modifier: Modifier = Modifier,
+    message: String,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = message)
     }
 }
 
