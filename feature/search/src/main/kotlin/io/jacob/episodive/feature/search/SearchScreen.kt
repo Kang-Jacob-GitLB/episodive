@@ -1,21 +1,17 @@
 package io.jacob.episodive.feature.search
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -23,7 +19,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
 import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
 import io.jacob.episodive.core.designsystem.component.FeedsSection
-import io.jacob.episodive.core.designsystem.component.StateImage
+import io.jacob.episodive.core.designsystem.component.PodcastsSection
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
@@ -109,58 +105,12 @@ private fun SearchScreen(
             )
         },
         contentOnExpand = { scrollState ->
-            LazyColumn(state = scrollState) {
-                items(
-                    count = searchResult.podcasts.size,
-                    key = { searchResult.podcasts[it].id },
-                ) { index ->
-                    val podcast = searchResult.podcasts[index]
-                    ListItem(
-                        headlineContent = { Text(podcast.title) },
-                        supportingContent = { Text("podcast • ${podcast.author}") },
-                        leadingContent = {
-                            StateImage(
-                                imageUrl = podcast.image,
-                                contentDescription = podcast.title,
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                            )
-                        },
-//                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier
-                            .clickable {
-                                onPodcastClick(podcast)
-                            }
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
-                }
-
-                item {
-                    EpisodesSection(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        title = "Episodes",
-                        episodes = emptyList(),
-                        onEpisodeClick = {}
-                    )
-                }
-
-                items(
-                    count = searchResult.episodes.size,
-                    key = { searchResult.episodes[it].id },
-                ) { index ->
-                    val episode = searchResult.episodes[index]
-
-                    EpisodeItem(
-                        episode = episode,
-                        onClick = { onEpisodeClick(episode) }
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-            }
+            SearchResultsOnExpand(
+                scrollState = scrollState,
+                searchResult = searchResult,
+                onPodcastClick = onPodcastClick,
+                onEpisodeClick = onEpisodeClick,
+            )
         }
     )
 }
@@ -202,6 +152,78 @@ private fun SearchContentsOnCollapse(
                     episodes = episodes,
                     onEpisodeClick = onEpisodeClick
                 )
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
+        }
+    }
+}
+
+@Composable
+private fun SearchResultsOnExpand(
+    modifier: Modifier = Modifier,
+    scrollState: LazyListState,
+    searchResult: SearchResult,
+    onPodcastClick: (Podcast) -> Unit = {},
+    onEpisodeClick: (Episode) -> Unit = {},
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth(),
+        state = scrollState
+    ) {
+        if (searchResult.podcasts.isNotEmpty()) {
+            item {
+                PodcastsSection(
+                    title = "Podcasts",
+                    podcasts = searchResult.podcasts,
+                    onMore = {},
+                    onPodcastClick = onPodcastClick,
+                )
+            }
+        } else {
+            item {
+                Text(
+                    text = "No podcasts found",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                )
+            }
+        }
+
+        if (searchResult.episodes.isNotEmpty()) {
+            item {
+                HorizontalDivider(modifier = Modifier.padding(12.dp))
+            }
+
+            item {
+                EpisodesSection(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    title = "Episodes",
+                    episodes = emptyList(),
+                    onEpisodeClick = {}
+                )
+            }
+
+            items(
+                count = searchResult.episodes.size,
+                key = { searchResult.episodes[it].id },
+            ) { index ->
+                val episode = searchResult.episodes[index]
+
+                EpisodeItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    episode = episode,
+                    onClick = { onEpisodeClick(episode) }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
 

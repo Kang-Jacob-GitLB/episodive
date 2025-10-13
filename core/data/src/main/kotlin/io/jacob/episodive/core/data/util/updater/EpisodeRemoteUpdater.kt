@@ -28,7 +28,11 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
     override suspend fun fetchFromNetwork(query: EpisodeQuery): List<EpisodeResponse> {
         return when (query) {
             is EpisodeQuery.Person -> remoteDataSource.searchEpisodesByPerson(query.person)
-            is EpisodeQuery.FeedId -> remoteDataSource.getEpisodesByFeedId(query.feedId)
+            is EpisodeQuery.FeedId -> remoteDataSource.getEpisodesByFeedId(
+                feedId = query.feedId,
+                max = query.max,
+            )
+
             is EpisodeQuery.FeedUrl -> remoteDataSource.getEpisodesByFeedUrl(query.feedUrl)
             is EpisodeQuery.PodcastGuid -> remoteDataSource.getEpisodesByPodcastGuid(query.podcastGuid)
             is EpisodeQuery.Live -> remoteDataSource.getLiveEpisodes()

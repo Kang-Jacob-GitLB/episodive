@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -55,7 +54,6 @@ class SearchViewModel @Inject constructor(
         getRecentEpisodesUseCase(),
         getTrendingFeedsUseCase(),
     ) { query, result, recentEpisodes, trendingFeeds ->
-        Timber.i("trendingFeeds=${trendingFeeds.size}, recentEpisodes=${recentEpisodes.size}")
         SearchState.Success(
             searchQuery = query,
             searchHistory = emptyList(), // Implement search history if needed
