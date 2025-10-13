@@ -1,4 +1,4 @@
-package io.jacob.episodive.core.domain.usecase
+package io.jacob.episodive.core.domain.usecase.search
 
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
@@ -13,7 +13,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertEquals
+import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
@@ -53,13 +53,13 @@ class SearchUseCaseTest {
                 val result = awaitItem()
 
                 // Then
-                assertEquals(2, result.podcasts.size)
+                Assert.assertEquals(2, result.podcasts.size)
                 result.podcasts.forEachIndexed { index, podcast ->
-                    assertEquals(podcastTestDataList[index], podcast)
+                    Assert.assertEquals(podcastTestDataList[index], podcast)
                 }
-                assertEquals(10, result.episodes.size)
+                Assert.assertEquals(10, result.episodes.size)
                 result.episodes.forEachIndexed { index, episode ->
-                    assertEquals(episodeTestDataList[index], episode)
+                    Assert.assertEquals(episodeTestDataList[index], episode)
                 }
 
                 awaitComplete()

@@ -11,18 +11,21 @@ import io.jacob.episodive.core.data.repository.FeedRepositoryImpl
 import io.jacob.episodive.core.data.repository.ImageRepositoryImpl
 import io.jacob.episodive.core.data.repository.PlayerRepositoryImpl
 import io.jacob.episodive.core.data.repository.PodcastRepositoryImpl
+import io.jacob.episodive.core.data.repository.RecentSearchRepositoryImpl
 import io.jacob.episodive.core.data.repository.UserRepositoryImpl
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
+import io.jacob.episodive.core.database.datasource.RecentSearchLocalDataSource
 import io.jacob.episodive.core.datastore.datasource.UserPreferencesDataSource
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.FeedRepository
 import io.jacob.episodive.core.domain.repository.ImageRepository
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.PodcastRepository
+import io.jacob.episodive.core.domain.repository.RecentSearchRepository
 import io.jacob.episodive.core.domain.repository.UserRepository
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
@@ -100,6 +103,16 @@ object RepositoryModule {
     ): ImageRepository {
         return ImageRepositoryImpl(
             context = context,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideRecentSearchRepository(
+        recentSearchLocalDataSource: RecentSearchLocalDataSource,
+    ): RecentSearchRepository {
+        return RecentSearchRepositoryImpl(
+            recentSearchLocalDataSource = recentSearchLocalDataSource,
         )
     }
 }

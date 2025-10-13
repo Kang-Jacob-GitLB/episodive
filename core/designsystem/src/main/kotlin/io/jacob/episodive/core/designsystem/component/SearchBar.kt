@@ -36,9 +36,6 @@ fun EpisodiveSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     onSearch: (String) -> Unit,
-//    searchResult: SearchResult,
-//    onPodcastClick: (Podcast) -> Unit,
-//    onEpisodeClick: (Episode) -> Unit,
     isExpanded: Boolean = false,
     placeholder: @Composable () -> Unit = { Text("What do you want to listen to?") },
     leadingIconOnCollapse: @Composable () -> Unit = {
@@ -93,7 +90,7 @@ fun EpisodiveSearchBar(
                     onQueryChange = onQueryChange,
                     onSearch = {
                         onSearch(query)
-                        expanded = false
+                        keyboardController?.hide()
                     },
                     expanded = expanded,
                     onExpandedChange = { expanded = it },

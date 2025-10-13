@@ -139,7 +139,10 @@ fun OnboardingScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
-                    .align(Alignment.BottomCenter)
+                    .align(Alignment.BottomCenter),
+                gradientColors = GradientColors(
+                    bottom = MaterialTheme.colorScheme.primaryContainer,
+                ),
             ) {
                 Column(
                     modifier = Modifier

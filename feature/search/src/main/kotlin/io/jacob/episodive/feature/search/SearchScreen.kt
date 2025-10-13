@@ -1,14 +1,22 @@
 package io.jacob.episodive.feature.search
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +32,8 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
 import io.jacob.episodive.core.designsystem.component.FeedsSection
 import io.jacob.episodive.core.designsystem.component.LoadingWheel
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
+import io.jacob.episodive.core.designsystem.component.SectionHeader
+import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
@@ -63,11 +73,15 @@ fun SearchRoute(
                 query = s.searchQuery,
                 onQueryChange = { viewModel.sendAction(SearchAction.QueryChanged(it)) },
                 onSearch = { viewModel.sendAction(SearchAction.ClickSearch(it)) },
+                recentSearches = s.recentSearches,
                 searchResult = s.searchResult,
                 episodes = s.recentEpisodes,
                 feeds = s.trendingFeeds.toFeedsFromTrending(),
                 onPodcastClick = { viewModel.sendAction(SearchAction.ClickPodcast(it)) },
                 onEpisodeClick = { viewModel.sendAction(SearchAction.ClickEpisode(it)) },
+                onRecentSearchClick = { viewModel.sendAction(SearchAction.ClickRecentSearch(it)) },
+                onRemoveRecentSearch = { viewModel.sendAction(SearchAction.RemoveRecentSearch(it)) },
+                onClearRecentSearches = { viewModel.sendAction(SearchAction.ClearRecentSearches) },
             )
         }
 
@@ -81,21 +95,22 @@ private fun SearchScreen(
     query: String,
     onQueryChange: (String) -> Unit,
     onSearch: (String) -> Unit,
+    recentSearches: List<String>,
     searchResult: SearchResult,
     feeds: List<Feed>,
     episodes: List<Episode>,
     onPodcastClick: (Podcast) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
     onFeedClick: (Feed) -> Unit = {},
+    onRecentSearchClick: (String) -> Unit = {},
+    onRemoveRecentSearch: (String) -> Unit = {},
+    onClearRecentSearches: () -> Unit = {},
 ) {
     EpisodiveSearchBar(
         modifier = modifier,
         query = query,
         onQueryChange = onQueryChange,
         onSearch = onSearch,
-//        searchResult = searchResult,
-//        onPodcastClick = onPodcastClick,
-//        onEpisodeClick = onEpisodeClick,
         contentOnCollapse = {
             SearchContentsOnCollapse(
                 modifier = Modifier,
@@ -108,9 +123,13 @@ private fun SearchScreen(
         contentOnExpand = { scrollState ->
             SearchResultsOnExpand(
                 scrollState = scrollState,
+                recentSearches = recentSearches,
                 searchResult = searchResult,
                 onPodcastClick = onPodcastClick,
                 onEpisodeClick = onEpisodeClick,
+                onRecentSearchClick = onRecentSearchClick,
+                onRemoveRecentSearch = onRemoveRecentSearch,
+                onClearRecentSearches = onClearRecentSearches
             )
         }
     )
@@ -166,9 +185,13 @@ private fun SearchContentsOnCollapse(
 private fun SearchResultsOnExpand(
     modifier: Modifier = Modifier,
     scrollState: LazyListState,
+    recentSearches: List<String>,
     searchResult: SearchResult,
     onPodcastClick: (Podcast) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
+    onRecentSearchClick: (String) -> Unit = {},
+    onRemoveRecentSearch: (String) -> Unit = {},
+    onClearRecentSearches: () -> Unit = {},
 ) {
     LazyColumn(
         modifier = modifier
@@ -186,11 +209,12 @@ private fun SearchResultsOnExpand(
             }
         } else {
             item {
-                Text(
-                    text = "No podcasts found",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                RecentSearchesSection(
+                    title = "Recent Searches",
+                    recentSearches = recentSearches,
+                    onRecentSearchClicked = onRecentSearchClick,
+                    onRemoveRecentSearch = onRemoveRecentSearch,
+                    onClearRecentSearches = onClearRecentSearches
                 )
             }
         }
@@ -235,6 +259,80 @@ private fun SearchResultsOnExpand(
 }
 
 @Composable
+private fun RecentSearchesSection(
+    modifier: Modifier = Modifier,
+    title: String,
+    recentSearches: List<String>,
+    onRecentSearchClicked: (String) -> Unit,
+    onRemoveRecentSearch: (String) -> Unit,
+    onClearRecentSearches: () -> Unit
+) {
+    SectionHeader(
+        modifier = modifier,
+        title = title,
+        actionIcon = EpisodiveIcons.Close,
+        actionIconContentDescription = "Clear recent searches",
+        onActionClick = onClearRecentSearches,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            recentSearches.forEach { recentSearch ->
+                RecentSearchItem(
+                    recentSearch = recentSearch,
+                    onClick = { onRecentSearchClicked(recentSearch) },
+                    onRemove = { onRemoveRecentSearch(recentSearch) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentSearchItem(
+    modifier: Modifier = Modifier,
+    recentSearch: String,
+    onClick: () -> Unit,
+    onRemove: () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(4.dp)
+            .clickable { onClick() },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = EpisodiveIcons.History,
+            contentDescription = "Recent Search Icon",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = recentSearch,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        IconButton(onClick = { onRemove() }) {
+            Icon(
+                imageVector = EpisodiveIcons.Close,
+                contentDescription = "Remove Recent Search",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
 private fun LoadingScreen(
     modifier: Modifier = Modifier,
 ) {
@@ -269,6 +367,7 @@ private fun SearchScreenPreview() {
             query = "test",
             onQueryChange = {},
             onSearch = {},
+            recentSearches = listOf("test1", "test2", "test3", "test4", "test5"),
             searchResult = SearchResult(
                 podcasts = podcastTestDataList.take(3),
                 episodes = episodeTestDataList,

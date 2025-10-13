@@ -1,4 +1,4 @@
-package io.jacob.episodive.core.domain.usecase
+package io.jacob.episodive.core.domain.usecase.search
 
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.PodcastRepository

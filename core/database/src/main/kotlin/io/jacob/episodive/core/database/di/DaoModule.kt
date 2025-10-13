@@ -21,4 +21,8 @@ object DaoModule {
     @Provides
     @Singleton
     fun provideFeedDao(database: EpisodiveDatabase) = database.feedDao()
+
+    @Provides
+    @Singleton
+    fun provideRecentSearchDao(database: EpisodiveDatabase) = database.recentSearchDao()
 }

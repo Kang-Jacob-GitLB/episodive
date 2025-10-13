@@ -3,10 +3,14 @@ package io.jacob.episodive.feature.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.jacob.episodive.core.domain.usecase.SearchUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetRecentEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.feed.GetTrendingFeedsUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
+import io.jacob.episodive.core.domain.usecase.search.ClearRecentSearchesUseCase
+import io.jacob.episodive.core.domain.usecase.search.DeleteRecentSearchUseCase
+import io.jacob.episodive.core.domain.usecase.search.GetRecentSearchesUseCase
+import io.jacob.episodive.core.domain.usecase.search.SearchUseCase
+import io.jacob.episodive.core.domain.usecase.search.UpsertRecentSearchUseCase
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
@@ -32,9 +36,13 @@ import javax.inject.Inject
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchUseCase: SearchUseCase,
-    private val getRecentEpisodesUseCase: GetRecentEpisodesUseCase,
-    private val getTrendingFeedsUseCase: GetTrendingFeedsUseCase,
+    getRecentEpisodesUseCase: GetRecentEpisodesUseCase,
+    getTrendingFeedsUseCase: GetTrendingFeedsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
+    getRecentSearchesUseCase: GetRecentSearchesUseCase,
+    private val upsertRecentSearchUseCase: UpsertRecentSearchUseCase,
+    private val deleteRecentSearchUseCase: DeleteRecentSearchUseCase,
+    private val clearRecentSearchesUseCase: ClearRecentSearchesUseCase,
 ) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
 
@@ -53,19 +61,22 @@ class SearchViewModel @Inject constructor(
     val state: StateFlow<SearchState> = combine(
         _searchQuery,
         _searchResult,
+        getRecentSearchesUseCase(),
         getRecentEpisodesUseCase(),
         getTrendingFeedsUseCase(),
-    ) { query, result, recentEpisodes, trendingFeeds ->
+    ) { query, result, recentSearches, recentEpisodes, trendingFeeds ->
         SearchState.Success(
             searchQuery = query,
             searchHistory = emptyList(), // Implement search history if needed
             searchResult = result,
+            recentSearches = recentSearches,
             categories = Category.entries.toList(),
             recentEpisodes = recentEpisodes.take(6),
             trendingFeeds = trendingFeeds.take(10),
         ) as SearchState
     }.catch { e ->
         emit(SearchState.Error(e.message ?: "An unknown error occurred"))
+        e.printStackTrace()
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -85,9 +96,9 @@ class SearchViewModel @Inject constructor(
         _action.collect { action ->
             when (action) {
                 is SearchAction.QueryChanged -> changeQuery(action.query)
-                is SearchAction.ClickSearch -> changeQuery(action.query)
+                is SearchAction.ClickSearch -> search(action.query)
                 is SearchAction.ClearQuery -> clearQuery()
-                is SearchAction.ClickRecentSearch -> changeQuery(action.query)
+                is SearchAction.ClickRecentSearch -> search(action.query)
                 is SearchAction.RemoveRecentSearch -> removeRecentSearch(action.query)
                 is SearchAction.ClearRecentSearches -> clearRecentSearches()
                 is SearchAction.ClickCategory -> clickCategory(action.category)
@@ -105,17 +116,21 @@ class SearchViewModel @Inject constructor(
         _searchQuery.emit(query)
     }
 
+    private fun search(query: String) = viewModelScope.launch {
+        _searchQuery.emit(query)
+        upsertRecentSearchUseCase(query)
+    }
 
     private fun clearQuery() = viewModelScope.launch {
         _searchQuery.emit("")
     }
 
-    private fun removeRecentSearch(query: String) {
-        // Implement removal from search history if needed
+    private fun removeRecentSearch(query: String) = viewModelScope.launch {
+        deleteRecentSearchUseCase(query)
     }
 
-    private fun clearRecentSearches() {
-        // Implement clearing of search history if needed
+    private fun clearRecentSearches() = viewModelScope.launch {
+        clearRecentSearchesUseCase()
     }
 
     private fun clickCategory(category: Category) = viewModelScope.launch {
@@ -138,6 +153,7 @@ sealed interface SearchState {
         val searchQuery: String,
         val searchHistory: List<String>,
         val searchResult: SearchResult,
+        val recentSearches: List<String>,
         val categories: List<Category>,
         val recentEpisodes: List<Episode>,
         val trendingFeeds: List<TrendingFeed>,
