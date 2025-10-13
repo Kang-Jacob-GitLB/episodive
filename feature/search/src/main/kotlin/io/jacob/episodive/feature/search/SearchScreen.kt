@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,15 +22,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
 import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
-import io.jacob.episodive.core.designsystem.component.PodcastsSection
+import io.jacob.episodive.core.designsystem.component.FeedsSection
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
+import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.Feed
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SearchResult
+import io.jacob.episodive.core.model.mapper.toFeedsFromTrending
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
+import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
 
 @Composable
 fun SearchRoute(
@@ -62,6 +67,8 @@ fun SearchRoute(
                 onQueryChange = { viewModel.sendAction(SearchAction.QueryChanged(it)) },
                 onSearch = { viewModel.sendAction(SearchAction.ClickSearch(it)) },
                 searchResult = s.searchResult,
+                episodes = s.recentEpisodes,
+                feeds = s.trendingFeeds.toFeedsFromTrending(),
                 onPodcastClick = { viewModel.sendAction(SearchAction.ClickPodcast(it)) },
                 onEpisodeClick = { viewModel.sendAction(SearchAction.ClickEpisode(it)) },
             )
@@ -78,8 +85,11 @@ private fun SearchScreen(
     onQueryChange: (String) -> Unit,
     onSearch: (String) -> Unit,
     searchResult: SearchResult,
+    feeds: List<Feed>,
+    episodes: List<Episode>,
     onPodcastClick: (Podcast) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
+    onFeedClick: (Feed) -> Unit = {},
 ) {
     EpisodiveSearchBar(
         modifier = modifier,
@@ -90,12 +100,12 @@ private fun SearchScreen(
 //        onPodcastClick = onPodcastClick,
 //        onEpisodeClick = onEpisodeClick,
         contentOnCollapse = {
-            val podcasts = searchResult.podcasts
-            PodcastsSection(
-                title = "Podcasts",
-                podcasts = podcasts,
-                onMore = { /* TODO */ },
-                onPodcastClick = onPodcastClick
+            SearchContentsOnCollapse(
+                modifier = Modifier,
+                episodes = episodes,
+                feeds = feeds,
+                onEpisodeClick = onEpisodeClick,
+                onFeedClick = onFeedClick,
             )
         },
         contentOnExpand = { scrollState ->
@@ -155,6 +165,52 @@ private fun SearchScreen(
     )
 }
 
+@Composable
+private fun SearchContentsOnCollapse(
+    modifier: Modifier = Modifier,
+    feeds: List<Feed>,
+    episodes: List<Episode>,
+    onEpisodeClick: (Episode) -> Unit = {},
+    onFeedClick: (Feed) -> Unit = {},
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth(),
+    ) {
+        if (feeds.isNotEmpty()) {
+            item {
+                FeedsSection(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    title = "Feeds",
+                    feeds = feeds,
+                    onFeedClick = onFeedClick
+                )
+            }
+        }
+
+        if (episodes.isNotEmpty()) {
+            item {
+                HorizontalDivider(modifier = Modifier.padding(12.dp))
+            }
+
+            item {
+                EpisodesSection(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    title = "Episodes",
+                    episodes = episodes,
+                    onEpisodeClick = onEpisodeClick
+                )
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
+        }
+    }
+}
+
 @DevicePreviews
 @Composable
 private fun SearchScreenPreview() {
@@ -167,6 +223,8 @@ private fun SearchScreenPreview() {
                 podcasts = podcastTestDataList.take(3),
                 episodes = episodeTestDataList,
             ),
+            feeds = trendingFeedTestDataList.toFeedsFromTrending(),
+            episodes = episodeTestDataList,
         )
     }
 }
