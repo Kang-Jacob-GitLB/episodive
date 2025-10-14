@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -17,7 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +46,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackgroun
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveTopAppBar
+import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
@@ -193,7 +195,7 @@ private fun PlayerScreen(
                     StateImage(
                         modifier = Modifier
                             .size(300.dp)
-                            .clip(RoundedCornerShape(16.dp)),
+                            .clip(MaterialTheme.shapes.extraExtraLarge),
                         imageUrl = nowPlaying.image.ifEmpty { nowPlaying.feedImage },
                         contentDescription = nowPlaying.title
                     )
@@ -444,30 +446,22 @@ private fun InfoSection(
     modifier: Modifier = Modifier,
     episode: Episode,
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .background(
-                color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(16.dp)
-            ),
+    Card(
+        modifier = modifier.padding(16.dp),
     ) {
-        Box {
-            SectionHeader(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                title = "More info",
-            ) {
+        SectionHeader(
+            title = "More info",
+            contentPadding = PaddingValues(horizontal = 16.dp),
+        ) {
+            HtmlTextContainer(text = episode.description ?: "") {
                 Text(
-                    text = episode.description ?: "",
+                    text = it,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -483,5 +477,13 @@ private fun PlayerScreenPreview() {
             isPlaying = true,
             isLike = false,
         )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun InfoSectionPreview() {
+    EpisodiveTheme {
+        InfoSection(episode = episodeTestData)
     }
 }

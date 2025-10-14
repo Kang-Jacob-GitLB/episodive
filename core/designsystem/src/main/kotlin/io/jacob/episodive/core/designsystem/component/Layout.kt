@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -36,6 +37,7 @@ fun SectionHeader(
     actionIcon: ImageVector? = null,
     actionIconContentDescription: String? = null,
     onActionClick: () -> Unit = {},
+    contentPadding: PaddingValues = PaddingValues(0.dp),
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
     Column(
@@ -69,7 +71,11 @@ fun SectionHeader(
             }
         }
 
-        content()
+        Column(
+            modifier = Modifier.padding(contentPadding)
+        ) {
+            content()
+        }
     }
 }
 
@@ -77,6 +83,7 @@ fun SectionHeader(
 fun SubSectionHeader(
     modifier: Modifier = Modifier,
     title: String,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
     Column(
@@ -92,7 +99,11 @@ fun SubSectionHeader(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        content()
+        Column(
+            modifier = Modifier.padding(contentPadding)
+        ) {
+            content()
+        }
     }
 }
 
@@ -149,7 +160,12 @@ private fun SectionHeaderPreview() {
             actionIcon = EpisodiveIcons.KeyboardArrowRight,
             actionIconContentDescription = "See All",
             onActionClick = {}
-        )
+        ) {
+            Text(
+                text = "Content",
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 
@@ -159,7 +175,12 @@ private fun SubSectionHeaderPreview() {
     EpisodiveTheme {
         SubSectionHeader(
             title = "Preview",
-        )
+        ) {
+            Text(
+                text = "Content",
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 

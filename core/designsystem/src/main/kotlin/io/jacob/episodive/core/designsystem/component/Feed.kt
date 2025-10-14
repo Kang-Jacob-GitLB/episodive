@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -82,7 +81,7 @@ fun FeedItem(
         StateImage(
             modifier = Modifier
                 .size(140.dp)
-                .clip(RoundedCornerShape(16.dp)),
+                .clip(MaterialTheme.shapes.extraLarge),
             imageUrl = feed.image ?: "",
             contentDescription = feed.title,
         )

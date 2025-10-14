@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -87,7 +86,7 @@ fun EpisodeItem(
         StateImage(
             modifier = Modifier
                 .size(72.dp)
-                .clip(RoundedCornerShape(16.dp)),
+                .clip(MaterialTheme.shapes.largeIncreased),
             imageUrl = episode.image.ifEmpty { episode.feedImage },
             contentDescription = episode.title,
         )
@@ -182,7 +181,7 @@ fun PlayingEpisodeItem(
     Surface(
         modifier = modifier
             .size(width = 192.dp, height = 84.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.largeIncreased,
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
         onClick = onClick
     ) {
@@ -195,7 +194,7 @@ fun PlayingEpisodeItem(
             StateImage(
                 modifier = Modifier
                     .size(68.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .clip(MaterialTheme.shapes.largeIncreased),
                 imageUrl = playedEpisode.episode.image.ifEmpty { playedEpisode.episode.feedImage },
                 contentDescription = playedEpisode.episode.title,
             )

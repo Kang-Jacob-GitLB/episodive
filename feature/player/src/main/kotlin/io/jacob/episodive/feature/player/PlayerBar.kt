@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -129,7 +128,7 @@ private fun PlayerBar(
             .height(LocalDimensionTheme.current.playerBarHeight)
             .padding(horizontal = 6.dp)
             .padding(bottom = 6.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = dominantColor,
         ),
@@ -145,8 +144,8 @@ private fun PlayerBar(
             ) {
                 StateImage(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(6.dp)),
+                        .size(50.dp)
+                        .clip(MaterialTheme.shapes.medium),
                     imageUrl = nowPlaying.image.ifEmpty { nowPlaying.feedImage },
                     contentDescription = nowPlaying.title
                 )

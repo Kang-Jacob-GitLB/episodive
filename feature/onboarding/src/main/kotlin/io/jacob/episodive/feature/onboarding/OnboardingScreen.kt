@@ -32,8 +32,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +59,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconText
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
+import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.component.scrollbar.DecorativeScrollbar
 import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
@@ -162,7 +161,7 @@ fun OnboardingScreen(
                     EpisodiveButton(
                         modifier = Modifier
                             .fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.medium,
                         onClick = { viewModel.sendAction(OnboardingAction.NextPage) },
                         text = { Text(text = stringResource(R.string.feature_onboarding_next)) },
                         enabled = true,
@@ -404,7 +403,7 @@ private fun CategoryButton(
     Surface(
         modifier = modifier
             .size(140.dp),
-        shape = RoundedCornerShape(corner = CornerSize(16.dp)),
+        shape = MaterialTheme.shapes.extraLarge,
         selected = isSelected,
         onClick = {
             onClick(category)
@@ -465,7 +464,7 @@ private fun FeedButton(
         StateImage(
             modifier = Modifier
                 .size(96.dp)
-                .clip(RoundedCornerShape(corner = CornerSize(16.dp))),
+                .clip(MaterialTheme.shapes.extraLarge),
             imageUrl = feed.image ?: "",
             contentDescription = feed.title,
         )
@@ -495,7 +494,7 @@ private fun FeedButton(
                 EpisodiveIconToggleButton(
                     modifier = Modifier
                         .size(34.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                     checked = isSelected,
                     onCheckedChange = { checked -> onClick(feed) },
                     icon = {
@@ -582,14 +581,19 @@ private fun FeedButton(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
+            HtmlTextContainer(
                 text = feed.description ?: "",
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            ) {
+                Text(
+                    text = it,
+                    maxLines = 4,
+                    minLines = 4,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
