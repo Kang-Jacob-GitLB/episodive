@@ -2,7 +2,6 @@ package io.jacob.episodive.core.designsystem.component
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
@@ -36,6 +35,7 @@ fun EpisodiveSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     onSearch: (String) -> Unit,
+    isExpandable: Boolean = true,
     isExpanded: Boolean = false,
     placeholder: @Composable () -> Unit = { Text("What do you want to listen to?") },
     leadingIconOnCollapse: @Composable () -> Unit = {
@@ -76,7 +76,7 @@ fun EpisodiveSearchBar(
     }
 
     Column(
-        modifier.fillMaxSize(),
+        modifier = modifier,
     ) {
         SearchBar(
             modifier = Modifier
@@ -93,12 +93,12 @@ fun EpisodiveSearchBar(
                         keyboardController?.hide()
                     },
                     expanded = expanded,
-                    onExpandedChange = { expanded = it },
+                    onExpandedChange = { if (isExpandable) expanded = it },
                     placeholder = placeholder,
                     leadingIcon = {
                         if (expanded) {
                             IconButton(
-                                onClick = { expanded = false }
+                                onClick = { if (isExpandable) expanded = false }
                             ) {
                                 leadingIconOnExpand()
                             }
@@ -121,7 +121,7 @@ fun EpisodiveSearchBar(
                 )
             },
             expanded = expanded,
-            onExpandedChange = { expanded = it },
+            onExpandedChange = { if (isExpandable) expanded = it },
         ) {
             contentOnExpand(scrollState)
         }

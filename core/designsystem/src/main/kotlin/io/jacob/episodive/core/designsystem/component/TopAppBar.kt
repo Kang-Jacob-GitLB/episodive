@@ -19,8 +19,8 @@ import io.jacob.episodive.core.designsystem.tooling.ThemePreviews
 fun EpisodiveTopAppBar(
     modifier: Modifier = Modifier,
     title: @Composable () -> Unit,
-    navigationIcon: ImageVector,
-    navigationIconContentDescription: String,
+    navigationIcon: ImageVector? = null,
+    navigationIconContentDescription: String? = null,
     actionIcon: ImageVector? = null,
     actionIconContentDescription: String? = null,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
@@ -30,6 +30,9 @@ fun EpisodiveTopAppBar(
     CenterAlignedTopAppBar(
         title = title,
         navigationIcon = {
+            if (navigationIcon == null) return@CenterAlignedTopAppBar
+            if (navigationIconContentDescription == null) return@CenterAlignedTopAppBar
+
             IconButton(onClick = onNavigationClick) {
                 Icon(
                     imageVector = navigationIcon,

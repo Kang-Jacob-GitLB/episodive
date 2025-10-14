@@ -22,6 +22,7 @@ import io.jacob.episodive.core.model.TrendingFeed
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -90,6 +91,9 @@ class HomeViewModel @Inject constructor(
 
     private val _action = MutableSharedFlow<HomeAction>(extraBufferCapacity = 1)
 
+    private val _effect = MutableSharedFlow<HomeEffect>(extraBufferCapacity = 1)
+    val effect = _effect.asSharedFlow()
+
     init {
         handleActions()
     }
@@ -99,6 +103,7 @@ class HomeViewModel @Inject constructor(
             when (action) {
                 is HomeAction.PlayEpisode -> playEpisode(action.episode)
                 is HomeAction.ResumeEpisode -> resumeEpisode(action.playedEpisode)
+                is HomeAction.ClickPodcast -> clickPodcast(action.podcastId)
             }
         }
     }
@@ -113,6 +118,10 @@ class HomeViewModel @Inject constructor(
 
     private fun resumeEpisode(playedEpisode: PlayedEpisode) = viewModelScope.launch {
         resumeEpisodeUseCase(playedEpisode)
+    }
+
+    private fun clickPodcast(podcastId: Long) = viewModelScope.launch {
+        _effect.emit(HomeEffect.NavigateToPodcast(podcastId))
     }
 
     companion object {
@@ -139,4 +148,9 @@ sealed interface HomeState {
 sealed interface HomeAction {
     data class PlayEpisode(val episode: Episode) : HomeAction
     data class ResumeEpisode(val playedEpisode: PlayedEpisode) : HomeAction
+    data class ClickPodcast(val podcastId: Long) : HomeAction
+}
+
+sealed interface HomeEffect {
+    data class NavigateToPodcast(val podcastId: Long) : HomeEffect
 }
