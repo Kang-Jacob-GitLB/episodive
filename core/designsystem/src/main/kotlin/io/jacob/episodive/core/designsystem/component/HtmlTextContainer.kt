@@ -4,6 +4,7 @@ import android.util.Patterns
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -16,57 +17,68 @@ import androidx.compose.ui.text.style.TextDecoration
 fun HtmlTextContainer(text: String, content: @Composable (AnnotatedString) -> Unit) {
     val linkColor = MaterialTheme.colorScheme.primary
     val htmlText = text.replace("\n", "<br>")
-    val annotatedString = remember(htmlText) {
+
+    val annotatedString = remember(htmlText, linkColor) {
         val baseString = AnnotatedString.fromHtml(htmlString = htmlText)
-
-        buildAnnotatedString {
-            append(baseString)
-
-            val patterns = listOf(
-                Patterns.EMAIL_ADDRESS to "mailto:",
-                Patterns.WEB_URL to "",
-                Patterns.PHONE to "tel:"
-            )
-
-            val allMatches = patterns.flatMap { (pattern, scheme) ->
-                pattern.toRegex().findAll(baseString.text).mapNotNull { match ->
-                    when (scheme) {
-                        "" -> { // URL 검증
-                            if (!match.value.startsWith("http") && !match.value.startsWith("www")) {
-                                return@mapNotNull null
-                            }
-                        }
-
-                        "tel:" -> { // 전화번호 검증
-                            val digitCount = match.value.replace(Regex("[^0-9]"), "").length
-                            if (digitCount < 7) return@mapNotNull null
-                        }
-                    }
-                    Triple(match.range.first, match.range.last, scheme + match.value)
-                }
-            }.sortedBy { it.first }
-
-            val nonOverlappingMatches = mutableListOf<Triple<Int, Int, String>>()
-            allMatches.forEach { match ->
-                if (nonOverlappingMatches.none { it.second >= match.first }) {
-                    nonOverlappingMatches.add(match)
-                }
-            }
-
-            nonOverlappingMatches.forEach { (start, end, uri) ->
-                val link = LinkAnnotation.Url(
-                    url = uri,
-                    styles = TextLinkStyles(
-                        style = SpanStyle(
-                            color = linkColor,
-                            textDecoration = TextDecoration.Underline
-                        )
-                    )
-                )
-                addLink(link, start, end + 1)
-            }
-        }
+        addLinksToAnnotatedString(baseString, linkColor)
     }
 
     content(annotatedString)
+}
+
+private fun addLinksToAnnotatedString(
+    baseString: AnnotatedString,
+    linkColor: Color
+): AnnotatedString = buildAnnotatedString {
+    append(baseString)
+
+    val allMatches = findAllMatches(baseString.text)
+    val nonOverlappingMatches = filterOverlappingMatches(allMatches)
+
+    nonOverlappingMatches.forEach { (start, end, uri) ->
+        addLink(
+            LinkAnnotation.Url(
+                url = uri,
+                styles = TextLinkStyles(
+                    style = SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)
+                )
+            ),
+            start,
+            end + 1
+        )
+    }
+}
+
+private fun findAllMatches(text: String): List<Triple<Int, Int, String>> {
+    val patterns = listOf(
+        Patterns.EMAIL_ADDRESS to "mailto:",
+        Patterns.WEB_URL to "",
+        Patterns.PHONE to "tel:"
+    )
+
+    return patterns.flatMap { (pattern, scheme) ->
+        pattern.toRegex().findAll(text).mapNotNull { match ->
+            if (isValidMatch(match.value, scheme)) {
+                Triple(match.range.first, match.range.last, scheme + match.value)
+            } else null
+        }
+    }.sortedBy { it.first }
+}
+
+private fun isValidMatch(value: String, scheme: String): Boolean = when (scheme) {
+    "" -> value.startsWith("http") || value.startsWith("www")
+    "tel:" -> value.replace(Regex("[^0-9]"), "").length >= 7
+    else -> true
+}
+
+private fun filterOverlappingMatches(
+    matches: List<Triple<Int, Int, String>>
+): List<Triple<Int, Int, String>> {
+    val result = mutableListOf<Triple<Int, Int, String>>()
+    matches.forEach { match ->
+        if (result.none { it.second >= match.first }) {
+            result.add(match)
+        }
+    }
+    return result
 }
