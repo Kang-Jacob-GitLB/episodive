@@ -14,6 +14,7 @@ import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetPreferredCategoriesUseCase
 import io.jacob.episodive.core.domain.usecase.user.ToggleCategoryUseCase
 import io.jacob.episodive.core.domain.util.combine
+import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.FollowedPodcast
 import io.jacob.episodive.core.model.LibraryFindResult
@@ -43,7 +44,7 @@ class LibraryViewModel @Inject constructor(
     getAllPlayedEpisodesUseCase: GetAllPlayedEpisodesUseCase,
     getLikedEpisodesUseCase: GetLikedEpisodesUseCase,
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
-    private val getPreferredCategoriesUseCase: GetPreferredCategoriesUseCase,
+    getPreferredCategoriesUseCase: GetPreferredCategoriesUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val resumeEpisodeUseCase: ResumeEpisodeUseCase,
     private val toggleLikedUseCase: ToggleLikedUseCase,
@@ -64,19 +65,25 @@ class LibraryViewModel @Inject constructor(
             }
         }
 
+    private val _section = MutableStateFlow(LibrarySection.All)
+
     val state: StateFlow<LibraryState> = combine(
         _findQuery,
         _findResult,
         getAllPlayedEpisodesUseCase(),
         getLikedEpisodesUseCase(),
         getFollowedPodcastsUseCase(),
-    ) { query, result, allPlayedEpisodes, likedEpisodes, followedPodcasts ->
+        getPreferredCategoriesUseCase(),
+        _section
+    ) { query, result, allPlayedEpisodes, likedEpisodes, followedPodcasts, preferredCategories, section ->
         LibraryState.Success(
             findQuery = query,
             findResult = result,
             allPlayedEpisodes = allPlayedEpisodes,
             likedEpisodes = likedEpisodes,
-            followedPodcasts = followedPodcasts
+            followedPodcasts = followedPodcasts,
+            preferredCategories = preferredCategories,
+            section = section,
         ) as LibraryState
     }.catch { e ->
         emit(LibraryState.Error(e.message ?: "An unknown error occurred"))
@@ -107,6 +114,7 @@ class LibraryViewModel @Inject constructor(
                 is LibraryAction.ClickPodcast -> clickPodcast(action.podcast)
                 is LibraryAction.ToggleLikedEpisode -> toggleLikedEpisode(action.likedEpisode)
                 is LibraryAction.ToggleFollowedPodcast -> toggleFollowedPodcast(action.followedPodcast)
+                is LibraryAction.SelectSection -> selectSection(action.section)
             }
         }
     }
@@ -146,6 +154,10 @@ class LibraryViewModel @Inject constructor(
     private fun toggleFollowedPodcast(followedPodcast: FollowedPodcast) = viewModelScope.launch {
         toggleFollowedUseCase(followedPodcast.podcast.id)
     }
+
+    private fun selectSection(section: LibrarySection) = viewModelScope.launch {
+        _section.emit(section)
+    }
 }
 
 sealed interface LibraryState {
@@ -156,6 +168,8 @@ sealed interface LibraryState {
         val allPlayedEpisodes: List<PlayedEpisode>,
         val likedEpisodes: List<LikedEpisode>,
         val followedPodcasts: List<FollowedPodcast>,
+        val preferredCategories: List<Category>,
+        val section: LibrarySection,
     ) : LibraryState
 
     data class Error(val message: String) : LibraryState
@@ -170,8 +184,11 @@ sealed interface LibraryAction {
     data class ClickPodcast(val podcast: Podcast) : LibraryAction
     data class ToggleLikedEpisode(val likedEpisode: LikedEpisode) : LibraryAction
     data class ToggleFollowedPodcast(val followedPodcast: FollowedPodcast) : LibraryAction
+    data class SelectSection(val section: LibrarySection) : LibraryAction
 }
 
 sealed interface LibraryEffect {
     data class NavigateToPodcast(val podcast: Podcast) : LibraryEffect
 }
+
+enum class LibrarySection { All, RecentlyListened, Liked, Followed, Categories }

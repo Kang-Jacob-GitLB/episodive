@@ -5,8 +5,10 @@
     <string name="feature_library_filter_recently_listened">Recently listened</string>
     <string name="feature_library_filter_liked">Liked</string>
     <string name="feature_library_filter_followed">Followed</string>
+    <string name="feature_library_filter_preferred">Preferred</string>
     <string name="feature_library_section_recently_listened_episodes">Recently listened episodes</string>
     <string name="feature_library_section_liked_episodes">Liked episodes</string>
     <string name="feature_library_section_followed_podcasts">Followed podcasts</string>
+    <string name="feature_library_section_preferred_categories">Preferred categories</string>
     <string name="feature_library_find_your_library">Find your library</string>
 </resources>
