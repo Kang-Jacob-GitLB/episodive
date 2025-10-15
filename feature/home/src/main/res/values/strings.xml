@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_home_title">Home</string>
-    <string name="feature_home_section_my_recent_feeds">Recent published</string>
+    <string name="feature_home_section_my_recent_feeds">My recent published</string>
     <string name="feature_home_section_random_episodes">Random episodes</string>
-    <string name="feature_home_section_my_trending_feeds">Trending feeds</string>
+    <string name="feature_home_section_my_trending_feeds">My trending feeds</string>
     <string name="feature_home_section_followed_podcasts">Followed podcasts</string>
     <string name="feature_home_section_trending_in_local">Local trending</string>
     <string name="feature_home_section_trending_in_foreign">Foreign trending</string>

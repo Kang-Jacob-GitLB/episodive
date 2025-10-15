@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_search_title">Search</string>
+    <string name="feature_search_placeholder">What do you want to listen to?</string>
+    <string name="feature_search_section_global_trending_feeds">Global trending feeds</string>
+    <string name="feature_search_section_global_recent_episodes">Global recent episodes</string>
+    <string name="feature_search_section_podcasts">Podcasts</string>
+    <string name="feature_search_section_episodes">Episodes</string>
+    <string name="feature_search_section_recent_searches">Recent searches</string>
 </resources>

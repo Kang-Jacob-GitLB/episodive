@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -119,6 +120,9 @@ private fun SearchScreen(
         onQueryChange = onQueryChange,
         onSearch = onSearch,
         isExpanded = isExpanded,
+        placeholder = {
+            Text(stringResource(R.string.feature_search_placeholder))
+        },
         contentOnCollapse = {
             SearchContentsOnCollapse(
                 modifier = Modifier,
@@ -160,7 +164,7 @@ private fun SearchContentsOnCollapse(
                 FeedsSection(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    title = "Feeds",
+                    title = stringResource(R.string.feature_search_section_global_trending_feeds),
                     feeds = feeds,
                     onFeedClick = onFeedClick
                 )
@@ -176,7 +180,7 @@ private fun SearchContentsOnCollapse(
                 EpisodesSection(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    title = "Episodes",
+                    title = stringResource(R.string.feature_search_section_global_recent_episodes),
                     episodes = episodes,
                     onEpisodeClick = onEpisodeClick
                 )
@@ -213,7 +217,7 @@ private fun SearchResultsOnExpand(
             if (searchResult.podcasts.isNotEmpty()) {
                 item {
                     PodcastsSection(
-                        title = "Podcasts",
+                        title = stringResource(R.string.feature_search_section_podcasts),
                         podcasts = searchResult.podcasts,
                         onMore = {},
                         onPodcastClick = onPodcastClick,
@@ -222,7 +226,7 @@ private fun SearchResultsOnExpand(
             } else {
                 item {
                     RecentSearchesSection(
-                        title = "Recent Searches",
+                        title = stringResource(R.string.feature_search_section_recent_searches),
                         recentSearches = recentSearches,
                         onRecentSearchClicked = onRecentSearchClick,
                         onRemoveRecentSearch = onRemoveRecentSearch,
@@ -240,7 +244,7 @@ private fun SearchResultsOnExpand(
                     EpisodesSection(
                         modifier = Modifier
                             .fillMaxWidth(),
-                        title = "Episodes",
+                        title = stringResource(R.string.feature_search_section_episodes),
                         episodes = emptyList(),
                         onEpisodeClick = {}
                     )

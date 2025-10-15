@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -130,7 +131,7 @@ private fun LibraryScreen(
 
         item {
             PlayedEpisodeRowSection(
-                title = "Recently listen",
+                title = stringResource(R.string.feature_library_section_recently_listened_episodes),
                 playedEpisodes = playedEpisodes,
                 onPlayedEpisodeClick = onPlayedEpisodeClick,
             )
@@ -138,7 +139,7 @@ private fun LibraryScreen(
 
         item {
             EpisodeRowSection(
-                title = "Liked Episodes",
+                title = stringResource(R.string.feature_library_section_liked_episodes),
                 episodes = likedEpisodes.map { it.episode },
                 onEpisodeClick = onEpisodeClick
             )
@@ -146,7 +147,7 @@ private fun LibraryScreen(
 
         item {
             PodcastsSection(
-                title = "Followed Podcasts",
+                title = stringResource(R.string.feature_library_section_followed_podcasts),
                 podcasts = followedPodcasts.map { it.podcast },
                 onMore = {},
                 onPodcastClick = onPodcastClick
@@ -168,15 +169,18 @@ private fun Header(
 ) {
     var showFind by remember { mutableStateOf(false) }
     val items = listOf(
-        "All", "Recently listen", "Liked", "Followed"
+        stringResource(R.string.feature_library_filter_all),
+        stringResource(R.string.feature_library_filter_recently_listened),
+        stringResource(R.string.feature_library_filter_liked),
+        stringResource(R.string.feature_library_filter_followed),
     )
     var selectedIndex by remember { mutableIntStateOf(0) }
 
     SectionHeader(
         modifier = modifier,
-        title = "내 라이브러리",
+        title = stringResource(R.string.feature_library_title),
         actionIcon = if (showFind) null else EpisodiveIcons.SearchBorder,
-        actionIconContentDescription = "검색",
+        actionIconContentDescription = "search",
         onActionClick = { showFind = true }
     ) {
         if (showFind) {
@@ -192,7 +196,7 @@ private fun Header(
                         },
                         expanded = false,
                         onExpandedChange = { if (!it) showFind = false },
-                        placeholder = { Text("검색") },
+                        placeholder = { Text(stringResource(R.string.feature_library_find_your_library)) },
                         leadingIcon = {
                             IconButton(onClick = { showFind = false }) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, null)

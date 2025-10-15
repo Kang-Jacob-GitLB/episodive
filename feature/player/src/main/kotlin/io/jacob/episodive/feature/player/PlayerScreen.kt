@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -450,7 +451,7 @@ private fun InfoSection(
         modifier = modifier.padding(16.dp),
     ) {
         SectionHeader(
-            title = "More info",
+            title = stringResource(R.string.feature_player_more_info),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
             HtmlTextContainer(text = episode.description ?: "") {

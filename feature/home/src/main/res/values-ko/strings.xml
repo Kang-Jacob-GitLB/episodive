@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_home_title">홈</string>
+    <string name="feature_home_section_my_recent_feeds">나의 최신 피드</string>
+    <string name="feature_home_section_random_episodes">랜덤 에피소드</string>
+    <string name="feature_home_section_my_trending_feeds">나의 인기 피드</string>
+    <string name="feature_home_section_followed_podcasts">팔로우한 팟캐스트</string>
+    <string name="feature_home_section_trending_in_local">국내 인기</string>
+    <string name="feature_home_section_trending_in_foreign">해외 인기</string>
+    <string name="feature_home_section_live_episodes">라이브 에피소드</string>
+    <string name="feature_home_episodes">에피소드</string>
+</resources>

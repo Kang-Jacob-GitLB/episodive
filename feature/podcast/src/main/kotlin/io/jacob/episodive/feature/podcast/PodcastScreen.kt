@@ -117,7 +117,9 @@ private fun PodcastScreen(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    text = "All episodes (${podcast.episodeCount})",
+                    text = stringResource(R.string.feature_podcast_all_episodes_format).format(
+                        podcast.episodeCount
+                    ),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )

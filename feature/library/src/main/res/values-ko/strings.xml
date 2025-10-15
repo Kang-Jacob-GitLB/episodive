@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_library_title">라이브러리</string>
+    <string name="feature_library_filter_all">모든</string>
+    <string name="feature_library_filter_recently_listened">최근 들었던</string>
+    <string name="feature_library_filter_liked">좋아요 표시한</string>
+    <string name="feature_library_filter_followed">팔로우한</string>
+    <string name="feature_library_section_recently_listened_episodes">최근 들었던 에피소드</string>
+    <string name="feature_library_section_liked_episodes">좋아요 표시한 에피소드</string>
+    <string name="feature_library_section_followed_podcasts">팔로우한 팟캐스트</string>
+    <string name="feature_library_find_your_library">당신의 라이브러리를 찾아보세요</string>
+</resources>

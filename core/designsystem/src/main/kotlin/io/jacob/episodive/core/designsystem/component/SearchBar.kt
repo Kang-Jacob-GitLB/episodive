@@ -36,7 +36,7 @@ fun EpisodiveSearchBar(
     onSearch: (String) -> Unit,
     isExpandable: Boolean = true,
     isExpanded: Boolean = false,
-    placeholder: @Composable () -> Unit = { Text("What do you want to listen to?") },
+    placeholder: @Composable () -> Unit = {},
     leadingIconOnCollapse: @Composable () -> Unit = {
         Icon(
             EpisodiveIcons.Search,
