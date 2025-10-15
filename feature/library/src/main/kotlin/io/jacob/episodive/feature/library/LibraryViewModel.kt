@@ -124,7 +124,11 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun resumeEpisode(playedEpisode: PlayedEpisode) {
-        resumeEpisodeUseCase(playedEpisode)
+        if (playedEpisode.isCompleted) {
+            playEpisodeUseCase(playedEpisode.episode)
+        } else {
+            resumeEpisodeUseCase(playedEpisode)
+        }
     }
 
     private fun playEpisode(episode: Episode) {
