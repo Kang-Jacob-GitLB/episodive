@@ -66,7 +66,7 @@ fun SearchRoute(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is SearchEffect.NavigateToCategory -> {}
-                is SearchEffect.NavigateToPodcast -> onPodcastClick(effect.podcast.id)
+                is SearchEffect.NavigateToPodcast -> onPodcastClick(effect.podcastId)
                 is SearchEffect.NavigateToEpisode -> {}
             }
         }
@@ -86,6 +86,7 @@ fun SearchRoute(
                 feeds = s.trendingFeeds.toFeedsFromTrending(),
                 onPodcastClick = { viewModel.sendAction(SearchAction.ClickPodcast(it)) },
                 onEpisodeClick = { viewModel.sendAction(SearchAction.ClickEpisode(it)) },
+                onFeedClick = { viewModel.sendAction(SearchAction.ClickFeed(it)) },
                 onRecentSearchClick = { viewModel.sendAction(SearchAction.ClickRecentSearch(it)) },
                 onRemoveRecentSearch = { viewModel.sendAction(SearchAction.RemoveRecentSearch(it)) },
                 onClearRecentSearches = { viewModel.sendAction(SearchAction.ClearRecentSearches) },

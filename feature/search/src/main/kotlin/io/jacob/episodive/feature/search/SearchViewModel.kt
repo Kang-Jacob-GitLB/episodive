@@ -13,6 +13,7 @@ import io.jacob.episodive.core.domain.usecase.search.SearchUseCase
 import io.jacob.episodive.core.domain.usecase.search.UpsertRecentSearchUseCase
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.Feed
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SearchResult
 import io.jacob.episodive.core.model.TrendingFeed
@@ -105,6 +106,7 @@ class SearchViewModel @Inject constructor(
                 is SearchAction.ClickCategory -> clickCategory(action.category)
                 is SearchAction.ClickPodcast -> clickPodcast(action.podcast)
                 is SearchAction.ClickEpisode -> clickEpisode(action.episode)
+                is SearchAction.ClickFeed -> clickFeed(action.feed)
             }
         }
     }
@@ -139,12 +141,16 @@ class SearchViewModel @Inject constructor(
     }
 
     private fun clickPodcast(podcast: Podcast) = viewModelScope.launch {
-        _effect.emit(SearchEffect.NavigateToPodcast(podcast))
+        _effect.emit(SearchEffect.NavigateToPodcast(podcast.id))
     }
 
     private fun clickEpisode(episode: Episode) = viewModelScope.launch {
         playEpisodeUseCase(episode)
 //        _effect.emit(SearchEffect.NavigateToEpisode(episode))
+    }
+
+    private fun clickFeed(feed: Feed) = viewModelScope.launch {
+        _effect.emit(SearchEffect.NavigateToPodcast(feed.id))
     }
 }
 
@@ -173,10 +179,11 @@ sealed interface SearchAction {
     data class ClickCategory(val category: Category) : SearchAction
     data class ClickPodcast(val podcast: Podcast) : SearchAction
     data class ClickEpisode(val episode: Episode) : SearchAction
+    data class ClickFeed(val feed: Feed) : SearchAction
 }
 
 sealed interface SearchEffect {
     data class NavigateToCategory(val category: Category) : SearchEffect
-    data class NavigateToPodcast(val podcast: Podcast) : SearchEffect
+    data class NavigateToPodcast(val podcastId: Long) : SearchEffect
     data class NavigateToEpisode(val episode: Episode) : SearchEffect
 }
