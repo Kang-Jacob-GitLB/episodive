@@ -39,6 +39,7 @@ import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.mapper.toDurationSeconds
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toIntSeconds
+import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import kotlin.time.Clock
 
@@ -247,6 +248,66 @@ fun PlayingEpisodeItem(
     }
 }
 
+@Composable
+fun EpisodeDetailItem(
+    modifier: Modifier = Modifier,
+    episode: Episode,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .width(200.dp)
+            .clickable(onClick = onClick),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        StateImage(
+            modifier = Modifier
+                .size(200.dp)
+                .clip(MaterialTheme.shapes.extraLarge),
+            imageUrl = episode.image.ifEmpty { episode.feedImage },
+            contentDescription = episode.title,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        val subTitle = "%s • %s".format(
+            episode.datePublished.toHumanReadable(),
+            episode.duration?.toHumanReadable() ?: episode.feedTitle
+        ).trim()
+
+        Text(
+            text = subTitle,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        Text(
+            text = episode.title,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+
+        HtmlTextContainer(
+            text = episode.description ?: "",
+            enableLinks = false,
+        ) {
+            Text(
+                text = it,
+                maxLines = 4,
+                minLines = 4,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
 @DevicePreviews
 @Composable
 private fun EpisodeSectionPreview() {
@@ -274,6 +335,17 @@ private fun PlayingEpisodesSectionPreview() {
                 )
             },
             onEpisodeClick = {}
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun EpisodeDetailItemPreview() {
+    EpisodiveTheme {
+        EpisodeDetailItem(
+            episode = episodeTestData,
+            onClick = {}
         )
     }
 }

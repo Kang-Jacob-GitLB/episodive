@@ -102,8 +102,8 @@ class LibraryViewModel @Inject constructor(
                 is LibraryAction.ClickFind -> changeQuery(action.query)
                 is LibraryAction.ClearQuery -> clearQuery()
                 is LibraryAction.ClickPlayingEpisode -> resumeEpisode(action.playingEpisode)
-                is LibraryAction.ClickLikedEpisode -> playEpisode(action.likedEpisode.episode)
-                is LibraryAction.ClickFollowedPodcast -> clickPodcast(action.followedPodcast.podcast)
+                is LibraryAction.ClickEpisode -> playEpisode(action.episode)
+                is LibraryAction.ClickPodcast -> clickPodcast(action.podcast)
                 is LibraryAction.ToggleLikedEpisode -> toggleLikedEpisode(action.likedEpisode)
                 is LibraryAction.ToggleFollowedPodcast -> toggleFollowedPodcast(action.followedPodcast)
             }
@@ -161,8 +161,8 @@ sealed interface LibraryAction {
     data class ClickFind(val query: String) : LibraryAction
     data object ClearQuery : LibraryAction
     data class ClickPlayingEpisode(val playingEpisode: PlayedEpisode) : LibraryAction
-    data class ClickLikedEpisode(val likedEpisode: LikedEpisode) : LibraryAction
-    data class ClickFollowedPodcast(val followedPodcast: FollowedPodcast) : LibraryAction
+    data class ClickEpisode(val episode: Episode) : LibraryAction
+    data class ClickPodcast(val podcast: Podcast) : LibraryAction
     data class ToggleLikedEpisode(val likedEpisode: LikedEpisode) : LibraryAction
     data class ToggleFollowedPodcast(val followedPodcast: FollowedPodcast) : LibraryAction
 }

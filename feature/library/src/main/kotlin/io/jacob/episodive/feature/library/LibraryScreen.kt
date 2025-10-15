@@ -1,5 +1,7 @@
 package io.jacob.episodive.feature.library
 
+import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
@@ -31,7 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.jacob.episodive.core.designsystem.component.EpisodesSection
+import io.jacob.episodive.core.designsystem.component.EpisodeDetailItem
 import io.jacob.episodive.core.designsystem.component.EpisodiveFilterChip
 import io.jacob.episodive.core.designsystem.component.PlayingEpisodesSection
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
@@ -42,10 +45,12 @@ import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
+import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.FollowedPodcast
 import io.jacob.episodive.core.model.LibraryFindResult
 import io.jacob.episodive.core.model.LikedEpisode
 import io.jacob.episodive.core.model.PlayedEpisode
+import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.testing.model.followedPodcastTestDataList
 import io.jacob.episodive.core.testing.model.likedEpisodeTestDataList
 import io.jacob.episodive.core.testing.model.playedEpisodeTestDataList
@@ -81,8 +86,8 @@ fun LibraryRoute(
             likedEpisodes = s.likedEpisodes,
             followedPodcasts = s.followedPodcasts,
             onPlayedEpisodeClick = { viewModel.sendAction(LibraryAction.ClickPlayingEpisode(it)) },
-            onLikedEpisodeClick = { viewModel.sendAction(LibraryAction.ClickLikedEpisode(it)) },
-            onFollowedPodcastClick = { viewModel.sendAction(LibraryAction.ClickFollowedPodcast(it)) },
+            onEpisodeClick = { viewModel.sendAction(LibraryAction.ClickEpisode(it)) },
+            onPodcastClick = { viewModel.sendAction(LibraryAction.ClickPodcast(it)) },
             onToggleLikedEpisode = { viewModel.sendAction(LibraryAction.ToggleLikedEpisode(it)) },
             onToggleFollowedPodcast = { viewModel.sendAction(LibraryAction.ToggleFollowedPodcast(it)) }
         )
@@ -102,8 +107,8 @@ private fun LibraryScreen(
     likedEpisodes: List<LikedEpisode>,
     followedPodcasts: List<FollowedPodcast>,
     onPlayedEpisodeClick: (PlayedEpisode) -> Unit = {},
-    onLikedEpisodeClick: (LikedEpisode) -> Unit = {},
-    onFollowedPodcastClick: (FollowedPodcast) -> Unit = {},
+    onEpisodeClick: (Episode) -> Unit = {},
+    onPodcastClick: (Podcast) -> Unit = {},
     onToggleLikedEpisode: (LikedEpisode) -> Unit = {},
     onToggleFollowedPodcast: (FollowedPodcast) -> Unit = {},
 ) {
@@ -112,7 +117,7 @@ private fun LibraryScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(systemBarsPadding),
+            .padding(top = systemBarsPadding.calculateTopPadding()),
     ) {
         item {
             Header(
@@ -130,12 +135,10 @@ private fun LibraryScreen(
         }
 
         item {
-            EpisodesSection(
+            EpisodeRowSection(
                 title = "Liked Episodes",
                 episodes = likedEpisodes.map { it.episode },
-                onEpisodeClick = {
-                    // TODO
-                }
+                onEpisodeClick = onEpisodeClick
             )
         }
 
@@ -144,9 +147,7 @@ private fun LibraryScreen(
                 title = "Followed Podcasts",
                 podcasts = followedPodcasts.map { it.podcast },
                 onMore = {},
-                onPodcastClick = {
-//                    onFollowedPodcastClick(it)
-                }
+                onPodcastClick = onPodcastClick
             )
         }
 
@@ -216,6 +217,47 @@ private fun Header(
                         label = { Text(label) },
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EpisodeRowSection(
+    modifier: Modifier = Modifier,
+    title: String,
+    episodes: List<Episode>,
+    onEpisodeClick: (Episode) -> Unit,
+) {
+    SectionHeader(
+        modifier = modifier,
+        title = title,
+        actionIcon = EpisodiveIcons.KeyboardArrowRight,
+        actionIconContentDescription = title,
+        onActionClick = { /* TODO */ },
+    ) {
+        val lazyListState = rememberLazyListState()
+        val flingBehavior = rememberSnapFlingBehavior(
+            lazyListState = lazyListState,
+            snapPosition = SnapPosition.Start,
+        )
+
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth(),
+            state = lazyListState,
+            flingBehavior = flingBehavior,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+        ) {
+            items(
+                count = episodes.size,
+                key = { episodes[it].id },
+            ) {
+                EpisodeDetailItem(
+                    episode = episodes[it],
+                    onClick = { onEpisodeClick(episodes[it]) }
+                )
             }
         }
     }

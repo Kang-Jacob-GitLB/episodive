@@ -14,13 +14,21 @@ import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextDecoration
 
 @Composable
-fun HtmlTextContainer(text: String, content: @Composable (AnnotatedString) -> Unit) {
+fun HtmlTextContainer(
+    text: String,
+    enableLinks: Boolean = true,
+    content: @Composable (AnnotatedString) -> Unit
+) {
     val linkColor = MaterialTheme.colorScheme.primary
     val htmlText = text.replace("\n", "<br>")
 
-    val annotatedString = remember(htmlText, linkColor) {
+    val annotatedString = remember(htmlText, linkColor, enableLinks) {
         val baseString = AnnotatedString.fromHtml(htmlString = htmlText)
-        addLinksToAnnotatedString(baseString, linkColor)
+        if (enableLinks) {
+            addLinksToAnnotatedString(baseString, linkColor)
+        } else {
+            baseString
+        }
     }
 
     content(annotatedString)
