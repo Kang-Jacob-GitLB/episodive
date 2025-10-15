@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -93,7 +94,7 @@ class SearchViewModel @Inject constructor(
     }
 
     private fun handleActions() = viewModelScope.launch {
-        _action.collect { action ->
+        _action.collectLatest { action ->
             when (action) {
                 is SearchAction.QueryChanged -> changeQuery(action.query)
                 is SearchAction.ClickSearch -> search(action.query)

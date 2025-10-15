@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -99,7 +100,7 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun handleActions() = viewModelScope.launch {
-        _action.collect { action ->
+        _action.collectLatest { action ->
             when (action) {
                 is HomeAction.PlayEpisode -> playEpisode(action.episode)
                 is HomeAction.ResumeEpisode -> resumeEpisode(action.playedEpisode)

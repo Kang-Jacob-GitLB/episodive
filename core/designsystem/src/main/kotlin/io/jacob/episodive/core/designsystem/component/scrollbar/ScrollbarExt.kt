@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlin.math.min
@@ -73,7 +74,7 @@ fun LazyListState.scrollbarState(
         }
             .filterNotNull()
             .distinctUntilChanged()
-            .collect { state.onScroll(it) }
+            .collectLatest { state.onScroll(it) }
     }
     return state
 }
@@ -146,7 +147,7 @@ fun LazyGridState.scrollbarState(
         }
             .filterNotNull()
             .distinctUntilChanged()
-            .collect { state.onScroll(it) }
+            .collectLatest { state.onScroll(it) }
     }
     return state
 }
@@ -209,7 +210,7 @@ fun LazyStaggeredGridState.scrollbarState(
         }
             .filterNotNull()
             .distinctUntilChanged()
-            .collect { state.onScroll(it) }
+            .collectLatest { state.onScroll(it) }
     }
     return state
 }

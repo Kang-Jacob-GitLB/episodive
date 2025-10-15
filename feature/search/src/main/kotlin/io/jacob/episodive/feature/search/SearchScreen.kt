@@ -1,10 +1,14 @@
 package io.jacob.episodive.feature.search
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,6 +34,8 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
 import io.jacob.episodive.core.designsystem.component.FeedsSection
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
 import io.jacob.episodive.core.designsystem.component.SectionHeader
+import io.jacob.episodive.core.designsystem.component.scrollbar.DecorativeScrollbar
+import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
@@ -195,68 +201,82 @@ private fun SearchResultsOnExpand(
     onRemoveRecentSearch: (String) -> Unit = {},
     onClearRecentSearches: () -> Unit = {},
 ) {
-    LazyColumn(
+    Box(
         modifier = modifier
-            .fillMaxWidth(),
-        state = scrollState
+            .fillMaxSize(),
     ) {
-        if (searchResult.podcasts.isNotEmpty()) {
-            item {
-                PodcastsSection(
-                    title = "Podcasts",
-                    podcasts = searchResult.podcasts,
-                    onMore = {},
-                    onPodcastClick = onPodcastClick,
-                )
+        LazyColumn(
+            modifier = modifier
+                .fillMaxWidth(),
+            state = scrollState
+        ) {
+            if (searchResult.podcasts.isNotEmpty()) {
+                item {
+                    PodcastsSection(
+                        title = "Podcasts",
+                        podcasts = searchResult.podcasts,
+                        onMore = {},
+                        onPodcastClick = onPodcastClick,
+                    )
+                }
+            } else {
+                item {
+                    RecentSearchesSection(
+                        title = "Recent Searches",
+                        recentSearches = recentSearches,
+                        onRecentSearchClicked = onRecentSearchClick,
+                        onRemoveRecentSearch = onRemoveRecentSearch,
+                        onClearRecentSearches = onClearRecentSearches
+                    )
+                }
             }
-        } else {
+
+            if (searchResult.episodes.isNotEmpty()) {
+                item {
+                    HorizontalDivider(modifier = Modifier.padding(12.dp))
+                }
+
+                item {
+                    EpisodesSection(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        title = "Episodes",
+                        episodes = emptyList(),
+                        onEpisodeClick = {}
+                    )
+                }
+
+                items(
+                    count = searchResult.episodes.size,
+                    key = { searchResult.episodes[it].id },
+                ) { index ->
+                    val episode = searchResult.episodes[index]
+
+                    EpisodeItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        episode = episode,
+                        onClick = { onEpisodeClick(episode) }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
             item {
-                RecentSearchesSection(
-                    title = "Recent Searches",
-                    recentSearches = recentSearches,
-                    onRecentSearchClicked = onRecentSearchClick,
-                    onRemoveRecentSearch = onRemoveRecentSearch,
-                    onClearRecentSearches = onClearRecentSearches
-                )
+                Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
             }
         }
 
-        if (searchResult.episodes.isNotEmpty()) {
-            item {
-                HorizontalDivider(modifier = Modifier.padding(12.dp))
-            }
-
-            item {
-                EpisodesSection(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    title = "Episodes",
-                    episodes = emptyList(),
-                    onEpisodeClick = {}
-                )
-            }
-
-            items(
-                count = searchResult.episodes.size,
-                key = { searchResult.episodes[it].id },
-            ) { index ->
-                val episode = searchResult.episodes[index]
-
-                EpisodeItem(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    episode = episode,
-                    onClick = { onEpisodeClick(episode) }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
-        }
+        scrollState.DecorativeScrollbar(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(vertical = 12.dp)
+                .align(Alignment.TopEnd),
+            state = scrollState.scrollbarState(itemsAvailable = searchResult.episodes.size),
+            orientation = Orientation.Vertical,
+        )
     }
 }
 

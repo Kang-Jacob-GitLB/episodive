@@ -37,6 +37,7 @@ import androidx.compose.ui.util.unpackFloat1
 import androidx.compose.ui.util.unpackFloat2
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withTimeout
 import kotlin.math.max
 import kotlin.math.min
@@ -351,11 +352,11 @@ fun Scrollbar(
 
     // Process presses
     LaunchedEffect(Unit) {
-        snapshotFlow { pressedOffset }.collect { pressedOffset ->
+        snapshotFlow { pressedOffset }.collectLatest { pressedOffset ->
             // Press ended, reset interactionThumbTravelPercent
             if (pressedOffset == Offset.Unspecified) {
                 interactionThumbTravelPercent = Float.NaN
-                return@collect
+                return@collectLatest
             }
 
             var currentThumbMovedPercent = state.thumbMovedPercent
@@ -386,10 +387,10 @@ fun Scrollbar(
 
     // Process drags
     LaunchedEffect(Unit) {
-        snapshotFlow { draggedOffset }.collect { draggedOffset ->
+        snapshotFlow { draggedOffset }.collectLatest { draggedOffset ->
             if (draggedOffset == Offset.Unspecified) {
                 interactionThumbTravelPercent = Float.NaN
-                return@collect
+                return@collectLatest
             }
             val currentTravel = track.thumbPosition(
                 dimension = orientation.valueOf(draggedOffset),

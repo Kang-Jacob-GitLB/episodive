@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -103,7 +104,7 @@ class PlayerViewModel @Inject constructor(
     init {
         handleActions()
         viewModelScope.launch {
-            playingEpisode.collect { (episodeId, progress) ->
+            playingEpisode.collectLatest { (episodeId, progress) ->
                 if (episodeId != null) {
                     updatePlayedEpisodeUseCase(episodeId, progress)
                 }
@@ -112,7 +113,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     private fun handleActions() = viewModelScope.launch {
-        _action.collect { action ->
+        _action.collectLatest { action ->
             when (action) {
                 is PlayerAction.PlayOrPause -> playOrPause()
                 is PlayerAction.Next -> next()
