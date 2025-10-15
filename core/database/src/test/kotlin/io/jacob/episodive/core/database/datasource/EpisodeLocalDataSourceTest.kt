@@ -275,6 +275,22 @@ class EpisodeLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When getAllPlayedEpisodes is called, Then getAllPlayedEpisodes of dao is called`() =
+        runTest {
+            // Given
+            coEvery { episodeDao.getAllPlayedEpisodes() } returns mockk()
+
+            // When
+            dataSource.getAllPlayedEpisodes()
+
+            // Then
+            coVerify { episodeDao.getAllPlayedEpisodes() }
+            confirmVerified(
+                episodeDao,
+            )
+        }
+
+    @Test
     fun `Given dependencies, When isLiked is called, Then isLiked of dao is called`() =
         runTest {
             // Given

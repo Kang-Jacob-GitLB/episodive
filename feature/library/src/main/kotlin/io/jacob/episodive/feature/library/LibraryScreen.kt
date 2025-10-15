@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -36,7 +37,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodeDetailItem
 import io.jacob.episodive.core.designsystem.component.EpisodiveFilterChip
-import io.jacob.episodive.core.designsystem.component.PlayingEpisodesSection
+import io.jacob.episodive.core.designsystem.component.PlayedEpisodeItem
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
@@ -82,7 +83,7 @@ fun LibraryRoute(
             onQueryChange = { viewModel.sendAction(LibraryAction.QueryChanged(it)) },
             onFind = { viewModel.sendAction(LibraryAction.ClickFind(it)) },
             findResult = s.findResult,
-            playingEpisodes = s.playingEpisodes,
+            playedEpisodes = s.allPlayedEpisodes,
             likedEpisodes = s.likedEpisodes,
             followedPodcasts = s.followedPodcasts,
             onPlayedEpisodeClick = { viewModel.sendAction(LibraryAction.ClickPlayingEpisode(it)) },
@@ -103,7 +104,7 @@ private fun LibraryScreen(
     onQueryChange: (String) -> Unit,
     onFind: (String) -> Unit,
     findResult: LibraryFindResult,
-    playingEpisodes: List<PlayedEpisode>,
+    playedEpisodes: List<PlayedEpisode>,
     likedEpisodes: List<LikedEpisode>,
     followedPodcasts: List<FollowedPodcast>,
     onPlayedEpisodeClick: (PlayedEpisode) -> Unit = {},
@@ -128,9 +129,10 @@ private fun LibraryScreen(
         }
 
         item {
-            PlayingEpisodesSection(
-                playingEpisodes = playingEpisodes,
-                onEpisodeClick = onPlayedEpisodeClick
+            PlayedEpisodeRowSection(
+                title = "Recently listen",
+                playedEpisodes = playedEpisodes,
+                onPlayedEpisodeClick = onPlayedEpisodeClick,
             )
         }
 
@@ -223,6 +225,48 @@ private fun Header(
 }
 
 @Composable
+private fun PlayedEpisodeRowSection(
+    modifier: Modifier = Modifier,
+    title: String,
+    playedEpisodes: List<PlayedEpisode>,
+    onPlayedEpisodeClick: (PlayedEpisode) -> Unit,
+) {
+    SectionHeader(
+        modifier = modifier,
+        title = title,
+        actionIcon = EpisodiveIcons.KeyboardArrowRight,
+        actionIconContentDescription = title,
+        onActionClick = { /* TODO */ },
+    ) {
+        val lazyListState = rememberLazyListState()
+        val flingBehavior = rememberSnapFlingBehavior(
+            lazyListState = lazyListState,
+            snapPosition = SnapPosition.Start,
+        )
+
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth(),
+            state = lazyListState,
+            flingBehavior = flingBehavior,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+        ) {
+            items(
+                count = playedEpisodes.size,
+                key = { playedEpisodes[it].episode.id },
+            ) {
+                PlayedEpisodeItem(
+                    modifier = Modifier.width(250.dp),
+                    playedEpisode = playedEpisodes[it],
+                    onClick = { onPlayedEpisodeClick(playedEpisodes[it]) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun EpisodeRowSection(
     modifier: Modifier = Modifier,
     title: String,
@@ -272,7 +316,7 @@ private fun LibraryScreenPreview() {
             onQueryChange = {},
             onFind = {},
             findResult = LibraryFindResult(),
-            playingEpisodes = playedEpisodeTestDataList,
+            playedEpisodes = playedEpisodeTestDataList,
             likedEpisodes = likedEpisodeTestDataList,
             followedPodcasts = followedPodcastTestDataList,
         )

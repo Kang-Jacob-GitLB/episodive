@@ -22,6 +22,7 @@ interface EpisodeLocalDataSource {
     fun getLikedEpisodes(query: String? = null): Flow<List<LikedEpisodeDto>>
     fun getPlayingEpisodes(query: String? = null): Flow<List<PlayedEpisodeDto>>
     fun getPlayedEpisodes(query: String? = null): Flow<List<PlayedEpisodeDto>>
+    fun getAllPlayedEpisodes(query: String? = null): Flow<List<PlayedEpisodeDto>>
     fun isLiked(id: Long): Flow<Boolean>
     fun getEpisodeCount(): Flow<Int>
     fun getLikedEpisodeCount(): Flow<Int>

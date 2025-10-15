@@ -315,6 +315,22 @@ class EpisodeRepositoryTest {
         }
 
     @Test
+    fun `When getAllPlayedEpisodes, Then calls localDataSource directly`() =
+        runTest {
+            // Given
+            coEvery { localDataSource.getAllPlayedEpisodes() } returns flowOf(mockk(relaxed = true))
+
+            // When
+            repository.getAllPlayedEpisodes().test {
+                awaitItem()
+                awaitComplete()
+            }
+
+            // Then
+            coVerify { localDataSource.getAllPlayedEpisodes() }
+        }
+
+    @Test
     fun `Given episode is liked, When toggleLiked, Then removes liked and returns false`() =
         runTest {
             // Given

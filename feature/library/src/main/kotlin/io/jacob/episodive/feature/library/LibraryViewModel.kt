@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.FindInLibraryUseCase
+import io.jacob.episodive.core.domain.usecase.episode.GetAllPlayedEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesUseCase
-import io.jacob.episodive.core.domain.usecase.episode.GetPlayingEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
@@ -39,7 +39,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val findInLibraryUseCase: FindInLibraryUseCase,
-    getPlayingEpisodesUseCase: GetPlayingEpisodesUseCase,
+    getAllPlayedEpisodesUseCase: GetAllPlayedEpisodesUseCase,
     getLikedEpisodesUseCase: GetLikedEpisodesUseCase,
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
     private val getPreferredCategoriesUseCase: GetPreferredCategoriesUseCase,
@@ -66,14 +66,14 @@ class LibraryViewModel @Inject constructor(
     val state: StateFlow<LibraryState> = combine(
         _findQuery,
         _findResult,
-        getPlayingEpisodesUseCase(),
+        getAllPlayedEpisodesUseCase(),
         getLikedEpisodesUseCase(),
         getFollowedPodcastsUseCase(),
-    ) { query, result, playingEpisodes, likedEpisodes, followedPodcasts ->
+    ) { query, result, allPlayedEpisodes, likedEpisodes, followedPodcasts ->
         LibraryState.Success(
             findQuery = query,
             findResult = result,
-            playingEpisodes = playingEpisodes,
+            allPlayedEpisodes = allPlayedEpisodes,
             likedEpisodes = likedEpisodes,
             followedPodcasts = followedPodcasts
         ) as LibraryState
@@ -148,7 +148,7 @@ sealed interface LibraryState {
     data class Success(
         val findQuery: String,
         val findResult: LibraryFindResult,
-        val playingEpisodes: List<PlayedEpisode>,
+        val allPlayedEpisodes: List<PlayedEpisode>,
         val likedEpisodes: List<LikedEpisode>,
         val followedPodcasts: List<FollowedPodcast>,
     ) : LibraryState

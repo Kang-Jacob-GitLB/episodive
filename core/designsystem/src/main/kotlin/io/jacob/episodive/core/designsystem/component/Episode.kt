@@ -36,12 +36,10 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.PlayedEpisode
-import io.jacob.episodive.core.model.mapper.toDurationSeconds
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toIntSeconds
 import io.jacob.episodive.core.testing.model.episodeTestData
-import io.jacob.episodive.core.testing.model.episodeTestDataList
-import kotlin.time.Clock
+import io.jacob.episodive.core.testing.model.playedEpisodeTestData
 
 @Composable
 fun EpisodesSection(
@@ -212,8 +210,6 @@ fun PlayingEpisodeItem(
                     overflow = TextOverflow.Ellipsis,
                 )
 
-//                Spacer(modifier = Modifier.height(2.dp))
-
                 Text(
                     text = playedEpisode.episode.title,
                     style = MaterialTheme.typography.titleSmall,
@@ -242,6 +238,85 @@ fun PlayingEpisodeItem(
                             0f
                         }
                     },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PlayedEpisodeItem(
+    modifier: Modifier = Modifier,
+    playedEpisode: PlayedEpisode,
+    showMoreInfo: Boolean = true,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = modifier
+            .clickable { onClick() },
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        StateImage(
+            modifier = Modifier
+                .size(68.dp)
+                .clip(MaterialTheme.shapes.largeIncreased),
+            imageUrl = playedEpisode.episode.image.ifEmpty { playedEpisode.episode.feedImage },
+            contentDescription = playedEpisode.episode.title,
+        )
+
+        Column(
+            modifier = Modifier,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = playedEpisode.episode.title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                minLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier,
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(4.dp)
+                        .clip(CircleShape),
+                    color = if (playedEpisode.isCompleted) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                    gapSize = (-4).dp,
+                    drawStopIndicator = {},
+                    progress = { playedEpisode.progress },
+                )
+
+                Text(
+                    text = "${(playedEpisode.progress * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            if (showMoreInfo) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text =
+                        if (playedEpisode.isCompleted) "완료됨"
+                        else if (playedEpisode.remain != null) "${playedEpisode.remain?.toHumanReadable()} 남음"
+                        else "",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -310,31 +385,33 @@ fun EpisodeDetailItem(
 
 @DevicePreviews
 @Composable
-private fun EpisodeSectionPreview() {
+private fun EpisodeItemPreview() {
     EpisodiveTheme {
-        EpisodesSection(
-            title = "Episodes",
-            episodes = episodeTestDataList,
-            onEpisodeClick = {}
+        EpisodeItem(
+            episode = episodeTestData,
+            onClick = {}
         )
     }
 }
 
 @DevicePreviews
 @Composable
-private fun PlayingEpisodesSectionPreview() {
+private fun PlayingEpisodesPreview() {
     EpisodiveTheme {
-        PlayingEpisodesSection(
-            playingEpisodes = episodeTestDataList.map {
-                PlayedEpisode(
-                    episode = it,
-                    playedAt = Clock.System.now(),
-                    position = (it.duration?.toIntSeconds()?.let { seconds -> seconds / 2 }
-                        ?: 0).toDurationSeconds(),
-                    isCompleted = false,
-                )
-            },
-            onEpisodeClick = {}
+        PlayingEpisodeItem(
+            playedEpisode = playedEpisodeTestData,
+            onClick = {}
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun PlayedEpisodesPreview() {
+    EpisodiveTheme {
+        PlayedEpisodeItem(
+            playedEpisode = playedEpisodeTestData,
+            onClick = {}
         )
     }
 }

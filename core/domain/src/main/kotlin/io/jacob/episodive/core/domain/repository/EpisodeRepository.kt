@@ -54,6 +54,8 @@ interface EpisodeRepository {
 
     fun getPlayedEpisodes(query: String? = null): Flow<List<PlayedEpisode>>
 
+    fun getAllPlayedEpisodes(query: String? = null): Flow<List<PlayedEpisode>>
+
     suspend fun toggleLiked(id: Long): Boolean
 
     suspend fun updatePlayed(id: Long, position: Duration, isCompleted: Boolean)
