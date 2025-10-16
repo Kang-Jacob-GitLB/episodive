@@ -22,7 +22,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.jacob.episodive.core.designsystem.R
-import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Podcast
@@ -33,15 +32,12 @@ fun PodcastsSection(
     modifier: Modifier = Modifier,
     title: String,
     podcasts: List<Podcast>,
-    onMore: () -> Unit,
+    onMore: () -> Unit = {},
     onPodcastClick: (Podcast) -> Unit,
 ) {
     SectionHeader(
         modifier = modifier,
         title = title,
-        actionIcon = EpisodiveIcons.KeyboardArrowRight,
-        actionIconContentDescription = title,
-        onActionClick = onMore
     ) {
         val lazyListState = rememberLazyListState()
         val flingBehavior = rememberSnapFlingBehavior(

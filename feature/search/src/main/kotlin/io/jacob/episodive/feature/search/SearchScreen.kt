@@ -262,7 +262,10 @@ private fun SearchResultsOnExpand(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
                         episode = episode,
-                        onClick = { onEpisodeClick(episode) }
+                        isLoading = false,
+                        isLiked = true,
+                        onClick = { onEpisodeClick(episode) },
+                        onToggleLiked = { /* TODO */ }
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))

@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -27,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -61,7 +63,11 @@ fun EpisodesSection(
             episodes.forEach { episode ->
                 EpisodeItem(
                     episode = episode,
-                    onClick = { onEpisodeClick(episode) }
+                    progress = 0f,
+                    isLoading = false,
+                    isLiked = false,
+                    onClick = { onEpisodeClick(episode) },
+                    onToggleLiked = { /* TODO */ }
                 )
             }
         }
@@ -72,7 +78,11 @@ fun EpisodesSection(
 fun EpisodeItem(
     modifier: Modifier = Modifier,
     episode: Episode,
+    progress: Float = 0f,
+    isLoading: Boolean = false,
+    isLiked: Boolean,
     onClick: () -> Unit,
+    onToggleLiked: () -> Unit,
 ) {
     Row(
         modifier = modifier
@@ -124,10 +134,46 @@ fun EpisodeItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = EpisodiveIcons.PlayArrow,
-                tint = MaterialTheme.colorScheme.primary,
-                contentDescription = "Play episode",
+            EpisodiveIconProgressButton(
+                modifier = Modifier.size(32.dp),
+                onClick = onClick,
+                isLoading = isLoading,
+                progress = progress,
+                icon = {
+                    Icon(
+                        modifier = Modifier.size(24.dp),
+                        imageVector = EpisodiveIcons.PlayArrow,
+                        contentDescription = "Like",
+                    )
+                },
+            )
+
+            EpisodiveIconToggleButton(
+                modifier = Modifier.size(32.dp),
+                checked = isLiked,
+                onCheckedChange = { onToggleLiked() },
+                colors = IconButtonDefaults.iconToggleButtonColors(
+                    checkedContainerColor = Color.Transparent,
+                    checkedContentColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+                icon = {
+                    Icon(
+                        modifier = Modifier.size(16.dp),
+                        imageVector = EpisodiveIcons.FavoriteBorder,
+                        contentDescription = "Like",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                },
+                checkedIcon = {
+                    Icon(
+                        modifier = Modifier.size(16.dp),
+                        imageVector = EpisodiveIcons.Favorite,
+                        contentDescription = "Unlike",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             )
         }
     }
@@ -389,7 +435,11 @@ private fun EpisodeItemPreview() {
     EpisodiveTheme {
         EpisodeItem(
             episode = episodeTestData,
-            onClick = {}
+            progress = 0f,
+            isLoading = false,
+            isLiked = false,
+            onClick = {},
+            onToggleLiked = {},
         )
     }
 }

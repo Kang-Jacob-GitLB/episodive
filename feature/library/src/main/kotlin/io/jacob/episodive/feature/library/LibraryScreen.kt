@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -24,7 +25,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -37,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -99,6 +99,8 @@ fun LibraryRoute(
             onQueryChange = { viewModel.sendAction(LibraryAction.QueryChanged(it)) },
             onFind = { viewModel.sendAction(LibraryAction.ClickFind(it)) },
             findResult = s.findResult,
+            section = s.section,
+            onSectionChange = { viewModel.sendAction(LibraryAction.SelectSection(it)) },
             playedEpisodes = s.allPlayedEpisodes,
             likedEpisodes = s.likedEpisodes,
             followedPodcasts = s.followedPodcasts,
@@ -121,6 +123,8 @@ private fun LibraryScreen(
     onQueryChange: (String) -> Unit,
     onFind: (String) -> Unit,
     findResult: LibraryFindResult,
+    section: LibrarySection,
+    onSectionChange: (LibrarySection) -> Unit = {},
     playedEpisodes: List<PlayedEpisode>,
     likedEpisodes: List<LikedEpisode>,
     followedPodcasts: List<FollowedPodcast>,
@@ -133,53 +137,80 @@ private fun LibraryScreen(
 ) {
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
 
+    var showFind by remember { mutableStateOf(false) }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .padding(top = systemBarsPadding.calculateTopPadding()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Header(
+            LibraryHeader(
+                showFind = showFind,
+                onShowFindChanged = { showFind = it }
+            )
+        }
+
+        stickyHeader {
+            FindOrFilter(
+                showFind = showFind,
+                onShowFindChanged = { showFind = it },
                 query = query,
                 onQueryChange = onQueryChange,
-                onFind = onFind
+                onFind = onFind,
+                section = section,
+                onSectionChange = onSectionChange
             )
         }
 
-        item {
-            PlayedEpisodeRowSection(
-                title = stringResource(R.string.feature_library_section_recently_listened_episodes),
-                playedEpisodes = playedEpisodes,
-                onPlayedEpisodeClick = onPlayedEpisodeClick,
-                onMore = { /* TODO */ },
-            )
+        if (section == LibrarySection.All) {
+            item {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    PlayedEpisodeRowSection(
+                        title = stringResource(R.string.feature_library_section_recently_listened_episodes),
+                        playedEpisodes = playedEpisodes,
+                        onPlayedEpisodeClick = onPlayedEpisodeClick,
+                    )
+
+                    EpisodeRowSection(
+                        title = stringResource(R.string.feature_library_section_liked_episodes),
+                        episodes = likedEpisodes.map { it.episode },
+                        onEpisodeClick = onEpisodeClick,
+                    )
+
+                    PodcastsSection(
+                        title = stringResource(R.string.feature_library_section_followed_podcasts),
+                        podcasts = followedPodcasts.map { it.podcast },
+                        onPodcastClick = onPodcastClick,
+                    )
+
+                    CategorySection(
+                        title = stringResource(R.string.feature_library_section_preferred_categories),
+                        categories = preferredCategories,
+                        onCategoryClick = {},
+                    )
+                }
+            }
         }
 
-        item {
-            EpisodeRowSection(
-                title = stringResource(R.string.feature_library_section_liked_episodes),
-                episodes = likedEpisodes.map { it.episode },
-                onEpisodeClick = onEpisodeClick,
-                onMore = { /* TODO */ },
-            )
-        }
-
-        item {
-            PodcastsSection(
-                title = stringResource(R.string.feature_library_section_followed_podcasts),
-                podcasts = followedPodcasts.map { it.podcast },
-                onPodcastClick = onPodcastClick,
-                onMore = { /* TODO */ },
-            )
-        }
-
-        item {
-            CategorySection(
-                title = stringResource(R.string.feature_library_section_preferred_categories),
-                categories = preferredCategories,
-                onCategoryClick = {},
-                onMore = { /* TODO */ },
-            )
+        if (section == LibrarySection.RecentlyListened) {
+            items(
+                count = playedEpisodes.size,
+                key = { index -> playedEpisodes[index].episode.id },
+                contentType = { index -> playedEpisodes[index].episode },
+            ) { index ->
+                val playedEpisode = playedEpisodes[index]
+                PlayedEpisodeItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    playedEpisode = playedEpisode,
+                    onClick = { onPlayedEpisodeClick(playedEpisode) },
+                )
+            }
         }
 
         item {
@@ -189,26 +220,15 @@ private fun LibraryScreen(
 }
 
 @Composable
-private fun Header(
+private fun LibraryHeader(
     modifier: Modifier = Modifier,
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onFind: (String) -> Unit,
+    showFind: Boolean,
+    onShowFindChanged: (Boolean) -> Unit,
 ) {
-    var showFind by remember { mutableStateOf(false) }
-    val items = listOf(
-        stringResource(R.string.feature_library_filter_all),
-        stringResource(R.string.feature_library_filter_recently_listened),
-        stringResource(R.string.feature_library_filter_liked),
-        stringResource(R.string.feature_library_filter_followed),
-        stringResource(R.string.feature_library_filter_preferred),
-    )
-    var selectedIndex by remember { mutableIntStateOf(0) }
-
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -228,7 +248,7 @@ private fun Header(
         ) { isShowingFind ->
             if (!isShowingFind) {
                 IconButton(
-                    onClick = { showFind = true }
+                    onClick = { onShowFindChanged(true) }
                 ) {
                     Icon(
                         imageVector = EpisodiveIcons.SearchBorder,
@@ -242,7 +262,23 @@ private fun Header(
         }
     }
 
+
+}
+
+@Composable
+private fun FindOrFilter(
+    modifier: Modifier = Modifier,
+    showFind: Boolean,
+    onShowFindChanged: (Boolean) -> Unit,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onFind: (String) -> Unit,
+    section: LibrarySection,
+    onSectionChange: (LibrarySection) -> Unit,
+) {
     AnimatedContent(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.background),
         targetState = showFind,
         transitionSpec = {
             fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
@@ -250,48 +286,87 @@ private fun Header(
         label = "search_content"
     ) { isShowingFind ->
         if (isShowingFind) {
-            SearchBar(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                windowInsets = WindowInsets(0, 0, 0, 0),
-                inputField = {
-                    SearchBarDefaults.InputField(
-                        query = query,
-                        onQueryChange = onQueryChange,
-                        onSearch = {
-                            onFind(query)
-                            showFind = false
-                        },
-                        expanded = false,
-                        onExpandedChange = { if (!it) showFind = false },
-                        placeholder = { Text(stringResource(R.string.feature_library_find_your_library)) },
-                        leadingIcon = {
-                            IconButton(onClick = { showFind = false }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
-                            }
-                        }
-                    )
+            FindBar(
+                query = query,
+                onQueryChange = onQueryChange,
+                onFind = onFind,
+                onDismiss = { onShowFindChanged(false) },
+            )
+        } else {
+            SectionFilter(
+                currentSection = section,
+                onSectionChange = onSectionChange
+            )
+        }
+    }
+}
+
+@Composable
+private fun FindBar(
+    modifier: Modifier = Modifier,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onFind: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    SearchBar(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        windowInsets = WindowInsets(0, 0, 0, 0),
+        inputField = {
+            SearchBarDefaults.InputField(
+                query = query,
+                onQueryChange = onQueryChange,
+                onSearch = {
+                    onFind(query)
+                    onDismiss()
                 },
                 expanded = false,
-                onExpandedChange = { if (!it) showFind = false }
-            ) {
-                // 검색 결과
-            }
-        } else {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                itemsIndexed(items) { index, label ->
-                    EpisodiveFilterChip(
-                        selected = selectedIndex == index,
-                        onSelectedChange = { selectedIndex = index },
-                        label = { Text(label) },
-                    )
+                onExpandedChange = { if (!it) onDismiss() },
+                placeholder = { Text(stringResource(R.string.feature_library_find_your_library)) },
+                leadingIcon = {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                    }
                 }
-            }
+            )
+        },
+        expanded = false,
+        onExpandedChange = { if (!it) onDismiss() }
+    ) {
+        // 검색 결과
+    }
+}
+
+@Composable
+private fun SectionFilter(
+    modifier: Modifier = Modifier,
+    currentSection: LibrarySection,
+    onSectionChange: (LibrarySection) -> Unit,
+) {
+    val sectionNames = mapOf(
+        LibrarySection.All to stringResource(R.string.feature_library_filter_all),
+        LibrarySection.RecentlyListened to stringResource(R.string.feature_library_filter_recently_listened),
+        LibrarySection.Liked to stringResource(R.string.feature_library_filter_liked),
+        LibrarySection.Followed to stringResource(R.string.feature_library_filter_followed),
+        LibrarySection.Preferred to stringResource(R.string.feature_library_filter_preferred),
+    )
+
+    LazyRow(
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(
+            items = LibrarySection.entries,
+            key = { it.name },
+        ) { section ->
+            EpisodiveFilterChip(
+                selected = currentSection == section,
+                onSelectedChange = { if (it) onSectionChange(section) },
+                label = { Text(sectionNames[section] ?: "") },
+            )
         }
     }
 }
@@ -302,14 +377,10 @@ private fun PlayedEpisodeRowSection(
     title: String,
     playedEpisodes: List<PlayedEpisode>,
     onPlayedEpisodeClick: (PlayedEpisode) -> Unit,
-    onMore: () -> Unit,
 ) {
     SectionHeader(
         modifier = modifier,
         title = title,
-        actionIcon = EpisodiveIcons.KeyboardArrowRight,
-        actionIconContentDescription = title,
-        onActionClick = onMore,
     ) {
         val lazyListState = rememberLazyListState()
         val flingBehavior = rememberSnapFlingBehavior(
@@ -345,14 +416,10 @@ private fun EpisodeRowSection(
     title: String,
     episodes: List<Episode>,
     onEpisodeClick: (Episode) -> Unit,
-    onMore: () -> Unit,
 ) {
     SectionHeader(
         modifier = modifier,
         title = title,
-        actionIcon = EpisodiveIcons.KeyboardArrowRight,
-        actionIconContentDescription = title,
-        onActionClick = onMore,
     ) {
         val lazyListState = rememberLazyListState()
         val flingBehavior = rememberSnapFlingBehavior(
@@ -387,13 +454,11 @@ private fun CategorySection(
     title: String,
     categories: List<Category>,
     onCategoryClick: (Category) -> Unit,
-    onMore: () -> Unit,
 ) {
     SectionHeader(
         modifier = modifier,
         title = title,
         contentPadding = PaddingValues(horizontal = 16.dp),
-        onActionClick = onMore
     ) {
         val lazyListState = rememberLazyListState()
         val flingBehavior = rememberSnapFlingBehavior(
@@ -459,6 +524,7 @@ private fun LibraryScreenPreview() {
             onQueryChange = {},
             onFind = {},
             findResult = LibraryFindResult(),
+            section = LibrarySection.All,
             playedEpisodes = playedEpisodeTestDataList,
             likedEpisodes = likedEpisodeTestDataList,
             followedPodcasts = followedPodcastTestDataList,

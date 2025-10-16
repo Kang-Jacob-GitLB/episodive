@@ -34,6 +34,8 @@ import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.LoadingWheel
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
+import io.jacob.episodive.core.designsystem.screen.ErrorScreen
+import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.GradientColors
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
@@ -133,7 +135,9 @@ private fun PodcastScreen(
                     EpisodeItem(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         episode = episode,
-                        onClick = { onEpisodeClick(episode) }
+                        isLiked = false,
+                        onClick = { onEpisodeClick(episode) },
+                        onToggleLiked = { /* TODO */ },
                     )
                 }
             }

@@ -191,4 +191,4 @@ sealed interface LibraryEffect {
     data class NavigateToPodcast(val podcast: Podcast) : LibraryEffect
 }
 
-enum class LibrarySection { All, RecentlyListened, Liked, Followed, Categories }
+enum class LibrarySection { All, RecentlyListened, Liked, Followed, Preferred; }
