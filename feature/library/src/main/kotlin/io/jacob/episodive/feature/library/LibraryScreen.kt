@@ -5,30 +5,23 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,16 +34,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodeDetailItem
+import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodiveFilterChip
+import io.jacob.episodive.core.designsystem.component.EpisodiveScaffold
 import io.jacob.episodive.core.designsystem.component.PlayedEpisodeItem
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
 import io.jacob.episodive.core.designsystem.component.SectionHeader
@@ -68,6 +64,7 @@ import io.jacob.episodive.core.model.LibraryFindResult
 import io.jacob.episodive.core.model.LikedEpisode
 import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.Podcast
+import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.testing.model.followedPodcastTestDataList
 import io.jacob.episodive.core.testing.model.likedEpisodeTestDataList
 import io.jacob.episodive.core.testing.model.playedEpisodeTestDataList
@@ -135,24 +132,12 @@ private fun LibraryScreen(
     onToggleLikedEpisode: (LikedEpisode) -> Unit = {},
     onToggleFollowedPodcast: (FollowedPodcast) -> Unit = {},
 ) {
-    val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
-
     var showFind by remember { mutableStateOf(false) }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(top = systemBarsPadding.calculateTopPadding()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            LibraryHeader(
-                showFind = showFind,
-                onShowFindChanged = { showFind = it }
-            )
-        }
-
-        stickyHeader {
+    EpisodiveScaffold(
+        modifier = modifier,
+        title = stringResource(R.string.feature_library_title),
+        subTitle = {
             FindOrFilter(
                 showFind = showFind,
                 onShowFindChanged = { showFind = it },
@@ -162,51 +147,157 @@ private fun LibraryScreen(
                 section = section,
                 onSectionChange = onSectionChange
             )
+        },
+        actionIcon = if (showFind) EpisodiveIcons.Close else EpisodiveIcons.SearchBorder,
+        actionIconContentDescription = "search",
+        onActionClick = {
+            showFind = !showFind
+            if (showFind) {
+                onSectionChange(LibrarySection.All)
+            }
         }
+    ) { paddingValues, nestedScrollConnection ->
+        when (section) {
+            LibrarySection.All -> AllSectionContent(
+                modifier = modifier,
+                paddingValues = paddingValues,
+                nestedScrollConnection = nestedScrollConnection,
+                playedEpisodes = playedEpisodes,
+                likedEpisodes = likedEpisodes,
+                followedPodcasts = followedPodcasts,
+                preferredCategories = preferredCategories,
+                onPlayedEpisodeClick = onPlayedEpisodeClick,
+                onEpisodeClick = onEpisodeClick,
+                onPodcastClick = onPodcastClick
+            )
 
-        if (section == LibrarySection.All) {
-            item {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    PlayedEpisodeRowSection(
-                        title = stringResource(R.string.feature_library_section_recently_listened_episodes),
-                        playedEpisodes = playedEpisodes,
-                        onPlayedEpisodeClick = onPlayedEpisodeClick,
-                    )
+            LibrarySection.RecentlyListened -> RecentlyListenedContent(
+                modifier = modifier,
+                paddingValues = paddingValues,
+                nestedScrollConnection = nestedScrollConnection,
+                playedEpisodes = playedEpisodes,
+                onPlayedEpisodeClick = onPlayedEpisodeClick
+            )
 
-                    EpisodeRowSection(
-                        title = stringResource(R.string.feature_library_section_liked_episodes),
-                        episodes = likedEpisodes.map { it.episode },
-                        onEpisodeClick = onEpisodeClick,
-                    )
+            LibrarySection.Liked -> LikedContent(
+                modifier = modifier,
+                paddingValues = paddingValues,
+                nestedScrollConnection = nestedScrollConnection,
+                likedEpisodes = likedEpisodes,
+                onLikedEpisodeClick = { onEpisodeClick(it.episode) },
+                onToggleLiked = onToggleLikedEpisode
+            )
 
-                    PodcastsSection(
-                        title = stringResource(R.string.feature_library_section_followed_podcasts),
-                        podcasts = followedPodcasts.map { it.podcast },
-                        onPodcastClick = onPodcastClick,
-                    )
+            LibrarySection.Followed -> TODO()
+            LibrarySection.Preferred -> TODO()
+        }
+    }
+}
 
-                    CategorySection(
-                        title = stringResource(R.string.feature_library_section_preferred_categories),
-                        categories = preferredCategories,
-                        onCategoryClick = {},
-                    )
-                }
+@Composable
+private fun AllSectionContent(
+    modifier: Modifier = Modifier,
+    paddingValues: PaddingValues,
+    nestedScrollConnection: NestedScrollConnection,
+    playedEpisodes: List<PlayedEpisode>,
+    likedEpisodes: List<LikedEpisode>,
+    followedPodcasts: List<FollowedPodcast>,
+    preferredCategories: List<Category>,
+    onPlayedEpisodeClick: (PlayedEpisode) -> Unit,
+    onEpisodeClick: (Episode) -> Unit,
+    onPodcastClick: (Podcast) -> Unit,
+) {
+    LazyColumn(
+        modifier = modifier
+            .padding(paddingValues)
+            .nestedScroll(nestedScrollConnection),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                PlayedEpisodeRowSection(
+                    title = stringResource(R.string.feature_library_section_recently_listened_episodes),
+                    playedEpisodes = playedEpisodes,
+                    onPlayedEpisodeClick = onPlayedEpisodeClick,
+                )
+
+                EpisodeRowSection(
+                    title = stringResource(R.string.feature_library_section_liked_episodes),
+                    episodes = likedEpisodes.map { it.episode },
+                    onEpisodeClick = onEpisodeClick,
+                )
+
+                PodcastsSection(
+                    title = stringResource(R.string.feature_library_section_followed_podcasts),
+                    podcasts = followedPodcasts.map { it.podcast },
+                    onPodcastClick = onPodcastClick,
+                )
+
+                CategorySection(
+                    title = stringResource(R.string.feature_library_section_preferred_categories),
+                    categories = preferredCategories,
+                    onCategoryClick = {},
+                )
             }
         }
 
-        if (section == LibrarySection.RecentlyListened) {
+        item {
+            Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
+        }
+    }
+}
+
+@Composable
+private fun RecentlyListenedContent(
+    modifier: Modifier = Modifier,
+    paddingValues: PaddingValues,
+    nestedScrollConnection: NestedScrollConnection,
+    playedEpisodes: List<PlayedEpisode>,
+    onPlayedEpisodeClick: (PlayedEpisode) -> Unit,
+) {
+    // 날짜별로 그룹화
+    val groupedEpisodes = remember(playedEpisodes) {
+        playedEpisodes.groupBy { playedEpisode ->
+            playedEpisode.playedAt.toHumanReadable()
+        }
+    }
+
+    LazyColumn(
+        modifier = modifier
+            .padding(paddingValues)
+            .nestedScroll(nestedScrollConnection),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        groupedEpisodes.forEach { (dateLabel, episodes) ->
+            // 날짜 헤더
+            item(
+                key = "header_$dateLabel",
+                contentType = "date_header"
+            ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 8.dp),
+                    text = dateLabel,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // 해당 날짜의 에피소드들
             items(
-                count = playedEpisodes.size,
-                key = { index -> playedEpisodes[index].episode.id },
-                contentType = { index -> playedEpisodes[index].episode },
-            ) { index ->
-                val playedEpisode = playedEpisodes[index]
+                items = episodes,
+                key = { it.episode.id },
+                contentType = { "episode" }
+            ) { playedEpisode ->
                 PlayedEpisodeItem(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 16.dp)
+                        .animateItem(),
                     playedEpisode = playedEpisode,
                     onClick = { onPlayedEpisodeClick(playedEpisode) },
                 )
@@ -220,83 +311,65 @@ private fun LibraryScreen(
 }
 
 @Composable
-private fun LibraryHeader(
+private fun LikedContent(
     modifier: Modifier = Modifier,
-    showFind: Boolean,
-    onShowFindChanged: (Boolean) -> Unit,
+    paddingValues: PaddingValues,
+    nestedScrollConnection: NestedScrollConnection,
+    likedEpisodes: List<LikedEpisode>,
+    onLikedEpisodeClick: (LikedEpisode) -> Unit,
+    onToggleLiked: (LikedEpisode) -> Unit,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            modifier = Modifier.weight(1f),
-            text = stringResource(R.string.feature_library_title),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        AnimatedContent(
-            targetState = showFind,
-            transitionSpec = {
-                fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
-            },
-            label = "search_icon"
-        ) { isShowingFind ->
-            if (!isShowingFind) {
-                IconButton(
-                    onClick = { onShowFindChanged(true) }
-                ) {
-                    Icon(
-                        imageVector = EpisodiveIcons.SearchBorder,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        contentDescription = "search"
-                    )
-                }
-            } else {
-                Spacer(modifier = Modifier.size(48.dp))
-            }
+    // 날짜별로 그룹화
+    val groupedEpisodes = remember(likedEpisodes) {
+        likedEpisodes.groupBy { likedEpisode ->
+            likedEpisode.likedAt.toHumanReadable()
         }
     }
 
-
-}
-
-@Composable
-private fun FindOrFilter(
-    modifier: Modifier = Modifier,
-    showFind: Boolean,
-    onShowFindChanged: (Boolean) -> Unit,
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onFind: (String) -> Unit,
-    section: LibrarySection,
-    onSectionChange: (LibrarySection) -> Unit,
-) {
-    AnimatedContent(
+    LazyColumn(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.background),
-        targetState = showFind,
-        transitionSpec = {
-            fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
-        },
-        label = "search_content"
-    ) { isShowingFind ->
-        if (isShowingFind) {
-            FindBar(
-                query = query,
-                onQueryChange = onQueryChange,
-                onFind = onFind,
-                onDismiss = { onShowFindChanged(false) },
-            )
-        } else {
-            SectionFilter(
-                currentSection = section,
-                onSectionChange = onSectionChange
-            )
+            .padding(paddingValues)
+            .nestedScroll(nestedScrollConnection),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        groupedEpisodes.forEach { (dateLabel, episodes) ->
+            // 날짜 헤더
+            item(
+                key = "header_$dateLabel",
+                contentType = "date_header"
+            ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 8.dp),
+                    text = dateLabel,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // 해당 날짜의 에피소드들
+            items(
+                items = episodes,
+                key = { it.episode.id },
+                contentType = { "episode" }
+            ) { likedEpisode ->
+                EpisodeItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .animateItem(),
+                    episode = likedEpisode.episode,
+                    isLiked = true,
+                    onClick = { onLikedEpisodeClick(likedEpisode) },
+                    onToggleLiked = { onToggleLiked(likedEpisode) }
+                )
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
         }
     }
 }
@@ -312,7 +385,8 @@ private fun FindBar(
     SearchBar(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 16.dp),
         windowInsets = WindowInsets(0, 0, 0, 0),
         inputField = {
             SearchBarDefaults.InputField(
@@ -327,7 +401,7 @@ private fun FindBar(
                 placeholder = { Text(stringResource(R.string.feature_library_find_your_library)) },
                 leadingIcon = {
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                        Icon(EpisodiveIcons.SearchBorder, null)
                     }
                 }
             )
@@ -366,6 +440,41 @@ private fun SectionFilter(
                 selected = currentSection == section,
                 onSelectedChange = { if (it) onSectionChange(section) },
                 label = { Text(sectionNames[section] ?: "") },
+            )
+        }
+    }
+}
+
+@Composable
+private fun FindOrFilter(
+    modifier: Modifier = Modifier,
+    showFind: Boolean,
+    onShowFindChanged: (Boolean) -> Unit,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onFind: (String) -> Unit,
+    section: LibrarySection,
+    onSectionChange: (LibrarySection) -> Unit,
+) {
+    AnimatedContent(
+        modifier = modifier,
+        targetState = showFind,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+        },
+        label = "search_content"
+    ) { isShowingFind ->
+        if (isShowingFind) {
+            FindBar(
+                query = query,
+                onQueryChange = onQueryChange,
+                onFind = onFind,
+                onDismiss = { onShowFindChanged(false) },
+            )
+        } else {
+            SectionFilter(
+                currentSection = section,
+                onSectionChange = onSectionChange
             )
         }
     }

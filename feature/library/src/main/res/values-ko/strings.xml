@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_library_title">라이브러리</string>
+    <string name="feature_library_title">보관함</string>
     <string name="feature_library_filter_all">모든</string>
     <string name="feature_library_filter_recently_listened">최근 들었던</string>
     <string name="feature_library_filter_liked">좋아요 표시한</string>

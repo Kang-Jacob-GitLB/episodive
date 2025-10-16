@@ -43,10 +43,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.jacob.episodive.core.designsystem.component.EpisodiveCenterTopAppBar
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
-import io.jacob.episodive.core.designsystem.component.EpisodiveTopAppBar
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.StateImage
@@ -175,7 +175,7 @@ private fun PlayerScreen(
                         .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    EpisodiveTopAppBar(
+                    EpisodiveCenterTopAppBar(
                         title = {},
                         navigationIcon = EpisodiveIcons.KeyboardArrowDown,
                         navigationIconContentDescription = "Down",
