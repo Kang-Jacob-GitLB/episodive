@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -48,6 +49,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodiveFilterChip
 import io.jacob.episodive.core.designsystem.component.EpisodiveScaffold
 import io.jacob.episodive.core.designsystem.component.PlayedEpisodeItem
+import io.jacob.episodive.core.designsystem.component.PodcastDetailItem
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.StateImage
@@ -188,7 +190,15 @@ private fun LibraryScreen(
                 onToggleLiked = onToggleLikedEpisode
             )
 
-            LibrarySection.Followed -> TODO()
+            LibrarySection.Followed -> FollowedContent(
+                modifier = modifier,
+                paddingValues = paddingValues,
+                nestedScrollConnection = nestedScrollConnection,
+                followedPodcasts = followedPodcasts,
+                onFollowedPodcastClick = { onPodcastClick(it.podcast) },
+                onToggleFollowed = onToggleFollowedPodcast
+            )
+
             LibrarySection.Preferred -> TODO()
         }
     }
@@ -257,7 +267,6 @@ private fun RecentlyListenedContent(
     playedEpisodes: List<PlayedEpisode>,
     onPlayedEpisodeClick: (PlayedEpisode) -> Unit,
 ) {
-    // 날짜별로 그룹화
     val groupedEpisodes = remember(playedEpisodes) {
         playedEpisodes.groupBy { playedEpisode ->
             playedEpisode.playedAt.toHumanReadable()
@@ -271,23 +280,22 @@ private fun RecentlyListenedContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         groupedEpisodes.forEach { (dateLabel, episodes) ->
-            // 날짜 헤더
-            item(
+            stickyHeader(
                 key = "header_$dateLabel",
                 contentType = "date_header"
             ) {
                 Text(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(horizontal = 16.dp)
-                        .padding(top = 8.dp),
+                        .padding(vertical = 8.dp),
                     text = dateLabel,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            // 해당 날짜의 에피소드들
             items(
                 items = episodes,
                 key = { it.episode.id },
@@ -319,7 +327,6 @@ private fun LikedContent(
     onLikedEpisodeClick: (LikedEpisode) -> Unit,
     onToggleLiked: (LikedEpisode) -> Unit,
 ) {
-    // 날짜별로 그룹화
     val groupedEpisodes = remember(likedEpisodes) {
         likedEpisodes.groupBy { likedEpisode ->
             likedEpisode.likedAt.toHumanReadable()
@@ -333,23 +340,22 @@ private fun LikedContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         groupedEpisodes.forEach { (dateLabel, episodes) ->
-            // 날짜 헤더
-            item(
+            stickyHeader(
                 key = "header_$dateLabel",
                 contentType = "date_header"
             ) {
                 Text(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(horizontal = 16.dp)
-                        .padding(top = 8.dp),
+                        .padding(vertical = 8.dp),
                     text = dateLabel,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            // 해당 날짜의 에피소드들
             items(
                 items = episodes,
                 key = { it.episode.id },
@@ -364,6 +370,68 @@ private fun LikedContent(
                     isLiked = true,
                     onClick = { onLikedEpisodeClick(likedEpisode) },
                     onToggleLiked = { onToggleLiked(likedEpisode) }
+                )
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
+        }
+    }
+}
+
+@Composable
+private fun FollowedContent(
+    modifier: Modifier = Modifier,
+    paddingValues: PaddingValues,
+    nestedScrollConnection: NestedScrollConnection,
+    followedPodcasts: List<FollowedPodcast>,
+    onFollowedPodcastClick: (FollowedPodcast) -> Unit,
+    onToggleFollowed: (FollowedPodcast) -> Unit,
+) {
+    val groupedPodcasts = remember(followedPodcasts) {
+        followedPodcasts.groupBy { followedPodcast ->
+            followedPodcast.followedAt.toHumanReadable()
+        }
+    }
+
+    LazyColumn(
+        modifier = modifier
+            .padding(paddingValues)
+            .nestedScroll(nestedScrollConnection),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        groupedPodcasts.forEach { (dateLabel, podcasts) ->
+            stickyHeader(
+                key = "header_$dateLabel",
+                contentType = "date_header"
+            ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 16.dp)
+                        .padding(vertical = 8.dp),
+                    text = dateLabel,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            items(
+                items = podcasts,
+                key = { it.podcast.id },
+                contentType = { "podcast" }
+            ) { followedPodcast ->
+                PodcastDetailItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .animateItem(),
+                    podcast = followedPodcast.podcast,
+                    isFollowed = true,
+                    onClick = { onFollowedPodcastClick(followedPodcast) },
+                    onToggleFollowed = { onToggleFollowed(followedPodcast) }
                 )
             }
         }

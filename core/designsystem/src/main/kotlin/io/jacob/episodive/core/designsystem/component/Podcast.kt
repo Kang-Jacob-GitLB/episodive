@@ -5,7 +5,9 @@ import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,19 +15,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.jacob.episodive.core.designsystem.R
+import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Podcast
-import io.jacob.episodive.core.testing.model.podcastTestDataList
+import io.jacob.episodive.core.model.mapper.toHumanReadable
+import io.jacob.episodive.core.testing.model.podcastTestData
 
 @Composable
 fun PodcastsSection(
@@ -71,7 +77,7 @@ fun PodcastsSection(
 fun PodcastItem(
     modifier: Modifier = Modifier,
     podcast: Podcast,
-    onClick: () -> Unit,
+    onClick: () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -109,15 +115,175 @@ fun PodcastItem(
     }
 }
 
+@Composable
+fun PodcastDetailItem(
+    modifier: Modifier = Modifier,
+    podcast: Podcast,
+    isFollowed: Boolean,
+    onClick: () -> Unit = {},
+    onToggleFollowed: () -> Unit = {},
+) {
+    Row(
+        modifier = modifier
+            .clickable(onClick = onClick),
+    ) {
+        StateImage(
+            modifier = Modifier
+                .size(96.dp)
+                .clip(MaterialTheme.shapes.extraLarge),
+            imageUrl = podcast.image,
+            contentDescription = podcast.title,
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    modifier = Modifier
+                        .weight(1f),
+                    text = podcast.title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+
+                EpisodiveIconToggleButton(
+                    modifier = Modifier
+                        .size(34.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    checked = isFollowed,
+                    onCheckedChange = { onToggleFollowed() },
+                    icon = {
+                        Icon(
+                            modifier = Modifier.size(14.dp),
+                            imageVector = EpisodiveIcons.PersonAdd,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            contentDescription = podcast.title,
+                        )
+                    },
+                    checkedIcon = {
+                        Icon(
+                            modifier = Modifier.size(14.dp),
+                            imageVector = EpisodiveIcons.PersonRemove,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            contentDescription = podcast.title,
+                        )
+                    },
+                )
+            }
+
+            FlowRow(
+                modifier = Modifier,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                podcast.ownerName.ifEmpty { podcast.author }.let { owner ->
+                    if (owner.isNotEmpty()) {
+                        EpisodiveIconText(
+                            icon = {
+                                Icon(
+                                    imageVector = EpisodiveIcons.Attribution,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(12.dp),
+                                )
+                            },
+                            text = {
+                                Text(
+                                    text = podcast.ownerName.ifEmpty { podcast.author },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        )
+                    }
+                }
+
+                EpisodiveIconText(
+                    icon = {
+                        Icon(
+                            imageVector = EpisodiveIcons.PublishedWithChanges,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(12.dp),
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = (podcast.newestItemPublishTime
+                                ?: podcast.lastUpdateTime).toHumanReadable(),
+                            maxLines = 1,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                )
+
+                EpisodiveIconText(
+                    icon = {
+                        Icon(
+                            imageVector = EpisodiveIcons.FormatListNumbered,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(12.dp),
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = "${podcast.episodeCount} ${stringResource(R.string.core_designsystem_episodes)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            HtmlTextContainer(
+                text = podcast.description,
+            ) {
+                Text(
+                    text = it,
+                    maxLines = 4,
+                    minLines = 4,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
 @DevicePreviews
 @Composable
-private fun PodcastsSectionPreview() {
+private fun PodcastItemPreview() {
     EpisodiveTheme {
-        PodcastsSection(
-            title = "Podcasts",
-            podcasts = podcastTestDataList,
-            onMore = {},
-            onPodcastClick = {},
+        PodcastItem(
+            podcast = podcastTestData,
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun PodcastDetailItemPreview() {
+    EpisodiveTheme {
+        PodcastDetailItem(
+            podcast = podcastTestData,
+            isFollowed = false,
         )
     }
 }

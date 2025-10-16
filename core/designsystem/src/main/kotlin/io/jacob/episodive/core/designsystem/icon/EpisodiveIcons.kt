@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Attribution
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Check
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FileDownload
+import androidx.compose.material.icons.rounded.FormatListNumbered
 import androidx.compose.material.icons.rounded.Forward30
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Home
@@ -51,6 +53,7 @@ import androidx.compose.material.icons.rounded.ViewDay
 object EpisodiveIcons {
     val Add = Icons.Rounded.Add
     val ArrowBack = Icons.AutoMirrored.Rounded.ArrowBack
+    val Attribution = Icons.Rounded.Attribution
     val AutoAwesome = Icons.Rounded.AutoAwesome
     val AutoAwesomeBorder = Icons.Outlined.AutoAwesome
     val BarChart = Icons.Rounded.BarChart
@@ -61,6 +64,7 @@ object EpisodiveIcons {
     val Favorite = Icons.Rounded.Favorite
     val FavoriteBorder = Icons.Outlined.FavoriteBorder
     val FileDownload = Icons.Rounded.FileDownload
+    val FormatListNumbered = Icons.Rounded.FormatListNumbered
     val Forward30 = Icons.Rounded.Forward30
     val History = Icons.Rounded.History
     val Home = Icons.Rounded.Home
