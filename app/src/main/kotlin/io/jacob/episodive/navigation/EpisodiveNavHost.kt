@@ -5,12 +5,12 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
-import io.jacob.episodive.feature.clip.navigation.clipSection
 import io.jacob.episodive.feature.home.navigation.homeSection
 import io.jacob.episodive.feature.library.navigation.librarySection
 import io.jacob.episodive.feature.podcast.navigation.navigateToPodcast
 import io.jacob.episodive.feature.podcast.navigation.podcastScreen
 import io.jacob.episodive.feature.search.navigation.searchSection
+import io.jacob.episodive.feature.soundbite.navigation.soundbiteSection
 import io.jacob.episodive.ui.EpisodiveAppState
 
 @Composable
@@ -65,7 +65,7 @@ fun EpisodiveNavHost(
             )
         }
 
-        clipSection(
+        soundbiteSection(
             onRegisterNestedNavController = { navController ->
                 appState.registerNestedNavController(BottomBarDestination.CLIP, navController)
             },

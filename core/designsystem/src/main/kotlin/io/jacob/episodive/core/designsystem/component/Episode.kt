@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -27,6 +29,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -433,6 +437,75 @@ fun EpisodeDetailItem(
     }
 }
 
+@Composable
+fun EpisodeClipItem(
+    modifier: Modifier = Modifier,
+    episode: Episode,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .clip(MaterialTheme.shapes.largeIncreased)
+            .clickable(onClick = onClick),
+    ) {
+        StateImage(
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(radius = 8.dp)
+                .alpha(0.3f),
+            imageUrl = episode.image.ifEmpty { episode.feedImage },
+            contentDescription = episode.title,
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
+        ) {
+            Card(
+                modifier = Modifier
+                    .size(160.dp),
+                shape = MaterialTheme.shapes.largeIncreased
+            ) {
+                StateImage(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    imageUrl = episode.image.ifEmpty { episode.feedImage },
+                    contentDescription = episode.title,
+                )
+            }
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = episode.title,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+
+                HtmlTextContainer(
+                    text = episode.description ?: "",
+                    enableLinks = false,
+                ) {
+                    Text(
+                        text = it,
+                        maxLines = 6,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
+    }
+}
+
 @DevicePreviews
 @Composable
 private fun EpisodeItemPreview() {
@@ -475,6 +548,17 @@ private fun PlayedEpisodesPreview() {
 private fun EpisodeDetailItemPreview() {
     EpisodiveTheme {
         EpisodeDetailItem(
+            episode = episodeTestData,
+            onClick = {}
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun EpisodeClipItemPreview() {
+    EpisodiveTheme {
+        EpisodeClipItem(
             episode = episodeTestData,
             onClick = {}
         )
