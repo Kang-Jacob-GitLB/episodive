@@ -2,4 +2,6 @@
 <resources>
     <string name="core_designsystem_episodes">episodes</string>
     <string name="core_designsystem_continue">Continue</string>
+    <string name="core_designsystem_completed">Completed</string>
+    <string name="core_designsystem_left">Left</string>
 </resources>

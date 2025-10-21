@@ -558,7 +558,6 @@ private fun FindBar(
                 onSearch = {
                     onFind(query)
                     keyboardController?.hide()
-//                    onDismiss()
                 },
                 expanded = false,
                 onExpandedChange = { if (!it) onDismiss() },
@@ -571,10 +570,9 @@ private fun FindBar(
             )
         },
         expanded = false,
-        onExpandedChange = { if (!it) onDismiss() }
-    ) {
-        // 검색 결과
-    }
+        onExpandedChange = { if (!it) onDismiss() },
+        content = {}
+    )
 }
 
 @Composable

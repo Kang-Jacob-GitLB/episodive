@@ -356,8 +356,12 @@ fun PlayedEpisodeItem(
 
                 Text(
                     text =
-                        if (playedEpisode.isCompleted) "완료됨"
-                        else if (playedEpisode.remain != null) "${playedEpisode.remain?.toHumanReadable()} 남음"
+                        if (playedEpisode.isCompleted) stringResource(R.string.core_designsystem_completed)
+                        else if (playedEpisode.remain != null) "${playedEpisode.remain?.toHumanReadable()} ${
+                            stringResource(
+                                R.string.core_designsystem_left
+                            )
+                        }"
                         else "",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

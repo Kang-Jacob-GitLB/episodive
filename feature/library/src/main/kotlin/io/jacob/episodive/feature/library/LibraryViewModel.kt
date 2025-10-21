@@ -38,7 +38,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -92,7 +91,6 @@ class LibraryViewModel @Inject constructor(
                 section = section,
             ) as LibraryState
         } else {
-            Timber.i("result playing: ${result.playingEpisodes.size}, liked: ${result.likedEpisodes.size}, followed: ${result.followedPodcasts.size}")
             LibraryState.Success(
                 findQuery = query,
                 allPlayedEpisodes = result.playingEpisodes,

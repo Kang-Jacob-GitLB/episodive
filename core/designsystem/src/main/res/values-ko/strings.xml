@@ -2,4 +2,6 @@
 <resources>
     <string name="core_designsystem_episodes">에피소드</string>
     <string name="core_designsystem_continue">이어듣기</string>
+    <string name="core_designsystem_completed">완료됨</string>
+    <string name="core_designsystem_left">남음</string>
 </resources>
