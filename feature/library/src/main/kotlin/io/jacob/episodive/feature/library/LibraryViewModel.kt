@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -80,16 +81,28 @@ class LibraryViewModel @Inject constructor(
         getSelectableCategoriesUseCase(),
         _section
     ) { query, result, allPlayedEpisodes, likedEpisodes, followedPodcasts, preferredCategories, selectableCategories, section ->
-        LibraryState.Success(
-            findQuery = query,
-            findResult = result,
-            allPlayedEpisodes = allPlayedEpisodes,
-            likedEpisodes = likedEpisodes,
-            followedPodcasts = followedPodcasts,
-            preferredCategories = preferredCategories,
-            selectableCategories = selectableCategories,
-            section = section,
-        ) as LibraryState
+        if (query.isEmpty() && result.isAllEmpty) {
+            LibraryState.Success(
+                findQuery = query,
+                allPlayedEpisodes = allPlayedEpisodes,
+                likedEpisodes = likedEpisodes,
+                followedPodcasts = followedPodcasts,
+                preferredCategories = preferredCategories,
+                selectableCategories = selectableCategories,
+                section = section,
+            ) as LibraryState
+        } else {
+            Timber.i("result playing: ${result.playingEpisodes.size}, liked: ${result.likedEpisodes.size}, followed: ${result.followedPodcasts.size}")
+            LibraryState.Success(
+                findQuery = query,
+                allPlayedEpisodes = result.playingEpisodes,
+                likedEpisodes = result.likedEpisodes,
+                followedPodcasts = result.followedPodcasts,
+                preferredCategories = emptyList(),
+                selectableCategories = selectableCategories,
+                section = section,
+            ) as LibraryState
+        }
     }.catch { e ->
         emit(LibraryState.Error(e.message ?: "An unknown error occurred"))
         e.printStackTrace()
@@ -174,7 +187,6 @@ sealed interface LibraryState {
     data object Loading : LibraryState
     data class Success(
         val findQuery: String,
-        val findResult: LibraryFindResult,
         val allPlayedEpisodes: List<PlayedEpisode>,
         val likedEpisodes: List<LikedEpisode>,
         val followedPodcasts: List<FollowedPodcast>,

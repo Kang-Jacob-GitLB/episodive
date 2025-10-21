@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -63,7 +65,6 @@ import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.FollowedPodcast
-import io.jacob.episodive.core.model.LibraryFindResult
 import io.jacob.episodive.core.model.LikedEpisode
 import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.Podcast
@@ -99,7 +100,6 @@ fun LibraryRoute(
             query = s.findQuery,
             onQueryChange = { viewModel.sendAction(LibraryAction.QueryChanged(it)) },
             onFind = { viewModel.sendAction(LibraryAction.ClickFind(it)) },
-            findResult = s.findResult,
             section = s.section,
             onSectionChange = { viewModel.sendAction(LibraryAction.SelectSection(it)) },
             playedEpisodes = s.allPlayedEpisodes,
@@ -131,7 +131,6 @@ private fun LibraryScreen(
     query: String,
     onQueryChange: (String) -> Unit,
     onFind: (String) -> Unit,
-    findResult: LibraryFindResult,
     section: LibrarySection,
     onSectionChange: (LibrarySection) -> Unit = {},
     playedEpisodes: List<PlayedEpisode>,
@@ -147,12 +146,14 @@ private fun LibraryScreen(
     onTogglePreferredCategory: (Category) -> Unit = {},
 ) {
     var showFind by remember { mutableStateOf(false) }
+    val scrollState = rememberLazyListState()
 
     EpisodiveScaffold(
         modifier = modifier,
         title = stringResource(R.string.feature_library_title),
         subTitle = {
             FindOrFilter(
+                scrollState = scrollState,
                 showFind = showFind,
                 onShowFindChanged = { showFind = it },
                 query = query,
@@ -175,6 +176,7 @@ private fun LibraryScreen(
             LibrarySection.All -> AllSectionContent(
                 modifier = modifier,
                 paddingValues = paddingValues,
+                scrollState = scrollState,
                 nestedScrollConnection = nestedScrollConnection,
                 playedEpisodes = playedEpisodes,
                 likedEpisodes = likedEpisodes,
@@ -226,6 +228,7 @@ private fun LibraryScreen(
 @Composable
 private fun AllSectionContent(
     modifier: Modifier = Modifier,
+    scrollState: LazyListState,
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
     playedEpisodes: List<PlayedEpisode>,
@@ -240,35 +243,60 @@ private fun AllSectionContent(
         modifier = modifier
             .padding(paddingValues)
             .nestedScroll(nestedScrollConnection),
+        state = scrollState,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                PlayedEpisodeRowSection(
-                    title = stringResource(R.string.feature_library_section_recently_listened_episodes),
-                    playedEpisodes = playedEpisodes,
-                    onPlayedEpisodeClick = onPlayedEpisodeClick,
-                )
+                if (playedEpisodes.isNotEmpty()) {
+                    PlayedEpisodeRowSection(
+                        title = stringResource(R.string.feature_library_section_recently_listened_episodes),
+                        playedEpisodes = playedEpisodes,
+                        onPlayedEpisodeClick = onPlayedEpisodeClick,
+                    )
+                }
 
-                EpisodeRowSection(
-                    title = stringResource(R.string.feature_library_section_liked_episodes),
-                    episodes = likedEpisodes.map { it.episode },
-                    onEpisodeClick = onEpisodeClick,
-                )
+                if (likedEpisodes.isNotEmpty()) {
+                    EpisodeRowSection(
+                        title = stringResource(R.string.feature_library_section_liked_episodes),
+                        episodes = likedEpisodes.map { it.episode },
+                        onEpisodeClick = onEpisodeClick,
+                    )
+                }
 
-                PodcastsSection(
-                    title = stringResource(R.string.feature_library_section_followed_podcasts),
-                    podcasts = followedPodcasts.map { it.podcast },
-                    onPodcastClick = onPodcastClick,
-                )
+                if (followedPodcasts.isNotEmpty()) {
+                    PodcastsSection(
+                        title = stringResource(R.string.feature_library_section_followed_podcasts),
+                        podcasts = followedPodcasts.map { it.podcast },
+                        onPodcastClick = onPodcastClick,
+                    )
+                }
 
-                CategorySection(
-                    title = stringResource(R.string.feature_library_section_preferred_categories),
-                    categories = preferredCategories,
-                    onCategoryClick = {},
-                )
+                if (preferredCategories.isNotEmpty()) {
+                    CategorySection(
+                        title = stringResource(R.string.feature_library_section_preferred_categories),
+                        categories = preferredCategories,
+                        onCategoryClick = {},
+                    )
+                }
+
+                if (
+                    playedEpisodes.isEmpty() &&
+                    likedEpisodes.isEmpty() &&
+                    followedPodcasts.isEmpty() &&
+                    preferredCategories.isEmpty()
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        text = stringResource(R.string.feature_library_not_found_results),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
 
@@ -503,11 +531,20 @@ private fun PreferredContent(
 @Composable
 private fun FindBar(
     modifier: Modifier = Modifier,
+    scrollState: LazyListState,
     query: String,
     onQueryChange: (String) -> Unit,
     onFind: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(scrollState.isScrollInProgress) {
+        if (scrollState.isScrollInProgress) {
+            keyboardController?.hide()
+        }
+    }
+
     SearchBar(
         modifier = modifier
             .fillMaxWidth()
@@ -520,7 +557,8 @@ private fun FindBar(
                 onQueryChange = onQueryChange,
                 onSearch = {
                     onFind(query)
-                    onDismiss()
+                    keyboardController?.hide()
+//                    onDismiss()
                 },
                 expanded = false,
                 onExpandedChange = { if (!it) onDismiss() },
@@ -574,6 +612,7 @@ private fun SectionFilter(
 @Composable
 private fun FindOrFilter(
     modifier: Modifier = Modifier,
+    scrollState: LazyListState,
     showFind: Boolean,
     onShowFindChanged: (Boolean) -> Unit,
     query: String,
@@ -592,6 +631,7 @@ private fun FindOrFilter(
     ) { isShowingFind ->
         if (isShowingFind) {
             FindBar(
+                scrollState = scrollState,
                 query = query,
                 onQueryChange = onQueryChange,
                 onFind = onFind,
@@ -729,7 +769,6 @@ private fun LibraryScreenPreview() {
             query = "test",
             onQueryChange = {},
             onFind = {},
-            findResult = LibraryFindResult(),
             section = LibrarySection.All,
             playedEpisodes = playedEpisodeTestDataList,
             likedEpisodes = likedEpisodeTestDataList,

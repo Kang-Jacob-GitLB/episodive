@@ -11,4 +11,5 @@
     <string name="feature_library_section_followed_podcasts">Followed podcasts</string>
     <string name="feature_library_section_preferred_categories">Preferred categories</string>
     <string name="feature_library_find_your_library">Find your library</string>
+    <string name="feature_library_not_found_results">No results found.</string>
 </resources>
