@@ -11,6 +11,8 @@ import io.jacob.episodive.core.domain.usecase.user.SetFirstLaunchOffUseCase
 import io.jacob.episodive.core.domain.usecase.user.ToggleCategoryUseCase
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Feed
+import io.jacob.episodive.core.model.SelectableCategory
+import io.jacob.episodive.core.model.SelectableFeed
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -39,17 +41,17 @@ class OnboardingViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _page = MutableStateFlow(OnboardingPage.Welcome)
-    private val _categories: Flow<List<CategoryUiModel>> =
+    private val _categories: Flow<List<SelectableCategory>> =
         getPreferredCategoriesUseCase().flatMapLatest { preferredCategories ->
             Timber.d("preferredCategories: $preferredCategories")
             Category.entries.map { category ->
-                CategoryUiModel(
+                SelectableCategory(
                     category = category,
                     isSelected = preferredCategories.contains(category),
                 )
             }.let { flowOf(it) }
         }
-    private val _feeds: Flow<List<FeedUiModel>> =
+    private val _feeds: Flow<List<SelectableFeed>> =
         combine(
             getRecommendedFeedsUseCase(),
             getFollowedPodcastsUseCase(),
@@ -57,7 +59,7 @@ class OnboardingViewModel @Inject constructor(
             val followedIds = followedPodcasts.map { it.podcast.id }.toSet()
             Timber.d("recommendedFeeds: ${recommendedFeeds.size}, followedIds: $followedIds")
             recommendedFeeds.map { feed ->
-                FeedUiModel(
+                SelectableFeed(
                     feed = feed,
                     isSelected = followedIds.contains(feed.id),
                 )
@@ -152,8 +154,8 @@ class OnboardingViewModel @Inject constructor(
 }
 
 data class OnboardingState(
-    val categories: List<CategoryUiModel>,
-    val feeds: List<FeedUiModel>,
+    val categories: List<SelectableCategory>,
+    val feeds: List<SelectableFeed>,
 )
 
 sealed interface OnboardingAction {
@@ -181,13 +183,3 @@ enum class OnboardingPage {
         fun lastIndex() = entries.last().ordinal
     }
 }
-
-data class CategoryUiModel(
-    val category: Category,
-    val isSelected: Boolean,
-)
-
-data class FeedUiModel(
-    val feed: Feed,
-    val isSelected: Boolean,
-)

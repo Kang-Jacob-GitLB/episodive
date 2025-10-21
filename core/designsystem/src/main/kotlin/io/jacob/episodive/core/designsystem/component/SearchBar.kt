@@ -2,12 +2,10 @@ package io.jacob.episodive.core.designsystem.component
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,8 +34,9 @@ fun EpisodiveSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     onSearch: (String) -> Unit,
+    isExpandable: Boolean = true,
     isExpanded: Boolean = false,
-    placeholder: @Composable () -> Unit = { Text("What do you want to listen to?") },
+    placeholder: @Composable () -> Unit = {},
     leadingIconOnCollapse: @Composable () -> Unit = {
         Icon(
             EpisodiveIcons.Search,
@@ -76,14 +75,14 @@ fun EpisodiveSearchBar(
     }
 
     Column(
-        modifier.fillMaxSize(),
+        modifier = modifier,
     ) {
         SearchBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontalPadding)
                 .focusRequester(focusRequester),
-            shape = RoundedCornerShape(16.dp),
+            shape = MaterialTheme.shapes.large,
             inputField = {
                 SearchBarDefaults.InputField(
                     query = query,
@@ -93,12 +92,12 @@ fun EpisodiveSearchBar(
                         keyboardController?.hide()
                     },
                     expanded = expanded,
-                    onExpandedChange = { expanded = it },
+                    onExpandedChange = { if (isExpandable) expanded = it },
                     placeholder = placeholder,
                     leadingIcon = {
                         if (expanded) {
                             IconButton(
-                                onClick = { expanded = false }
+                                onClick = { if (isExpandable) expanded = false }
                             ) {
                                 leadingIconOnExpand()
                             }
@@ -121,7 +120,7 @@ fun EpisodiveSearchBar(
                 )
             },
             expanded = expanded,
-            onExpandedChange = { expanded = it },
+            onExpandedChange = { if (isExpandable) expanded = it },
         ) {
             contentOnExpand(scrollState)
         }

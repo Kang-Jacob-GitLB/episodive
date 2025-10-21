@@ -7,16 +7,23 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -24,10 +31,59 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
+
+@Composable
+fun EpisodiveScaffold(
+    modifier: Modifier = Modifier,
+    title: String,
+    subTitle: @Composable () -> Unit = {},
+    navigationIcon: ImageVector? = null,
+    navigationIconContentDescription: String? = null,
+    actionIcon: ImageVector? = null,
+    actionIconContentDescription: String? = null,
+    onNavigationClick: () -> Unit = {},
+    onActionClick: () -> Unit = {},
+    scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
+    content: @Composable (PaddingValues, NestedScrollConnection) -> Unit
+) {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            Column {
+                EpisodiveTopAppBar(
+                    title = {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.headlineMedium,
+                        )
+                    },
+                    navigationIcon = navigationIcon,
+                    navigationIconContentDescription = navigationIconContentDescription,
+                    actionIcon = actionIcon,
+                    actionIconContentDescription = actionIconContentDescription,
+                    onNavigationClick = onNavigationClick,
+                    onActionClick = onActionClick,
+                    scrollBehavior = scrollBehavior
+                )
+
+                subTitle()
+            }
+        },
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+            .exclude(WindowInsets.navigationBars)
+    ) { paddingValues ->
+        content(
+            paddingValues,
+            scrollBehavior.nestedScrollConnection
+        )
+    }
+}
 
 @Composable
 fun SectionHeader(
@@ -36,6 +92,7 @@ fun SectionHeader(
     actionIcon: ImageVector? = null,
     actionIconContentDescription: String? = null,
     onActionClick: () -> Unit = {},
+    contentPadding: PaddingValues = PaddingValues(0.dp),
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
     Column(
@@ -45,7 +102,8 @@ fun SectionHeader(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -69,7 +127,11 @@ fun SectionHeader(
             }
         }
 
-        content()
+        Column(
+            modifier = Modifier.padding(contentPadding)
+        ) {
+            content()
+        }
     }
 }
 
@@ -77,6 +139,7 @@ fun SectionHeader(
 fun SubSectionHeader(
     modifier: Modifier = Modifier,
     title: String,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
     Column(
@@ -92,7 +155,11 @@ fun SubSectionHeader(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        content()
+        Column(
+            modifier = Modifier.padding(contentPadding)
+        ) {
+            content()
+        }
     }
 }
 
@@ -117,7 +184,7 @@ fun FadeTopBarLayout(
     Box(modifier = modifier) {
         content()
 
-        EpisodiveTopAppBar(
+        EpisodiveCenterTopAppBar(
             modifier = Modifier,
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = if (showTopBar) 1f else 0f)
@@ -130,6 +197,9 @@ fun FadeTopBarLayout(
                 ) {
                     Text(
                         text = title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             },
@@ -142,6 +212,21 @@ fun FadeTopBarLayout(
 
 @DevicePreviews
 @Composable
+private fun EpisodiveScaffoldPreview() {
+    EpisodiveTheme {
+        EpisodiveScaffold(
+            title = "Title",
+        ) { paddingValues, nestedScrollConnection ->
+            Text(
+                text = "Content",
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@DevicePreviews
+@Composable
 private fun SectionHeaderPreview() {
     EpisodiveTheme {
         SectionHeader(
@@ -149,7 +234,12 @@ private fun SectionHeaderPreview() {
             actionIcon = EpisodiveIcons.KeyboardArrowRight,
             actionIconContentDescription = "See All",
             onActionClick = {}
-        )
+        ) {
+            Text(
+                text = "Content",
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 
@@ -159,7 +249,12 @@ private fun SubSectionHeaderPreview() {
     EpisodiveTheme {
         SubSectionHeader(
             title = "Preview",
-        )
+        ) {
+            Text(
+                text = "Content",
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 

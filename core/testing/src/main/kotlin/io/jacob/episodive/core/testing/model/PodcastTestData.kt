@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.testing.model
 
 import io.jacob.episodive.core.model.Category
+import io.jacob.episodive.core.model.FollowedPodcast
 import io.jacob.episodive.core.model.Medium
 import io.jacob.episodive.core.model.Podcast
 import kotlin.time.Instant
@@ -13,7 +14,7 @@ val podcastTestDataList = listOf(
         url = "https://anchor.fm/s/ddaceaa8/podcast/rss",
         originalUrl = "http://pod.ssenhosting.com/rss/pb_33508/pbchannel_48285.xml",
         link = "https://podcasters.spotify.com/pod/show/qus1gd6ab6g",
-        description = "어렵고 딱딱한 경제,시사,금융 이야기를 쉽고 유쾌하게 풀어내는 경제/시사/이슈/잡썰 토크방송입니다. 매일 오전 6시 슈카월드 광고/ 제휴 문의 : syukaworld2@naver.com",
+        description = "어렵고 딱딱한 경제,시사,금융 이야기를\n쉽고 유쾌하게 풀어내는 \n경제/시사/이슈/잡썰 토크방송입니다.\n매일 오전 6시 슈카월드\n광고/ 제휴 문의 : syukaworld2@naver.com",
         author = "슈카친구들",
         ownerName = "슈카친구들",
         image = "https://d3t3ozftmdmh3i.cloudfront.net/production/podcast_uploaded_nologo/37090970/37090970-1679992813357-7ebb5a0de140c.jpg",
@@ -359,3 +360,13 @@ val podcastTestDataList = listOf(
 )
 
 val podcastTestData = podcastTestDataList.first()
+
+val followedPodcastTestDataList = podcastTestDataList.map {
+    FollowedPodcast(
+        podcast = it,
+        followedAt = Instant.fromEpochSeconds(1757990593),
+        isNotificationEnabled = false,
+    )
+}
+
+val followedPodcastTestData = followedPodcastTestDataList.first()

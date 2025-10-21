@@ -2,4 +2,5 @@
 <resources>
     <string name="feature_podcast_follow">Follow</string>
     <string name="feature_podcast_unfollow">Unfollow</string>
+    <string name="feature_podcast_all_episodes_format">All episodes (%d)</string>
 </resources>

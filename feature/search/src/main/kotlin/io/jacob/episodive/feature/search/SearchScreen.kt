@@ -1,11 +1,13 @@
 package io.jacob.episodive.feature.search
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -30,10 +33,13 @@ import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
 import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
 import io.jacob.episodive.core.designsystem.component.FeedsSection
-import io.jacob.episodive.core.designsystem.component.LoadingWheel
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
 import io.jacob.episodive.core.designsystem.component.SectionHeader
+import io.jacob.episodive.core.designsystem.component.scrollbar.DecorativeScrollbar
+import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
+import io.jacob.episodive.core.designsystem.screen.ErrorScreen
+import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
@@ -45,6 +51,7 @@ import io.jacob.episodive.core.model.mapper.toFeedsFromTrending
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun SearchRoute(
@@ -56,10 +63,10 @@ fun SearchRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.effect.collect { effect ->
+        viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is SearchEffect.NavigateToCategory -> {}
-                is SearchEffect.NavigateToPodcast -> onPodcastClick(effect.podcast.id)
+                is SearchEffect.NavigateToPodcast -> onPodcastClick(effect.podcastId)
                 is SearchEffect.NavigateToEpisode -> {}
             }
         }
@@ -79,6 +86,7 @@ fun SearchRoute(
                 feeds = s.trendingFeeds.toFeedsFromTrending(),
                 onPodcastClick = { viewModel.sendAction(SearchAction.ClickPodcast(it)) },
                 onEpisodeClick = { viewModel.sendAction(SearchAction.ClickEpisode(it)) },
+                onFeedClick = { viewModel.sendAction(SearchAction.ClickFeed(it)) },
                 onRecentSearchClick = { viewModel.sendAction(SearchAction.ClickRecentSearch(it)) },
                 onRemoveRecentSearch = { viewModel.sendAction(SearchAction.RemoveRecentSearch(it)) },
                 onClearRecentSearches = { viewModel.sendAction(SearchAction.ClearRecentSearches) },
@@ -113,6 +121,9 @@ private fun SearchScreen(
         onQueryChange = onQueryChange,
         onSearch = onSearch,
         isExpanded = isExpanded,
+        placeholder = {
+            Text(stringResource(R.string.feature_search_placeholder))
+        },
         contentOnCollapse = {
             SearchContentsOnCollapse(
                 modifier = Modifier,
@@ -154,7 +165,7 @@ private fun SearchContentsOnCollapse(
                 FeedsSection(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    title = "Feeds",
+                    title = stringResource(R.string.feature_search_section_global_trending_feeds),
                     feeds = feeds,
                     onFeedClick = onFeedClick
                 )
@@ -170,7 +181,7 @@ private fun SearchContentsOnCollapse(
                 EpisodesSection(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    title = "Episodes",
+                    title = stringResource(R.string.feature_search_section_global_recent_episodes),
                     episodes = episodes,
                     onEpisodeClick = onEpisodeClick
                 )
@@ -195,68 +206,85 @@ private fun SearchResultsOnExpand(
     onRemoveRecentSearch: (String) -> Unit = {},
     onClearRecentSearches: () -> Unit = {},
 ) {
-    LazyColumn(
+    Box(
         modifier = modifier
-            .fillMaxWidth(),
-        state = scrollState
+            .fillMaxSize(),
     ) {
-        if (searchResult.podcasts.isNotEmpty()) {
-            item {
-                PodcastsSection(
-                    title = "Podcasts",
-                    podcasts = searchResult.podcasts,
-                    onMore = {},
-                    onPodcastClick = onPodcastClick,
-                )
+        LazyColumn(
+            modifier = modifier
+                .fillMaxWidth(),
+            state = scrollState
+        ) {
+            if (searchResult.podcasts.isNotEmpty()) {
+                item {
+                    PodcastsSection(
+                        title = stringResource(R.string.feature_search_section_podcasts),
+                        podcasts = searchResult.podcasts,
+                        onMore = {},
+                        onPodcastClick = onPodcastClick,
+                    )
+                }
+            } else {
+                item {
+                    RecentSearchesSection(
+                        title = stringResource(R.string.feature_search_section_recent_searches),
+                        recentSearches = recentSearches,
+                        onRecentSearchClicked = onRecentSearchClick,
+                        onRemoveRecentSearch = onRemoveRecentSearch,
+                        onClearRecentSearches = onClearRecentSearches
+                    )
+                }
             }
-        } else {
+
+            if (searchResult.episodes.isNotEmpty()) {
+                item {
+                    HorizontalDivider(modifier = Modifier.padding(12.dp))
+                }
+
+                item {
+                    EpisodesSection(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        title = stringResource(R.string.feature_search_section_episodes),
+                        episodes = emptyList(),
+                        onEpisodeClick = {}
+                    )
+                }
+
+                items(
+                    count = searchResult.episodes.size,
+                    key = { searchResult.episodes[it].id },
+                ) { index ->
+                    val episode = searchResult.episodes[index]
+
+                    EpisodeItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        episode = episode,
+                        isLoading = false,
+                        isLiked = true,
+                        onClick = { onEpisodeClick(episode) },
+                        onToggleLiked = { /* TODO */ }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
             item {
-                RecentSearchesSection(
-                    title = "Recent Searches",
-                    recentSearches = recentSearches,
-                    onRecentSearchClicked = onRecentSearchClick,
-                    onRemoveRecentSearch = onRemoveRecentSearch,
-                    onClearRecentSearches = onClearRecentSearches
-                )
+                Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
             }
         }
 
-        if (searchResult.episodes.isNotEmpty()) {
-            item {
-                HorizontalDivider(modifier = Modifier.padding(12.dp))
-            }
-
-            item {
-                EpisodesSection(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    title = "Episodes",
-                    episodes = emptyList(),
-                    onEpisodeClick = {}
-                )
-            }
-
-            items(
-                count = searchResult.episodes.size,
-                key = { searchResult.episodes[it].id },
-            ) { index ->
-                val episode = searchResult.episodes[index]
-
-                EpisodeItem(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    episode = episode,
-                    onClick = { onEpisodeClick(episode) }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
-        }
+        scrollState.DecorativeScrollbar(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(vertical = 12.dp)
+                .align(Alignment.TopEnd),
+            state = scrollState.scrollbarState(itemsAvailable = searchResult.episodes.size),
+            orientation = Orientation.Vertical,
+        )
     }
 }
 
@@ -331,33 +359,6 @@ private fun RecentSearchItem(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    }
-}
-
-@Composable
-private fun LoadingScreen(
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        LoadingWheel()
-    }
-}
-
-@Composable
-private fun ErrorScreen(
-    modifier: Modifier = Modifier,
-    message: String,
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = message)
     }
 }
 

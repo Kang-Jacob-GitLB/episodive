@@ -158,6 +158,10 @@ class EpisodeRepositoryImpl @Inject constructor(
         return localDataSource.getPlayedEpisodes(query).map { it.toPlayedEpisodes() }
     }
 
+    override fun getAllPlayedEpisodes(query: String?): Flow<List<PlayedEpisode>> {
+        return localDataSource.getAllPlayedEpisodes(query).map { it.toPlayedEpisodes() }
+    }
+
     @Transaction
     override suspend fun toggleLiked(id: Long): Boolean {
         return if (localDataSource.isLiked(id).first()) {

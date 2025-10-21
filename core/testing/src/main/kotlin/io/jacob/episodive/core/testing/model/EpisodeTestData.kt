@@ -3,6 +3,8 @@ package io.jacob.episodive.core.testing.model
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.EpisodeType
+import io.jacob.episodive.core.model.LikedEpisode
+import io.jacob.episodive.core.model.PlayedEpisode
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -874,3 +876,23 @@ val recentEpisodeTestDataList = listOf(
 )
 
 val recentEpisodeTestData = recentEpisodeTestDataList.first()
+
+val playedEpisodeTestDataList = episodeTestDataList.map {
+    PlayedEpisode(
+        episode = it,
+        playedAt = Instant.fromEpochSeconds(1758082808L),
+        position = 1.seconds,
+        isCompleted = false,
+    )
+}
+
+val playedEpisodeTestData = playedEpisodeTestDataList.first()
+
+val likedEpisodeTestDataList = episodeTestDataList.map {
+    LikedEpisode(
+        episode = it,
+        likedAt = Instant.fromEpochSeconds(1758082808L),
+    )
+}
+
+val likedEpisodeTestData = likedEpisodeTestDataList.first()

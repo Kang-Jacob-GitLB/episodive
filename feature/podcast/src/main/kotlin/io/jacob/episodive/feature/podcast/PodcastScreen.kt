@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -31,9 +30,12 @@ import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.FadeTopBarLayout
+import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.LoadingWheel
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
+import io.jacob.episodive.core.designsystem.screen.ErrorScreen
+import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.GradientColors
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
@@ -117,7 +119,9 @@ private fun PodcastScreen(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    text = "All episodes (${podcast.episodeCount})",
+                    text = stringResource(R.string.feature_podcast_all_episodes_format).format(
+                        podcast.episodeCount
+                    ),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -131,7 +135,9 @@ private fun PodcastScreen(
                     EpisodeItem(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         episode = episode,
-                        onClick = { onEpisodeClick(episode) }
+                        isLiked = false,
+                        onClick = { onEpisodeClick(episode) },
+                        onToggleLiked = { /* TODO */ },
                     )
                 }
             }
@@ -166,7 +172,7 @@ private fun PodcastHeader(
             StateImage(
                 modifier = Modifier
                     .size(220.dp)
-                    .clip(shape = RoundedCornerShape(24.dp)),
+                    .clip(shape = MaterialTheme.shapes.extraExtraLarge),
                 imageUrl = podcast.image,
                 contentDescription = podcast.title,
             )
@@ -185,7 +191,7 @@ private fun PodcastHeader(
 
             EpisodiveButton(
                 onClick = onFollowClick,
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 buttonColors = ButtonDefaults.buttonColors(
                     containerColor = if (isFollowed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
                 ),
@@ -198,11 +204,13 @@ private fun PodcastHeader(
                 },
             )
 
-            Text(
-                text = podcast.description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            HtmlTextContainer(text = podcast.description) {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
     }
 }

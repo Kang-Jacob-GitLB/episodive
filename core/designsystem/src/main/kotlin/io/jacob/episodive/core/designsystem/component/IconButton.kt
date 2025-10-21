@@ -1,8 +1,11 @@
 package io.jacob.episodive.core.designsystem.component
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -11,6 +14,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -29,7 +33,7 @@ fun EpisodiveIconToggleButton(
     colors: IconToggleButtonColors = IconButtonDefaults.iconToggleButtonColors(
         checkedContainerColor = MaterialTheme.colorScheme.primary,
         checkedContentColor = MaterialTheme.colorScheme.onPrimary,
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f),
         contentColor = MaterialTheme.colorScheme.onBackground,
         disabledContainerColor = if (checked) {
             MaterialTheme.colorScheme.onBackground.copy(
@@ -77,6 +81,63 @@ fun EpisodiveIconButton(
         colors = colors,
     ) {
         icon()
+    }
+}
+
+@Composable
+fun EpisodiveIconProgressButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isLoading: Boolean = false,
+    progress: Float = 0f,
+    colors: IconButtonColors = IconButtonDefaults.iconButtonColors(
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.primary,
+        disabledContainerColor = MaterialTheme.colorScheme.onBackground.copy(
+            alpha = EpisodiveIconButtonDefaults.DISABLED_ICON_BUTTON_CONTAINER_ALPHA,
+        ),
+        disabledContentColor = MaterialTheme.colorScheme.onBackground.copy(
+            alpha = EpisodiveIconButtonDefaults.DISABLED_ICON_BUTTON_CONTAINER_ALPHA,
+        ),
+    ),
+    icon: @Composable () -> Unit,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        shape = CircleShape,
+        colors = IconButtonDefaults.iconButtonColors(
+            containerColor = Color.Transparent,
+            contentColor = colors.contentColor,
+            disabledContainerColor = Color.Transparent,
+            disabledContentColor = colors.disabledContentColor,
+        )
+    ) {
+        Box(
+            modifier = Modifier,
+            contentAlignment = Alignment.Center
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.fillMaxSize(),
+                    color = if (enabled) colors.containerColor else colors.disabledContentColor,
+                    trackColor = Color.Transparent,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                CircularProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxSize(),
+                    color = if (enabled) colors.containerColor else colors.disabledContentColor,
+                    trackColor = Color.Transparent,
+                    strokeWidth = 2.dp
+                )
+            }
+
+            icon()
+        }
     }
 }
 
@@ -136,6 +197,22 @@ private fun EpisodiveIconButtonPreview() {
                 )
             }
         )
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun EpisodiveIconProgressButtonPreview() {
+    EpisodiveTheme {
+        EpisodiveIconProgressButton(
+            onClick = { },
+            progress = 0.5f,
+        ) {
+            Icon(
+                imageVector = EpisodiveIcons.PlayArrow,
+                contentDescription = null,
+            )
+        }
     }
 }
 

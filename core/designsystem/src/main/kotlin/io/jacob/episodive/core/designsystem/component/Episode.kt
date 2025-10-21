@@ -18,8 +18,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -37,11 +38,10 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.PlayedEpisode
-import io.jacob.episodive.core.model.mapper.toDurationSeconds
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toIntSeconds
-import io.jacob.episodive.core.testing.model.episodeTestDataList
-import kotlin.time.Clock
+import io.jacob.episodive.core.testing.model.episodeTestData
+import io.jacob.episodive.core.testing.model.playedEpisodeTestData
 
 @Composable
 fun EpisodesSection(
@@ -63,7 +63,11 @@ fun EpisodesSection(
             episodes.forEach { episode ->
                 EpisodeItem(
                     episode = episode,
-                    onClick = { onEpisodeClick(episode) }
+                    progress = 0f,
+                    isLoading = false,
+                    isLiked = false,
+                    onClick = { onEpisodeClick(episode) },
+                    onToggleLiked = { /* TODO */ }
                 )
             }
         }
@@ -74,7 +78,11 @@ fun EpisodesSection(
 fun EpisodeItem(
     modifier: Modifier = Modifier,
     episode: Episode,
+    progress: Float = 0f,
+    isLoading: Boolean = false,
+    isLiked: Boolean,
     onClick: () -> Unit,
+    onToggleLiked: () -> Unit,
 ) {
     Row(
         modifier = modifier
@@ -87,7 +95,7 @@ fun EpisodeItem(
         StateImage(
             modifier = Modifier
                 .size(72.dp)
-                .clip(RoundedCornerShape(16.dp)),
+                .clip(MaterialTheme.shapes.largeIncreased),
             imageUrl = episode.image.ifEmpty { episode.feedImage },
             contentDescription = episode.title,
         )
@@ -126,10 +134,46 @@ fun EpisodeItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = EpisodiveIcons.PlayArrow,
-                tint = MaterialTheme.colorScheme.primary,
-                contentDescription = "Play episode",
+            EpisodiveIconProgressButton(
+                modifier = Modifier.size(32.dp),
+                onClick = onClick,
+                isLoading = isLoading,
+                progress = progress,
+                icon = {
+                    Icon(
+                        modifier = Modifier.size(24.dp),
+                        imageVector = EpisodiveIcons.PlayArrow,
+                        contentDescription = "Like",
+                    )
+                },
+            )
+
+            EpisodiveIconToggleButton(
+                modifier = Modifier.size(32.dp),
+                checked = isLiked,
+                onCheckedChange = { onToggleLiked() },
+                colors = IconButtonDefaults.iconToggleButtonColors(
+                    checkedContainerColor = Color.Transparent,
+                    checkedContentColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+                icon = {
+                    Icon(
+                        modifier = Modifier.size(16.dp),
+                        imageVector = EpisodiveIcons.FavoriteBorder,
+                        contentDescription = "Like",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                },
+                checkedIcon = {
+                    Icon(
+                        modifier = Modifier.size(16.dp),
+                        imageVector = EpisodiveIcons.Favorite,
+                        contentDescription = "Unlike",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             )
         }
     }
@@ -182,7 +226,7 @@ fun PlayingEpisodeItem(
     Surface(
         modifier = modifier
             .size(width = 192.dp, height = 84.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.largeIncreased,
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
         onClick = onClick
     ) {
@@ -195,7 +239,7 @@ fun PlayingEpisodeItem(
             StateImage(
                 modifier = Modifier
                     .size(68.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .clip(MaterialTheme.shapes.largeIncreased),
                 imageUrl = playedEpisode.episode.image.ifEmpty { playedEpisode.episode.feedImage },
                 contentDescription = playedEpisode.episode.title,
             )
@@ -211,8 +255,6 @@ fun PlayingEpisodeItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-
-//                Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
                     text = playedEpisode.episode.title,
@@ -248,33 +290,193 @@ fun PlayingEpisodeItem(
     }
 }
 
+@Composable
+fun PlayedEpisodeItem(
+    modifier: Modifier = Modifier,
+    playedEpisode: PlayedEpisode,
+    showMoreInfo: Boolean = true,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = modifier
+            .clickable { onClick() },
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        StateImage(
+            modifier = Modifier
+                .size(68.dp)
+                .clip(MaterialTheme.shapes.largeIncreased),
+            imageUrl = playedEpisode.episode.image.ifEmpty { playedEpisode.episode.feedImage },
+            contentDescription = playedEpisode.episode.title,
+        )
+
+        Column(
+            modifier = Modifier,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = playedEpisode.episode.title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                minLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier,
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(4.dp)
+                        .clip(CircleShape),
+                    color = if (playedEpisode.isCompleted) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                    gapSize = (-4).dp,
+                    drawStopIndicator = {},
+                    progress = { playedEpisode.progress },
+                )
+
+                Text(
+                    text = "${(playedEpisode.progress * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            if (showMoreInfo) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text =
+                        if (playedEpisode.isCompleted) stringResource(R.string.core_designsystem_completed)
+                        else if (playedEpisode.remain != null) "${playedEpisode.remain?.toHumanReadable()} ${
+                            stringResource(
+                                R.string.core_designsystem_left
+                            )
+                        }"
+                        else "",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun EpisodeDetailItem(
+    modifier: Modifier = Modifier,
+    episode: Episode,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .width(200.dp)
+            .clickable(onClick = onClick),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        StateImage(
+            modifier = Modifier
+                .size(200.dp)
+                .clip(MaterialTheme.shapes.extraLarge),
+            imageUrl = episode.image.ifEmpty { episode.feedImage },
+            contentDescription = episode.title,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        val subTitle = "%s • %s".format(
+            episode.datePublished.toHumanReadable(),
+            episode.duration?.toHumanReadable() ?: episode.feedTitle
+        ).trim()
+
+        Text(
+            text = subTitle,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        Text(
+            text = episode.title,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+
+        HtmlTextContainer(
+            text = episode.description ?: "",
+            enableLinks = false,
+        ) {
+            Text(
+                text = it,
+                maxLines = 4,
+                minLines = 4,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
 @DevicePreviews
 @Composable
-private fun EpisodeSectionPreview() {
+private fun EpisodeItemPreview() {
     EpisodiveTheme {
-        EpisodesSection(
-            title = "Episodes",
-            episodes = episodeTestDataList,
-            onEpisodeClick = {}
+        EpisodeItem(
+            episode = episodeTestData,
+            progress = 0f,
+            isLoading = false,
+            isLiked = false,
+            onClick = {},
+            onToggleLiked = {},
         )
     }
 }
 
 @DevicePreviews
 @Composable
-private fun PlayingEpisodesSectionPreview() {
+private fun PlayingEpisodesPreview() {
     EpisodiveTheme {
-        PlayingEpisodesSection(
-            playingEpisodes = episodeTestDataList.map {
-                PlayedEpisode(
-                    episode = it,
-                    playedAt = Clock.System.now(),
-                    position = (it.duration?.toIntSeconds()?.let { seconds -> seconds / 2 }
-                        ?: 0).toDurationSeconds(),
-                    isCompleted = false,
-                )
-            },
-            onEpisodeClick = {}
+        PlayingEpisodeItem(
+            playedEpisode = playedEpisodeTestData,
+            onClick = {}
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun PlayedEpisodesPreview() {
+    EpisodiveTheme {
+        PlayedEpisodeItem(
+            playedEpisode = playedEpisodeTestData,
+            onClick = {}
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun EpisodeDetailItemPreview() {
+    EpisodiveTheme {
+        EpisodeDetailItem(
+            episode = episodeTestData,
+            onClick = {}
         )
     }
 }

@@ -68,6 +68,10 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         return episodeDao.getPlayedEpisodes(query)
     }
 
+    override fun getAllPlayedEpisodes(query: String?): Flow<List<PlayedEpisodeDto>> {
+        return episodeDao.getAllPlayedEpisodes(query)
+    }
+
     override fun isLiked(id: Long): Flow<Boolean> {
         return episodeDao.isLiked(id)
     }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_search_title">검색</string>
+    <string name="feature_search_placeholder">무엇을 듣고 싶나요?</string>
+    <string name="feature_search_section_global_trending_feeds">글로벌 인기 피드</string>
+    <string name="feature_search_section_global_recent_episodes">글로벌 최신 피드</string>
+    <string name="feature_search_section_podcasts">팟캐스트</string>
+    <string name="feature_search_section_episodes">에피소드</string>
+    <string name="feature_search_section_recent_searches">검색 히스토리</string>
+</resources>

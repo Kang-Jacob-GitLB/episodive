@@ -22,13 +22,13 @@ fun NavController.navigateToLibrary(navOptions: NavOptions) =
     navigate(route = LibraryBaseRoute, navOptions)
 
 private fun NavGraphBuilder.libraryScreen(
-//    onPlaceClick: (Place) -> Unit,
+    onPodcatClick: (Long) -> Unit,
 //    onStoryClick: (Story) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     composable<LibraryRoute> {
         LibraryRoute(
-//            onPlaceClick = onPlaceClick,
+            onPodcastClick = onPodcatClick,
 //            onStoryClick = onStoryClick,
             onShowSnackbar = onShowSnackbar
         )
@@ -38,7 +38,7 @@ private fun NavGraphBuilder.libraryScreen(
 @Composable
 private fun LibraryNavHost(
     navController: NavHostController,
-//    navigateToPlaceDetail: NavController.(Place) -> Unit,
+    navigateToPodcast: NavController.(Long) -> Unit,
 //    navigateToStoryDetail: NavController.(Story) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
@@ -48,7 +48,7 @@ private fun LibraryNavHost(
         startDestination = LibraryRoute
     ) {
         libraryScreen(
-//            onPlaceClick = { navController.navigateToPlaceDetail(it) },
+            onPodcatClick = { navController.navigateToPodcast(it) },
 //            onStoryClick = { navController.navigateToStoryDetail(it) },
             onShowSnackbar = onShowSnackbar,
         )
@@ -59,7 +59,7 @@ private fun LibraryNavHost(
 
 fun NavGraphBuilder.librarySection(
     onRegisterNestedNavController: (NavHostController) -> Unit,
-//    navigateToPlaceDetail: NavController.(Place) -> Unit,
+    navigateToPodcast: NavController.(Long) -> Unit,
 //    navigateToStoryDetail: NavController.(Story) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
@@ -73,7 +73,7 @@ fun NavGraphBuilder.librarySection(
 
         LibraryNavHost(
             navController = navController,
-//            navigateToPlaceDetail = navigateToPlaceDetail,
+            navigateToPodcast = navigateToPodcast,
 //            navigateToStoryDetail = navigateToStoryDetail,
             onShowSnackbar = onShowSnackbar,
             destination = destination

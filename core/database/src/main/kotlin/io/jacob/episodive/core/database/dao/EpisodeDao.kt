@@ -109,14 +109,35 @@ interface EpisodeDao {
             AND e.cachedAt = (
                 SELECT MAX(cachedAt) FROM episodes WHERE id = pe.id
             )
-        AND (:query IS NULL OR :query = '' OR 
-            e.title LIKE '%' || :query || '%' COLLATE NOCASE OR 
+        AND (:query IS NULL OR :query = '' OR
+            e.title LIKE '%' || :query || '%' COLLATE NOCASE OR
             (e.description IS NOT NULL AND e.description LIKE '%' || :query || '%' COLLATE NOCASE) OR
             (e.feedAuthor IS NOT NULL AND e.feedAuthor LIKE '%' || :query || '%' COLLATE NOCASE))
         ORDER BY pe.playedAt DESC
     """
     )
     fun getPlayedEpisodes(query: String? = null): Flow<List<PlayedEpisodeDto>>
+
+    @Query(
+        """
+        SELECT
+            e.*,
+            pe.playedAt,
+            pe.position,
+            pe.isCompleted
+        FROM played_episodes pe
+        LEFT JOIN episodes e ON pe.id = e.id
+        WHERE e.cachedAt = (
+                SELECT MAX(cachedAt) FROM episodes WHERE id = pe.id
+            )
+        AND (:query IS NULL OR :query = '' OR
+            e.title LIKE '%' || :query || '%' COLLATE NOCASE OR
+            (e.description IS NOT NULL AND e.description LIKE '%' || :query || '%' COLLATE NOCASE) OR
+            (e.feedAuthor IS NOT NULL AND e.feedAuthor LIKE '%' || :query || '%' COLLATE NOCASE))
+        ORDER BY pe.playedAt DESC
+    """
+    )
+    fun getAllPlayedEpisodes(query: String? = null): Flow<List<PlayedEpisodeDto>>
 
     @Query("SELECT EXISTS(SELECT 1 FROM liked_episodes WHERE id = :id)")
     fun isLiked(id: Long): Flow<Boolean>

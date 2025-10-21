@@ -33,7 +33,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.P])
 class NetworkMapperTest {
-
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
@@ -52,7 +51,6 @@ class NetworkMapperTest {
         assertEquals(podcastTestData.author, podcast.author)
         assertEquals(podcastTestData.medium, podcast.medium)
         assertEquals(podcastTestData.categories, podcast.categories)
-        // HTML should be stripped in description
         assertNotNull(podcast.description)
     }
 
@@ -112,7 +110,6 @@ class NetworkMapperTest {
         assertEquals(episodeTestData.duration, episode.duration)
         assertEquals(episodeTestData.explicit, episode.explicit)
         assertEquals(episodeTestData.episodeType, episode.episodeType)
-        // HTML should be stripped in description
         assertNotNull(episode.description)
     }
 
@@ -175,7 +172,6 @@ class NetworkMapperTest {
         assertEquals(trendingFeedTestData.trendScore, trendingFeed.trendScore)
         assertEquals(trendingFeedTestData.language, trendingFeed.language)
         assertEquals(trendingFeedTestData.categories, trendingFeed.categories)
-        // HTML should be stripped in description
         assertNotNull(trendingFeed.description)
     }
 
@@ -241,7 +237,6 @@ class NetworkMapperTest {
         assertEquals(recentFeedTestData.trendScore, recentFeed.trendScore)
         assertEquals(recentFeedTestData.language, recentFeed.language)
         assertEquals(recentFeedTestData.categories, recentFeed.categories)
-        // HTML should be stripped in description
         assertNotNull(recentFeed.description)
     }
 
@@ -517,46 +512,6 @@ class NetworkMapperTest {
         assertEquals(originalEpisode.datePublished, backToEpisode.datePublished)
         assertEquals(originalEpisode.explicit, backToEpisode.explicit)
         assertEquals(originalEpisode.episodeType, backToEpisode.episodeType)
-    }
-
-    @Test
-    fun `HTML stripping works correctly in descriptions`() {
-        // Given
-        val podcastResponseWithHtml = PodcastResponse(
-            id = 123L,
-            podcastGuid = "test-guid",
-            title = "Test Podcast",
-            url = "https://example.com/feed",
-            originalUrl = "https://example.com/feed",
-            link = "https://example.com",
-            description = "<p>This is <strong>bold</strong> text with <a href='#'>link</a></p>",
-            author = "Test Author",
-            ownerName = "Test Owner",
-            image = "https://example.com/image.jpg",
-            artwork = "https://example.com/artwork.jpg",
-            lastUpdateTime = 1758000000L,
-            lastCrawlTime = 1758000000L,
-            lastParseTime = 1758000000L,
-            lastGoodHttpStatusTime = 1758000000L,
-            lastHttpStatus = 200,
-            contentType = "application/rss+xml",
-            language = "en",
-            type = 0,
-            medium = "podcast",
-            dead = 0,
-            episodeCount = 100,
-            crawlErrors = 0,
-            parseErrors = 0,
-            locked = 0
-        )
-
-        // When
-        val podcast = podcastResponseWithHtml.toPodcast()
-
-        // Then
-        assertEquals("This is bold text with link\n\n", podcast.description)
-        assertFalse(podcast.description.contains("<"))
-        assertFalse(podcast.description.contains(">"))
     }
 
     @Test

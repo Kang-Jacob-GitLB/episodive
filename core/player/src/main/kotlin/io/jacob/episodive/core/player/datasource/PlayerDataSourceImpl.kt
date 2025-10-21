@@ -12,6 +12,7 @@ import io.jacob.episodive.core.model.mapper.toDurationMillis
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import timber.log.Timber
@@ -310,7 +311,12 @@ class PlayerDataSourceImpl @Inject constructor(
     private val _speed = MutableStateFlow(1.0f)
     override val speed: Flow<Float> = _speed
 
-    override val progress: Flow<Progress> = _isPlaying.flatMapLatest { isPlaying ->
+    override val progress: Flow<Progress> = combine(
+        _isPlaying,
+        _playback
+    ) { isPlaying, playback ->
+        isPlaying to playback
+    }.flatMapLatest { (isPlaying, playback) ->
         flow {
             while (isPlaying) {
                 emit(
@@ -321,6 +327,17 @@ class PlayerDataSourceImpl @Inject constructor(
                     )
                 )
                 delay(500L)
+            }
+
+            if (playback == Player.STATE_ENDED) {
+                val duration = player.duration.toDurationMillis()
+                emit(
+                    Progress(
+                        position = duration,
+                        buffered = duration,
+                        duration = duration,
+                    )
+                )
             }
         }
     }

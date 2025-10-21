@@ -1,6 +1,5 @@
 package io.jacob.episodive.core.network.mapper
 
-import android.text.Html
 import androidx.annotation.RestrictTo
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
@@ -35,7 +34,7 @@ fun PodcastResponse.toPodcast(): Podcast =
         url = url,
         originalUrl = originalUrl,
         link = link,
-        description = Html.fromHtml(description, Html.FROM_HTML_MODE_LEGACY).toString(),
+        description = description,
         author = author,
         ownerName = ownerName,
         image = image,
@@ -115,7 +114,7 @@ fun EpisodeResponse.toEpisode(): Episode =
         guid = guid,
         title = title,
         link = link,
-        description = description?.let { Html.fromHtml(it, Html.FROM_HTML_MODE_LEGACY).toString() },
+        description = description,
         datePublished = datePublished.toInstant(),
         dateCrawled = dateCrawled.toInstant(),
         enclosureUrl = enclosureUrl,
@@ -192,7 +191,7 @@ fun TrendingFeedResponse.toTrendingFeed(): TrendingFeed =
         id = id,
         url = url,
         title = title,
-        description = Html.fromHtml(description, Html.FROM_HTML_MODE_LEGACY).toString(),
+        description = description,
         author = author,
         image = image,
         artwork = artwork,
@@ -234,7 +233,7 @@ fun RecentFeedResponse.toRecentFeed(): RecentFeed =
         title = title,
         newestItemPublishTime = newestItemPublishTime.toInstant(),
         oldestItemPublishTime = oldestItemPublishTime?.toInstant(),
-        description = description?.let { Html.fromHtml(it, Html.FROM_HTML_MODE_LEGACY).toString() },
+        description = description,
         author = author,
         image = image,
         itunesId = itunesId,

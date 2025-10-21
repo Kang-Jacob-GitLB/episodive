@@ -310,6 +310,50 @@ class EpisodeDaoTest {
         }
 
     @Test
+    fun `Given some episode entities, When getAllPlayedEpisodes is called, Then all played episodes are returned`() =
+        runTest {
+            // Given
+            val now = Clock.System.now()
+            dao.upsertPlayed(
+                PlayedEpisodeEntity(
+                    id = episodeEntities[0].id,
+                    playedAt = now,
+                    position = 1000.seconds,
+                    isCompleted = false
+                )
+            )
+            dao.upsertPlayed(
+                PlayedEpisodeEntity(
+                    id = episodeEntities[1].id,
+                    playedAt = now.plus(1.minutes),
+                    position = 2000.seconds,
+                    isCompleted = false
+                )
+            )
+            dao.upsertPlayed(
+                PlayedEpisodeEntity(
+                    id = episodeEntities[2].id,
+                    playedAt = now.plus(2.minutes),
+                    position = 3000.seconds,
+                    isCompleted = true
+                )
+            )
+            dao.upsertEpisodes(episodeEntities)
+
+            // When
+            val allPlayedEpisodes = dao.getAllPlayedEpisodes().first()
+
+            // Then
+            assertEquals(3, allPlayedEpisodes.size)
+            assertEquals(episodeEntities[2].id, allPlayedEpisodes[0].episode?.id)
+            assertEquals(episodeEntities[1].id, allPlayedEpisodes[1].episode?.id)
+            assertEquals(episodeEntities[0].id, allPlayedEpisodes[2].episode?.id)
+            assertEquals(3000.seconds, allPlayedEpisodes[0].position)
+            assertEquals(2000.seconds, allPlayedEpisodes[1].position)
+            assertEquals(1000.seconds, allPlayedEpisodes[2].position)
+        }
+
+    @Test
     fun `Given some episode entities, When upsert and remove, Then getPlayingEpisodeCount returns correct count`() =
         runTest {
             // Given

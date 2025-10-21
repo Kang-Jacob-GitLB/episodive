@@ -69,22 +69,22 @@ local db
 
 #### 1. 메인
 
-- [ ] 검색창
+- [x] 검색창
 - [ ] For you
-- [ ] Recently listen
+- [x] Recently listen
 - [ ] Saved
-- [ ] Liked
-- [ ] Followed
+- [x] Liked
+- [x] Followed
 
 #### 2. 상세
 
-- [ ] chips (For you, Recently listen, Saved, Liked, Followed)
+- [x] chips (For you, Recently listen, Saved, Liked, Followed)
 - [ ] For you, 랜덤 에피소드 리스트 (horizontal)
     - /episodes/random (lang, cat)
-- [ ] Recently listen, 최근 재생 에피소드 리스트 (horizontal)
+- [x] Recently listen, 최근 재생 에피소드 리스트 (horizontal)
 - [ ] Saved, 저장된 팟캐스트 리스트 (horizontal)
-- [ ] Liked, 좋아요 표시한 에피소드 리스트 (horizontal)
-- [ ] Followed, 구독한 팟캐스트 리스트 (horizontal)
+- [x] Liked, 좋아요 표시한 에피소드 리스트 (horizontal)
+- [x] Followed, 구독한 팟캐스트 리스트 (horizontal)
 
 ### 설정
 
