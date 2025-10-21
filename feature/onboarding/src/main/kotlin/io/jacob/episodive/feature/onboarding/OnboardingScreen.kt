@@ -35,7 +35,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.jacob.episodive.core.designsystem.component.CategoryButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconText
@@ -69,6 +69,8 @@ import io.jacob.episodive.core.designsystem.theme.GradientColors
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Feed
+import io.jacob.episodive.core.model.SelectableCategory
+import io.jacob.episodive.core.model.SelectableFeed
 import io.jacob.episodive.core.model.mapper.toFeedFromTrending
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
@@ -214,7 +216,7 @@ private fun WelcomeScreen(
 @Composable
 private fun CategorySelectionScreen(
     modifier: Modifier = Modifier,
-    categories: List<CategoryUiModel>,
+    categories: List<SelectableCategory>,
     onCategoryCheckedChanged: (Category) -> Unit,
 ) {
     val lazyGridState = rememberLazyGridState()
@@ -284,7 +286,7 @@ private fun CategorySelectionScreen(
 @Composable
 private fun FeedSelectionScreen(
     modifier: Modifier = Modifier,
-    feeds: List<FeedUiModel>,
+    feeds: List<SelectableFeed>,
     onFeedCheckedChanged: (Feed) -> Unit,
 ) {
     val lazyListState = rememberLazyListState()
@@ -389,63 +391,6 @@ private fun CompletionScreen(
                 textAlign = TextAlign.Center,
             )
 
-        }
-    }
-}
-
-@Composable
-private fun CategoryButton(
-    modifier: Modifier = Modifier,
-    category: Category,
-    isSelected: Boolean,
-    onClick: (Category) -> Unit,
-) {
-    Surface(
-        modifier = modifier
-            .size(140.dp),
-        shape = MaterialTheme.shapes.extraLarge,
-        selected = isSelected,
-        onClick = {
-            onClick(category)
-        },
-    ) {
-        StateImage(
-            modifier = Modifier
-                .fillMaxSize(),
-            imageUrl = category.imageUrl,
-            contentDescription = category.label,
-        )
-
-        Box(
-            modifier = Modifier.padding(12.dp),
-        ) {
-            Text(
-                text = category.label,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .align(Alignment.BottomCenter),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            EpisodiveIconToggleButton(
-                modifier = Modifier
-                    .size(24.dp)
-                    .align(Alignment.TopEnd),
-                checked = isSelected,
-                onCheckedChange = { checked -> onClick(category) },
-                icon = {
-                    Icon(
-                        imageVector = EpisodiveIcons.Add,
-                        contentDescription = category.label,
-                    )
-                },
-                checkedIcon = {
-                    Icon(
-                        imageVector = EpisodiveIcons.Check,
-                        contentDescription = category.label,
-                    )
-                },
-            )
         }
     }
 }
@@ -641,7 +586,7 @@ private fun WelcomeScreenPreview() {
 private fun CategorySelectionScreenPreview() {
     EpisodiveTheme {
         CategorySelectionScreen(
-            categories = Category.entries.map { CategoryUiModel(it, false) },
+            categories = Category.entries.map { SelectableCategory(it, false) },
             onCategoryCheckedChanged = {},
         )
     }
@@ -652,7 +597,7 @@ private fun CategorySelectionScreenPreview() {
 private fun FeedSelectionScreenPreview() {
     EpisodiveTheme {
         FeedSelectionScreen(
-            feeds = trendingFeedTestDataList.map { FeedUiModel(it.toFeedFromTrending(), true) },
+            feeds = trendingFeedTestDataList.map { SelectableFeed(it.toFeedFromTrending(), true) },
             onFeedCheckedChanged = {},
         )
     }

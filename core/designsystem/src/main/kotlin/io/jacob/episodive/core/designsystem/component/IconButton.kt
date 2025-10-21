@@ -33,7 +33,7 @@ fun EpisodiveIconToggleButton(
     colors: IconToggleButtonColors = IconButtonDefaults.iconToggleButtonColors(
         checkedContainerColor = MaterialTheme.colorScheme.primary,
         checkedContentColor = MaterialTheme.colorScheme.onPrimary,
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f),
         contentColor = MaterialTheme.colorScheme.onBackground,
         disabledContainerColor = if (checked) {
             MaterialTheme.colorScheme.onBackground.copy(

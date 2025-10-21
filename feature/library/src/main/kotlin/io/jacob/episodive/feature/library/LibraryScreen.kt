@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
@@ -14,13 +13,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
@@ -36,14 +38,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.jacob.episodive.core.designsystem.component.CategoryButton
+import io.jacob.episodive.core.designsystem.component.CategoryItem
 import io.jacob.episodive.core.designsystem.component.EpisodeDetailItem
 import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodiveFilterChip
@@ -52,7 +54,6 @@ import io.jacob.episodive.core.designsystem.component.PlayedEpisodeItem
 import io.jacob.episodive.core.designsystem.component.PodcastDetailItem
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
 import io.jacob.episodive.core.designsystem.component.SectionHeader
-import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
@@ -66,6 +67,7 @@ import io.jacob.episodive.core.model.LibraryFindResult
 import io.jacob.episodive.core.model.LikedEpisode
 import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.Podcast
+import io.jacob.episodive.core.model.SelectableCategory
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.testing.model.followedPodcastTestDataList
 import io.jacob.episodive.core.testing.model.likedEpisodeTestDataList
@@ -104,11 +106,19 @@ fun LibraryRoute(
             likedEpisodes = s.likedEpisodes,
             followedPodcasts = s.followedPodcasts,
             preferredCategories = s.preferredCategories,
+            selectableCategories = s.selectableCategories,
             onPlayedEpisodeClick = { viewModel.sendAction(LibraryAction.ClickPlayingEpisode(it)) },
             onEpisodeClick = { viewModel.sendAction(LibraryAction.ClickEpisode(it)) },
             onPodcastClick = { viewModel.sendAction(LibraryAction.ClickPodcast(it)) },
             onToggleLikedEpisode = { viewModel.sendAction(LibraryAction.ToggleLikedEpisode(it)) },
-            onToggleFollowedPodcast = { viewModel.sendAction(LibraryAction.ToggleFollowedPodcast(it)) }
+            onToggleFollowedPodcast = { viewModel.sendAction(LibraryAction.ToggleFollowedPodcast(it)) },
+            onTogglePreferredCategory = {
+                viewModel.sendAction(
+                    LibraryAction.TogglePreferredCategory(
+                        it
+                    )
+                )
+            },
         )
 
         is LibraryState.Error -> ErrorScreen(message = s.message)
@@ -128,11 +138,13 @@ private fun LibraryScreen(
     likedEpisodes: List<LikedEpisode>,
     followedPodcasts: List<FollowedPodcast>,
     preferredCategories: List<Category>,
+    selectableCategories: List<SelectableCategory>,
     onPlayedEpisodeClick: (PlayedEpisode) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
     onPodcastClick: (Podcast) -> Unit = {},
     onToggleLikedEpisode: (LikedEpisode) -> Unit = {},
     onToggleFollowedPodcast: (FollowedPodcast) -> Unit = {},
+    onTogglePreferredCategory: (Category) -> Unit = {},
 ) {
     var showFind by remember { mutableStateOf(false) }
 
@@ -199,7 +211,14 @@ private fun LibraryScreen(
                 onToggleFollowed = onToggleFollowedPodcast
             )
 
-            LibrarySection.Preferred -> TODO()
+            LibrarySection.Preferred -> PreferredContent(
+                modifier = modifier,
+                paddingValues = paddingValues,
+                nestedScrollConnection = nestedScrollConnection,
+                selectableCategories = selectableCategories,
+                onCategoryClick = {},
+                onTogglePreferred = onTogglePreferredCategory
+            )
         }
     }
 }
@@ -443,6 +462,45 @@ private fun FollowedContent(
 }
 
 @Composable
+private fun PreferredContent(
+    modifier: Modifier = Modifier,
+    paddingValues: PaddingValues,
+    nestedScrollConnection: NestedScrollConnection,
+    selectableCategories: List<SelectableCategory>,
+    onCategoryClick: (Category) -> Unit = {},
+    onTogglePreferred: (Category) -> Unit = {},
+) {
+    LazyVerticalGrid(
+        modifier = modifier
+            .padding(paddingValues)
+            .nestedScroll(nestedScrollConnection),
+        columns = GridCells.Fixed(2),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(16.dp),
+    ) {
+        items(
+            items = selectableCategories,
+            key = { it.category.id },
+        ) {
+            val category = it.category
+            CategoryButton(
+                modifier = Modifier
+                    .aspectRatio(1f)
+                    .animateItem(),
+                category = category,
+                isSelected = it.isSelected,
+                onClick = { onTogglePreferred(category) }
+            )
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
+        }
+    }
+}
+
+@Composable
 private fun FindBar(
     modifier: Modifier = Modifier,
     query: String,
@@ -635,7 +693,6 @@ private fun CategorySection(
     SectionHeader(
         modifier = modifier,
         title = title,
-        contentPadding = PaddingValues(horizontal = 16.dp),
     ) {
         val lazyListState = rememberLazyListState()
         val flingBehavior = rememberSnapFlingBehavior(
@@ -649,46 +706,18 @@ private fun CategorySection(
             state = lazyListState,
             flingBehavior = flingBehavior,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
             items(
-                count = categories.size,
-                key = { categories[it].id },
-            ) {
+                items = categories,
+                key = { it.id },
+            ) { category ->
                 CategoryItem(
-                    category = categories[it],
-                    onClick = { onCategoryClick(categories[it]) }
+                    category = category,
+                    onClick = { onCategoryClick(category) }
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun CategoryItem(
-    modifier: Modifier = Modifier,
-    category: Category,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = modifier
-            .clickable { onClick() },
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        StateImage(
-            modifier = Modifier
-                .size(140.dp)
-                .clip(MaterialTheme.shapes.largeIncreased),
-            imageUrl = category.imageUrl,
-            contentDescription = category.name,
-        )
-
-        Text(
-            text = category.label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 
@@ -705,7 +734,13 @@ private fun LibraryScreenPreview() {
             playedEpisodes = playedEpisodeTestDataList,
             likedEpisodes = likedEpisodeTestDataList,
             followedPodcasts = followedPodcastTestDataList,
-            preferredCategories = Category.entries
+            preferredCategories = Category.entries,
+            selectableCategories = Category.entries.map { category ->
+                SelectableCategory(
+                    category = category,
+                    isSelected = true,
+                )
+            },
         )
     }
 }

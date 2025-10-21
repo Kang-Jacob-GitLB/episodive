@@ -12,6 +12,7 @@ import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetPreferredCategoriesUseCase
+import io.jacob.episodive.core.domain.usecase.user.GetSelectableCategoriesUseCase
 import io.jacob.episodive.core.domain.usecase.user.ToggleCategoryUseCase
 import io.jacob.episodive.core.domain.util.combine
 import io.jacob.episodive.core.model.Category
@@ -21,6 +22,7 @@ import io.jacob.episodive.core.model.LibraryFindResult
 import io.jacob.episodive.core.model.LikedEpisode
 import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.Podcast
+import io.jacob.episodive.core.model.SelectableCategory
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -45,6 +47,7 @@ class LibraryViewModel @Inject constructor(
     getLikedEpisodesUseCase: GetLikedEpisodesUseCase,
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
     getPreferredCategoriesUseCase: GetPreferredCategoriesUseCase,
+    getSelectableCategoriesUseCase: GetSelectableCategoriesUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val resumeEpisodeUseCase: ResumeEpisodeUseCase,
     private val toggleLikedUseCase: ToggleLikedUseCase,
@@ -74,8 +77,9 @@ class LibraryViewModel @Inject constructor(
         getLikedEpisodesUseCase(),
         getFollowedPodcastsUseCase(),
         getPreferredCategoriesUseCase(),
+        getSelectableCategoriesUseCase(),
         _section
-    ) { query, result, allPlayedEpisodes, likedEpisodes, followedPodcasts, preferredCategories, section ->
+    ) { query, result, allPlayedEpisodes, likedEpisodes, followedPodcasts, preferredCategories, selectableCategories, section ->
         LibraryState.Success(
             findQuery = query,
             findResult = result,
@@ -83,6 +87,7 @@ class LibraryViewModel @Inject constructor(
             likedEpisodes = likedEpisodes,
             followedPodcasts = followedPodcasts,
             preferredCategories = preferredCategories,
+            selectableCategories = selectableCategories,
             section = section,
         ) as LibraryState
     }.catch { e ->
@@ -114,6 +119,7 @@ class LibraryViewModel @Inject constructor(
                 is LibraryAction.ClickPodcast -> clickPodcast(action.podcast)
                 is LibraryAction.ToggleLikedEpisode -> toggleLikedEpisode(action.likedEpisode)
                 is LibraryAction.ToggleFollowedPodcast -> toggleFollowedPodcast(action.followedPodcast)
+                is LibraryAction.TogglePreferredCategory -> toggleCategory(action.category)
                 is LibraryAction.SelectSection -> selectSection(action.section)
             }
         }
@@ -155,6 +161,10 @@ class LibraryViewModel @Inject constructor(
         toggleFollowedUseCase(followedPodcast.podcast.id)
     }
 
+    private fun toggleCategory(category: Category) = viewModelScope.launch {
+        toggleCategoryUseCase(category)
+    }
+
     private fun selectSection(section: LibrarySection) = viewModelScope.launch {
         _section.emit(section)
     }
@@ -169,6 +179,7 @@ sealed interface LibraryState {
         val likedEpisodes: List<LikedEpisode>,
         val followedPodcasts: List<FollowedPodcast>,
         val preferredCategories: List<Category>,
+        val selectableCategories: List<SelectableCategory>,
         val section: LibrarySection,
     ) : LibraryState
 
@@ -184,6 +195,7 @@ sealed interface LibraryAction {
     data class ClickPodcast(val podcast: Podcast) : LibraryAction
     data class ToggleLikedEpisode(val likedEpisode: LikedEpisode) : LibraryAction
     data class ToggleFollowedPodcast(val followedPodcast: FollowedPodcast) : LibraryAction
+    data class TogglePreferredCategory(val category: Category) : LibraryAction
     data class SelectSection(val section: LibrarySection) : LibraryAction
 }
 
