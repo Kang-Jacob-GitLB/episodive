@@ -12,10 +12,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import io.jacob.episodive.MainActivityViewModel
 import io.jacob.episodive.core.data.util.NetworkMonitor
+import io.jacob.episodive.feature.clip.navigation.navigateToClip
 import io.jacob.episodive.feature.home.navigation.navigateToHome
 import io.jacob.episodive.feature.library.navigation.navigateToLibrary
 import io.jacob.episodive.feature.search.navigation.navigateToSearch
-import io.jacob.episodive.feature.soundbite.navigation.navigateToSoundbite
 import io.jacob.episodive.navigation.BottomBarDestination
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -69,7 +69,7 @@ class EpisodiveAppState(
         }
 
     val bottomBarDestinations: List<BottomBarDestination> = BottomBarDestination.entries
-    val startDestination = bottomBarDestinations.last()//first()
+    val startDestination = bottomBarDestinations.first()
 
     private val nestedNavControllers = mutableMapOf<BottomBarDestination, NavHostController>()
     val currentNestedNavController: NavHostController?
@@ -108,7 +108,7 @@ class EpisodiveAppState(
             BottomBarDestination.HOME -> navController.navigateToHome(bottomBarNavOptions)
             BottomBarDestination.SEARCH -> navController.navigateToSearch(bottomBarNavOptions)
             BottomBarDestination.LIBRARY -> navController.navigateToLibrary(bottomBarNavOptions)
-            BottomBarDestination.CLIP -> navController.navigateToSoundbite(bottomBarNavOptions)
+            BottomBarDestination.CLIP -> navController.navigateToClip(bottomBarNavOptions)
         }
     }
 
@@ -124,7 +124,7 @@ class EpisodiveAppState(
             BottomBarDestination.HOME -> navController.navigateToHome(bottomBarNavOptions)
             BottomBarDestination.SEARCH -> navController.navigateToSearch(bottomBarNavOptions)
             BottomBarDestination.LIBRARY -> navController.navigateToLibrary(bottomBarNavOptions)
-            BottomBarDestination.CLIP -> navController.navigateToSoundbite(bottomBarNavOptions)
+            BottomBarDestination.CLIP -> navController.navigateToClip(bottomBarNavOptions)
         }
     }
 

@@ -41,6 +41,5 @@ include(":feature:library")
 include(":feature:clip")
 include(":feature:podcast")
 include(":feature:player")
-include(":feature:soundbite")
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

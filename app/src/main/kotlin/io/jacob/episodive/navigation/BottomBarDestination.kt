@@ -3,14 +3,14 @@ package io.jacob.episodive.navigation
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
+import io.jacob.episodive.feature.clip.navigation.ClipBaseRoute
+import io.jacob.episodive.feature.clip.navigation.ClipRoute
 import io.jacob.episodive.feature.home.navigation.HomeBaseRoute
 import io.jacob.episodive.feature.home.navigation.HomeRoute
 import io.jacob.episodive.feature.library.navigation.LibraryBaseRoute
 import io.jacob.episodive.feature.library.navigation.LibraryRoute
 import io.jacob.episodive.feature.search.navigation.SearchBaseRoute
 import io.jacob.episodive.feature.search.navigation.SearchRoute
-import io.jacob.episodive.feature.soundbite.navigation.SoundbiteBaseRoute
-import io.jacob.episodive.feature.soundbite.navigation.SoundbiteRoute
 import kotlin.reflect.KClass
 import io.jacob.episodive.feature.clip.R as clipR
 import io.jacob.episodive.feature.home.R as homeR
@@ -50,7 +50,7 @@ enum class BottomBarDestination(
         selectedIcon = EpisodiveIcons.AutoAwesome,
         unselectedIcon = EpisodiveIcons.AutoAwesomeBorder,
         iconTextId = clipR.string.feature_clip_title,
-        route = SoundbiteRoute::class,
-        baseRoute = SoundbiteBaseRoute::class,
+        route = ClipRoute::class,
+        baseRoute = ClipBaseRoute::class,
     ),
 }

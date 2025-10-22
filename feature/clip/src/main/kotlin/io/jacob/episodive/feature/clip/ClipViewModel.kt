@@ -1,4 +1,4 @@
-package io.jacob.episodive.feature.soundbite
+package io.jacob.episodive.feature.clip
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SoundbiteViewModel @Inject constructor(
+class ClipViewModel @Inject constructor(
     private val getClipEpisodesUseCase: GetClipEpisodesUseCase,
     @ClipPlayerRepository private val playerRepository: PlayerRepository,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
@@ -33,26 +33,26 @@ class SoundbiteViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    val state: StateFlow<SoundbiteState> = combine(
+    val state: StateFlow<ClipState> = combine(
         clipEpisodes,
         playerRepository.indexOfList,
         playerRepository.progress,
         playerRepository.isPlaying,
     ) { episodes, indexOfPlaying, progress, isPlaying ->
         if (episodes.isNotEmpty()) {
-            SoundbiteState.Success(episodes, indexOfPlaying, progress, isPlaying)
+            ClipState.Success(episodes, indexOfPlaying, progress, isPlaying)
         } else {
-            SoundbiteState.Error("No soundbites available.")
+            ClipState.Error("No clips available.")
         }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = SoundbiteState.Loading
+        initialValue = ClipState.Loading
     )
 
-    private val _action = MutableSharedFlow<SoundbiteAction>(extraBufferCapacity = 1)
+    private val _action = MutableSharedFlow<ClipAction>(extraBufferCapacity = 1)
 
-    private val _effect = MutableSharedFlow<SoundbiteEffect>(extraBufferCapacity = 1)
+    private val _effect = MutableSharedFlow<ClipEffect>(extraBufferCapacity = 1)
     val effect = _effect.asSharedFlow()
 
     init {
@@ -63,16 +63,16 @@ class SoundbiteViewModel @Inject constructor(
     private fun handleActions() = viewModelScope.launch {
         _action.collectLatest { action ->
             when (action) {
-                is SoundbiteAction.PlayIndex -> playIndex(action.index)
-                is SoundbiteAction.ClickEpisode -> playEpisode(action.episode)
-                is SoundbiteAction.ClickPodcast -> clickPodcast(action.podcastId)
-                is SoundbiteAction.Resume -> resume()
-                is SoundbiteAction.Pause -> pause()
+                is ClipAction.PlayIndex -> playIndex(action.index)
+                is ClipAction.ClickEpisode -> playEpisode(action.episode)
+                is ClipAction.ClickPodcast -> clickPodcast(action.podcastId)
+                is ClipAction.Resume -> resume()
+                is ClipAction.Pause -> pause()
             }
         }
     }
 
-    fun sendAction(action: SoundbiteAction) = viewModelScope.launch {
+    fun sendAction(action: ClipAction) = viewModelScope.launch {
         _action.emit(action)
     }
 
@@ -104,30 +104,30 @@ class SoundbiteViewModel @Inject constructor(
     }
 
     private fun clickPodcast(podcastId: Long) = viewModelScope.launch {
-        _effect.emit(SoundbiteEffect.NavigateToPodcast(podcastId))
+        _effect.emit(ClipEffect.NavigateToPodcast(podcastId))
     }
 }
 
-sealed interface SoundbiteState {
-    object Loading : SoundbiteState
+sealed interface ClipState {
+    object Loading : ClipState
     data class Success(
         val clipEpisodes: List<ClipEpisode>,
         val indexOfPlaying: Int = 0,
         val progress: Progress,
         val isPlaying: Boolean,
-    ) : SoundbiteState
+    ) : ClipState
 
-    data class Error(val message: String) : SoundbiteState
+    data class Error(val message: String) : ClipState
 }
 
-sealed interface SoundbiteAction {
-    data class PlayIndex(val index: Int) : SoundbiteAction
-    data class ClickEpisode(val episode: Episode) : SoundbiteAction
-    data class ClickPodcast(val podcastId: Long) : SoundbiteAction
-    data object Resume : SoundbiteAction
-    data object Pause : SoundbiteAction
+sealed interface ClipAction {
+    data class PlayIndex(val index: Int) : ClipAction
+    data class ClickEpisode(val episode: Episode) : ClipAction
+    data class ClickPodcast(val podcastId: Long) : ClipAction
+    data object Resume : ClipAction
+    data object Pause : ClipAction
 }
 
-sealed interface SoundbiteEffect {
-    data class NavigateToPodcast(val podcastId: Long) : SoundbiteEffect
+sealed interface ClipEffect {
+    data class NavigateToPodcast(val podcastId: Long) : ClipEffect
 }

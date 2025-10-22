@@ -22,10 +22,12 @@ fun NavController.navigateToClip(navOptions: NavOptions) =
     navigate(route = ClipBaseRoute, navOptions)
 
 private fun NavGraphBuilder.clipScreen(
+    onPodcatClick: (Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     composable<ClipRoute> {
         ClipRoute(
+            onPodcastClick = onPodcatClick,
             onShowSnackbar = onShowSnackbar
         )
     }
@@ -34,6 +36,7 @@ private fun NavGraphBuilder.clipScreen(
 @Composable
 private fun ClipNavHost(
     navController: NavHostController,
+    navigateToPodcast: NavController.(Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
 ) {
@@ -42,6 +45,7 @@ private fun ClipNavHost(
         startDestination = ClipRoute
     ) {
         clipScreen(
+            onPodcatClick = { navController.navigateToPodcast(it) },
             onShowSnackbar = onShowSnackbar,
         )
 
@@ -51,6 +55,7 @@ private fun ClipNavHost(
 
 fun NavGraphBuilder.clipSection(
     onRegisterNestedNavController: (NavHostController) -> Unit,
+    navigateToPodcast: NavController.(Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
 ) {
@@ -63,6 +68,7 @@ fun NavGraphBuilder.clipSection(
 
         ClipNavHost(
             navController = nestedNavController,
+            navigateToPodcast = navigateToPodcast,
             onShowSnackbar = onShowSnackbar,
             destination = destination
         )
