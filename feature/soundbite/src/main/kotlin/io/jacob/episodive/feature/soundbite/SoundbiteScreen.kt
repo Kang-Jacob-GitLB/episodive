@@ -65,6 +65,7 @@ internal fun SoundbiteRoute(
                 clipEpisodes = s.clipEpisodes,
                 indexOfPlaying = s.indexOfPlaying,
                 progress = s.progress,
+                isPlaying = s.isPlaying,
                 onPageChanged = { viewModel.sendAction(SoundbiteAction.PlayIndex(it)) },
                 onEpisodeClick = { viewModel.sendAction(SoundbiteAction.ClickEpisode(it)) },
                 onPodcastClick = { viewModel.sendAction(SoundbiteAction.ClickPodcast(it)) },
@@ -82,6 +83,7 @@ private fun SoundbiteScreen(
     clipEpisodes: List<ClipEpisode>,
     indexOfPlaying: Int = 0,
     progress: Progress,
+    isPlaying: Boolean,
     onPageChanged: (Int) -> Unit,
     onEpisodeClick: (Episode) -> Unit = {},
     onPodcastClick: (Long) -> Unit,
@@ -92,6 +94,7 @@ private fun SoundbiteScreen(
         clipEpisodes = clipEpisodes,
         indexOfPlaying = indexOfPlaying,
         progress = progress,
+        isPlaying = isPlaying,
         onPageChanged = onPageChanged,
         onEpisodeClick = onEpisodeClick,
         onPodcastClick = onPodcastClick,
@@ -104,6 +107,7 @@ fun EpisodeClipPager(
     clipEpisodes: List<ClipEpisode>,
     indexOfPlaying: Int = 0,
     progress: Progress,
+    isPlaying: Boolean,
     onPageChanged: (Int) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
     onPodcastClick: (Long) -> Unit = {},
@@ -140,7 +144,7 @@ fun EpisodeClipPager(
         EpisodeClipItem(
             modifier = Modifier.fillMaxSize(),
             clipEpisode = clipEpisodes[page],
-            isPlaying = page == indexOfPlaying,
+            isPlaying = isPlaying && page == indexOfPlaying,
             remaining = progress.remaining,
             onClick = {
                 onEpisodeClick(clipEpisodes[page].episode)

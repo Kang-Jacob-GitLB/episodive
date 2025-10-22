@@ -26,8 +26,6 @@ class SoundbiteViewModel @Inject constructor(
     @ClipPlayerRepository private val playerRepository: PlayerRepository,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
 ) : ViewModel() {
-    private var index = 0
-
     private val clipEpisodes: StateFlow<List<ClipEpisode>> = getClipEpisodesUseCase()
         .stateIn(
             scope = viewModelScope,
@@ -39,10 +37,10 @@ class SoundbiteViewModel @Inject constructor(
         clipEpisodes,
         playerRepository.indexOfList,
         playerRepository.progress,
-    ) { episodes, indexOfPlaying, progress ->
+        playerRepository.isPlaying,
+    ) { episodes, indexOfPlaying, progress, isPlaying ->
         if (episodes.isNotEmpty()) {
-            index = indexOfPlaying
-            SoundbiteState.Success(episodes, indexOfPlaying, progress)
+            SoundbiteState.Success(episodes, indexOfPlaying, progress, isPlaying)
         } else {
             SoundbiteState.Error("No soundbites available.")
         }
@@ -116,6 +114,7 @@ sealed interface SoundbiteState {
         val clipEpisodes: List<ClipEpisode>,
         val indexOfPlaying: Int = 0,
         val progress: Progress,
+        val isPlaying: Boolean,
     ) : SoundbiteState
 
     data class Error(val message: String) : SoundbiteState
