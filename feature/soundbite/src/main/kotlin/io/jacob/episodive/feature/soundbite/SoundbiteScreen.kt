@@ -13,7 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodeClipItem
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
-import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.ClipEpisode
 
 @Composable
 internal fun SoundbiteRoute(
@@ -26,10 +26,9 @@ internal fun SoundbiteRoute(
     when (val s = state) {
         is SoundbiteState.Loading -> LoadingScreen()
         is SoundbiteState.Success -> {
-            val episodes = s.clipEpisodes.map { it.episode }
             SoundbiteScreen(
                 modifier = modifier,
-                episodes = episodes,
+                clipEpisodes = s.clipEpisodes,
                 onShowSnackbar = onShowSnackbar,
             )
         }
@@ -41,31 +40,32 @@ internal fun SoundbiteRoute(
 @Composable
 private fun SoundbiteScreen(
     modifier: Modifier = Modifier,
-    episodes: List<Episode>,
+    clipEpisodes: List<ClipEpisode>,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     EpisodeClipPager(
         modifier = modifier,
-        episodes = episodes,
+        clipEpisodes = clipEpisodes,
     )
 }
 
 @Composable
 fun EpisodeClipPager(
     modifier: Modifier = Modifier,
-    episodes: List<Episode>,
+    clipEpisodes: List<ClipEpisode>,
 ) {
-    val pagerState = rememberPagerState(pageCount = { episodes.size })
+    val pagerState = rememberPagerState(pageCount = { clipEpisodes.size })
 
     VerticalPager(
         state = pagerState,
         modifier = modifier.fillMaxSize(),
-        pageSpacing = 16.dp, // 이전/다음 컨텐츠가 보이는 간격
-        contentPadding = PaddingValues(vertical = 100.dp) // 상하 여백으로 이전/다음 미리보기
+        pageSpacing = 32.dp, // 이전/다음 컨텐츠가 보이는 간격
+        contentPadding = PaddingValues(vertical = 80.dp, horizontal = 24.dp) // 상하 여백으로 이전/다음 미리보기
     ) { page ->
         EpisodeClipItem(
             modifier = Modifier.fillMaxSize(),
-            episode = episodes[page],
+            clipEpisode = clipEpisodes[page],
+            isPlaying = page == pagerState.currentPage,
             onClick = {},
         )
     }

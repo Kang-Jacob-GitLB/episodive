@@ -15,7 +15,7 @@ class GetClipEpisodesUseCase @Inject constructor(
     private val episodeRepository: EpisodeRepository
 ) {
     @Suppress("UnusedFlow")
-    operator fun invoke(max: Int = 10): Flow<List<ClipEpisode>> {
+    operator fun invoke(max: Int = 20): Flow<List<ClipEpisode>> {
         return feedRepository.getRecentSoundbites().flatMapLatest {
             val soundbites = it.take(max)
             Timber.i("size of soundbites: ${soundbites.size}")
@@ -30,11 +30,11 @@ class GetClipEpisodesUseCase @Inject constructor(
 
             combine(episodeFlows) { episodes ->
                 episodes.mapIndexedNotNull { index, episode ->
-                    episode?.let {
+                    episode?.let { nonNullEpisode ->
                         ClipEpisode(
-                            episode = it,
-                            startTime = soundbites[index].startTime,
-                            duration = soundbites[index].duration
+                            episode = nonNullEpisode,
+                            clipStartTime = soundbites[index].startTime,
+                            clipDuration = soundbites[index].duration,
                         )
                     }
                 }

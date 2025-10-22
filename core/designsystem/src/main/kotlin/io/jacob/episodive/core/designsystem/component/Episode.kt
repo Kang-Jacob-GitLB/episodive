@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.designsystem.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -20,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -40,12 +42,15 @@ import io.jacob.episodive.core.designsystem.R
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
+import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toIntSeconds
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.playedEpisodeTestData
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 @Composable
 fun EpisodesSection(
@@ -440,22 +445,31 @@ fun EpisodeDetailItem(
 @Composable
 fun EpisodeClipItem(
     modifier: Modifier = Modifier,
-    episode: Episode,
+    clipEpisode: ClipEpisode,
+    isPlaying: Boolean,
     onClick: () -> Unit,
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .clip(MaterialTheme.shapes.largeIncreased)
-            .clickable(onClick = onClick),
+    val episode = clipEpisode.episode
+
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        shape = MaterialTheme.shapes.largeIncreased,
+        onClick = onClick,
+        color = Color.Transparent,
     ) {
         StateImage(
             modifier = Modifier
                 .fillMaxSize()
-                .blur(radius = 8.dp)
-                .alpha(0.3f),
+                .blur(radius = 20.dp),
             imageUrl = episode.image.ifEmpty { episode.feedImage },
             contentDescription = episode.title,
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.6f)
+                .background(MaterialTheme.colorScheme.background)
         )
 
         Column(
@@ -467,8 +481,9 @@ fun EpisodeClipItem(
         ) {
             Card(
                 modifier = Modifier
-                    .size(160.dp),
-                shape = MaterialTheme.shapes.largeIncreased
+                    .size(250.dp),
+                shape = MaterialTheme.shapes.largeIncreased,
+                elevation = CardDefaults.cardElevation(defaultElevation = 24.dp),
             ) {
                 StateImage(
                     modifier = Modifier
@@ -483,9 +498,9 @@ fun EpisodeClipItem(
             ) {
                 Text(
                     text = episode.title,
-                    maxLines = 2,
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
 
@@ -497,10 +512,76 @@ fun EpisodeClipItem(
                         text = it,
                         maxLines = 6,
                         overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ClipAnimationIconText(
+                    text = "00:00",
+                    isPlaying = isPlaying,
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                EpisodiveIconToggleButton(
+//                    modifier = Modifier.size(32.dp),
+                    checked = false,
+                    onCheckedChange = { /* TODO */ },
+                    colors = IconButtonDefaults.iconToggleButtonColors(
+                        checkedContainerColor = Color.Transparent,
+                        checkedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                    icon = {
+                        Icon(
+//                            modifier = Modifier.size(16.dp),
+                            imageVector = EpisodiveIcons.FavoriteBorder,
+                            contentDescription = "Like",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    checkedIcon = {
+                        Icon(
+//                            modifier = Modifier.size(16.dp),
+                            imageVector = EpisodiveIcons.Favorite,
+                            contentDescription = "Unlike",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                )
+
+                EpisodiveIconToggleButton(
+                    checked = false,
+                    onCheckedChange = { /* TODO */ },
+                    colors = IconButtonDefaults.iconToggleButtonColors(
+                        checkedContainerColor = MaterialTheme.colorScheme.primary,
+                        checkedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                    icon = {
+                        Icon(
+                            imageVector = EpisodiveIcons.PlayArrow,
+                            contentDescription = "Play",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    checkedIcon = {
+                        Icon(
+                            imageVector = EpisodiveIcons.Pause,
+                            contentDescription = "Pause",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                )
             }
         }
     }
@@ -559,7 +640,12 @@ private fun EpisodeDetailItemPreview() {
 private fun EpisodeClipItemPreview() {
     EpisodiveTheme {
         EpisodeClipItem(
-            episode = episodeTestData,
+            clipEpisode = ClipEpisode(
+                episode = episodeTestData,
+                clipStartTime = Instant.fromEpochSeconds(30),
+                clipDuration = 60.seconds,
+            ),
+            isPlaying = true,
             onClick = {}
         )
     }

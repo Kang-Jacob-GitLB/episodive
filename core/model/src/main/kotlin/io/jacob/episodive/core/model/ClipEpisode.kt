@@ -5,6 +5,6 @@ import kotlin.time.Instant
 
 data class ClipEpisode(
     val episode: Episode,
-    val startTime: Instant,
-    val duration: Duration,
+    val clipStartTime: Instant,
+    val clipDuration: Duration,
 )
