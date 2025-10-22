@@ -533,7 +533,6 @@ fun EpisodeClipItem(
                 Spacer(modifier = Modifier.weight(1f))
 
                 EpisodiveIconToggleButton(
-//                    modifier = Modifier.size(32.dp),
                     checked = false,
                     onCheckedChange = { /* TODO */ },
                     colors = IconButtonDefaults.iconToggleButtonColors(
@@ -544,7 +543,6 @@ fun EpisodeClipItem(
                     ),
                     icon = {
                         Icon(
-//                            modifier = Modifier.size(16.dp),
                             imageVector = EpisodiveIcons.FavoriteBorder,
                             contentDescription = "Like",
                             tint = MaterialTheme.colorScheme.onSurface
@@ -552,7 +550,6 @@ fun EpisodeClipItem(
                     },
                     checkedIcon = {
                         Icon(
-//                            modifier = Modifier.size(16.dp),
                             imageVector = EpisodiveIcons.Favorite,
                             contentDescription = "Unlike",
                             tint = MaterialTheme.colorScheme.onSurface
