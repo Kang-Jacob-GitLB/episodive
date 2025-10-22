@@ -22,10 +22,12 @@ fun NavController.navigateToSoundbite(navOptions: NavOptions) =
     navigate(route = SoundbiteBaseRoute, navOptions)
 
 private fun NavGraphBuilder.soundbiteScreen(
+    onPodcatClick: (Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     composable<SoundbiteRoute> {
         SoundbiteRoute(
+            onPodcastClick = onPodcatClick,
             onShowSnackbar = onShowSnackbar
         )
     }
@@ -34,6 +36,7 @@ private fun NavGraphBuilder.soundbiteScreen(
 @Composable
 fun SoundbiteNavHost(
     navController: NavHostController,
+    navigateToPodcast: NavController.(Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
 ) {
@@ -42,6 +45,7 @@ fun SoundbiteNavHost(
         startDestination = SoundbiteRoute
     ) {
         soundbiteScreen(
+            onPodcatClick = { navController.navigateToPodcast(it) },
             onShowSnackbar = onShowSnackbar,
         )
 
@@ -51,6 +55,7 @@ fun SoundbiteNavHost(
 
 fun NavGraphBuilder.soundbiteSection(
     onRegisterNestedNavController: (NavHostController) -> Unit,
+    navigateToPodcast: NavController.(Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
 ) {
@@ -63,6 +68,7 @@ fun NavGraphBuilder.soundbiteSection(
 
         SoundbiteNavHost(
             navController = navController,
+            navigateToPodcast = navigateToPodcast,
             onShowSnackbar = onShowSnackbar,
             destination = destination,
         )

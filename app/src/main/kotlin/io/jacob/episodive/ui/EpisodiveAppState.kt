@@ -69,7 +69,7 @@ class EpisodiveAppState(
         }
 
     val bottomBarDestinations: List<BottomBarDestination> = BottomBarDestination.entries
-    val startDestination = bottomBarDestinations.first()
+    val startDestination = bottomBarDestinations.last()//first()
 
     private val nestedNavControllers = mutableMapOf<BottomBarDestination, NavHostController>()
     val currentNestedNavController: NavHostController?

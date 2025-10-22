@@ -5,22 +5,56 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodeClipItem
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.model.ClipEpisode
+import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.Progress
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 internal fun SoundbiteRoute(
     modifier: Modifier = Modifier,
     viewModel: SoundbiteViewModel = hiltViewModel(),
+    onPodcastClick: (Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> viewModel.sendAction(SoundbiteAction.Resume)
+                Lifecycle.Event.ON_STOP -> viewModel.sendAction(SoundbiteAction.Pause)
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is SoundbiteEffect.NavigateToPodcast -> onPodcastClick(effect.podcastId)
+            }
+        }
+    }
+
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     when (val s = state) {
@@ -29,6 +63,11 @@ internal fun SoundbiteRoute(
             SoundbiteScreen(
                 modifier = modifier,
                 clipEpisodes = s.clipEpisodes,
+                indexOfPlaying = s.indexOfPlaying,
+                progress = s.progress,
+                onPageChanged = { viewModel.sendAction(SoundbiteAction.PlayIndex(it)) },
+                onEpisodeClick = { viewModel.sendAction(SoundbiteAction.ClickEpisode(it)) },
+                onPodcastClick = { viewModel.sendAction(SoundbiteAction.ClickPodcast(it)) },
                 onShowSnackbar = onShowSnackbar,
             )
         }
@@ -41,11 +80,21 @@ internal fun SoundbiteRoute(
 private fun SoundbiteScreen(
     modifier: Modifier = Modifier,
     clipEpisodes: List<ClipEpisode>,
+    indexOfPlaying: Int = 0,
+    progress: Progress,
+    onPageChanged: (Int) -> Unit,
+    onEpisodeClick: (Episode) -> Unit = {},
+    onPodcastClick: (Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     EpisodeClipPager(
         modifier = modifier,
         clipEpisodes = clipEpisodes,
+        indexOfPlaying = indexOfPlaying,
+        progress = progress,
+        onPageChanged = onPageChanged,
+        onEpisodeClick = onEpisodeClick,
+        onPodcastClick = onPodcastClick,
     )
 }
 
@@ -53,8 +102,34 @@ private fun SoundbiteScreen(
 fun EpisodeClipPager(
     modifier: Modifier = Modifier,
     clipEpisodes: List<ClipEpisode>,
+    indexOfPlaying: Int = 0,
+    progress: Progress,
+    onPageChanged: (Int) -> Unit = {},
+    onEpisodeClick: (Episode) -> Unit = {},
+    onPodcastClick: (Long) -> Unit = {},
 ) {
-    val pagerState = rememberPagerState(pageCount = { clipEpisodes.size })
+    val pagerState = rememberPagerState(
+        initialPage = indexOfPlaying,
+        pageCount = { clipEpisodes.size }
+    )
+
+    // indexOfPlaying이 변경되면 pager를 해당 페이지로 이동
+    LaunchedEffect(indexOfPlaying) {
+        if (pagerState.currentPage != indexOfPlaying) {
+            pagerState.animateScrollToPage(indexOfPlaying)
+        }
+    }
+
+    // 사용자가 pager를 스와이프하면 player의 index 변경
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }
+            .distinctUntilChanged()
+            .collect { page ->
+                if (page != indexOfPlaying) {
+                    onPageChanged(page)
+                }
+            }
+    }
 
     VerticalPager(
         state = pagerState,
@@ -65,8 +140,11 @@ fun EpisodeClipPager(
         EpisodeClipItem(
             modifier = Modifier.fillMaxSize(),
             clipEpisode = clipEpisodes[page],
-            isPlaying = page == pagerState.currentPage,
-            onClick = {},
+            isPlaying = page == indexOfPlaying,
+            remaining = progress.remaining,
+            onClick = {
+                onEpisodeClick(clipEpisodes[page].episode)
+            },
         )
     }
 }

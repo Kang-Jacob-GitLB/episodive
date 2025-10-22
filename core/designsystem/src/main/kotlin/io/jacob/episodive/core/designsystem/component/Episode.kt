@@ -49,6 +49,7 @@ import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toIntSeconds
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.playedEpisodeTestData
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -447,6 +448,7 @@ fun EpisodeClipItem(
     modifier: Modifier = Modifier,
     clipEpisode: ClipEpisode,
     isPlaying: Boolean,
+    remaining: Duration,
     onClick: () -> Unit,
 ) {
     val episode = clipEpisode.episode
@@ -524,7 +526,7 @@ fun EpisodeClipItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 ClipAnimationIconText(
-                    text = "00:00",
+                    text = remaining.toHumanReadable(),
                     isPlaying = isPlaying,
                 )
 
@@ -646,6 +648,7 @@ private fun EpisodeClipItemPreview() {
                 clipDuration = 60.seconds,
             ),
             isPlaying = true,
+            remaining = 45.seconds,
             onClick = {}
         )
     }
