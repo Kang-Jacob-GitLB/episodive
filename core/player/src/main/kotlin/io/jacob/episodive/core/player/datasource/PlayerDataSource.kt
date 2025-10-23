@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.player.datasource
 
+import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Progress
 import kotlinx.coroutines.flow.Flow
@@ -7,6 +8,8 @@ import kotlinx.coroutines.flow.Flow
 interface PlayerDataSource {
     fun play(episode: Episode)
     fun play(episodes: List<Episode>, indexToPlay: Int? = null)
+    fun playClip(clipEpisode: ClipEpisode)
+    fun playClips(clipEpisodes: List<ClipEpisode>, indexToPlay: Int? = null)
     fun playIndex(index: Int)
     fun playOrPause()
     fun pause()

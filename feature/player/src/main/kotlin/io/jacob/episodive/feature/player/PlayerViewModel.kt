@@ -3,6 +3,7 @@ package io.jacob.episodive.feature.player
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.jacob.episodive.core.domain.di.MainPlayerRepository
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
@@ -34,7 +35,7 @@ class PlayerViewModel @Inject constructor(
     private val updatePlayedEpisodeUseCase: UpdatePlayedEpisodeUseCase,
     private val getPodcastUseCase: GetPodcastUseCase,
     private val getDominantColorFromUrlUseCase: GetDominantColorFromUrlUseCase,
-    private val playerRepository: PlayerRepository,
+    @MainPlayerRepository private val playerRepository: PlayerRepository,
 ) : ViewModel() {
     private val playingEpisode = combine(
         playerRepository.nowPlaying,

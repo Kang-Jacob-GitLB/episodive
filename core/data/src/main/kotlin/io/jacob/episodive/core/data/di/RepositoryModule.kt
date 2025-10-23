@@ -20,6 +20,8 @@ import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.datasource.RecentSearchLocalDataSource
 import io.jacob.episodive.core.datastore.datasource.UserPreferencesDataSource
+import io.jacob.episodive.core.domain.di.ClipPlayerRepository
+import io.jacob.episodive.core.domain.di.MainPlayerRepository
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.FeedRepository
 import io.jacob.episodive.core.domain.repository.ImageRepository
@@ -31,6 +33,8 @@ import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
+import io.jacob.episodive.core.player.di.ClipPlayerDataSource
+import io.jacob.episodive.core.player.di.MainPlayerDataSource
 import javax.inject.Singleton
 
 @Module
@@ -88,11 +92,23 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun providePlayerRepository(
-        playerDataSource: PlayerDataSource,
+    @MainPlayerRepository
+    fun provideMainPlayerRepository(
+        @MainPlayerDataSource mainPlayerDataSource: PlayerDataSource,
     ): PlayerRepository {
         return PlayerRepositoryImpl(
-            playerDataSource = playerDataSource,
+            playerDataSource = mainPlayerDataSource,
+        )
+    }
+
+    @Provides
+    @Singleton
+    @ClipPlayerRepository
+    fun provideClipPlayerRepository(
+        @ClipPlayerDataSource clipPlayerDataSource: PlayerDataSource,
+    ): PlayerRepository {
+        return PlayerRepositoryImpl(
+            playerDataSource = clipPlayerDataSource,
         )
     }
 

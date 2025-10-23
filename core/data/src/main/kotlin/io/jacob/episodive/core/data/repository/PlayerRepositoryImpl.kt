@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.data.repository
 
 import io.jacob.episodive.core.domain.repository.PlayerRepository
+import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Playback
 import io.jacob.episodive.core.model.Progress
@@ -21,12 +22,28 @@ class PlayerRepositoryImpl @Inject constructor(
         playerDataSource.play(episodes, indexToPlay)
     }
 
+    override fun playClip(clipEpisode: ClipEpisode) {
+        playerDataSource.playClip(clipEpisode)
+    }
+
+    override fun playClips(clipEpisodes: List<ClipEpisode>, indexToPlay: Int?) {
+        playerDataSource.playClips(clipEpisodes, indexToPlay)
+    }
+
     override fun playIndex(index: Int) {
         playerDataSource.playIndex(index)
     }
 
     override fun playOrPause() {
         playerDataSource.playOrPause()
+    }
+
+    override fun pause() {
+        playerDataSource.pause()
+    }
+
+    override fun resume() {
+        playerDataSource.resume()
     }
 
     override fun stop() {

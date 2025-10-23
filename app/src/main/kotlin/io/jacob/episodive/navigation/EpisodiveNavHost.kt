@@ -69,6 +69,7 @@ fun EpisodiveNavHost(
             onRegisterNestedNavController = { navController ->
                 appState.registerNestedNavController(BottomBarDestination.CLIP, navController)
             },
+            navigateToPodcast = { navigateToPodcast(it) },
             onShowSnackbar = onShowSnackbar
         ) { nestedNavController ->
             addDetailsGraph(

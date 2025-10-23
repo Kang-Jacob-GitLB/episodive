@@ -14,4 +14,9 @@ data class Progress(
     val bufferedRatio: Float =
         if (duration == Duration.ZERO) 0f
         else buffered.toIntSeconds().toFloat() / duration.toIntSeconds()
+
+    val remaining: Duration = duration - position
+    val remainingRatio: Float =
+        if (duration == Duration.ZERO) 0f
+        else remaining.toIntSeconds().toFloat() / duration.toIntSeconds()
 }

@@ -14,17 +14,40 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class MainPlayer
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ClipPlayer
 
 @Module
 @InstallIn(SingletonComponent::class)
 object PlayerModule {
-    @OptIn(UnstableApi::class)
     @Provides
     @Singleton
-    fun provideExoPlayer(
+    @MainPlayer
+    fun provideMainExoPlayer(
         @ApplicationContext context: Context
     ): ExoPlayer {
+        return createExoPlayer(context)
+    }
+
+    @Provides
+    @Singleton
+    @ClipPlayer
+    fun provideClipExoPlayer(
+        @ApplicationContext context: Context
+    ): ExoPlayer {
+        return createExoPlayer(context)
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun createExoPlayer(context: Context): ExoPlayer {
         val audioAttributes = AudioAttributes.Builder()
             .setUsage(C.USAGE_MEDIA)
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)

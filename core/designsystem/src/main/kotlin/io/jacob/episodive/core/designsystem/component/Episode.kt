@@ -1,9 +1,11 @@
 package io.jacob.episodive.core.designsystem.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +20,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -27,6 +31,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -36,12 +42,16 @@ import io.jacob.episodive.core.designsystem.R
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
+import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toIntSeconds
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.playedEpisodeTestData
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 @Composable
 fun EpisodesSection(
@@ -433,6 +443,149 @@ fun EpisodeDetailItem(
     }
 }
 
+@Composable
+fun EpisodeClipItem(
+    modifier: Modifier = Modifier,
+    clipEpisode: ClipEpisode,
+    isPlaying: Boolean,
+    remaining: Duration,
+    onClick: () -> Unit,
+) {
+    val episode = clipEpisode.episode
+
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        shape = MaterialTheme.shapes.largeIncreased,
+        onClick = onClick,
+        color = Color.Transparent,
+    ) {
+        StateImage(
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(radius = 20.dp),
+            imageUrl = episode.image.ifEmpty { episode.feedImage },
+            contentDescription = episode.title,
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.6f)
+                .background(MaterialTheme.colorScheme.background)
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
+        ) {
+            Card(
+                modifier = Modifier
+                    .size(250.dp),
+                shape = MaterialTheme.shapes.largeIncreased,
+                elevation = CardDefaults.cardElevation(defaultElevation = 24.dp),
+            ) {
+                StateImage(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    imageUrl = episode.image.ifEmpty { episode.feedImage },
+                    contentDescription = episode.title,
+                )
+            }
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = episode.title,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+
+                HtmlTextContainer(
+                    text = episode.description ?: "",
+                    enableLinks = false,
+                ) {
+                    Text(
+                        text = it,
+                        maxLines = 6,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ClipAnimationIconText(
+                    text = remaining.toHumanReadable(),
+                    isPlaying = isPlaying,
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                EpisodiveIconToggleButton(
+                    checked = false,
+                    onCheckedChange = { /* TODO */ },
+                    colors = IconButtonDefaults.iconToggleButtonColors(
+                        checkedContainerColor = Color.Transparent,
+                        checkedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                    icon = {
+                        Icon(
+                            imageVector = EpisodiveIcons.FavoriteBorder,
+                            contentDescription = "Like",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    checkedIcon = {
+                        Icon(
+                            imageVector = EpisodiveIcons.Favorite,
+                            contentDescription = "Unlike",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                )
+
+                EpisodiveIconToggleButton(
+                    checked = false,
+                    onCheckedChange = { /* TODO */ },
+                    colors = IconButtonDefaults.iconToggleButtonColors(
+                        checkedContainerColor = MaterialTheme.colorScheme.primary,
+                        checkedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                    icon = {
+                        Icon(
+                            imageVector = EpisodiveIcons.PlayArrow,
+                            contentDescription = "Play",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    checkedIcon = {
+                        Icon(
+                            imageVector = EpisodiveIcons.Pause,
+                            contentDescription = "Pause",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
 @DevicePreviews
 @Composable
 private fun EpisodeItemPreview() {
@@ -476,6 +629,23 @@ private fun EpisodeDetailItemPreview() {
     EpisodiveTheme {
         EpisodeDetailItem(
             episode = episodeTestData,
+            onClick = {}
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun EpisodeClipItemPreview() {
+    EpisodiveTheme {
+        EpisodeClipItem(
+            clipEpisode = ClipEpisode(
+                episode = episodeTestData,
+                clipStartTime = Instant.fromEpochSeconds(30),
+                clipDuration = 60.seconds,
+            ),
+            isPlaying = true,
+            remaining = 45.seconds,
             onClick = {}
         )
     }

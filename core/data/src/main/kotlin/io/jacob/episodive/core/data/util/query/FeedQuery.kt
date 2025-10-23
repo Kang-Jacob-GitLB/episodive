@@ -4,6 +4,7 @@ import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.mapper.toCommaString
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 sealed interface FeedQuery : CacheableQuery {
 
@@ -30,6 +31,6 @@ sealed interface FeedQuery : CacheableQuery {
 
     data object Soundbite : FeedQuery {
         override val key: String = "soundbite"
-        override val timeToLive: Duration = 1.hours
+        override val timeToLive: Duration = 5.minutes
     }
 }
