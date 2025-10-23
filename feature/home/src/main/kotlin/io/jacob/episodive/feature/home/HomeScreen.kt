@@ -1,35 +1,45 @@
 package io.jacob.episodive.feature.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
+import io.jacob.episodive.core.designsystem.component.EpisodiveTopAppBar
 import io.jacob.episodive.core.designsystem.component.FeedsSection
 import io.jacob.episodive.core.designsystem.component.PlayingEpisodesSection
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
-import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
@@ -108,27 +118,43 @@ private fun HomeScreen(
     onPodcastClick: (Long) -> Unit = {},
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val screenWidth = this.maxWidth
         val screenHeight = this.maxHeight
-        val aspectRatio = 4f / 3f
-        val imageHeight = screenWidth / aspectRatio
-        val sheetMinHeight = screenHeight - imageHeight + 50.dp
+
+        val density = LocalDensity.current
+        var topBarHeight by remember { mutableStateOf(80.dp) }
+        var contentHeight by remember { mutableStateOf(10.dp) }
+
+        val sheetExpandHeight = screenHeight - topBarHeight - 16.dp
+        val sheetPartiallyExpandHeight = screenHeight - topBarHeight - contentHeight - 16.dp
 
         val sheetState = rememberBottomSheetScaffoldState(
             bottomSheetState = rememberStandardBottomSheetState(
-                initialValue = SheetValue.PartiallyExpanded
+                initialValue = SheetValue.PartiallyExpanded,
+                skipHiddenState = true
             )
         )
-        val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
 
         BottomSheetScaffold(
             modifier = Modifier.fillMaxSize(),
             scaffoldState = sheetState,
+            topBar = {
+                EpisodiveTopAppBar(
+                    modifier = Modifier.onSizeChanged { size ->
+                        topBarHeight = with(density) { size.height.toDp() }
+                    },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.feature_home_title),
+                            style = MaterialTheme.typography.headlineMedium,
+                        )
+                    },
+                )
+            },
             content = {
-                SectionHeader(
-                    modifier = Modifier
-                        .padding(top = systemBarsPadding.calculateTopPadding()),
-                    title = stringResource(R.string.feature_home_title),
+                Column(
+                    modifier = Modifier.onSizeChanged { size ->
+                        contentHeight = with(density) { size.height.toDp() }
+                    }
                 ) {
                     if (playingEpisodes.isNotEmpty()) {
                         PlayingEpisodesSection(
@@ -138,21 +164,31 @@ private fun HomeScreen(
                     }
                 }
             },
-            sheetPeekHeight = sheetMinHeight,
-            sheetDragHandle = {},
-//            sheetContainerColor = MaterialTheme.colorScheme.surface,
+            sheetPeekHeight = sheetPartiallyExpandHeight,
+            sheetDragHandle = {
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .height(4.dp)
+                        .width(40.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            shape = MaterialTheme.shapes.small
+                        )
+                )
+            },
             sheetContent = {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = sheetMinHeight) // 실제 이미지 높이 반영
+                        .heightIn(max = sheetExpandHeight)
                 ) {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize(),
                         contentPadding = PaddingValues(vertical = 16.dp),
                     ) {
-                        item {
+                        itemWithDivider {
                             FeedsSection(
                                 title = stringResource(R.string.feature_home_section_my_recent_feeds),
                                 feeds = myRecentFeeds.toFeedsFromRecent(),
@@ -162,7 +198,7 @@ private fun HomeScreen(
                             )
                         }
 
-                        item {
+                        itemWithDivider {
                             EpisodesSection(
                                 title = stringResource(R.string.feature_home_section_random_episodes),
                                 episodes = randomEpisodes,
@@ -170,7 +206,7 @@ private fun HomeScreen(
                             )
                         }
 
-                        item {
+                        itemWithDivider {
                             FeedsSection(
                                 title = stringResource(R.string.feature_home_section_my_trending_feeds),
                                 feeds = myTrendingFeeds.toFeedsFromTrending(),
@@ -180,7 +216,7 @@ private fun HomeScreen(
                             )
                         }
 
-                        item {
+                        itemWithDivider {
                             PodcastsSection(
                                 title = stringResource(R.string.feature_home_section_followed_podcasts),
                                 podcasts = followedPodcasts.map { it.podcast },
@@ -193,7 +229,7 @@ private fun HomeScreen(
                             )
                         }
 
-                        item {
+                        itemWithDivider {
                             FeedsSection(
                                 title = stringResource(R.string.feature_home_section_trending_in_local),
                                 feeds = localTrendingFeeds.toFeedsFromTrending(),
@@ -203,7 +239,7 @@ private fun HomeScreen(
                             )
                         }
 
-                        item {
+                        itemWithDivider {
                             FeedsSection(
                                 title = stringResource(R.string.feature_home_section_trending_in_foreign),
                                 feeds = foreignTrendingFeeds.toFeedsFromTrending(),
@@ -228,6 +264,17 @@ private fun HomeScreen(
                 }
             },
         )
+    }
+}
+
+fun LazyListScope.itemWithDivider(
+    key: Any? = null,
+    contentType: Any? = null,
+    content: @Composable LazyItemScope.() -> Unit
+) {
+    item(key, contentType, content)
+    item {
+        HorizontalDivider(modifier = Modifier.padding(16.dp))
     }
 }
 

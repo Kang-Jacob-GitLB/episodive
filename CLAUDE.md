@@ -117,6 +117,15 @@ When working with this codebase:
 5. **Adding New Features**: Use the `episodive.android.feature` convention plugin which
    automatically sets up compose, hilt, testing, and jacoco
 
+## Code Editing Rules
+
+**CRITICAL: Import Order Rule**
+
+- **ALWAYS modify/add actual code FIRST, then add necessary imports LAST**
+- NEVER add imports before writing the actual code that uses them
+- This prevents linter conflicts and ensures imports are only added when actually needed
+- Example order: 1) Edit function code 2) Add new composables 3) Then add required imports
+
 ## Test Data
 
 The `:core:testing` module provides test data factories:
