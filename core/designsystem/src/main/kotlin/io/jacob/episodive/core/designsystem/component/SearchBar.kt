@@ -2,6 +2,7 @@ package io.jacob.episodive.core.designsystem.component
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
@@ -82,6 +83,7 @@ fun EpisodiveSearchBar(
                 .fillMaxWidth()
                 .padding(horizontalPadding)
                 .focusRequester(focusRequester),
+            windowInsets = WindowInsets(0, 0, 0, 0),
             shape = MaterialTheme.shapes.large,
             inputField = {
                 SearchBarDefaults.InputField(

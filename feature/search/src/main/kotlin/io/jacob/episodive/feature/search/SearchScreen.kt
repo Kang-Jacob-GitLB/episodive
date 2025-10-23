@@ -31,6 +31,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
+import io.jacob.episodive.core.designsystem.component.EpisodiveScaffold
 import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
 import io.jacob.episodive.core.designsystem.component.FeedsSection
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
@@ -115,37 +116,43 @@ private fun SearchScreen(
     onClearRecentSearches: () -> Unit = {},
     isExpanded: Boolean = false,
 ) {
-    EpisodiveSearchBar(
+    EpisodiveScaffold(
         modifier = modifier,
-        query = query,
-        onQueryChange = onQueryChange,
-        onSearch = onSearch,
-        isExpanded = isExpanded,
-        placeholder = {
-            Text(stringResource(R.string.feature_search_placeholder))
-        },
-        contentOnCollapse = {
-            SearchContentsOnCollapse(
-                modifier = Modifier,
-                episodes = episodes,
-                feeds = feeds,
-                onEpisodeClick = onEpisodeClick,
-                onFeedClick = onFeedClick,
-            )
-        },
-        contentOnExpand = { scrollState ->
-            SearchResultsOnExpand(
-                scrollState = scrollState,
-                recentSearches = recentSearches,
-                searchResult = searchResult,
-                onPodcastClick = onPodcastClick,
-                onEpisodeClick = onEpisodeClick,
-                onRecentSearchClick = onRecentSearchClick,
-                onRemoveRecentSearch = onRemoveRecentSearch,
-                onClearRecentSearches = onClearRecentSearches
-            )
-        }
-    )
+        title = stringResource(R.string.feature_search_title),
+    ) { paddingValues, nestedScrollConnection ->
+        EpisodiveSearchBar(
+            modifier = modifier
+                .padding(paddingValues),
+            query = query,
+            onQueryChange = onQueryChange,
+            onSearch = onSearch,
+            isExpanded = isExpanded,
+            placeholder = {
+                Text(stringResource(R.string.feature_search_placeholder))
+            },
+            contentOnCollapse = {
+                SearchContentsOnCollapse(
+                    modifier = Modifier,
+                    episodes = episodes,
+                    feeds = feeds,
+                    onEpisodeClick = onEpisodeClick,
+                    onFeedClick = onFeedClick,
+                )
+            },
+            contentOnExpand = { scrollState ->
+                SearchResultsOnExpand(
+                    scrollState = scrollState,
+                    recentSearches = recentSearches,
+                    searchResult = searchResult,
+                    onPodcastClick = onPodcastClick,
+                    onEpisodeClick = onEpisodeClick,
+                    onRecentSearchClick = onRecentSearchClick,
+                    onRemoveRecentSearch = onRemoveRecentSearch,
+                    onClearRecentSearches = onClearRecentSearches
+                )
+            }
+        )
+    }
 }
 
 @Composable
