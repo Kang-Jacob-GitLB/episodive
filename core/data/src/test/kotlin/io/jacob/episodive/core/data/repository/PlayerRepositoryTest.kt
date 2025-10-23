@@ -2,6 +2,7 @@ package io.jacob.episodive.core.data.repository
 
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.repository.PlayerRepository
+import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -12,6 +13,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 class PlayerRepositoryTest {
     @get:Rule
@@ -53,6 +56,39 @@ class PlayerRepositoryTest {
 
         // Then
         coVerify { playerDataSource.play(listOf(episodeTestData), indexToPlay = 0) }
+    }
+
+    @Test
+    fun `Given dependencies, When playClip is called, Then calls playerDataSource playClip`() {
+        // When
+        repository.playClip(
+            ClipEpisode(
+                episode = episodeTestData,
+                clipStartTime = Instant.fromEpochSeconds(10000L),
+                clipDuration = 50.seconds,
+            )
+        )
+
+        // Then
+        coVerify { playerDataSource.playClip(any()) }
+    }
+
+    @Test
+    fun `Given dependencies, When playClips is called, Then calls playerDataSource playClips`() {
+        // When
+        repository.playClips(
+            clipEpisodes = listOf(
+                ClipEpisode(
+                    episode = episodeTestData,
+                    clipStartTime = Instant.fromEpochSeconds(10000L),
+                    clipDuration = 50.seconds,
+                )
+            ),
+            indexToPlay = 0,
+        )
+
+        // Then
+        coVerify { playerDataSource.playClips(any(), indexToPlay = 0) }
     }
 
     @Test
