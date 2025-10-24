@@ -5,7 +5,7 @@
     <string name="feature_onboarding_category_description">Please select three or more podcast\ngenres that you enjoy.</string>
     <string name="feature_onboarding_category_more_categories">Please select three or more</string>
     <string name="feature_onboarding_next">Next</string>
-    <string name="feature_onboarding_feed_title">You may interested</string>
-    <string name="feature_onboarding_feed_description">Tailored to your preferred genres,\nhere are the podcasts that best align\nwith your interests.</string>
+    <string name="feature_onboarding_podcast_title">You may interested</string>
+    <string name="feature_onboarding_podcast_description">Tailored to your preferred genres,\nhere are the podcasts that best align\nwith your interests.</string>
     <string name="feature_onboarding_completion_title">Great picks! We\'re\nfinding best podcasts\nfor you!</string>
 </resources>

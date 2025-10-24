@@ -3,6 +3,9 @@ package io.jacob.episodive.core.domain.usecase.episode
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.FeedRepository
 import io.jacob.episodive.core.model.ClipEpisode
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -28,16 +31,24 @@ class GetClipEpisodesUseCase @Inject constructor(
             flow {
                 val allClipEpisodes = mutableListOf<ClipEpisode>()
 
-                limitedSoundbites.forEachIndexed { index, soundbite ->
-                    episodeRepository.getEpisodeById(soundbite.episodeId).first()?.let { episode ->
-                        val clipEpisode = ClipEpisode(
-                            episode = episode,
-                            clipStartTime = soundbite.startTime,
-                            clipDuration = soundbite.duration,
-                        )
-                        allClipEpisodes.add(clipEpisode)
-                        emit(allClipEpisodes.toList())
+                limitedSoundbites.chunked(5).forEach { chunk ->
+                    // Fetch 5 episodes in parallel while maintaining order
+                    val chunkClipEpisodes = coroutineScope {
+                        chunk.map { soundbite ->
+                            async {
+                                episodeRepository.getEpisodeById(soundbite.episodeId).first()
+                                    ?.let { episode ->
+                                        ClipEpisode(
+                                            episode = episode,
+                                            clipStartTime = soundbite.startTime,
+                                            clipDuration = soundbite.duration,
+                                        )
+                                    }
+                            }
+                        }.awaitAll().filterNotNull()
                     }
+                    allClipEpisodes.addAll(chunkClipEpisodes)
+                    emit(allClipEpisodes.toList())
                 }
             }
         }

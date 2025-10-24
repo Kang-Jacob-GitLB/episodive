@@ -5,7 +5,7 @@
     <string name="feature_onboarding_category_description">좋아하는 팟캐스트 장르를\n세 개 이상 선택하세요.</string>
     <string name="feature_onboarding_category_more_categories">3개 이상 선택해주세요.</string>
     <string name="feature_onboarding_next">다음</string>
-    <string name="feature_onboarding_feed_title">당신이 선호할만한 것들</string>
-    <string name="feature_onboarding_feed_description">당신이 선호하는 장르에 맞춰,\n당신의 관심사에 가장 잘 맞는\n팟캐스트를 소개합니다.</string>
+    <string name="feature_onboarding_podcast_title">당신이 선호할만한 것들</string>
+    <string name="feature_onboarding_podcast_description">당신이 선호하는 장르에 맞춰,\n당신의 관심사에 가장 잘 맞는\n팟캐스트를 소개합니다.</string>
     <string name="feature_onboarding_completion_title">정말 좋은 선택이에요!\n당신에게 딱 맞는\n최고의 팟캐스트를 찾아드릴게요!</string>
 </resources>
