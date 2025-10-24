@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.Attribution
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BarChart
@@ -53,6 +54,7 @@ import androidx.compose.material.icons.rounded.ViewDay
 object EpisodiveIcons {
     val Add = Icons.Rounded.Add
     val ArrowBack = Icons.AutoMirrored.Rounded.ArrowBack
+    val ArrowDownward = Icons.Rounded.ArrowDownward
     val Attribution = Icons.Rounded.Attribution
     val AutoAwesome = Icons.Rounded.AutoAwesome
     val AutoAwesomeBorder = Icons.Outlined.AutoAwesome
