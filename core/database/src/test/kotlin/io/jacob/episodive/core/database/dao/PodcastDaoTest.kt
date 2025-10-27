@@ -109,6 +109,32 @@ class PodcastDaoTest {
         }
 
     @Test
+    fun `Given some podcast entities, When deletePodcastsByCacheKey is called, Then the correct podcasts are deleted`() =
+        runTest {
+            // Given
+            val entities = podcastEntities.chunked(2)
+            dao.upsertPodcasts(entities[0].map { it.copy(cacheKey = "test_key1") })
+            dao.upsertPodcasts(entities[1].map { it.copy(cacheKey = "test_key2") })
+            dao.upsertPodcasts(entities[2])
+
+            // When
+            dao.deletePodcastsByCacheKey("test_key1")
+
+            dao.getPodcasts().test {
+                val podcasts = awaitItem()
+                // Then
+                val remainingSize = entities[1].size + entities[2].size
+                assertEquals(remainingSize, podcasts.size)
+                val deletedIds = entities[0].map { it.id }
+                val entityIds = podcasts.map { it.id }
+                deletedIds.forEach { id ->
+                    assertFalse(entityIds.contains(id))
+                }
+                cancel()
+            }
+        }
+
+    @Test
     fun `Given some podcast entities, When getPodcastsByCacheKey is called, Then the correct podcasts are returned`() =
         runTest {
             // Given

@@ -28,6 +28,10 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         episodeDao.deleteEpisodes()
     }
 
+    override suspend fun deleteEpisodesByCacheKey(cacheKey: String) {
+        episodeDao.deleteEpisodesByCacheKey(cacheKey)
+    }
+
     override suspend fun addLiked(likedEpisode: LikedEpisodeEntity) {
         episodeDao.addLiked(likedEpisode)
     }

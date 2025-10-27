@@ -100,6 +100,22 @@ class EpisodeLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When deleteEpisodesByCacheKey is called, Then deleteEpisodesByCacheKey of dao is called`() =
+        runTest {
+            // Given
+            coEvery { episodeDao.deleteEpisodesByCacheKey(any()) } just Runs
+
+            // When
+            dataSource.deleteEpisodesByCacheKey(cacheKey)
+
+            // Then
+            coVerify { episodeDao.deleteEpisodesByCacheKey(cacheKey) }
+            confirmVerified(
+                episodeDao,
+            )
+        }
+
+    @Test
     fun `Given dependencies, When addLiked is called, Then addLiked of dao is called`() =
         runTest {
             // Given

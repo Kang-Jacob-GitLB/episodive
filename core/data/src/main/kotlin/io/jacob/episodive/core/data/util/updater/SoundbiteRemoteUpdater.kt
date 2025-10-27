@@ -17,29 +17,29 @@ class SoundbiteRemoteUpdater(
     override val query: FeedQuery,
 ) : BaseRemoteUpdater<SoundbiteEntity, FeedQuery, SoundbiteResponse>(query) {
 
-    override suspend fun fetchFromNetwork(query: FeedQuery): List<SoundbiteResponse> {
+    override suspend fun fetchFromRemote(query: FeedQuery): List<SoundbiteResponse> {
         return when (query) {
             is FeedQuery.Soundbite -> remoteDataSource.getRecentSoundbites()
             else -> emptyList()
         }
     }
 
-    override suspend fun fetchFromNetworkSingle(query: FeedQuery): SoundbiteResponse? {
+    override suspend fun fetchFromRemoteSingle(query: FeedQuery): SoundbiteResponse? {
         return null
     }
 
     override suspend fun mapToEntities(
         responses: List<SoundbiteResponse>,
-        cacheKey: String
+        query: FeedQuery,
     ): List<SoundbiteEntity> {
-        return responses.toSoundbites().toSoundbiteEntities(cacheKey)
+        return responses.toSoundbites().toSoundbiteEntities(query.key)
     }
 
     override suspend fun mapToEntity(
         response: SoundbiteResponse?,
-        cacheKey: String
+        query: FeedQuery,
     ): SoundbiteEntity? {
-        return response?.toSoundbite()?.toSoundbiteEntity(cacheKey)
+        return response?.toSoundbite()?.toSoundbiteEntity(query.key)
     }
 
     override suspend fun saveToLocal(entities: List<SoundbiteEntity>) {
@@ -63,5 +63,9 @@ class SoundbiteRemoteUpdater(
         val oldCached = cached.cachedAt
         val now = Clock.System.now()
         return now - oldCached > query.timeToLive
+    }
+
+    override suspend fun deleteLocal(query: FeedQuery) {
+        localDataSource.deleteSoundbitesByCacheKey(query.key)
     }
 }

@@ -95,6 +95,19 @@ class PodcastLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When deletePodcastsByCacheKey is called, Then deletePodcastsByCacheKey of dao is called`() =
+        runTest {
+            // Given
+            coEvery { podcastDao.deletePodcastsByCacheKey(any()) } just Runs
+
+            // When
+            dataSource.deletePodcastsByCacheKey(cacheKey)
+
+            // Then
+            coVerify { podcastDao.deletePodcastsByCacheKey(cacheKey) }
+        }
+
+    @Test
     fun `Given dependencies, When addFollowed is called, Then addFollowed of dao is called`() =
         runTest {
             // Given

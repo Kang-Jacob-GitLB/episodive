@@ -35,12 +35,20 @@ class FeedLocalDataSourceImpl @Inject constructor(
         feedDao.deleteTrendingFeeds()
     }
 
+    override suspend fun deleteTrendingFeedsByCacheKey(cacheKey: String) {
+        feedDao.deleteTrendingFeedsByCacheKey(cacheKey)
+    }
+
     override suspend fun deleteRecentFeed(id: Long) {
         feedDao.deleteRecentFeed(id)
     }
 
     override suspend fun deleteRecentFeeds() {
         feedDao.deleteRecentFeeds()
+    }
+
+    override suspend fun deleteRecentFeedsByCacheKey(cacheKey: String) {
+        feedDao.deleteRecentFeedsByCacheKey(cacheKey)
     }
 
     override suspend fun deleteRecentNewFeed(id: Long) {
@@ -51,12 +59,20 @@ class FeedLocalDataSourceImpl @Inject constructor(
         feedDao.deleteRecentNewFeeds()
     }
 
+    override suspend fun deleteRecentNewFeedsByCacheKey(cacheKey: String) {
+        feedDao.deleteRecentNewFeedsByCacheKey(cacheKey)
+    }
+
     override suspend fun deleteSoundbite(episodeId: Long) {
         feedDao.deleteSoundbite(episodeId)
     }
 
     override suspend fun deleteSoundbites() {
         feedDao.deleteSoundbites()
+    }
+
+    override suspend fun deleteSoundbitesByCacheKey(cacheKey: String) {
+        feedDao.deleteSoundbitesByCacheKey(cacheKey)
     }
 
     override fun getTrendingFeedsByCacheKey(cacheKey: String): Flow<List<TrendingFeedEntity>> {

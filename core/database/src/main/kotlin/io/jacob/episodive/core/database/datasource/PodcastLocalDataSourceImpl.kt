@@ -21,6 +21,10 @@ class PodcastLocalDataSourceImpl(
         podcastDao.deletePodcast(id)
     }
 
+    override suspend fun deletePodcastsByCacheKey(cacheKey: String) {
+        podcastDao.deletePodcastsByCacheKey(cacheKey)
+    }
+
     override suspend fun deletePodcasts() {
         podcastDao.deletePodcasts()
     }

@@ -29,11 +29,17 @@ interface FeedDao {
     @Query("DELETE FROM trending_feeds")
     suspend fun deleteTrendingFeeds()
 
+    @Query("DELETE FROM trending_feeds WHERE cacheKey = :cacheKey")
+    suspend fun deleteTrendingFeedsByCacheKey(cacheKey: String)
+
     @Query("DELETE FROM recent_feeds WHERE id = :id")
     suspend fun deleteRecentFeed(id: Long)
 
     @Query("DELETE FROM recent_feeds")
     suspend fun deleteRecentFeeds()
+
+    @Query("DELETE FROM recent_feeds WHERE cacheKey = :cacheKey")
+    suspend fun deleteRecentFeedsByCacheKey(cacheKey: String)
 
     @Query("DELETE FROM recent_new_feeds WHERE id = :id")
     suspend fun deleteRecentNewFeed(id: Long)
@@ -41,11 +47,17 @@ interface FeedDao {
     @Query("DELETE FROM recent_new_feeds")
     suspend fun deleteRecentNewFeeds()
 
+    @Query("DELETE FROM recent_new_feeds WHERE cacheKey = :cacheKey")
+    suspend fun deleteRecentNewFeedsByCacheKey(cacheKey: String)
+
     @Query("DELETE FROM soundbites WHERE episodeId = :episodeId")
     suspend fun deleteSoundbite(episodeId: Long)
 
     @Query("DELETE FROM soundbites")
     suspend fun deleteSoundbites()
+
+    @Query("DELETE FROM soundbites WHERE cacheKey = :cacheKey")
+    suspend fun deleteSoundbitesByCacheKey(cacheKey: String)
 
     @Query("SELECT * FROM trending_feeds WHERE cacheKey = :cacheKey")
     fun getTrendingFeedsByCacheKey(cacheKey: String): Flow<List<TrendingFeedEntity>>
