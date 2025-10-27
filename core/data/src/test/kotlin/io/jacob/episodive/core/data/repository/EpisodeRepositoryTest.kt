@@ -79,7 +79,7 @@ class EpisodeRepositoryTest {
         runTest {
             // Given
             val feedId = 123L
-            val expectedQuery = EpisodeQuery.FeedId(feedId, 10)
+            val expectedQuery = EpisodeQuery.FeedId(feedId)
 
             coEvery {
                 remoteUpdater.create(expectedQuery)
