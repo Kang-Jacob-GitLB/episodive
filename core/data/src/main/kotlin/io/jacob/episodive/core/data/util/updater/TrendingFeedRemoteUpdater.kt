@@ -18,7 +18,7 @@ class TrendingFeedRemoteUpdater(
     override val query: FeedQuery,
 ) : BaseRemoteUpdater<TrendingFeedEntity, FeedQuery, TrendingFeedResponse>(query) {
 
-    override suspend fun fetchFromNetwork(query: FeedQuery): List<TrendingFeedResponse> {
+    override suspend fun fetchFromRemote(query: FeedQuery): List<TrendingFeedResponse> {
         return when (query) {
             is FeedQuery.Trending ->
                 remoteDataSource.getTrendingFeeds(
@@ -30,22 +30,22 @@ class TrendingFeedRemoteUpdater(
         }
     }
 
-    override suspend fun fetchFromNetworkSingle(query: FeedQuery): TrendingFeedResponse? {
+    override suspend fun fetchFromRemoteSingle(query: FeedQuery): TrendingFeedResponse? {
         return null
     }
 
     override suspend fun mapToEntities(
         responses: List<TrendingFeedResponse>,
-        cacheKey: String
+        query: FeedQuery,
     ): List<TrendingFeedEntity> {
-        return responses.toTrendingFeeds().toTrendingFeedEntities(cacheKey)
+        return responses.toTrendingFeeds().toTrendingFeedEntities(query.key)
     }
 
     override suspend fun mapToEntity(
         response: TrendingFeedResponse?,
-        cacheKey: String
+        query: FeedQuery,
     ): TrendingFeedEntity? {
-        return response?.toTrendingFeed()?.toTrendingFeedEntity(cacheKey)
+        return response?.toTrendingFeed()?.toTrendingFeedEntity(query.key)
     }
 
     override suspend fun saveToLocal(entities: List<TrendingFeedEntity>) {
@@ -69,5 +69,9 @@ class TrendingFeedRemoteUpdater(
         val oldCached = cached.cachedAt
         val now = Clock.System.now()
         return now - oldCached > query.timeToLive
+    }
+
+    override suspend fun deleteLocal(query: FeedQuery) {
+        localDataSource.deleteTrendingFeedsByCacheKey(query.key)
     }
 }

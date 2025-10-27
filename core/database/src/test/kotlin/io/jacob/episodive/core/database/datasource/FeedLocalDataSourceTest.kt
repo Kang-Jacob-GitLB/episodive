@@ -122,6 +122,19 @@ class FeedLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When deleteTrendingFeedsByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.deleteTrendingFeedsByCacheKey(any()) } just Runs
+
+            // When
+            dataSource.deleteTrendingFeedsByCacheKey(cacheKey)
+
+            // Then
+            coVerify { feedDao.deleteTrendingFeedsByCacheKey(cacheKey) }
+        }
+
+    @Test
     fun `Given dependencies, When deleteRecentFeed, Then call dao's method`() =
         runTest {
             // Given
@@ -146,6 +159,19 @@ class FeedLocalDataSourceTest {
 
             // Then
             coVerify { feedDao.deleteRecentFeeds() }
+        }
+
+    @Test
+    fun `Given dependencies, When deleteRecentFeedsByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.deleteRecentFeedsByCacheKey(any()) } just Runs
+
+            // When
+            dataSource.deleteRecentFeedsByCacheKey(cacheKey)
+
+            // Then
+            coVerify { feedDao.deleteRecentFeedsByCacheKey(cacheKey) }
         }
 
     @Test
@@ -176,6 +202,19 @@ class FeedLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When deleteRecentNewFeedsByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.deleteRecentNewFeedsByCacheKey(any()) } just Runs
+
+            // When
+            dataSource.deleteRecentNewFeedsByCacheKey(cacheKey)
+
+            // Then
+            coVerify { feedDao.deleteRecentNewFeedsByCacheKey(cacheKey) }
+        }
+
+    @Test
     fun `Given dependencies, When deleteSoundbite, Then call dao's method`() =
         runTest {
             // Given
@@ -200,6 +239,19 @@ class FeedLocalDataSourceTest {
 
             // Then
             coVerify { feedDao.deleteSoundbites() }
+        }
+
+    @Test
+    fun `Given dependencies, When deleteSoundbitesByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.deleteSoundbitesByCacheKey(any()) } just Runs
+
+            // When
+            dataSource.deleteSoundbitesByCacheKey(cacheKey)
+
+            // Then
+            coVerify { feedDao.deleteSoundbitesByCacheKey(cacheKey) }
         }
 
     @Test

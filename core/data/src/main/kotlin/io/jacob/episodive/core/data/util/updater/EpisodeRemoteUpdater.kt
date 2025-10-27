@@ -25,24 +25,36 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
         fun create(@Assisted("query") query: EpisodeQuery): EpisodeRemoteUpdater
     }
 
-    override suspend fun fetchFromNetwork(query: EpisodeQuery): List<EpisodeResponse> {
+    override suspend fun fetchFromRemote(query: EpisodeQuery): List<EpisodeResponse> {
         return when (query) {
-            is EpisodeQuery.Person -> remoteDataSource.searchEpisodesByPerson(query.person)
-            is EpisodeQuery.FeedId -> remoteDataSource.getEpisodesByFeedId(
-                feedId = query.feedId,
-                max = query.max,
+            is EpisodeQuery.Person -> remoteDataSource.searchEpisodesByPerson(
+                person = query.person,
+                max = 10000,
             )
 
-            is EpisodeQuery.FeedUrl -> remoteDataSource.getEpisodesByFeedUrl(query.feedUrl)
-            is EpisodeQuery.PodcastGuid -> remoteDataSource.getEpisodesByPodcastGuid(query.podcastGuid)
-            is EpisodeQuery.Live -> remoteDataSource.getLiveEpisodes()
-            is EpisodeQuery.Random -> remoteDataSource.getRandomEpisodes()
-            is EpisodeQuery.Recent -> remoteDataSource.getRecentEpisodes()
+            is EpisodeQuery.FeedId -> remoteDataSource.getEpisodesByFeedId(
+                feedId = query.feedId,
+                max = 10000,
+            )
+
+            is EpisodeQuery.FeedUrl -> remoteDataSource.getEpisodesByFeedUrl(
+                feedUrl = query.feedUrl,
+                max = 10000,
+            )
+
+            is EpisodeQuery.PodcastGuid -> remoteDataSource.getEpisodesByPodcastGuid(
+                guid = query.podcastGuid,
+                max = 10000,
+            )
+
+            is EpisodeQuery.Live -> remoteDataSource.getLiveEpisodes(max = 6)
+            is EpisodeQuery.Random -> remoteDataSource.getRandomEpisodes(max = 6)
+            is EpisodeQuery.Recent -> remoteDataSource.getRecentEpisodes(max = 6)
             else -> emptyList()
         }
     }
 
-    override suspend fun fetchFromNetworkSingle(query: EpisodeQuery): EpisodeResponse? {
+    override suspend fun fetchFromRemoteSingle(query: EpisodeQuery): EpisodeResponse? {
         return when (query) {
             is EpisodeQuery.EpisodeId -> remoteDataSource.getEpisodeById(query.episodeId)
             else -> null
@@ -51,16 +63,16 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
 
     override suspend fun mapToEntities(
         responses: List<EpisodeResponse>,
-        cacheKey: String
+        query: EpisodeQuery,
     ): List<EpisodeEntity> {
-        return responses.toEpisodes().toEpisodeEntities(cacheKey)
+        return responses.toEpisodes().toEpisodeEntities(query.key)
     }
 
     override suspend fun mapToEntity(
         response: EpisodeResponse?,
-        cacheKey: String
+        query: EpisodeQuery,
     ): EpisodeEntity? {
-        return response?.toEpisode()?.toEpisodeEntity(cacheKey)
+        return response?.toEpisode()?.toEpisodeEntity(query.key)
     }
 
     override suspend fun saveToLocal(entities: List<EpisodeEntity>) {
@@ -84,5 +96,19 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
         val oldCached = cached.cachedAt
         val now = Clock.System.now()
         return now - oldCached > query.timeToLive
+    }
+
+    override suspend fun deleteLocal(query: EpisodeQuery) {
+        when (query) {
+            is EpisodeQuery.Person,
+            is EpisodeQuery.FeedId,
+            is EpisodeQuery.FeedUrl,
+            is EpisodeQuery.PodcastGuid,
+            is EpisodeQuery.Live,
+            is EpisodeQuery.Random,
+            is EpisodeQuery.Recent -> localDataSource.deleteEpisodesByCacheKey(query.key)
+
+            is EpisodeQuery.EpisodeId -> {}
+        }
     }
 }

@@ -21,13 +21,10 @@ class SearchUseCase @Inject constructor(
                 } else {
                     combine(
                         podcasts.map { podcast ->
-                            episodeRepository.getEpisodesByFeedId(
-                                feedId = podcast.id,
-                                max = 5,
-                            )
+                            episodeRepository.getEpisodesByFeedId(feedId = podcast.id)
                         }
                     ) { episodeArrays ->
-                        val episodes = episodeArrays.flatMap { it }
+                        val episodes = episodeArrays.flatMap { it.take(5) }
                         SearchResult(
                             podcasts = podcasts,
                             episodes = episodes

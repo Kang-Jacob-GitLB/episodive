@@ -74,6 +74,29 @@ class FeedDaoTest {
         }
 
     @Test
+    fun `Given some trending feeds, When deleteTrendingFeedsByCacheKey, Then deleted correctly`() =
+        runTest {
+            // Given
+            dao.upsertTrendingFeeds(trendingFeedEntities)
+            dao.upsertTrendingFeeds(trendingFeedEntities.map { it.copy(cacheKey = "test_cache1") })
+
+            // When
+            dao.deleteTrendingFeedsByCacheKey(cacheKey)
+            dao.getTrendingFeedsByCacheKey(cacheKey).test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, 0)
+                cancel()
+            }
+            dao.getTrendingFeedsByCacheKey("test_cache1").test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, trendingFeedEntities.size)
+                cancel()
+            }
+        }
+
+    @Test
     fun `Given recent feeds, When upsertRecentFeeds, Then upserted correctly`() =
         runTest {
             // Given
@@ -102,6 +125,29 @@ class FeedDaoTest {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given some recent feeds, When deleteRecentFeedsByCacheKey, Then deleted correctly`() =
+        runTest {
+            // Given
+            dao.upsertRecentFeeds(recentFeedEntities)
+            dao.upsertRecentFeeds(recentFeedEntities.map { it.copy(cacheKey = "test_cache1") })
+
+            // When
+            dao.deleteRecentFeedsByCacheKey(cacheKey)
+            dao.getRecentFeedsByCacheKey(cacheKey).test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, 0)
+                cancel()
+            }
+            dao.getRecentFeedsByCacheKey("test_cache1").test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, recentFeedEntities.size)
                 cancel()
             }
         }
@@ -140,6 +186,29 @@ class FeedDaoTest {
         }
 
     @Test
+    fun `Given some recent new feeds, When deleteRecentNewFeedsByCacheKey, Then deleted correctly`() =
+        runTest {
+            // Given
+            dao.upsertRecentNewFeeds(recentNewFeedEntities)
+            dao.upsertRecentNewFeeds(recentNewFeedEntities.map { it.copy(cacheKey = "test_cache1") })
+
+            // When
+            dao.deleteRecentNewFeedsByCacheKey(cacheKey)
+            dao.getRecentNewFeedsByCacheKey(cacheKey).test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, 0)
+                cancel()
+            }
+            dao.getRecentNewFeedsByCacheKey("test_cache1").test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, recentNewFeedEntities.size)
+                cancel()
+            }
+        }
+
+    @Test
     fun `Given soundbites, When upsertSoundbites, Then upserted correctly`() =
         runTest {
             // Given
@@ -168,6 +237,29 @@ class FeedDaoTest {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given some soundbites, When deleteSoundbitesByCacheKey, Then deleted correctly`() =
+        runTest {
+            // Given
+            dao.upsertSoundbites(soundbiteEntities)
+            dao.upsertSoundbites(soundbiteEntities.map { it.copy(cacheKey = "test_cache1") })
+
+            // When
+            dao.deleteSoundbitesByCacheKey(cacheKey)
+            dao.getSoundbitesByCacheKey(cacheKey).test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, 0)
+                cancel()
+            }
+            dao.getSoundbitesByCacheKey("test_cache1").test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, soundbiteEntities.size)
                 cancel()
             }
         }

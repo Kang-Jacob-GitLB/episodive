@@ -10,9 +10,7 @@ import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -104,6 +102,32 @@ class PodcastDaoTest {
                 val podcasts = awaitItem()
                 // Then
                 assertTrue(podcasts.isEmpty())
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given some podcast entities, When deletePodcastsByCacheKey is called, Then the correct podcasts are deleted`() =
+        runTest {
+            // Given
+            val entities = podcastEntities.chunked(2)
+            dao.upsertPodcasts(entities[0].map { it.copy(cacheKey = "test_key1") })
+            dao.upsertPodcasts(entities[1].map { it.copy(cacheKey = "test_key2") })
+            dao.upsertPodcasts(entities[2])
+
+            // When
+            dao.deletePodcastsByCacheKey("test_key1")
+
+            dao.getPodcasts().test {
+                val podcasts = awaitItem()
+                // Then
+                val remainingSize = entities[1].size + entities[2].size
+                assertEquals(remainingSize, podcasts.size)
+                val deletedIds = entities[0].map { it.id }
+                val entityIds = podcasts.map { it.id }
+                deletedIds.forEach { id ->
+                    assertFalse(entityIds.contains(id))
+                }
                 cancel()
             }
         }

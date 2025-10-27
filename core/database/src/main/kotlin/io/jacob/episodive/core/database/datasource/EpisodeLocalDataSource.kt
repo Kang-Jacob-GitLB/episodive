@@ -12,6 +12,7 @@ interface EpisodeLocalDataSource {
     suspend fun upsertEpisodes(episodes: List<EpisodeEntity>)
     suspend fun deleteEpisode(id: Long)
     suspend fun deleteEpisodes()
+    suspend fun deleteEpisodesByCacheKey(cacheKey: String)
     suspend fun addLiked(likedEpisode: LikedEpisodeEntity)
     suspend fun removeLiked(id: Long)
     suspend fun upsertPlayed(playedEpisode: PlayedEpisodeEntity)

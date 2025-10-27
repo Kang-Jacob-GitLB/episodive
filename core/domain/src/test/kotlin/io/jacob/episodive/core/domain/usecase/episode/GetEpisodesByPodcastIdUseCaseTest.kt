@@ -43,7 +43,7 @@ class GetEpisodesByPodcastIdUseCaseTest {
 
             // Then
             coVerifySequence {
-                episodeRepository.getEpisodesByFeedId(podcastId, max = 1000)
+                episodeRepository.getEpisodesByFeedId(podcastId, max = 10000)
             }
         }
 }

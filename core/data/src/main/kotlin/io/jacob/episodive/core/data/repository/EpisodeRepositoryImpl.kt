@@ -51,10 +51,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         max: Int?,
         since: Instant?
     ): Flow<List<Episode>> {
-        val query = EpisodeQuery.FeedId(
-            feedId = feedId,
-            max = max ?: 10
-        )
+        val query = EpisodeQuery.FeedId(feedId)
 
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),

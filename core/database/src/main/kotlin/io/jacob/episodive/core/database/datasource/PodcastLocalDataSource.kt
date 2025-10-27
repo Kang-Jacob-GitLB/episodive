@@ -10,6 +10,7 @@ interface PodcastLocalDataSource {
     suspend fun upsertPodcasts(podcasts: List<PodcastEntity>)
     suspend fun deletePodcast(id: Long)
     suspend fun deletePodcasts()
+    suspend fun deletePodcastsByCacheKey(cacheKey: String)
     suspend fun addFollowed(followedPodcastEntity: FollowedPodcastEntity)
     suspend fun addFolloweds(followedPodcastEntities: List<FollowedPodcastEntity>)
     suspend fun removeFollowed(id: Long)

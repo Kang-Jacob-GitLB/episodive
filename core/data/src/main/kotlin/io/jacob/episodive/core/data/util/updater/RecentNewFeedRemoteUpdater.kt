@@ -17,29 +17,29 @@ class RecentNewFeedRemoteUpdater(
     override val query: FeedQuery,
 ) : BaseRemoteUpdater<RecentNewFeedEntity, FeedQuery, RecentNewFeedResponse>(query) {
 
-    override suspend fun fetchFromNetwork(query: FeedQuery): List<RecentNewFeedResponse> {
+    override suspend fun fetchFromRemote(query: FeedQuery): List<RecentNewFeedResponse> {
         return when (query) {
             is FeedQuery.RecentNew -> remoteDataSource.getRecentNewFeeds()
             else -> emptyList()
         }
     }
 
-    override suspend fun fetchFromNetworkSingle(query: FeedQuery): RecentNewFeedResponse? {
+    override suspend fun fetchFromRemoteSingle(query: FeedQuery): RecentNewFeedResponse? {
         return null
     }
 
     override suspend fun mapToEntities(
         responses: List<RecentNewFeedResponse>,
-        cacheKey: String
+        query: FeedQuery,
     ): List<RecentNewFeedEntity> {
-        return responses.toRecentNewFeeds().toRecentNewFeedEntities(cacheKey)
+        return responses.toRecentNewFeeds().toRecentNewFeedEntities(query.key)
     }
 
     override suspend fun mapToEntity(
         response: RecentNewFeedResponse?,
-        cacheKey: String
+        query: FeedQuery,
     ): RecentNewFeedEntity? {
-        return response?.toRecentNewFeed()?.toRecentNewFeedEntity(cacheKey)
+        return response?.toRecentNewFeed()?.toRecentNewFeedEntity(query.key)
     }
 
     override suspend fun saveToLocal(entities: List<RecentNewFeedEntity>) {
@@ -63,5 +63,9 @@ class RecentNewFeedRemoteUpdater(
         val oldCached = cached.cachedAt
         val now = Clock.System.now()
         return now - oldCached > query.timeToLive
+    }
+
+    override suspend fun deleteLocal(query: FeedQuery) {
+        localDataSource.deleteRecentNewFeedsByCacheKey(query.key)
     }
 }

@@ -11,9 +11,7 @@ import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -135,6 +133,27 @@ class EpisodeDaoTest {
                 cancel()
             }
             assertEquals(0, dao.getEpisodeCount().first())
+        }
+
+    @Test
+    fun `Given some episode entities, When deleteEpisodesByCacheKey is called, Then episodes with the cache key are deleted`() =
+        runTest {
+            // Given
+            val entities = episodeEntities.chunked(2)
+            dao.upsertEpisodes(entities[0].map { it.copy(cacheKey = "test_key1") })
+            dao.upsertEpisodes(entities[1].map { it.copy(cacheKey = "test_key2") })
+            dao.upsertEpisodes(entities[2].map { it.copy(cacheKey = "test_key3") })
+            dao.upsertEpisodes(entities[3])
+
+            // When
+            dao.deleteEpisodesByCacheKey("test_key2")
+            dao.getEpisodesByCacheKey("test_key2").test {
+                val episodes = awaitItem()
+                // Then
+                assertTrue(episodes.isEmpty())
+                cancel()
+            }
+            assertEquals(6, dao.getEpisodeCount().first())
         }
 
     @Test

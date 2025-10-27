@@ -25,7 +25,7 @@ class PodcastRemoteUpdater @AssistedInject constructor(
         fun create(@Assisted("query") query: PodcastQuery): PodcastRemoteUpdater
     }
 
-    override suspend fun fetchFromNetwork(query: PodcastQuery): List<PodcastResponse> {
+    override suspend fun fetchFromRemote(query: PodcastQuery): List<PodcastResponse> {
         return when (query) {
             is PodcastQuery.Search -> remoteDataSource.searchPodcasts(query.query)
             is PodcastQuery.Medium -> remoteDataSource.getPodcastsByMedium(query.medium)
@@ -33,7 +33,7 @@ class PodcastRemoteUpdater @AssistedInject constructor(
         }
     }
 
-    override suspend fun fetchFromNetworkSingle(query: PodcastQuery): PodcastResponse? {
+    override suspend fun fetchFromRemoteSingle(query: PodcastQuery): PodcastResponse? {
         return when (query) {
             is PodcastQuery.FeedId -> remoteDataSource.getPodcastByFeedId(query.feedId)
             else -> null
@@ -42,16 +42,16 @@ class PodcastRemoteUpdater @AssistedInject constructor(
 
     override suspend fun mapToEntities(
         responses: List<PodcastResponse>,
-        cacheKey: String
+        query: PodcastQuery,
     ): List<PodcastEntity> {
-        return responses.toPodcasts().toPodcastEntities(cacheKey)
+        return responses.toPodcasts().toPodcastEntities(query.key)
     }
 
     override suspend fun mapToEntity(
         response: PodcastResponse?,
-        cacheKey: String
+        query: PodcastQuery,
     ): PodcastEntity? {
-        return response?.toPodcast()?.toPodcastEntity(cacheKey)
+        return response?.toPodcast()?.toPodcastEntity(query.key)
     }
 
     override suspend fun saveToLocal(entities: List<PodcastEntity>) {
@@ -75,5 +75,14 @@ class PodcastRemoteUpdater @AssistedInject constructor(
         val oldCached = cached.cachedAt
         val now = Clock.System.now()
         return now - oldCached > query.timeToLive
+    }
+
+    override suspend fun deleteLocal(query: PodcastQuery) {
+        when (query) {
+            is PodcastQuery.Search,
+            is PodcastQuery.Medium -> localDataSource.deletePodcastsByCacheKey(query.key)
+
+            is PodcastQuery.FeedId -> {}
+        }
     }
 }

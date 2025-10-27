@@ -24,6 +24,9 @@ interface PodcastDao {
     @Query("DELETE FROM podcasts")
     suspend fun deletePodcasts()
 
+    @Query("DELETE FROM podcasts WHERE cacheKey = :cacheKey")
+    suspend fun deletePodcastsByCacheKey(cacheKey: String)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addFollowed(followedPodcastEntity: FollowedPodcastEntity)
 

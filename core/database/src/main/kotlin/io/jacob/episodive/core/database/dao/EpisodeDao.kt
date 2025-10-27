@@ -26,6 +26,9 @@ interface EpisodeDao {
     @Query("DELETE FROM episodes")
     suspend fun deleteEpisodes()
 
+    @Query("DELETE FROM episodes WHERE cacheKey = :cacheKey")
+    suspend fun deleteEpisodesByCacheKey(cacheKey: String)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addLiked(likedEpisode: LikedEpisodeEntity)
 
