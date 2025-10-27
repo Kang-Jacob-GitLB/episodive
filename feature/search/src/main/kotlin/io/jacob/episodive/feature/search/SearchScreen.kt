@@ -33,8 +33,8 @@ import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
 import io.jacob.episodive.core.designsystem.component.EpisodiveScaffold
 import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
-import io.jacob.episodive.core.designsystem.component.FeedsSection
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
+import io.jacob.episodive.core.designsystem.component.PodcastsWithAuthorSection
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.scrollbar.DecorativeScrollbar
 import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
@@ -45,13 +45,10 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Episode
-import io.jacob.episodive.core.model.Feed
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SearchResult
-import io.jacob.episodive.core.model.mapper.toFeedsFromTrending
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
-import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -84,10 +81,9 @@ fun SearchRoute(
                 recentSearches = s.recentSearches,
                 searchResult = s.searchResult,
                 episodes = s.recentEpisodes,
-                feeds = s.trendingFeeds.toFeedsFromTrending(),
+                podcasts = s.trendingPodcasts,
                 onPodcastClick = { viewModel.sendAction(SearchAction.ClickPodcast(it)) },
                 onEpisodeClick = { viewModel.sendAction(SearchAction.ClickEpisode(it)) },
-                onFeedClick = { viewModel.sendAction(SearchAction.ClickFeed(it)) },
                 onRecentSearchClick = { viewModel.sendAction(SearchAction.ClickRecentSearch(it)) },
                 onRemoveRecentSearch = { viewModel.sendAction(SearchAction.RemoveRecentSearch(it)) },
                 onClearRecentSearches = { viewModel.sendAction(SearchAction.ClearRecentSearches) },
@@ -106,11 +102,10 @@ private fun SearchScreen(
     onSearch: (String) -> Unit,
     recentSearches: List<String>,
     searchResult: SearchResult,
-    feeds: List<Feed>,
+    podcasts: List<Podcast>,
     episodes: List<Episode>,
     onPodcastClick: (Podcast) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
-    onFeedClick: (Feed) -> Unit = {},
     onRecentSearchClick: (String) -> Unit = {},
     onRemoveRecentSearch: (String) -> Unit = {},
     onClearRecentSearches: () -> Unit = {},
@@ -134,9 +129,9 @@ private fun SearchScreen(
                 SearchContentsOnCollapse(
                     modifier = Modifier,
                     episodes = episodes,
-                    feeds = feeds,
+                    podcasts = podcasts,
                     onEpisodeClick = onEpisodeClick,
-                    onFeedClick = onFeedClick,
+                    onPodcastClick = onPodcastClick,
                 )
             },
             contentOnExpand = { scrollState ->
@@ -158,23 +153,23 @@ private fun SearchScreen(
 @Composable
 private fun SearchContentsOnCollapse(
     modifier: Modifier = Modifier,
-    feeds: List<Feed>,
+    podcasts: List<Podcast>,
     episodes: List<Episode>,
     onEpisodeClick: (Episode) -> Unit = {},
-    onFeedClick: (Feed) -> Unit = {},
+    onPodcastClick: (Podcast) -> Unit = {},
 ) {
     LazyColumn(
         modifier = modifier
             .fillMaxWidth(),
     ) {
-        if (feeds.isNotEmpty()) {
+        if (podcasts.isNotEmpty()) {
             item {
-                FeedsSection(
+                PodcastsWithAuthorSection(
                     modifier = Modifier
                         .fillMaxWidth(),
                     title = stringResource(R.string.feature_search_section_global_trending_feeds),
-                    feeds = feeds,
-                    onFeedClick = onFeedClick
+                    podcasts = podcasts,
+                    onPodcastClick = onPodcastClick
                 )
             }
         }
@@ -382,7 +377,7 @@ private fun SearchScreenOnCollapsePreview() {
                 podcasts = podcastTestDataList.take(3),
                 episodes = episodeTestDataList,
             ),
-            feeds = trendingFeedTestDataList.toFeedsFromTrending(),
+            podcasts = podcastTestDataList,
             episodes = episodeTestDataList,
         )
     }
@@ -401,7 +396,7 @@ private fun SearchScreenOnExpandPreview() {
                 podcasts = podcastTestDataList.take(3),
                 episodes = episodeTestDataList,
             ),
-            feeds = trendingFeedTestDataList.toFeedsFromTrending(),
+            podcasts = podcastTestDataList,
             episodes = episodeTestDataList,
             isExpanded = true,
         )
@@ -421,7 +416,7 @@ private fun SearchScreenOnExpandRecentSearchPreview() {
                 podcasts = emptyList(),
                 episodes = emptyList(),
             ),
-            feeds = trendingFeedTestDataList.toFeedsFromTrending(),
+            podcasts = podcastTestDataList,
             episodes = episodeTestDataList,
             isExpanded = true,
         )

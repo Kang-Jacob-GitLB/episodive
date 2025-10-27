@@ -37,9 +37,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
 import io.jacob.episodive.core.designsystem.component.EpisodiveTopAppBar
-import io.jacob.episodive.core.designsystem.component.FeedsSection
 import io.jacob.episodive.core.designsystem.component.PlayingEpisodesSection
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
+import io.jacob.episodive.core.designsystem.component.PodcastsWithAuthorSection
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
@@ -48,17 +48,12 @@ import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.FollowedPodcast
 import io.jacob.episodive.core.model.PlayedEpisode
-import io.jacob.episodive.core.model.RecentFeed
-import io.jacob.episodive.core.model.TrendingFeed
+import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.mapper.toDurationSeconds
-import io.jacob.episodive.core.model.mapper.toFeedsFromRecent
-import io.jacob.episodive.core.model.mapper.toFeedsFromTrending
 import io.jacob.episodive.core.model.mapper.toIntSeconds
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.liveEpisodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
-import io.jacob.episodive.core.testing.model.recentFeedTestDataList
-import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
 import kotlinx.coroutines.flow.collectLatest
 import kotlin.time.Clock
 
@@ -86,12 +81,12 @@ internal fun HomeRoute(
             modifier = modifier
                 .fillMaxSize(),
             playingEpisodes = s.playingEpisodes,
-            myRecentFeeds = s.myRecentFeeds,
+            myRecentPodcasts = s.myRecentPodcasts,
             randomEpisodes = s.randomEpisodes,
-            myTrendingFeeds = s.myTrendingFeeds,
+            myTrendingPodcasts = s.myTrendingFPodcasts,
             followedPodcasts = s.followedPodcasts,
-            localTrendingFeeds = s.localTrendingFeeds,
-            foreignTrendingFeeds = s.foreignTrendingFeeds,
+            localTrendingPodcasts = s.localTrendingPodcasts,
+            foreignTrendingPodcasts = s.foreignTrendingPodcasts,
             liveEpisodes = s.liveEpisodes,
             onPlayEpisode = { viewModel.sendAction(HomeAction.PlayEpisode(it)) },
             onResumeEpisode = { viewModel.sendAction(HomeAction.ResumeEpisode(it)) },
@@ -106,12 +101,12 @@ internal fun HomeRoute(
 private fun HomeScreen(
     modifier: Modifier = Modifier,
     playingEpisodes: List<PlayedEpisode>,
-    myRecentFeeds: List<RecentFeed>,
+    myRecentPodcasts: List<Podcast>,
     randomEpisodes: List<Episode>,
-    myTrendingFeeds: List<TrendingFeed>,
+    myTrendingPodcasts: List<Podcast>,
     followedPodcasts: List<FollowedPodcast>,
-    localTrendingFeeds: List<TrendingFeed>,
-    foreignTrendingFeeds: List<TrendingFeed>,
+    localTrendingPodcasts: List<Podcast>,
+    foreignTrendingPodcasts: List<Podcast>,
     liveEpisodes: List<Episode>,
     onPlayEpisode: (Episode) -> Unit = {},
     onResumeEpisode: (PlayedEpisode) -> Unit = {},
@@ -189,10 +184,10 @@ private fun HomeScreen(
                         contentPadding = PaddingValues(vertical = 16.dp),
                     ) {
                         itemWithDivider {
-                            FeedsSection(
+                            PodcastsWithAuthorSection(
                                 title = stringResource(R.string.feature_home_section_my_recent_feeds),
-                                feeds = myRecentFeeds.toFeedsFromRecent(),
-                                onFeedClick = { feed ->
+                                podcasts = myRecentPodcasts,
+                                onPodcastClick = { feed ->
                                     onPodcastClick(feed.id)
                                 }
                             )
@@ -207,10 +202,10 @@ private fun HomeScreen(
                         }
 
                         itemWithDivider {
-                            FeedsSection(
+                            PodcastsWithAuthorSection(
                                 title = stringResource(R.string.feature_home_section_my_trending_feeds),
-                                feeds = myTrendingFeeds.toFeedsFromTrending(),
-                                onFeedClick = { feed ->
+                                podcasts = myTrendingPodcasts,
+                                onPodcastClick = { feed ->
                                     onPodcastClick(feed.id)
                                 }
                             )
@@ -230,20 +225,20 @@ private fun HomeScreen(
                         }
 
                         itemWithDivider {
-                            FeedsSection(
+                            PodcastsWithAuthorSection(
                                 title = stringResource(R.string.feature_home_section_trending_in_local),
-                                feeds = localTrendingFeeds.toFeedsFromTrending(),
-                                onFeedClick = { feed ->
+                                podcasts = localTrendingPodcasts,
+                                onPodcastClick = { feed ->
                                     onPodcastClick(feed.id)
                                 }
                             )
                         }
 
                         itemWithDivider {
-                            FeedsSection(
+                            PodcastsWithAuthorSection(
                                 title = stringResource(R.string.feature_home_section_trending_in_foreign),
-                                feeds = foreignTrendingFeeds.toFeedsFromTrending(),
-                                onFeedClick = { feed ->
+                                podcasts = foreignTrendingPodcasts,
+                                onPodcastClick = { feed ->
                                     onPodcastClick(feed.id)
                                 }
                             )
@@ -292,9 +287,9 @@ private fun HomeScreenPreview() {
                     isCompleted = false,
                 )
             },
-            myRecentFeeds = recentFeedTestDataList,
+            myRecentPodcasts = podcastTestDataList,
             randomEpisodes = episodeTestDataList,
-            myTrendingFeeds = trendingFeedTestDataList,
+            myTrendingPodcasts = podcastTestDataList,
             followedPodcasts = podcastTestDataList.map {
                 FollowedPodcast(
                     podcast = it,
@@ -302,8 +297,8 @@ private fun HomeScreenPreview() {
                     isNotificationEnabled = false,
                 )
             },
-            localTrendingFeeds = trendingFeedTestDataList,
-            foreignTrendingFeeds = trendingFeedTestDataList,
+            localTrendingPodcasts = podcastTestDataList,
+            foreignTrendingPodcasts = podcastTestDataList,
             liveEpisodes = liveEpisodeTestDataList,
             onPodcastClick = {},
         )

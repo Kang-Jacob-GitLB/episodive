@@ -1,7 +1,6 @@
-package io.jacob.episodive.core.domain.usecase.feed
+package io.jacob.episodive.core.domain.usecase.podcast
 
 import app.cash.turbine.test
-import io.jacob.episodive.core.domain.repository.FeedRepository
 import io.jacob.episodive.core.domain.repository.UserRepository
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.UserData
@@ -20,17 +19,17 @@ class GetMyRecentFeedsUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val feedRepository = mockk<FeedRepository>(relaxed = true)
     private val userRepository = mockk<UserRepository>(relaxed = true)
+    private val getRecentPodcastsUseCase = mockk<GetRecentPodcastsUseCase>(relaxed = true)
 
-    private val useCase = GetMyRecentFeedsUseCase(
-        feedRepository = feedRepository,
+    private val useCase = GetMyRecentPodcastsUseCase(
         userRepository = userRepository,
+        getRecentPodcastsUseCase = getRecentPodcastsUseCase,
     )
 
     @After
     fun teardown() {
-        confirmVerified(feedRepository, userRepository)
+        confirmVerified(userRepository, getRecentPodcastsUseCase)
     }
 
     @Test
@@ -46,7 +45,7 @@ class GetMyRecentFeedsUseCaseTest {
                 )
             )
             coEvery {
-                feedRepository.getRecentFeeds(any(), any(), any(), any(), any())
+                getRecentPodcastsUseCase(any(), any())
             } returns mockk(relaxed = true)
 
             // When
@@ -57,7 +56,7 @@ class GetMyRecentFeedsUseCaseTest {
             // Then
             coVerifySequence {
                 userRepository.getUserData()
-                feedRepository.getRecentFeeds(any(), any(), any(), any(), any())
+                getRecentPodcastsUseCase(any(), any())
             }
         }
 }
