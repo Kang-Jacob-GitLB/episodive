@@ -19,10 +19,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodeClipItem
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
+import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
+import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Progress
+import io.jacob.episodive.core.testing.model.episodeTestDataList
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 @Composable
 internal fun ClipRoute(
@@ -84,10 +89,10 @@ private fun ClipScreen(
     indexOfPlaying: Int = 0,
     progress: Progress,
     isPlaying: Boolean,
-    onPageChanged: (Int) -> Unit,
+    onPageChanged: (Int) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
-    onPodcastClick: (Long) -> Unit,
-    onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
+    onPodcastClick: (Long) -> Unit = {},
+    onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean = { _, _ -> false }
 ) {
     EpisodeClipPager(
         modifier = modifier,
@@ -99,6 +104,7 @@ private fun ClipScreen(
         onEpisodeClick = onEpisodeClick,
         onPodcastClick = onPodcastClick,
     )
+
 }
 
 @Composable
@@ -138,6 +144,7 @@ fun EpisodeClipPager(
     VerticalPager(
         state = pagerState,
         modifier = modifier.fillMaxSize(),
+        key = { clipEpisodes[it].episode.id },
         pageSpacing = 32.dp, // 이전/다음 컨텐츠가 보이는 간격
         contentPadding = PaddingValues(vertical = 80.dp, horizontal = 24.dp) // 상하 여백으로 이전/다음 미리보기
     ) { page ->
@@ -149,6 +156,29 @@ fun EpisodeClipPager(
             onClick = {
                 onEpisodeClick(clipEpisodes[page].episode)
             },
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun ClipScreenPreview() {
+    EpisodiveTheme {
+        ClipScreen(
+            clipEpisodes = episodeTestDataList.map {
+                ClipEpisode(
+                    episode = it,
+                    clipStartTime = Instant.fromEpochMilliseconds(60_000L),
+                    clipDuration = 1278.seconds,
+                )
+            },
+            indexOfPlaying = 0,
+            progress = Progress(
+                position = 1000L.seconds,
+                buffered = 1278.seconds,
+                duration = 2000L.seconds,
+            ),
+            isPlaying = true,
         )
     }
 }

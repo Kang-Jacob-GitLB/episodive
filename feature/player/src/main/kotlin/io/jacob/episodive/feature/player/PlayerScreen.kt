@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -81,9 +83,7 @@ fun PlayerBottomSheet(
             when (effect) {
                 is PlayerEffect.NavigateToPodcast -> {}
                 is PlayerEffect.ShowPlayerBottomSheet -> {}
-                is PlayerEffect.HidePlayerBottomSheet -> {
-                    sheetState.hide()
-                }
+                is PlayerEffect.HidePlayerBottomSheet -> sheetState.hide()
             }
         }
     }
@@ -92,9 +92,7 @@ fun PlayerBottomSheet(
 
     ModalBottomSheet(
         modifier = modifier,
-        onDismissRequest = {
-            viewModel.sendAction(PlayerAction.CollapsePlayer)
-        },
+        onDismissRequest = { viewModel.sendAction(PlayerAction.CollapsePlayer) },
         sheetState = sheetState,
         dragHandle = null,
         scrimColor = Color.Transparent,
@@ -155,6 +153,7 @@ private fun PlayerScreen(
     onPodcastClick: (Long) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
+    val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
 
     LazyColumn(
         modifier = modifier
@@ -172,7 +171,8 @@ private fun PlayerScreen(
             ) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize(),
+                        .fillMaxSize()
+                        .padding(top = systemBarsPadding.calculateTopPadding()),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     EpisodiveCenterTopAppBar(
@@ -188,7 +188,8 @@ private fun PlayerScreen(
                             scrolledContainerColor = Color.Transparent,
                             navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
                             titleContentColor = MaterialTheme.colorScheme.onSurface,
-                        )
+                        ),
+                        windowInsets = WindowInsets(0),
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -451,6 +452,7 @@ private fun InfoSection(
         modifier = modifier.padding(16.dp),
     ) {
         SectionHeader(
+            modifier = Modifier.padding(vertical = 16.dp),
             title = stringResource(R.string.feature_player_more_info),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {

@@ -39,7 +39,7 @@ fun PodcastsSection(
     title: String,
     podcasts: List<Podcast>,
     onMore: () -> Unit = {},
-    onPodcastClick: (Podcast) -> Unit,
+    onPodcastClick: (Podcast) -> Unit = {},
 ) {
     SectionHeader(
         modifier = modifier,
@@ -65,6 +65,45 @@ fun PodcastsSection(
             ) { index ->
                 val podcast = podcasts[index]
                 PodcastItem(
+                    podcast = podcast,
+                    onClick = { onPodcastClick(podcast) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PodcastsWithAuthorSection(
+    modifier: Modifier = Modifier,
+    title: String,
+    podcasts: List<Podcast>,
+    onPodcastClick: (Podcast) -> Unit = {},
+) {
+    SectionHeader(
+        modifier = modifier,
+        title = title,
+    ) {
+        val lazyListState = rememberLazyListState()
+        val flingBehavior = rememberSnapFlingBehavior(
+            lazyListState = lazyListState,
+            snapPosition = SnapPosition.Start,
+        )
+
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth(),
+            state = lazyListState,
+            flingBehavior = flingBehavior,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+        ) {
+            items(
+                count = podcasts.size,
+                key = { podcasts[it].id }
+            ) { index ->
+                val podcast = podcasts[index]
+                PodcastWithAuthorItem(
                     podcast = podcast,
                     onClick = { onPodcastClick(podcast) }
                 )
@@ -107,6 +146,48 @@ fun PodcastItem(
 
         Text(
             text = "${podcast.episodeCount} ${stringResource(R.string.core_designsystem_episodes)}",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+fun PodcastWithAuthorItem(
+    modifier: Modifier = Modifier,
+    podcast: Podcast,
+    onClick: () -> Unit = {},
+) {
+    Column(
+        modifier = modifier
+            .width(140.dp)
+            .height(210.dp)
+            .clickable { onClick() },
+    ) {
+        StateImage(
+            modifier = Modifier
+                .size(140.dp)
+                .clip(MaterialTheme.shapes.extraLarge),
+            imageUrl = podcast.image,
+            contentDescription = podcast.title,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = podcast.title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = podcast.ownerName.ifEmpty { podcast.author },
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -272,6 +353,16 @@ fun PodcastDetailItem(
 private fun PodcastItemPreview() {
     EpisodiveTheme {
         PodcastItem(
+            podcast = podcastTestData,
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun PodcastWithAuthorPreview() {
+    EpisodiveTheme {
+        PodcastWithAuthorItem(
             podcast = podcastTestData,
         )
     }

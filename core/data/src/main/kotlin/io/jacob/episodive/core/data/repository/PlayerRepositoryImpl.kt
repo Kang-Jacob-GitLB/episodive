@@ -90,6 +90,14 @@ class PlayerRepositoryImpl @Inject constructor(
         playerDataSource.addTrack(episodes, index)
     }
 
+    override fun addClipTrack(clipEpisode: ClipEpisode, index: Int?) {
+        playerDataSource.addClipTrack(clipEpisode, index)
+    }
+
+    override fun addClipTracks(clipEpisodes: List<ClipEpisode>, index: Int?) {
+        playerDataSource.addClipTracks(clipEpisodes, index)
+    }
+
     override fun removeTrack(index: Int) {
         playerDataSource.removeTrack(index)
     }

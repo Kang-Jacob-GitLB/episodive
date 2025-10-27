@@ -110,6 +110,24 @@ class PlayerRepositoryTest {
     }
 
     @Test
+    fun `Given dependencies, When pause is called, Then calls playerDataSource pause`() {
+        // When
+        repository.pause()
+
+        // Then
+        coVerify { playerDataSource.pause() }
+    }
+
+    @Test
+    fun `Given dependencies, When resume is called, Then calls playerDataSource resume`() {
+        // When
+        repository.resume()
+
+        // Then
+        coVerify { playerDataSource.resume() }
+    }
+
+    @Test
     fun `Given dependencies, When stop is called, Then calls playerDataSource stop`() {
         // When
         repository.stop()
@@ -206,6 +224,36 @@ class PlayerRepositoryTest {
 
         // Then
         coVerify { playerDataSource.addTrack(listOf(episodeTestData), index = 0) }
+    }
+
+    @Test
+    fun `Given dependencies, When addClicpTrack is called, Then calls playerDataSource addClipTrack`() {
+        // When
+        val clipEpisode = ClipEpisode(
+            episode = episodeTestData,
+            clipStartTime = Instant.fromEpochSeconds(10000L),
+            clipDuration = 50.seconds,
+        )
+        repository.addClipTrack(clipEpisode, index = 0)
+
+        // Then
+        coVerify { playerDataSource.addClipTrack(clipEpisode, index = 0) }
+    }
+
+    @Test
+    fun `Given dependencies, When addClipTracks is called, Then calls playerDataSource addClipTracks`() {
+        // When
+        val clipEpisodes = listOf(
+            ClipEpisode(
+                episode = episodeTestData,
+                clipStartTime = Instant.fromEpochSeconds(10000L),
+                clipDuration = 50.seconds,
+            )
+        )
+        repository.addClipTracks(clipEpisodes, index = 0)
+
+        // Then
+        coVerify { playerDataSource.addClipTracks(clipEpisodes, index = 0) }
     }
 
     @Test

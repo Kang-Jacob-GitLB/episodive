@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.designsystem.component
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,6 +72,7 @@ fun EpisodiveCenterTopAppBar(
     actionIcon: ImageVector? = null,
     actionIconContentDescription: String? = null,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
     onNavigationClick: () -> Unit = {},
     onActionClick: () -> Unit = {},
@@ -104,6 +106,7 @@ fun EpisodiveCenterTopAppBar(
         colors = colors,
         scrollBehavior = scrollBehavior,
         modifier = modifier.testTag("episodiveCenterTopAppBar"),
+        windowInsets = windowInsets,
     )
 }
 

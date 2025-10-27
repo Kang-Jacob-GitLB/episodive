@@ -27,6 +27,8 @@ interface PlayerRepository {
     fun setSpeed(speed: Float)
     fun addTrack(episode: Episode, index: Int? = null)
     fun addTrack(episodes: List<Episode>, index: Int? = null)
+    fun addClipTrack(clipEpisode: ClipEpisode, index: Int? = null)
+    fun addClipTracks(clipEpisodes: List<ClipEpisode>, index: Int? = null)
     fun removeTrack(index: Int)
     fun clearPlayList()
     fun release()

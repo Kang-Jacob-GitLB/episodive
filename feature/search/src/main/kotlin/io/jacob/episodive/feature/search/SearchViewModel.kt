@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.episode.GetRecentEpisodesUseCase
-import io.jacob.episodive.core.domain.usecase.feed.GetTrendingFeedsUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetTrendingPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.search.ClearRecentSearchesUseCase
 import io.jacob.episodive.core.domain.usecase.search.DeleteRecentSearchUseCase
 import io.jacob.episodive.core.domain.usecase.search.GetRecentSearchesUseCase
@@ -13,10 +13,8 @@ import io.jacob.episodive.core.domain.usecase.search.SearchUseCase
 import io.jacob.episodive.core.domain.usecase.search.UpsertRecentSearchUseCase
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
-import io.jacob.episodive.core.model.Feed
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SearchResult
-import io.jacob.episodive.core.model.TrendingFeed
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -39,7 +37,7 @@ import javax.inject.Inject
 class SearchViewModel @Inject constructor(
     private val searchUseCase: SearchUseCase,
     getRecentEpisodesUseCase: GetRecentEpisodesUseCase,
-    getTrendingFeedsUseCase: GetTrendingFeedsUseCase,
+    getTrendingPodcastsUseCase: GetTrendingPodcastsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     getRecentSearchesUseCase: GetRecentSearchesUseCase,
     private val upsertRecentSearchUseCase: UpsertRecentSearchUseCase,
@@ -65,8 +63,8 @@ class SearchViewModel @Inject constructor(
         _searchResult,
         getRecentSearchesUseCase(),
         getRecentEpisodesUseCase(),
-        getTrendingFeedsUseCase(),
-    ) { query, result, recentSearches, recentEpisodes, trendingFeeds ->
+        getTrendingPodcastsUseCase(),
+    ) { query, result, recentSearches, recentEpisodes, trendingPodcasts ->
         SearchState.Success(
             searchQuery = query,
             searchHistory = emptyList(), // Implement search history if needed
@@ -74,7 +72,7 @@ class SearchViewModel @Inject constructor(
             recentSearches = recentSearches,
             categories = Category.entries.toList(),
             recentEpisodes = recentEpisodes.take(6),
-            trendingFeeds = trendingFeeds.take(10),
+            trendingPodcasts = trendingPodcasts.take(10),
         ) as SearchState
     }.catch { e ->
         emit(SearchState.Error(e.message ?: "An unknown error occurred"))
@@ -106,7 +104,6 @@ class SearchViewModel @Inject constructor(
                 is SearchAction.ClickCategory -> clickCategory(action.category)
                 is SearchAction.ClickPodcast -> clickPodcast(action.podcast)
                 is SearchAction.ClickEpisode -> clickEpisode(action.episode)
-                is SearchAction.ClickFeed -> clickFeed(action.feed)
             }
         }
     }
@@ -148,10 +145,6 @@ class SearchViewModel @Inject constructor(
         playEpisodeUseCase(episode)
 //        _effect.emit(SearchEffect.NavigateToEpisode(episode))
     }
-
-    private fun clickFeed(feed: Feed) = viewModelScope.launch {
-        _effect.emit(SearchEffect.NavigateToPodcast(feed.id))
-    }
 }
 
 sealed interface SearchState {
@@ -163,7 +156,7 @@ sealed interface SearchState {
         val recentSearches: List<String>,
         val categories: List<Category>,
         val recentEpisodes: List<Episode>,
-        val trendingFeeds: List<TrendingFeed>,
+        val trendingPodcasts: List<Podcast>,
     ) : SearchState
 
     data class Error(val message: String) : SearchState
@@ -179,7 +172,6 @@ sealed interface SearchAction {
     data class ClickCategory(val category: Category) : SearchAction
     data class ClickPodcast(val podcast: Podcast) : SearchAction
     data class ClickEpisode(val episode: Episode) : SearchAction
-    data class ClickFeed(val feed: Feed) : SearchAction
 }
 
 sealed interface SearchEffect {

@@ -3,16 +3,16 @@ package io.jacob.episodive.feature.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.jacob.episodive.core.domain.usecase.feed.GetRecommendedFeedsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetRecommendedPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetPreferredCategoriesUseCase
 import io.jacob.episodive.core.domain.usecase.user.SetFirstLaunchOffUseCase
 import io.jacob.episodive.core.domain.usecase.user.ToggleCategoryUseCase
 import io.jacob.episodive.core.model.Category
-import io.jacob.episodive.core.model.Feed
+import io.jacob.episodive.core.model.FollowablePodcast
+import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
-import io.jacob.episodive.core.model.SelectableFeed
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -36,7 +36,7 @@ class OnboardingViewModel @Inject constructor(
     private val toggleCategoryUseCase: ToggleCategoryUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
     private val getPreferredCategoriesUseCase: GetPreferredCategoriesUseCase,
-    getRecommendedFeedsUseCase: GetRecommendedFeedsUseCase,
+    getRecommendedPodcastsUseCase: GetRecommendedPodcastsUseCase,
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
 ) : ViewModel() {
 
@@ -51,35 +51,35 @@ class OnboardingViewModel @Inject constructor(
                 )
             }.let { flowOf(it) }
         }
-    private val _feeds: Flow<List<SelectableFeed>> =
+    private val _podcasts: Flow<List<FollowablePodcast>> =
         combine(
-            getRecommendedFeedsUseCase(),
+            getRecommendedPodcastsUseCase(),
             getFollowedPodcastsUseCase(),
-        ) { recommendedFeeds, followedPodcasts ->
+        ) { recommendedPodcasts, followedPodcasts ->
             val followedIds = followedPodcasts.map { it.podcast.id }.toSet()
-            Timber.d("recommendedFeeds: ${recommendedFeeds.size}, followedIds: $followedIds")
-            recommendedFeeds.map { feed ->
-                SelectableFeed(
-                    feed = feed,
-                    isSelected = followedIds.contains(feed.id),
+            Timber.d("recommendedPodcasts: ${recommendedPodcasts.size}, followedIds: $followedIds")
+            recommendedPodcasts.map { podcast ->
+                FollowablePodcast(
+                    podcast = podcast,
+                    isFollow = followedIds.contains(podcast.id),
                 )
             }
         }
 
     val state: StateFlow<OnboardingState> = combine(
         _categories,
-        _feeds
-    ) { categories, feeds ->
+        _podcasts
+    ) { categories, podcasts ->
         OnboardingState(
             categories = categories,
-            feeds = feeds
+            podcasts = podcasts
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = OnboardingState(
             categories = emptyList(),
-            feeds = emptyList(),
+            podcasts = emptyList(),
         )
     )
 
@@ -98,7 +98,7 @@ class OnboardingViewModel @Inject constructor(
                 is OnboardingAction.NextPage -> nextPage()
                 is OnboardingAction.PreviousPage -> previousPage()
                 is OnboardingAction.ChooseCategory -> chooseCategory(action.category)
-                is OnboardingAction.ChooseFeed -> chooseFeed(action.feed)
+                is OnboardingAction.ChoosePodcast -> choosePodcast(action.podcast)
             }
         }
     }
@@ -116,7 +116,7 @@ class OnboardingViewModel @Inject constructor(
                 }
             }
 
-            OnboardingPage.FeedSelection -> {
+            OnboardingPage.PodcastSelection -> {
                 finishOnboarding()
             }
 
@@ -143,8 +143,8 @@ class OnboardingViewModel @Inject constructor(
         toggleCategoryUseCase(category)
     }
 
-    private fun chooseFeed(feed: Feed) = viewModelScope.launch {
-        toggleFollowedUseCase(feed.id)
+    private fun choosePodcast(podcast: Podcast) = viewModelScope.launch {
+        toggleFollowedUseCase(podcast.id)
     }
 
     private fun finishOnboarding() = viewModelScope.launch {
@@ -155,14 +155,14 @@ class OnboardingViewModel @Inject constructor(
 
 data class OnboardingState(
     val categories: List<SelectableCategory>,
-    val feeds: List<SelectableFeed>,
+    val podcasts: List<FollowablePodcast>,
 )
 
 sealed interface OnboardingAction {
     data object NextPage : OnboardingAction
     data object PreviousPage : OnboardingAction
     data class ChooseCategory(val category: Category) : OnboardingAction
-    data class ChooseFeed(val feed: Feed) : OnboardingAction
+    data class ChoosePodcast(val podcast: Podcast) : OnboardingAction
 }
 
 sealed interface OnboardingEffect {
@@ -171,7 +171,7 @@ sealed interface OnboardingEffect {
 }
 
 enum class OnboardingPage {
-    Welcome, CategorySelection, FeedSelection, Completion;
+    Welcome, CategorySelection, PodcastSelection, Completion;
 
     fun next() = entries.getOrNull(ordinal.plus(1))
     fun previous() = entries.getOrNull(ordinal.minus(1))

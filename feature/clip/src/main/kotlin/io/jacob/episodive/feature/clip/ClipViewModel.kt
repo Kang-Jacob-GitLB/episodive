@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.di.ClipPlayerRepository
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetClipEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.player.PlayAndAddClipsUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
@@ -24,9 +25,10 @@ import javax.inject.Inject
 class ClipViewModel @Inject constructor(
     private val getClipEpisodesUseCase: GetClipEpisodesUseCase,
     @ClipPlayerRepository private val playerRepository: PlayerRepository,
+    private val playAndAddClipsUseCase: PlayAndAddClipsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
 ) : ViewModel() {
-    private val clipEpisodes: StateFlow<List<ClipEpisode>> = getClipEpisodesUseCase()
+    private val clipEpisodes: StateFlow<List<ClipEpisode>> = getClipEpisodesUseCase(40)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -77,13 +79,8 @@ class ClipViewModel @Inject constructor(
     }
 
     private fun playWhenReady() = viewModelScope.launch {
-        clipEpisodes.collectLatest {
-            if (it.isNotEmpty()) {
-                playerRepository.playClips(
-                    clipEpisodes = it,
-                    indexToPlay = 0,
-                )
-            }
+        clipEpisodes.collectLatest { clipEpisodes ->
+            playAndAddClipsUseCase(clipEpisodes)
         }
     }
 

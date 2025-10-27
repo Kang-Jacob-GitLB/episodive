@@ -2,7 +2,6 @@ package io.jacob.episodive.feature.onboarding
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -32,7 +30,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -50,32 +47,24 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.CategoryButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
-import io.jacob.episodive.core.designsystem.component.EpisodiveIconText
-import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
-import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
-import io.jacob.episodive.core.designsystem.component.StateImage
+import io.jacob.episodive.core.designsystem.component.PodcastDetailItem
 import io.jacob.episodive.core.designsystem.component.scrollbar.DecorativeScrollbar
 import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
-import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.GradientColors
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Category
-import io.jacob.episodive.core.model.Feed
+import io.jacob.episodive.core.model.FollowablePodcast
+import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
-import io.jacob.episodive.core.model.SelectableFeed
-import io.jacob.episodive.core.model.mapper.toFeedFromTrending
-import io.jacob.episodive.core.model.mapper.toHumanReadable
-import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
+import io.jacob.episodive.core.testing.model.podcastTestDataList
 import kotlinx.coroutines.flow.collectLatest
-import java.util.Locale
 
 @Composable
 fun OnboardingScreen(
@@ -119,12 +108,12 @@ fun OnboardingScreen(
                         },
                     )
 
-                OnboardingPage.FeedSelection ->
-                    FeedSelectionScreen(
+                OnboardingPage.PodcastSelection ->
+                    PodcastSelectionScreen(
                         modifier = modifier,
-                        feeds = state.feeds,
-                        onFeedCheckedChanged = { feed ->
-                            viewModel.sendAction(OnboardingAction.ChooseFeed(feed))
+                        followablePodcasts = state.podcasts,
+                        onPodcastCheckedChanged = { podcast ->
+                            viewModel.sendAction(OnboardingAction.ChoosePodcast(podcast))
                         },
                     )
 
@@ -284,10 +273,10 @@ private fun CategorySelectionScreen(
 }
 
 @Composable
-private fun FeedSelectionScreen(
+private fun PodcastSelectionScreen(
     modifier: Modifier = Modifier,
-    feeds: List<SelectableFeed>,
-    onFeedCheckedChanged: (Feed) -> Unit,
+    followablePodcasts: List<FollowablePodcast>,
+    onPodcastCheckedChanged: (Podcast) -> Unit,
 ) {
     val lazyListState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
@@ -308,11 +297,11 @@ private fun FeedSelectionScreen(
             ),
             modifier = Modifier
                 .fillMaxSize()
-                .testTag("onboarding:feedSelection"),
+                .testTag("onboarding:podcastSelection"),
         ) {
             item {
                 Text(
-                    text = stringResource(R.string.feature_onboarding_feed_title),
+                    text = stringResource(R.string.feature_onboarding_podcast_title),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
@@ -321,7 +310,7 @@ private fun FeedSelectionScreen(
 
             item {
                 Text(
-                    text = stringResource(R.string.feature_onboarding_feed_description),
+                    text = stringResource(R.string.feature_onboarding_podcast_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -329,13 +318,14 @@ private fun FeedSelectionScreen(
             }
 
             items(
-                count = feeds.size,
-                key = { feeds[it].feed.id },
+                count = followablePodcasts.size,
+                key = { followablePodcasts[it].podcast.id },
             ) {
-                FeedButton(
-                    feed = feeds[it].feed,
-                    isSelected = feeds[it].isSelected,
-                    onClick = onFeedCheckedChanged
+                PodcastDetailItem(
+                    podcast = followablePodcasts[it].podcast,
+                    isFollowed = followablePodcasts[it].isFollow,
+                    onClick = { onPodcastCheckedChanged(followablePodcasts[it].podcast) },
+                    onToggleFollowed = { onPodcastCheckedChanged(followablePodcasts[it].podcast) },
                 )
             }
         }
@@ -344,7 +334,7 @@ private fun FeedSelectionScreen(
                 .fillMaxHeight()
                 .padding(vertical = 12.dp)
                 .align(Alignment.TopEnd),
-            state = lazyListState.scrollbarState(itemsAvailable = feeds.size),
+            state = lazyListState.scrollbarState(itemsAvailable = followablePodcasts.size),
             orientation = Orientation.Vertical,
         )
     }
@@ -391,154 +381,6 @@ private fun CompletionScreen(
                 textAlign = TextAlign.Center,
             )
 
-        }
-    }
-}
-
-@Composable
-private fun FeedButton(
-    modifier: Modifier = Modifier,
-    feed: Feed,
-    isSelected: Boolean,
-    onClick: (Feed) -> Unit,
-) {
-    Row(
-        modifier = modifier
-            .clickable(onClick = { onClick(feed) }),
-    ) {
-        StateImage(
-            modifier = Modifier
-                .size(96.dp)
-                .clip(MaterialTheme.shapes.extraLarge),
-            imageUrl = feed.image ?: "",
-            contentDescription = feed.title,
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    modifier = Modifier
-                        .weight(1f),
-                    text = feed.title,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-
-                EpisodiveIconToggleButton(
-                    modifier = Modifier
-                        .size(34.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    checked = isSelected,
-                    onCheckedChange = { checked -> onClick(feed) },
-                    icon = {
-                        Icon(
-                            modifier = Modifier.size(14.dp),
-                            imageVector = EpisodiveIcons.PersonAdd,
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            contentDescription = feed.title,
-                        )
-                    },
-                    checkedIcon = {
-                        Icon(
-                            modifier = Modifier.size(14.dp),
-                            imageVector = EpisodiveIcons.PersonRemove,
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            contentDescription = feed.title,
-                        )
-                    },
-                )
-            }
-
-            Row(
-                modifier = Modifier,
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                EpisodiveIconText(
-                    icon = {
-                        Icon(
-                            imageVector = EpisodiveIcons.Language,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(12.dp),
-                        )
-                    },
-                    text = {
-                        Text(
-                            text = Locale.forLanguageTag(feed.language).displayLanguage,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                )
-
-                EpisodiveIconText(
-                    icon = {
-                        Icon(
-                            imageVector = EpisodiveIcons.PublishedWithChanges,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(12.dp),
-                        )
-                    },
-                    text = {
-                        Text(
-                            text = feed.newestItemPublishTime.toHumanReadable(),
-                            maxLines = 1,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                )
-
-                feed.trendScore?.let { trendScore ->
-                    EpisodiveIconText(
-                        icon = {
-                            Icon(
-                                imageVector = EpisodiveIcons.BarChart,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(12.dp),
-                            )
-                        },
-                        text = {
-                            Text(
-                                text = "$trendScore★",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            HtmlTextContainer(
-                text = feed.description ?: "",
-            ) {
-                Text(
-                    text = it,
-                    maxLines = 4,
-                    minLines = 4,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
     }
 }
@@ -594,11 +436,11 @@ private fun CategorySelectionScreenPreview() {
 
 @DevicePreviews
 @Composable
-private fun FeedSelectionScreenPreview() {
+private fun PodcastSelectionScreenPreview() {
     EpisodiveTheme {
-        FeedSelectionScreen(
-            feeds = trendingFeedTestDataList.map { SelectableFeed(it.toFeedFromTrending(), true) },
-            onFeedCheckedChanged = {},
+        PodcastSelectionScreen(
+            followablePodcasts = podcastTestDataList.map { FollowablePodcast(it, true) },
+            onPodcastCheckedChanged = {},
         )
     }
 }

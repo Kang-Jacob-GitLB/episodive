@@ -320,6 +320,50 @@ class PlayerDataSourceImpl @Inject constructor(
         }
     }
 
+    override fun addClipTrack(clipEpisode: ClipEpisode, index: Int?) {
+        val mediaItem = MediaItem.Builder()
+            .setUri(clipEpisode.episode.enclosureUrl)
+            .setTag(clipEpisode.episode)
+            .setClippingConfiguration(
+                MediaItem.ClippingConfiguration.Builder()
+                    .setStartPositionMs(clipEpisode.clipStartTime.toEpochMilliseconds())
+                    .setEndPositionMs(
+                        clipEpisode.clipStartTime.toEpochMilliseconds() + clipEpisode.clipDuration.inWholeMilliseconds
+                    )
+                    .build()
+            )
+            .build()
+
+        index?.let {
+            player.addMediaItem(it, mediaItem)
+        } ?: run {
+            player.addMediaItem(mediaItem)
+        }
+    }
+
+    override fun addClipTracks(clipEpisodes: List<ClipEpisode>, index: Int?) {
+        val mediaItems = clipEpisodes.map {
+            MediaItem.Builder()
+                .setUri(it.episode.enclosureUrl)
+                .setTag(it.episode)
+                .setClippingConfiguration(
+                    MediaItem.ClippingConfiguration.Builder()
+                        .setStartPositionMs(it.clipStartTime.toEpochMilliseconds())
+                        .setEndPositionMs(
+                            it.clipStartTime.toEpochMilliseconds() + it.clipDuration.inWholeMilliseconds
+                        )
+                        .build()
+                )
+                .build()
+        }
+
+        index?.let {
+            player.addMediaItems(it, mediaItems)
+        } ?: run {
+            player.addMediaItems(mediaItems)
+        }
+    }
+
     override fun removeTrack(index: Int) {
         player.removeMediaItem(index)
     }

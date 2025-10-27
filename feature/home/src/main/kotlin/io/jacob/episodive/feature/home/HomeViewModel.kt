@@ -6,19 +6,18 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.episode.GetLiveEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetMyRandomEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetPlayingEpisodesUseCase
-import io.jacob.episodive.core.domain.usecase.feed.GetMyRecentFeedsUseCase
-import io.jacob.episodive.core.domain.usecase.feed.GetMyTrendingFeedsUseCase
-import io.jacob.episodive.core.domain.usecase.feed.GetTrendingFeedsUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetMyRecentPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetMyTrendingPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetTrendingPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
 import io.jacob.episodive.core.domain.util.combine
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.FollowedPodcast
 import io.jacob.episodive.core.model.PlayedEpisode
-import io.jacob.episodive.core.model.RecentFeed
-import io.jacob.episodive.core.model.TrendingFeed
+import io.jacob.episodive.core.model.Podcast
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,51 +33,51 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     getUserDataUseCase: GetUserDataUseCase,
     getPlayingEpisodesUseCase: GetPlayingEpisodesUseCase,
-    getMyRecentFeedsUseCase: GetMyRecentFeedsUseCase,
+    getMyRecentPodcastsUseCase: GetMyRecentPodcastsUseCase,
     getMyRandomEpisodesUseCase: GetMyRandomEpisodesUseCase,
-    getMyTrendingFeedsUseCase: GetMyTrendingFeedsUseCase,
+    getMyTrendingPodcastsUseCase: GetMyTrendingPodcastsUseCase,
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
-    private val getTrendingFeedsUseCase: GetTrendingFeedsUseCase,
+    private val getTrendingPodcastsUseCase: GetTrendingPodcastsUseCase,
     getLiveEpisodesUseCase: GetLiveEpisodesUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val resumeEpisodeUseCase: ResumeEpisodeUseCase,
 ) : ViewModel() {
 
-    private val localTrendingFeeds = getUserDataUseCase().flatMapLatest { userData ->
-        getTrendingFeedsUseCase(language = userData.language)
+    private val localTrendingPodcasts = getUserDataUseCase().flatMapLatest { userData ->
+        getTrendingPodcastsUseCase(language = userData.language)
     }
 
-    private val foreignTrendingFeeds = getUserDataUseCase().flatMapLatest { userData ->
+    private val foreignTrendingPodcasts = getUserDataUseCase().flatMapLatest { userData ->
         val foreignLanguages = languages.filter { it != userData.language }.joinToString(",")
-        getTrendingFeedsUseCase(language = foreignLanguages)
+        getTrendingPodcastsUseCase(language = foreignLanguages)
     }
 
     val state: StateFlow<HomeState> = combine(
         getPlayingEpisodesUseCase(),
-        getMyRecentFeedsUseCase(),
+        getMyRecentPodcastsUseCase(),
         getMyRandomEpisodesUseCase(),
-        getMyTrendingFeedsUseCase(),
+        getMyTrendingPodcastsUseCase(),
         getFollowedPodcastsUseCase(),
-        localTrendingFeeds,
-        foreignTrendingFeeds,
+        localTrendingPodcasts,
+        foreignTrendingPodcasts,
         getLiveEpisodesUseCase(),
     ) { playingEpisodes,
-        myRecentFeeds,
+        myRecentPodcasts,
         randomEpisodes,
-        myTrendingFeeds,
+        myTrendingPodcasts,
         followedPodcasts,
-        localTrendingFeeds,
-        foreignTrendingFeeds,
+        localTrendingPodcasts,
+        foreignTrendingPodcasts,
         liveEpisodes ->
 
         HomeState.Success(
             playingEpisodes = playingEpisodes.take(10),
-            myRecentFeeds = myRecentFeeds.take(10),
+            myRecentPodcasts = myRecentPodcasts.take(10),
             randomEpisodes = randomEpisodes.take(6),
-            myTrendingFeeds = myTrendingFeeds.take(10),
+            myTrendingFPodcasts = myTrendingPodcasts.take(10),
             followedPodcasts = followedPodcasts.take(10),
-            localTrendingFeeds = localTrendingFeeds.take(10),
-            foreignTrendingFeeds = foreignTrendingFeeds.take(10),
+            localTrendingPodcasts = localTrendingPodcasts.take(10),
+            foreignTrendingPodcasts = foreignTrendingPodcasts.take(10),
             liveEpisodes = liveEpisodes.take(6),
         ) as HomeState
     }.catch { e ->
@@ -134,12 +133,12 @@ sealed interface HomeState {
     data object Loading : HomeState
     data class Success(
         val playingEpisodes: List<PlayedEpisode>,
-        val myRecentFeeds: List<RecentFeed>,
+        val myRecentPodcasts: List<Podcast>,
         val randomEpisodes: List<Episode>,
-        val myTrendingFeeds: List<TrendingFeed>,
+        val myTrendingFPodcasts: List<Podcast>,
         val followedPodcasts: List<FollowedPodcast>,
-        val localTrendingFeeds: List<TrendingFeed>,
-        val foreignTrendingFeeds: List<TrendingFeed>,
+        val localTrendingPodcasts: List<Podcast>,
+        val foreignTrendingPodcasts: List<Podcast>,
         val liveEpisodes: List<Episode>,
     ) : HomeState
 
