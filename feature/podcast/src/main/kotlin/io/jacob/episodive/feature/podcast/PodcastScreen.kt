@@ -1,9 +1,11 @@
 package io.jacob.episodive.feature.podcast
 
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +36,8 @@ import io.jacob.episodive.core.designsystem.component.FadeTopBarLayout
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.LoadingWheel
 import io.jacob.episodive.core.designsystem.component.StateImage
+import io.jacob.episodive.core.designsystem.component.scrollbar.DraggableScrollbar
+import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
@@ -44,6 +49,7 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun PodcastRoute(
@@ -88,6 +94,7 @@ private fun PodcastScreen(
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
 
     FadeTopBarLayout(
         modifier = modifier,
@@ -146,6 +153,22 @@ private fun PodcastScreen(
                 Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
             }
         }
+
+        listState.DraggableScrollbar(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(vertical = 12.dp)
+                .padding(top = 110.dp)
+                .align(Alignment.TopEnd),
+            state = listState.scrollbarState(itemsAvailable = episodes.size),
+            orientation = Orientation.Vertical,
+            onThumbMoved = { thumbPosition ->
+                scope.launch {
+                    val itemIndex = (thumbPosition * episodes.size).toInt()
+                    listState.scrollToItem(itemIndex)
+                }
+            }
+        )
     }
 }
 

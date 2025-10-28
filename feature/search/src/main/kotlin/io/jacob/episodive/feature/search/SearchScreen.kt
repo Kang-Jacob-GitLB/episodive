@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -36,7 +37,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
 import io.jacob.episodive.core.designsystem.component.PodcastsWithAuthorSection
 import io.jacob.episodive.core.designsystem.component.SectionHeader
-import io.jacob.episodive.core.designsystem.component.scrollbar.DecorativeScrollbar
+import io.jacob.episodive.core.designsystem.component.scrollbar.DraggableScrollbar
 import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
@@ -50,6 +51,7 @@ import io.jacob.episodive.core.model.SearchResult
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @Composable
 fun SearchRoute(
@@ -208,6 +210,8 @@ private fun SearchResultsOnExpand(
     onRemoveRecentSearch: (String) -> Unit = {},
     onClearRecentSearches: () -> Unit = {},
 ) {
+    val scope = rememberCoroutineScope()
+
     Box(
         modifier = modifier
             .fillMaxSize(),
@@ -279,13 +283,19 @@ private fun SearchResultsOnExpand(
             }
         }
 
-        scrollState.DecorativeScrollbar(
+        scrollState.DraggableScrollbar(
             modifier = Modifier
                 .fillMaxHeight()
                 .padding(vertical = 12.dp)
                 .align(Alignment.TopEnd),
             state = scrollState.scrollbarState(itemsAvailable = searchResult.episodes.size),
             orientation = Orientation.Vertical,
+            onThumbMoved = { thumbPosition ->
+                scope.launch {
+                    val itemIndex = (thumbPosition * searchResult.episodes.size).toInt()
+                    scrollState.scrollToItem(itemIndex)
+                }
+            }
         )
     }
 }

@@ -37,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,7 +55,7 @@ import io.jacob.episodive.core.designsystem.component.CategoryButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.PodcastDetailItem
-import io.jacob.episodive.core.designsystem.component.scrollbar.DecorativeScrollbar
+import io.jacob.episodive.core.designsystem.component.scrollbar.DraggableScrollbar
 import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.GradientColors
@@ -65,6 +66,7 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @Composable
 fun OnboardingScreen(
@@ -210,6 +212,7 @@ private fun CategorySelectionScreen(
 ) {
     val lazyGridState = rememberLazyGridState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = modifier
@@ -261,13 +264,19 @@ private fun CategorySelectionScreen(
                 )
             }
         }
-        lazyGridState.DecorativeScrollbar(
+        lazyGridState.DraggableScrollbar(
             modifier = Modifier
                 .fillMaxHeight()
                 .padding(vertical = 12.dp)
                 .align(Alignment.TopEnd),
             state = lazyGridState.scrollbarState(itemsAvailable = categories.size),
             orientation = Orientation.Vertical,
+            onThumbMoved = { thumbPosition ->
+                scope.launch {
+                    val itemIndex = (thumbPosition * categories.size).toInt()
+                    lazyGridState.scrollToItem(itemIndex)
+                }
+            }
         )
     }
 }
@@ -280,6 +289,7 @@ private fun PodcastSelectionScreen(
 ) {
     val lazyListState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = modifier
@@ -329,13 +339,19 @@ private fun PodcastSelectionScreen(
                 )
             }
         }
-        lazyListState.DecorativeScrollbar(
+        lazyListState.DraggableScrollbar(
             modifier = Modifier
                 .fillMaxHeight()
                 .padding(vertical = 12.dp)
                 .align(Alignment.TopEnd),
             state = lazyListState.scrollbarState(itemsAvailable = followablePodcasts.size),
             orientation = Orientation.Vertical,
+            onThumbMoved = { thumbPosition ->
+                scope.launch {
+                    val itemIndex = (thumbPosition * followablePodcasts.size).toInt()
+                    lazyListState.scrollToItem(itemIndex)
+                }
+            }
         )
     }
 }
