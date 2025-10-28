@@ -46,6 +46,9 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.kotlinx.serialization.json)
 
+    //----- Coil
+    implementation(libs.coil.compose)
+
     //----- Compose
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.animation.compose)

@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.designsystem.component
 
+import androidx.annotation.Px
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -25,7 +26,6 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
-import coil.request.CachePolicy
 import coil.request.ImageRequest
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
@@ -34,9 +34,10 @@ import timber.log.Timber
 
 @Composable
 fun StateImage(
-    imageUrl: String,
-    contentDescription: String?,
     modifier: Modifier = Modifier,
+    imageUrl: String,
+    @Px size: Int = 300,
+    contentDescription: String?,
     contentScale: ContentScale = ContentScale.Crop,
     placeholderBrush: Brush = thumbnailPlaceholderDefaultBrush(),
     fallbackIcon: ImageVector = EpisodiveIcons.ErrorOutline,
@@ -52,12 +53,8 @@ fun StateImage(
 
     val imageLoader = rememberAsyncImagePainter(
         model = ImageRequest.Builder(LocalContext.current)
-            .data(imageUrl.replace("http://", "https://"))
-            .addHeader("User-Agent", "Episodive/1.0")
-            .crossfade(true)
-            .size(300)
-            .diskCachePolicy(CachePolicy.ENABLED)
-            .memoryCachePolicy(CachePolicy.ENABLED)
+            .data(imageUrl)
+            .size(size)
             .build(),
         contentScale = contentScale,
         onState = { state -> imagePainterState = state }
