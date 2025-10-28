@@ -13,7 +13,7 @@ class DisabledOnWindowsRule : TestRule {
         return object : Statement() {
             override fun evaluate() {
                 if (description.getAnnotation(DisabledOnWindows::class.java) != null) {
-                    val osName = System.getProperty("os.name")
+                    val osName = System.getProperty("os.name") ?: ""
                     if (osName.contains("Windows", ignoreCase = true)) {
                         println("\u001B[33m[!] Test skipped on Windows: ${description.methodName}\u001B[0m")
                         return
