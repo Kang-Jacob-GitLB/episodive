@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.designsystem.component
 
+import androidx.annotation.Px
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -33,9 +34,10 @@ import timber.log.Timber
 
 @Composable
 fun StateImage(
-    imageUrl: String,
-    contentDescription: String?,
     modifier: Modifier = Modifier,
+    imageUrl: String,
+    @Px size: Int = 300,
+    contentDescription: String?,
     contentScale: ContentScale = ContentScale.Crop,
     placeholderBrush: Brush = thumbnailPlaceholderDefaultBrush(),
     fallbackIcon: ImageVector = EpisodiveIcons.ErrorOutline,
@@ -52,7 +54,7 @@ fun StateImage(
     val imageLoader = rememberAsyncImagePainter(
         model = ImageRequest.Builder(LocalContext.current)
             .data(imageUrl)
-            .size(300)
+            .size(size)
             .build(),
         contentScale = contentScale,
         onState = { state -> imagePainterState = state }
