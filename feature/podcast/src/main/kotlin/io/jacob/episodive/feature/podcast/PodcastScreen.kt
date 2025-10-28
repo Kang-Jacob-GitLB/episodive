@@ -165,6 +165,7 @@ private fun PodcastScreen(
             onThumbMoved = { thumbPosition ->
                 scope.launch {
                     val itemIndex = (thumbPosition * episodes.size).toInt()
+                        .coerceIn(0, episodes.size - 1)
                     listState.scrollToItem(itemIndex)
                 }
             }

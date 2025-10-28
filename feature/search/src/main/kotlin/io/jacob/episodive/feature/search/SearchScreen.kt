@@ -293,6 +293,7 @@ private fun SearchResultsOnExpand(
             onThumbMoved = { thumbPosition ->
                 scope.launch {
                     val itemIndex = (thumbPosition * searchResult.episodes.size).toInt()
+                        .coerceIn(0, searchResult.episodes.size - 1)
                     scrollState.scrollToItem(itemIndex)
                 }
             }

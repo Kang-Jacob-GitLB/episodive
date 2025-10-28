@@ -274,6 +274,7 @@ private fun CategorySelectionScreen(
             onThumbMoved = { thumbPosition ->
                 scope.launch {
                     val itemIndex = (thumbPosition * categories.size).toInt()
+                        .coerceIn(0, categories.size - 1)
                     lazyGridState.scrollToItem(itemIndex)
                 }
             }
@@ -349,6 +350,7 @@ private fun PodcastSelectionScreen(
             onThumbMoved = { thumbPosition ->
                 scope.launch {
                     val itemIndex = (thumbPosition * followablePodcasts.size).toInt()
+                        .coerceIn(0, followablePodcasts.size - 1)
                     lazyListState.scrollToItem(itemIndex)
                 }
             }
