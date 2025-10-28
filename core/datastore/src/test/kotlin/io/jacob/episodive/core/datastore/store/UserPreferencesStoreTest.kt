@@ -4,6 +4,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import io.jacob.episodive.core.model.Category
+import io.jacob.episodive.core.testing.util.DisabledOnWindows
+import io.jacob.episodive.core.testing.util.DisabledOnWindowsRule
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
@@ -25,6 +27,9 @@ class UserPreferencesStoreTest {
 
     @get:Rule
     val tmpFolder: TemporaryFolder = TemporaryFolder.builder().assureDeletion().build()
+
+    @get:Rule
+    val disabledOnWindowsRule = DisabledOnWindowsRule()
 
     private lateinit var dataStore: DataStore<Preferences>
     private lateinit var userPreferencesStore: UserPreferencesStore
@@ -49,6 +54,7 @@ class UserPreferencesStoreTest {
     }
 
     @Test
+    @DisabledOnWindows
     fun addCategory_withSingleCategory_storesCorrectly() = runTest {
         userPreferencesStore.addCategory(Category.ARTS)
 
@@ -66,6 +72,7 @@ class UserPreferencesStoreTest {
     }
 
     @Test
+    @DisabledOnWindows
     fun removeCategory_removesCorrectly() = runTest {
         userPreferencesStore.addCategories(
             listOf(
@@ -110,6 +117,7 @@ class UserPreferencesStoreTest {
     }
 
     @Test
+    @DisabledOnWindows
     fun addCategories_withDuplicateCategories_storesDistinctly() = runTest {
         userPreferencesStore.addCategories(
             listOf(
