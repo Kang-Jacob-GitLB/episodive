@@ -25,7 +25,6 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
-import coil.request.CachePolicy
 import coil.request.ImageRequest
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
@@ -52,12 +51,8 @@ fun StateImage(
 
     val imageLoader = rememberAsyncImagePainter(
         model = ImageRequest.Builder(LocalContext.current)
-            .data(imageUrl.replace("http://", "https://"))
-            .addHeader("User-Agent", "Episodive/1.0")
-            .crossfade(true)
+            .data(imageUrl)
             .size(300)
-            .diskCachePolicy(CachePolicy.ENABLED)
-            .memoryCachePolicy(CachePolicy.ENABLED)
             .build(),
         contentScale = contentScale,
         onState = { state -> imagePainterState = state }

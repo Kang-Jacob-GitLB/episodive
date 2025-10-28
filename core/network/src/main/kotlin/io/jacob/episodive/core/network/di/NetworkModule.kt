@@ -9,14 +9,20 @@ import io.jacob.episodive.core.network.util.RETROFIT_BASE_URL
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class RetrofitOkHttpClient
 
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    @RetrofitOkHttpClient
+    fun provideRetrofitOkHttpClient(): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(EpisodiveInterceptor())
             .build()
@@ -25,7 +31,7 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideRetrofit(
-        okHttpClient: OkHttpClient
+        @RetrofitOkHttpClient okHttpClient: OkHttpClient
     ): Retrofit {
         return Retrofit.Builder()
             .baseUrl(RETROFIT_BASE_URL)
