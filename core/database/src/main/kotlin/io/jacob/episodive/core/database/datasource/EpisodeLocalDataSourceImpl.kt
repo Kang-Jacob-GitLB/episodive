@@ -2,9 +2,7 @@ package io.jacob.episodive.core.database.datasource
 
 import io.jacob.episodive.core.database.dao.EpisodeDao
 import io.jacob.episodive.core.database.model.EpisodeEntity
-import io.jacob.episodive.core.database.model.LikedEpisodeDto
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
-import io.jacob.episodive.core.database.model.PlayedEpisodeDto
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -32,22 +30,6 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         episodeDao.deleteEpisodesByCacheKey(cacheKey)
     }
 
-    override suspend fun addLiked(likedEpisode: LikedEpisodeEntity) {
-        episodeDao.addLiked(likedEpisode)
-    }
-
-    override suspend fun removeLiked(id: Long) {
-        episodeDao.removeLiked(id)
-    }
-
-    override suspend fun upsertPlayed(playedEpisode: PlayedEpisodeEntity) {
-        episodeDao.upsertPlayed(playedEpisode)
-    }
-
-    override suspend fun removePlayed(id: Long) {
-        episodeDao.removePlayed(id)
-    }
-
     override fun getEpisode(id: Long): Flow<EpisodeEntity?> {
         return episodeDao.getEpisode(id)
     }
@@ -60,39 +42,35 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         return episodeDao.getEpisodesByCacheKey(cacheKey)
     }
 
-    override fun getLikedEpisodes(query: String?): Flow<List<LikedEpisodeDto>> {
-        return episodeDao.getLikedEpisodes(query)
+    override suspend fun addLiked(likedEpisode: LikedEpisodeEntity) {
+        episodeDao.addLiked(likedEpisode)
     }
 
-    override fun getPlayingEpisodes(query: String?): Flow<List<PlayedEpisodeDto>> {
-        return episodeDao.getPlayingEpisodes(query)
+    override suspend fun removeLiked(id: Long) {
+        episodeDao.removeLiked(id)
     }
 
-    override fun getPlayedEpisodes(query: String?): Flow<List<PlayedEpisodeDto>> {
-        return episodeDao.getPlayedEpisodes(query)
-    }
-
-    override fun getAllPlayedEpisodes(query: String?): Flow<List<PlayedEpisodeDto>> {
-        return episodeDao.getAllPlayedEpisodes(query)
-    }
-
-    override fun isLiked(id: Long): Flow<Boolean> {
+    override fun isLiked(id: Long): Boolean {
         return episodeDao.isLiked(id)
     }
 
-    override fun getEpisodeCount(): Flow<Int> {
-        return episodeDao.getEpisodeCount()
+    override suspend fun toggleLiked(id: Long): Boolean {
+        return episodeDao.toggleLiked(id)
     }
 
-    override fun getLikedEpisodeCount(): Flow<Int> {
-        return episodeDao.getLikedEpisodeCount()
+    override fun getLikedEpisodes(): Flow<List<LikedEpisodeEntity>> {
+        return episodeDao.getLikedEpisodes()
     }
 
-    override fun getPlayingEpisodeCount(): Flow<Int> {
-        return episodeDao.getPlayingEpisodeCount()
+    override suspend fun upsertPlayed(playedEpisode: PlayedEpisodeEntity) {
+        episodeDao.upsertPlayed(playedEpisode)
     }
 
-    override fun getPlayedEpisodeCount(): Flow<Int> {
-        return episodeDao.getPlayedEpisodeCount()
+    override suspend fun removePlayed(id: Long) {
+        episodeDao.removePlayed(id)
+    }
+
+    override fun getPlayedEpisodes(): Flow<List<PlayedEpisodeEntity>> {
+        return episodeDao.getPlayedEpisodes()
     }
 }

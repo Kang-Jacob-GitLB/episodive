@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.model
 
+import io.jacob.episodive.core.model.mapper.toIntSeconds
 import kotlin.time.Duration
 import kotlin.time.Instant
 
@@ -35,6 +36,10 @@ data class Episode(
     val chaptersUrl: String? = null,
     val transcriptUrl: String? = null,
     val transcripts: List<Transcript>? = null,
+    val likedAt: Instant? = null,
+    val playedAt: Instant? = null,
+    val position: Duration = Duration.ZERO,
+    val isCompleted: Boolean = false,
 ) {
     val isLive: Boolean
         get() = enclosureLength == 0L ||
@@ -42,4 +47,14 @@ data class Episode(
                 endTime != null ||
                 status != null ||
                 contentLink != null
+
+    val progress: Float = duration?.let {
+        if (it == Duration.ZERO) 0f
+        else position.toIntSeconds().toFloat() / it.toIntSeconds()
+    } ?: 0f
+
+    val remain: Duration? = duration?.let {
+        if (it == Duration.ZERO) null
+        else it - position
+    }
 }

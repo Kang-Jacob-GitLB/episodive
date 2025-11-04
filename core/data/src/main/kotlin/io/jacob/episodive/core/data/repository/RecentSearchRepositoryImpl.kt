@@ -33,8 +33,4 @@ class RecentSearchRepositoryImpl @Inject constructor(
     override suspend fun clearRecentSearches() {
         recentSearchLocalDataSource.clearRecentSearches()
     }
-
-    override suspend fun getRecentSearchesCount(): Int {
-        return recentSearchLocalDataSource.getRecentSearchesCount()
-    }
 }

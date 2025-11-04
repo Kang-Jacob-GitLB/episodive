@@ -46,16 +46,11 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Episode
-import io.jacob.episodive.core.model.FollowedPodcast
-import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.Podcast
-import io.jacob.episodive.core.model.mapper.toDurationSeconds
-import io.jacob.episodive.core.model.mapper.toIntSeconds
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.liveEpisodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import kotlinx.coroutines.flow.collectLatest
-import kotlin.time.Clock
 
 @Composable
 internal fun HomeRoute(
@@ -100,16 +95,16 @@ internal fun HomeRoute(
 @Composable
 private fun HomeScreen(
     modifier: Modifier = Modifier,
-    playingEpisodes: List<PlayedEpisode>,
+    playingEpisodes: List<Episode>,
     myRecentPodcasts: List<Podcast>,
     randomEpisodes: List<Episode>,
     myTrendingPodcasts: List<Podcast>,
-    followedPodcasts: List<FollowedPodcast>,
+    followedPodcasts: List<Podcast>,
     localTrendingPodcasts: List<Podcast>,
     foreignTrendingPodcasts: List<Podcast>,
     liveEpisodes: List<Episode>,
     onPlayEpisode: (Episode) -> Unit = {},
-    onResumeEpisode: (PlayedEpisode) -> Unit = {},
+    onResumeEpisode: (Episode) -> Unit = {},
     onPodcastClick: (Long) -> Unit = {},
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -214,7 +209,7 @@ private fun HomeScreen(
                         itemWithDivider {
                             PodcastsSection(
                                 title = stringResource(R.string.feature_home_section_followed_podcasts),
-                                podcasts = followedPodcasts.map { it.podcast },
+                                podcasts = followedPodcasts,
                                 onMore = {
 
                                 },
@@ -278,25 +273,11 @@ fun LazyListScope.itemWithDivider(
 private fun HomeScreenPreview() {
     EpisodiveTheme {
         HomeScreen(
-            playingEpisodes = episodeTestDataList.map {
-                PlayedEpisode(
-                    episode = it,
-                    playedAt = Clock.System.now(),
-                    position = (it.duration?.toIntSeconds()?.let { seconds -> seconds / 2 }
-                        ?: 0).toDurationSeconds(),
-                    isCompleted = false,
-                )
-            },
+            playingEpisodes = episodeTestDataList,
             myRecentPodcasts = podcastTestDataList,
             randomEpisodes = episodeTestDataList,
             myTrendingPodcasts = podcastTestDataList,
-            followedPodcasts = podcastTestDataList.map {
-                FollowedPodcast(
-                    podcast = it,
-                    followedAt = Clock.System.now(),
-                    isNotificationEnabled = false,
-                )
-            },
+            followedPodcasts = podcastTestDataList,
             localTrendingPodcasts = podcastTestDataList,
             foreignTrendingPodcasts = podcastTestDataList,
             liveEpisodes = liveEpisodeTestDataList,

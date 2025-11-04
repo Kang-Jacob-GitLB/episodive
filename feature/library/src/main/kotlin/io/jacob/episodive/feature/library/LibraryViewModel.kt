@@ -17,10 +17,7 @@ import io.jacob.episodive.core.domain.usecase.user.ToggleCategoryUseCase
 import io.jacob.episodive.core.domain.util.combine
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
-import io.jacob.episodive.core.model.FollowedPodcast
 import io.jacob.episodive.core.model.LibraryFindResult
-import io.jacob.episodive.core.model.LikedEpisode
-import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
 import kotlinx.coroutines.FlowPreview
@@ -148,9 +145,9 @@ class LibraryViewModel @Inject constructor(
         _findQuery.emit("")
     }
 
-    private fun resumeEpisode(playedEpisode: PlayedEpisode) {
+    private fun resumeEpisode(playedEpisode: Episode) {
         if (playedEpisode.isCompleted) {
-            playEpisodeUseCase(playedEpisode.episode)
+            playEpisodeUseCase(playedEpisode)
         } else {
             resumeEpisodeUseCase(playedEpisode)
         }
@@ -164,12 +161,12 @@ class LibraryViewModel @Inject constructor(
         _effect.emit(LibraryEffect.NavigateToPodcast(podcast))
     }
 
-    private fun toggleLikedEpisode(likedEpisode: LikedEpisode) = viewModelScope.launch {
-        toggleLikedUseCase(likedEpisode.episode.id)
+    private fun toggleLikedEpisode(likedEpisode: Episode) = viewModelScope.launch {
+        toggleLikedUseCase(likedEpisode.id)
     }
 
-    private fun toggleFollowedPodcast(followedPodcast: FollowedPodcast) = viewModelScope.launch {
-        toggleFollowedUseCase(followedPodcast.podcast.id)
+    private fun toggleFollowedPodcast(followedPodcast: Podcast) = viewModelScope.launch {
+        toggleFollowedUseCase(followedPodcast.id)
     }
 
     private fun toggleCategory(category: Category) = viewModelScope.launch {
@@ -185,9 +182,9 @@ sealed interface LibraryState {
     data object Loading : LibraryState
     data class Success(
         val findQuery: String,
-        val allPlayedEpisodes: List<PlayedEpisode>,
-        val likedEpisodes: List<LikedEpisode>,
-        val followedPodcasts: List<FollowedPodcast>,
+        val allPlayedEpisodes: List<Episode>,
+        val likedEpisodes: List<Episode>,
+        val followedPodcasts: List<Podcast>,
         val preferredCategories: List<Category>,
         val selectableCategories: List<SelectableCategory>,
         val section: LibrarySection,
@@ -200,11 +197,11 @@ sealed interface LibraryAction {
     data class QueryChanged(val query: String) : LibraryAction
     data class ClickFind(val query: String) : LibraryAction
     data object ClearQuery : LibraryAction
-    data class ClickPlayingEpisode(val playingEpisode: PlayedEpisode) : LibraryAction
+    data class ClickPlayingEpisode(val playingEpisode: Episode) : LibraryAction
     data class ClickEpisode(val episode: Episode) : LibraryAction
     data class ClickPodcast(val podcast: Podcast) : LibraryAction
-    data class ToggleLikedEpisode(val likedEpisode: LikedEpisode) : LibraryAction
-    data class ToggleFollowedPodcast(val followedPodcast: FollowedPodcast) : LibraryAction
+    data class ToggleLikedEpisode(val likedEpisode: Episode) : LibraryAction
+    data class ToggleFollowedPodcast(val followedPodcast: Podcast) : LibraryAction
     data class TogglePreferredCategory(val category: Category) : LibraryAction
     data class SelectSection(val section: LibrarySection) : LibraryAction
 }

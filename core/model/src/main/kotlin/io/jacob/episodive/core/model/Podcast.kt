@@ -38,4 +38,6 @@ data class Podcast(
 //    val value: Value4Value? = null,
 //    val funding: Funding? = null,
     val newestItemPublishTime: Instant? = null,
+    val followedAt: Instant? = null,
+    val isNotificationEnabled: Boolean = false,
 )

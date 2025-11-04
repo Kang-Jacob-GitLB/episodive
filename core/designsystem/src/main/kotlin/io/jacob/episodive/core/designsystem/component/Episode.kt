@@ -44,11 +44,9 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
-import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toIntSeconds
 import io.jacob.episodive.core.testing.model.episodeTestData
-import io.jacob.episodive.core.testing.model.playedEpisodeTestData
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -192,8 +190,8 @@ fun EpisodeItem(
 @Composable
 fun PlayingEpisodesSection(
     modifier: Modifier = Modifier,
-    playingEpisodes: List<PlayedEpisode>,
-    onEpisodeClick: (PlayedEpisode) -> Unit,
+    playingEpisodes: List<Episode>,
+    onEpisodeClick: (Episode) -> Unit,
 ) {
     SubSectionHeader(
         modifier = modifier,
@@ -215,7 +213,7 @@ fun PlayingEpisodesSection(
         ) {
             items(
                 count = playingEpisodes.size,
-                key = { playingEpisodes[it].episode.id }
+                key = { playingEpisodes[it].id }
             ) { index ->
                 val playedEpisode = playingEpisodes[index]
                 PlayingEpisodeItem(
@@ -230,7 +228,7 @@ fun PlayingEpisodesSection(
 @Composable
 fun PlayingEpisodeItem(
     modifier: Modifier = Modifier,
-    playedEpisode: PlayedEpisode,
+    playedEpisode: Episode,
     onClick: () -> Unit,
 ) {
     Surface(
@@ -250,8 +248,8 @@ fun PlayingEpisodeItem(
                 modifier = Modifier
                     .size(68.dp)
                     .clip(MaterialTheme.shapes.largeIncreased),
-                imageUrl = playedEpisode.episode.image.ifEmpty { playedEpisode.episode.feedImage },
-                contentDescription = playedEpisode.episode.title,
+                imageUrl = playedEpisode.image.ifEmpty { playedEpisode.feedImage },
+                contentDescription = playedEpisode.title,
             )
 
             Column(
@@ -259,7 +257,7 @@ fun PlayingEpisodeItem(
                     .width(98.dp)
             ) {
                 Text(
-                    text = playedEpisode.episode.feedTitle ?: "",
+                    text = playedEpisode.feedTitle ?: "",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -267,7 +265,7 @@ fun PlayingEpisodeItem(
                 )
 
                 Text(
-                    text = playedEpisode.episode.title,
+                    text = playedEpisode.title,
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
@@ -286,7 +284,7 @@ fun PlayingEpisodeItem(
                     gapSize = (-4).dp,
                     drawStopIndicator = {},
                     progress = {
-                        val duration = playedEpisode.episode.duration?.toIntSeconds()
+                        val duration = playedEpisode.duration?.toIntSeconds()
                         val position = playedEpisode.position.toIntSeconds()
                         if (duration != null && duration > 0) {
                             (position.toFloat() / duration).coerceIn(0f, 1f)
@@ -303,7 +301,7 @@ fun PlayingEpisodeItem(
 @Composable
 fun PlayedEpisodeItem(
     modifier: Modifier = Modifier,
-    playedEpisode: PlayedEpisode,
+    playedEpisode: Episode,
     showMoreInfo: Boolean = true,
     onClick: () -> Unit,
 ) {
@@ -316,8 +314,8 @@ fun PlayedEpisodeItem(
             modifier = Modifier
                 .size(68.dp)
                 .clip(MaterialTheme.shapes.largeIncreased),
-            imageUrl = playedEpisode.episode.image.ifEmpty { playedEpisode.episode.feedImage },
-            contentDescription = playedEpisode.episode.title,
+            imageUrl = playedEpisode.image.ifEmpty { playedEpisode.feedImage },
+            contentDescription = playedEpisode.title,
         )
 
         Column(
@@ -325,7 +323,7 @@ fun PlayedEpisodeItem(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = playedEpisode.episode.title,
+                text = playedEpisode.title,
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
@@ -606,7 +604,7 @@ private fun EpisodeItemPreview() {
 private fun PlayingEpisodesPreview() {
     EpisodiveTheme {
         PlayingEpisodeItem(
-            playedEpisode = playedEpisodeTestData,
+            playedEpisode = episodeTestData,
             onClick = {}
         )
     }
@@ -617,7 +615,7 @@ private fun PlayingEpisodesPreview() {
 private fun PlayedEpisodesPreview() {
     EpisodiveTheme {
         PlayedEpisodeItem(
-            playedEpisode = playedEpisodeTestData,
+            playedEpisode = episodeTestData,
             onClick = {}
         )
     }

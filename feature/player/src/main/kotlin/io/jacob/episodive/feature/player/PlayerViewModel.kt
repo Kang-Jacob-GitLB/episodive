@@ -50,7 +50,7 @@ class PlayerViewModel @Inject constructor(
     private val isLiked = playerRepository.nowPlaying.mapNotNull { it?.id }
         .flatMapLatest { episodeId ->
             getLikedEpisodesUseCase().mapNotNull { likedEpisodes ->
-                likedEpisodes.any { it.episode.id == episodeId }
+                likedEpisodes.any { it.id == episodeId }
             }
         }
 

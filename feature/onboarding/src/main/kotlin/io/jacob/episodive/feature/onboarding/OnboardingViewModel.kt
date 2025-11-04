@@ -56,7 +56,7 @@ class OnboardingViewModel @Inject constructor(
             getRecommendedPodcastsUseCase(),
             getFollowedPodcastsUseCase(),
         ) { recommendedPodcasts, followedPodcasts ->
-            val followedIds = followedPodcasts.map { it.podcast.id }.toSet()
+            val followedIds = followedPodcasts.map { it.id }.toSet()
             Timber.d("recommendedPodcasts: ${recommendedPodcasts.size}, followedIds: $followedIds")
             recommendedPodcasts.map { podcast ->
                 FollowablePodcast(

@@ -15,8 +15,6 @@ import io.jacob.episodive.core.domain.usecase.podcast.GetTrendingPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
 import io.jacob.episodive.core.domain.util.combine
 import io.jacob.episodive.core.model.Episode
-import io.jacob.episodive.core.model.FollowedPodcast
-import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.Podcast
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -116,7 +114,7 @@ class HomeViewModel @Inject constructor(
         playEpisodeUseCase(episode)
     }
 
-    private fun resumeEpisode(playedEpisode: PlayedEpisode) = viewModelScope.launch {
+    private fun resumeEpisode(playedEpisode: Episode) = viewModelScope.launch {
         resumeEpisodeUseCase(playedEpisode)
     }
 
@@ -132,11 +130,11 @@ class HomeViewModel @Inject constructor(
 sealed interface HomeState {
     data object Loading : HomeState
     data class Success(
-        val playingEpisodes: List<PlayedEpisode>,
+        val playingEpisodes: List<Episode>,
         val myRecentPodcasts: List<Podcast>,
         val randomEpisodes: List<Episode>,
         val myTrendingFPodcasts: List<Podcast>,
-        val followedPodcasts: List<FollowedPodcast>,
+        val followedPodcasts: List<Podcast>,
         val localTrendingPodcasts: List<Podcast>,
         val foreignTrendingPodcasts: List<Podcast>,
         val liveEpisodes: List<Episode>,
@@ -147,7 +145,7 @@ sealed interface HomeState {
 
 sealed interface HomeAction {
     data class PlayEpisode(val episode: Episode) : HomeAction
-    data class ResumeEpisode(val playedEpisode: PlayedEpisode) : HomeAction
+    data class ResumeEpisode(val playedEpisode: Episode) : HomeAction
     data class ClickPodcast(val podcastId: Long) : HomeAction
 }
 

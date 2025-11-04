@@ -7,5 +7,4 @@ interface RecentSearchRepository {
     suspend fun upsertRecentSearch(query: String)
     suspend fun deleteRecentSearch(query: String)
     suspend fun clearRecentSearches()
-    suspend fun getRecentSearchesCount(): Int
 }

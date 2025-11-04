@@ -116,85 +116,6 @@ class EpisodeLocalDataSourceTest {
         }
 
     @Test
-    fun `Given dependencies, When addLiked is called, Then addLiked of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.addLiked(any()) } just Runs
-
-            // When
-            dataSource.addLiked(
-                LikedEpisodeEntity(
-                    id = episodeEntity.id,
-                    likedAt = Clock.System.now()
-                )
-            )
-
-            // Then
-            coVerifySequence {
-                episodeDao.addLiked(any())
-            }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When removeLiked is called, Then removeLiked of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.removeLiked(any()) } just Runs
-
-            // When
-            dataSource.removeLiked(episodeEntity.id)
-
-            // Then
-            coVerifySequence {
-                episodeDao.removeLiked(any())
-            }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When upsertPlayed is called, Then upsertPlayed of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.upsertPlayed(any()) } just Runs
-
-            // When
-            dataSource.upsertPlayed(
-                PlayedEpisodeEntity(
-                    id = episodeEntity.id,
-                    playedAt = Clock.System.now(),
-                    position = 2000.seconds,
-                )
-            )
-
-            // Then
-            coVerify { episodeDao.upsertPlayed(any()) }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When removePlayed is called, Then removePlayed of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.removePlayed(any()) } just Runs
-
-            // When
-            dataSource.removePlayed(episodeEntity.id)
-
-            // Then
-            coVerify { episodeDao.removePlayed(episodeEntity.id) }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
     fun `Given dependencies, When getEpisode is called, Then getEpisode of dao is called`() =
         runTest {
             // Given
@@ -243,64 +164,41 @@ class EpisodeLocalDataSourceTest {
         }
 
     @Test
-    fun `Given dependencies, When getLikedEpisodes is called, Then getLikedEpisodes of dao is called`() =
+    fun `Given dependencies, When addLiked is called, Then addLiked of dao is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.getLikedEpisodes() } returns mockk()
+            coEvery { episodeDao.addLiked(any()) } just Runs
 
             // When
-            dataSource.getLikedEpisodes()
+            dataSource.addLiked(
+                LikedEpisodeEntity(
+                    id = episodeEntity.id,
+                    likedAt = Clock.System.now()
+                )
+            )
 
             // Then
-            coVerify { episodeDao.getLikedEpisodes() }
+            coVerifySequence {
+                episodeDao.addLiked(any())
+            }
             confirmVerified(
                 episodeDao,
             )
         }
 
     @Test
-    fun `Given dependencies, When getPlayingEpisodes is called, Then getPlayingEpisodes of dao is called`() =
+    fun `Given dependencies, When removeLiked is called, Then removeLiked of dao is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.getPlayingEpisodes() } returns mockk()
+            coEvery { episodeDao.removeLiked(any()) } just Runs
 
             // When
-            dataSource.getPlayingEpisodes()
+            dataSource.removeLiked(episodeEntity.id)
 
             // Then
-            coVerify { episodeDao.getPlayingEpisodes() }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When getPlayedEpisodes is called, Then getPlayedEpisodes of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.getPlayedEpisodes() } returns mockk()
-
-            // When
-            dataSource.getPlayedEpisodes()
-
-            // Then
-            coVerify { episodeDao.getPlayedEpisodes() }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When getAllPlayedEpisodes is called, Then getAllPlayedEpisodes of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.getAllPlayedEpisodes() } returns mockk()
-
-            // When
-            dataSource.getAllPlayedEpisodes()
-
-            // Then
-            coVerify { episodeDao.getAllPlayedEpisodes() }
+            coVerifySequence {
+                episodeDao.removeLiked(any())
+            }
             confirmVerified(
                 episodeDao,
             )
@@ -323,66 +221,86 @@ class EpisodeLocalDataSourceTest {
         }
 
     @Test
-    fun `Given dependencies, When getEpisodeCount is called, Then getEpisodeCount of dao is called`() =
+    fun `Given dependencies, When toggleLiked is called, Then toggleLiked of dao is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.getEpisodeCount() } returns mockk()
+            coEvery { episodeDao.toggleLiked(any()) } returns mockk()
 
             // When
-            dataSource.getEpisodeCount()
+            dataSource.toggleLiked(episodeEntity.id)
 
             // Then
-            coVerify { episodeDao.getEpisodeCount() }
+            coVerify { episodeDao.toggleLiked(episodeEntity.id) }
+        }
+
+    @Test
+    fun `Given dependencies, When getLikedEpisodes is called, Then getLikedEpisodes of dao is called`() =
+        runTest {
+            // Given
+            coEvery { episodeDao.getLikedEpisodes() } returns mockk()
+
+            // When
+            dataSource.getLikedEpisodes()
+
+            // Then
+            coVerify { episodeDao.getLikedEpisodes() }
             confirmVerified(
                 episodeDao,
             )
         }
 
     @Test
-    fun `Given dependencies, When getLikedEpisodeCount is called, Then getLikedEpisodeCount of dao is called`() =
+    fun `Given dependencies, When upsertPlayed is called, Then upsertPlayed of dao is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.getLikedEpisodeCount() } returns mockk()
+            coEvery { episodeDao.upsertPlayed(any()) } just Runs
 
             // When
-            dataSource.getLikedEpisodeCount()
+            dataSource.upsertPlayed(
+                PlayedEpisodeEntity(
+                    id = episodeEntity.id,
+                    playedAt = Clock.System.now(),
+                    position = 2000.seconds,
+                )
+            )
 
             // Then
-            coVerify { episodeDao.getLikedEpisodeCount() }
+            coVerify { episodeDao.upsertPlayed(any()) }
             confirmVerified(
                 episodeDao,
             )
         }
 
     @Test
-    fun `Given dependencies, When getPlayingEpisodeCount is called, Then getPlayingEpisodeCount of dao is called`() =
+    fun `Given dependencies, When removePlayed is called, Then removePlayed of dao is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.getPlayingEpisodeCount() } returns mockk()
+            coEvery { episodeDao.removePlayed(any()) } just Runs
 
             // When
-            dataSource.getPlayingEpisodeCount()
+            dataSource.removePlayed(episodeEntity.id)
 
             // Then
-            coVerify { episodeDao.getPlayingEpisodeCount() }
+            coVerify { episodeDao.removePlayed(episodeEntity.id) }
             confirmVerified(
                 episodeDao,
             )
         }
 
     @Test
-    fun `Given dependencies, When getPlayedEpisodeCount is called, Then getPlayedEpisodeCount of dao is called`() =
+    fun `Given dependencies, When getPlayedEpisodes is called, Then getPlayedEpisodes of dao is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.getPlayedEpisodeCount() } returns mockk()
+            coEvery { episodeDao.getPlayedEpisodes() } returns mockk()
 
             // When
-            dataSource.getPlayedEpisodeCount()
+            dataSource.getPlayedEpisodes()
 
             // Then
-            coVerify { episodeDao.getPlayedEpisodeCount() }
+            coVerify { episodeDao.getPlayedEpisodes() }
             confirmVerified(
                 episodeDao,
             )
         }
+
 }

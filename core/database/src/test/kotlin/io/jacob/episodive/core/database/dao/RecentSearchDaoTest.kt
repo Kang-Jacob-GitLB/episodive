@@ -135,36 +135,4 @@ class RecentSearchDaoTest {
                 cancel()
             }
         }
-
-    @Test
-    fun `Given some recentSearchEntities, When clearRecentSearches, Then remove all recentSearches`() =
-        runTest {
-            // Given
-            val now = Clock.System.now()
-            dao.upsertRecentSearch(
-                RecentSearchEntity(
-                    query = "query1",
-                    searchedAt = now
-                )
-            )
-            dao.upsertRecentSearch(
-                RecentSearchEntity(
-                    query = "query2",
-                    searchedAt = now.plus(1.minutes)
-                )
-            )
-            dao.upsertRecentSearch(
-                RecentSearchEntity(
-                    query = "query3",
-                    searchedAt = now.plus(2.minutes)
-                )
-            )
-
-            // When
-            dao.clearRecentSearches()
-            val count = dao.getRecentSearchesCount()
-
-            // Then
-            assertEquals(0, count)
-        }
 }

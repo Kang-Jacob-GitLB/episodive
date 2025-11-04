@@ -1,25 +1,19 @@
 package io.jacob.episodive.core.data.repository
 
-import androidx.room.Transaction
 import io.jacob.episodive.core.data.util.Cacher
-import io.jacob.episodive.core.data.util.CacherSingle
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisode
 import io.jacob.episodive.core.database.mapper.toEpisodes
-import io.jacob.episodive.core.database.mapper.toLikedEpisodes
-import io.jacob.episodive.core.database.mapper.toPlayedEpisodes
-import io.jacob.episodive.core.database.model.LikedEpisodeEntity
+import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
-import io.jacob.episodive.core.model.LikedEpisode
-import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import kotlin.time.Clock
@@ -94,12 +88,14 @@ class EpisodeRepositoryImpl @Inject constructor(
     override fun getEpisodeById(id: Long): Flow<Episode?> {
         val query = EpisodeQuery.EpisodeId(id)
 
-        return CacherSingle(
+        return Cacher(
             remoteUpdater = remoteUpdater.create(query),
             sourceFactory = {
-                localDataSource.getEpisode(id)
+                localDataSource.getEpisode(id).map { entity ->
+                    entity?.let { listOf(it) } ?: emptyList()
+                }
             }
-        ).flow.map { it?.toEpisode() }
+        ).flow.map { it.ifEmpty { null }?.firstOrNull()?.toEpisode() }
     }
 
     override fun getLiveEpisodes(max: Int?): Flow<List<Episode>> {
@@ -143,36 +139,86 @@ class EpisodeRepositoryImpl @Inject constructor(
         ).flow.map { it.toEpisodes() }
     }
 
-    override fun getLikedEpisodes(query: String?): Flow<List<LikedEpisode>> {
-        return localDataSource.getLikedEpisodes(query).map { it.toLikedEpisodes() }
-    }
-
-    override fun getPlayingEpisodes(query: String?): Flow<List<PlayedEpisode>> {
-        return localDataSource.getPlayingEpisodes(query).map { it.toPlayedEpisodes() }
-    }
-
-    override fun getPlayedEpisodes(query: String?): Flow<List<PlayedEpisode>> {
-        return localDataSource.getPlayedEpisodes(query).map { it.toPlayedEpisodes() }
-    }
-
-    override fun getAllPlayedEpisodes(query: String?): Flow<List<PlayedEpisode>> {
-        return localDataSource.getAllPlayedEpisodes(query).map { it.toPlayedEpisodes() }
-    }
-
-    @Transaction
-    override suspend fun toggleLiked(id: Long): Boolean {
-        return if (localDataSource.isLiked(id).first()) {
-            localDataSource.removeLiked(id)
-            false
-        } else {
-            localDataSource.addLiked(
-                LikedEpisodeEntity(
-                    id = id,
-                    likedAt = Clock.System.now()
-                )
-            )
-            true
+    override fun getLikedEpisodes(query: String?): Flow<List<Episode>> {
+        return combine(
+            localDataSource.getEpisodes(),
+            localDataSource.getLikedEpisodes()
+        ) { episodes, liked ->
+            val episodeMap = episodes.associateBy { it.id }
+            liked.mapNotNull { likedEpisode ->
+                episodeMap[likedEpisode.id]?.let { episode ->
+                    if (query == null || episode.matchesQuery(query)) {
+                        episode.toEpisode().copy(likedAt = likedEpisode.likedAt)
+                    } else null
+                }
+            }
         }
+    }
+
+    override fun getPlayingEpisodes(query: String?): Flow<List<Episode>> {
+        return combine(
+            localDataSource.getEpisodes(),
+            localDataSource.getPlayedEpisodes()
+        ) { episodes, played ->
+            val episodeMap = episodes.associateBy { it.id }
+            played.filter { !it.isCompleted }
+                .mapNotNull { playedEpisode ->
+                    episodeMap[playedEpisode.id]?.let { episode ->
+                        if (query == null || episode.matchesQuery(query)) {
+                            episode.toEpisode().copy(
+                                playedAt = playedEpisode.playedAt,
+                                position = playedEpisode.position,
+                                isCompleted = playedEpisode.isCompleted,
+                            )
+                        } else null
+                    }
+                }
+        }
+    }
+
+    override fun getPlayedEpisodes(query: String?): Flow<List<Episode>> {
+        return combine(
+            localDataSource.getEpisodes(),
+            localDataSource.getPlayedEpisodes()
+        ) { episodes, played ->
+            val episodeMap = episodes.associateBy { it.id }
+            played.filter { it.isCompleted }
+                .mapNotNull { playedEpisode ->
+                    episodeMap[playedEpisode.id]?.let { episode ->
+                        if (query == null || episode.matchesQuery(query)) {
+                            episode.toEpisode().copy(
+                                playedAt = playedEpisode.playedAt,
+                                position = playedEpisode.position,
+                                isCompleted = playedEpisode.isCompleted,
+                            )
+                        } else null
+                    }
+                }
+        }
+    }
+
+    override fun getAllPlayedEpisodes(query: String?): Flow<List<Episode>> {
+        return combine(
+            localDataSource.getEpisodes(),
+            localDataSource.getPlayedEpisodes(),
+        ) { episodes, played ->
+            val episodeMap = episodes.associateBy { it.id }
+            played.mapNotNull { playedEpisode ->
+                episodeMap[playedEpisode.id]?.let { episode ->
+                    if (query == null || episode.matchesQuery(query)) {
+                        episode.toEpisode().copy(
+                            playedAt = playedEpisode.playedAt,
+                            position = playedEpisode.position,
+                            isCompleted = playedEpisode.isCompleted,
+                        )
+                    } else null
+                }
+            }
+        }
+    }
+
+    override suspend fun toggleLiked(id: Long): Boolean {
+        return localDataSource.toggleLiked(id)
     }
 
     override suspend fun updatePlayed(
@@ -188,5 +234,12 @@ class EpisodeRepositoryImpl @Inject constructor(
                 isCompleted = isCompleted,
             )
         )
+    }
+
+    private fun EpisodeEntity.matchesQuery(query: String): Boolean {
+        return title.contains(query, ignoreCase = true) ||
+                description?.contains(query, ignoreCase = true) == true ||
+                feedAuthor?.contains(query, ignoreCase = true) == true ||
+                feedTitle?.contains(query, ignoreCase = true) == true
     }
 }

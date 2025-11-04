@@ -18,7 +18,6 @@ class GetClipEpisodesUseCase @Inject constructor(
     private val feedRepository: FeedRepository,
     private val episodeRepository: EpisodeRepository
 ) {
-    @Suppress("UnusedFlow")
     operator fun invoke(max: Int = 20): Flow<List<ClipEpisode>> {
         return feedRepository.getRecentSoundbites().flatMapLatest { soundbites ->
             val limitedSoundbites = soundbites.take(max)

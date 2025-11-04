@@ -108,38 +108,6 @@ class PodcastLocalDataSourceTest {
         }
 
     @Test
-    fun `Given dependencies, When addFollowed is called, Then addFollowed of dao is called`() =
-        runTest {
-            // Given
-            coEvery { podcastDao.addFollowed(any()) } just Runs
-
-            // When
-            dataSource.addFollowed(
-                FollowedPodcastEntity(
-                    id = podcastEntity.id,
-                    followedAt = Clock.System.now(),
-                    isNotificationEnabled = true,
-                )
-            )
-
-            // Then
-            coVerify { podcastDao.addFollowed(any()) }
-        }
-
-    @Test
-    fun `Given dependencies, When removeFollowed is called, Then removeFollowed of dao is called`() =
-        runTest {
-            // Given
-            coEvery { podcastDao.removeFollowed(any()) } just Runs
-
-            // When
-            dataSource.removeFollowed(podcastEntity.id)
-
-            // Then
-            coVerify { podcastDao.removeFollowed(podcastEntity.id) }
-        }
-
-    @Test
     fun `Given dependencies, When getPodcast is called, Then getPodcast of dao is called`() =
         runTest {
             // Given
@@ -179,16 +147,35 @@ class PodcastLocalDataSourceTest {
         }
 
     @Test
-    fun `Given dependencies, When getFollowedPodcasts is called, Then getFollowedPodcasts of dao is called`() =
+    fun `Given dependencies, When addFollowed is called, Then addFollowed of dao is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.getFollowedPodcasts() } returns mockk()
+            coEvery { podcastDao.addFollowed(any()) } just Runs
 
             // When
-            dataSource.getFollowedPodcasts()
+            dataSource.addFollowed(
+                FollowedPodcastEntity(
+                    id = podcastEntity.id,
+                    followedAt = Clock.System.now(),
+                    isNotificationEnabled = true,
+                )
+            )
 
             // Then
-            coVerify { podcastDao.getFollowedPodcasts() }
+            coVerify { podcastDao.addFollowed(any()) }
+        }
+
+    @Test
+    fun `Given dependencies, When removeFollowed is called, Then removeFollowed of dao is called`() =
+        runTest {
+            // Given
+            coEvery { podcastDao.removeFollowed(any()) } just Runs
+
+            // When
+            dataSource.removeFollowed(podcastEntity.id)
+
+            // Then
+            coVerify { podcastDao.removeFollowed(podcastEntity.id) }
         }
 
     @Test
@@ -205,49 +192,28 @@ class PodcastLocalDataSourceTest {
         }
 
     @Test
-    fun `Given dependencies, When getPodcastCount is called, Then getPodcastCount of dao is called`() =
+    fun `Given dependencies, When toggleFollowed is called, Then toggleFollowed of dao is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.getPodcastCount() } returns mockk()
+            coEvery { podcastDao.toggleFollowed(any()) } returns mockk()
 
             // When
-            dataSource.getPodcastCount()
+            dataSource.toggleFollowed(podcastEntity.id)
 
             // Then
-            coVerify { podcastDao.getPodcastCount() }
+            coVerify { podcastDao.toggleFollowed(podcastEntity.id) }
         }
 
     @Test
-    fun `Given dependencies, When getFollowedPodcastCount is called, Then getFollowedPodcastCount of dao is called`() =
+    fun `Given dependencies, When getFollowedPodcasts is called, Then getFollowedPodcasts of dao is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.getFollowedPodcastCount() } returns mockk()
+            coEvery { podcastDao.getFollowedPodcasts() } returns mockk()
 
             // When
-            dataSource.getFollowedPodcastCount()
+            dataSource.getFollowedPodcasts()
 
             // Then
-            coVerify { podcastDao.getFollowedPodcastCount() }
-        }
-
-    @Test
-    fun `Given dependencies, When addFolloweds is called, Then addFolloweds of dao is called`() =
-        runTest {
-            // Given
-            coEvery { podcastDao.addFolloweds(any()) } just Runs
-
-            // When
-            dataSource.addFolloweds(
-                listOf(
-                    FollowedPodcastEntity(
-                        id = podcastEntity.id,
-                        followedAt = Clock.System.now(),
-                        isNotificationEnabled = true,
-                    )
-                )
-            )
-
-            // Then
-            coVerify { podcastDao.addFolloweds(any()) }
+            coVerify { podcastDao.getFollowedPodcasts() }
         }
 }

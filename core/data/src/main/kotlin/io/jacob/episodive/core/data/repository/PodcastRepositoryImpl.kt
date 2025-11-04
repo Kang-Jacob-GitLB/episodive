@@ -1,26 +1,21 @@
 package io.jacob.episodive.core.data.repository
 
-import androidx.room.Transaction
 import io.jacob.episodive.core.data.util.Cacher
-import io.jacob.episodive.core.data.util.CacherSingle
 import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
-import io.jacob.episodive.core.database.mapper.toFollowedPodcasts
 import io.jacob.episodive.core.database.mapper.toPodcast
 import io.jacob.episodive.core.database.mapper.toPodcasts
-import io.jacob.episodive.core.database.model.FollowedPodcastEntity
+import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.domain.repository.PodcastRepository
-import io.jacob.episodive.core.model.FollowedPodcast
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toPodcast
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
-import kotlin.time.Clock
 
 class PodcastRepositoryImpl @Inject constructor(
     private val localDataSource: PodcastLocalDataSource,
@@ -44,12 +39,14 @@ class PodcastRepositoryImpl @Inject constructor(
     override fun getPodcastByFeedId(feedId: Long): Flow<Podcast?> {
         val query = PodcastQuery.FeedId(feedId)
 
-        return CacherSingle(
+        return Cacher(
             remoteUpdater = remoteUpdater.create(query),
             sourceFactory = {
-                localDataSource.getPodcast(feedId)
+                localDataSource.getPodcast(feedId).map { entity ->
+                    entity?.let { listOf(it) } ?: emptyList()
+                }
             }
-        ).flow.map { it?.toPodcast() }
+        ).flow.map { it.ifEmpty { null }?.firstOrNull()?.toPodcast() }
     }
 
     override fun getPodcastByFeedUrl(feedUrl: String): Flow<Podcast?> = flow {
@@ -82,42 +79,33 @@ class PodcastRepositoryImpl @Inject constructor(
         ).flow.map { it.toPodcasts() }
     }
 
-    override fun getFollowedPodcasts(query: String?): Flow<List<FollowedPodcast>> {
-        return localDataSource.getFollowedPodcasts(query).map { it.toFollowedPodcasts() }
-    }
-
-    @Transaction
-    override suspend fun toggleFollowed(id: Long): Boolean {
-        return if (localDataSource.isFollowed(id).first()) {
-            localDataSource.removeFollowed(id)
-            false
-        } else {
-            localDataSource.addFollowed(
-                FollowedPodcastEntity(
-                    id = id,
-                    followedAt = Clock.System.now(),
-                    isNotificationEnabled = true,
-                )
-            )
-            true
-        }
-    }
-
-    override suspend fun addFolloweds(ids: List<Long>): Boolean {
-        return try {
-            val now = Clock.System.now()
-            val followedPodcastEntities = ids.map {
-                FollowedPodcastEntity(
-                    id = it,
-                    followedAt = now,
-                    isNotificationEnabled = true,
-                )
+    override fun getFollowedPodcasts(query: String?): Flow<List<Podcast>> {
+        return combine(
+            localDataSource.getPodcasts(),
+            localDataSource.getFollowedPodcasts(),
+        ) { podcasts, followed ->
+            val podcastMap = podcasts.associateBy { it.id }
+            followed.mapNotNull { followedPodcast ->
+                podcastMap[followedPodcast.id]?.let { podcast ->
+                    if (query == null || podcast.matchesQuery(query)) {
+                        podcast.toPodcast().copy(
+                            followedAt = followedPodcast.followedAt,
+                            isNotificationEnabled = followedPodcast.isNotificationEnabled,
+                        )
+                    } else null
+                }
             }
-            localDataSource.addFolloweds(followedPodcastEntities)
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
         }
+    }
+
+    override suspend fun toggleFollowed(id: Long): Boolean {
+        return localDataSource.toggleFollowed(id)
+    }
+
+    private fun PodcastEntity.matchesQuery(query: String): Boolean {
+        return title.contains(query, ignoreCase = true) ||
+                description.contains(query, ignoreCase = true) ||
+                author.contains(query, ignoreCase = true) ||
+                ownerName.contains(query, ignoreCase = true)
     }
 }

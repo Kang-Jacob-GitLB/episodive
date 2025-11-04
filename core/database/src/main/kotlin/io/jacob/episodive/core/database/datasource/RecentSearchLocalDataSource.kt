@@ -8,5 +8,4 @@ interface RecentSearchLocalDataSource {
     suspend fun upsertRecentSearch(recentSearch: RecentSearchEntity)
     suspend fun deleteRecentSearch(query: String)
     suspend fun clearRecentSearches()
-    suspend fun getRecentSearchesCount(): Int
 }

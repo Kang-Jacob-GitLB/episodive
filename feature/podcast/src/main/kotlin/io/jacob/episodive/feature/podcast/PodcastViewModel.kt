@@ -56,7 +56,7 @@ class PodcastViewModel @AssistedInject constructor(
         if (podcast == null) {
             PodcastState.Error("Podcast not found")
         } else {
-            val isFollowed = followedPodcasts.any { it.podcast.id == podcast.id }
+            val isFollowed = followedPodcasts.any { it.id == podcast.id }
             Timber.i("episode size=${episodes.size}, isFollowed=$isFollowed")
             PodcastState.Success(
                 podcast = podcast,
