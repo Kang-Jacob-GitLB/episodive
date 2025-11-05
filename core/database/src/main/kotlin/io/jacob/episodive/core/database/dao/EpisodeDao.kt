@@ -29,6 +29,14 @@ interface EpisodeDao {
     @Query("DELETE FROM episodes WHERE cacheKey = :cacheKey")
     suspend fun deleteEpisodesByCacheKey(cacheKey: String)
 
+    @Transaction
+    suspend fun replaceEpisodes(episodes: List<EpisodeEntity>) {
+        episodes.groupBy { it.cacheKey }.forEach { (cacheKey, episodeGroup) ->
+            deleteEpisodesByCacheKey(cacheKey)
+            upsertEpisodes(episodeGroup)
+        }
+    }
+
     @Query("SELECT * FROM episodes WHERE id = :id ORDER BY cachedAt DESC LIMIT 1")
     fun getEpisode(id: Long): Flow<EpisodeEntity?>
 

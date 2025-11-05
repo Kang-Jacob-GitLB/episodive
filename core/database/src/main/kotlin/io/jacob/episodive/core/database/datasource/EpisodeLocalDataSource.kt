@@ -11,6 +11,7 @@ interface EpisodeLocalDataSource {
     suspend fun deleteEpisode(id: Long)
     suspend fun deleteEpisodes()
     suspend fun deleteEpisodesByCacheKey(cacheKey: String)
+    suspend fun replaceEpisodes(episodes: List<EpisodeEntity>)
     fun getEpisode(id: Long): Flow<EpisodeEntity?>
     fun getEpisodes(): Flow<List<EpisodeEntity>>
     fun getEpisodesByCacheKey(cacheKey: String): Flow<List<EpisodeEntity>>

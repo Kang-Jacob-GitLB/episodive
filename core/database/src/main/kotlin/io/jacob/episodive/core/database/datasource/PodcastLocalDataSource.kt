@@ -10,6 +10,7 @@ interface PodcastLocalDataSource {
     suspend fun deletePodcast(id: Long)
     suspend fun deletePodcasts()
     suspend fun deletePodcastsByCacheKey(cacheKey: String)
+    suspend fun replacePodcasts(podcasts: List<PodcastEntity>)
     fun getPodcast(id: Long): Flow<PodcastEntity?>
     fun getPodcasts(): Flow<List<PodcastEntity>>
     fun getPodcastsByCacheKey(cacheKey: String): Flow<List<PodcastEntity>>

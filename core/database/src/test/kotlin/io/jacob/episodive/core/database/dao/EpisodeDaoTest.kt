@@ -156,6 +156,83 @@ class EpisodeDaoTest {
         }
 
     @Test
+    fun `Given existing episodes with different cache keys, When replaceEpisodes is called, Then episodes are replaced by cache key`() =
+        runTest {
+            // Given - Insert initial episodes with different cache keys
+            val initialEntities = episodeEntities.chunked(2)
+            dao.upsertEpisodes(initialEntities[0].map { it.copy(cacheKey = "key1") })
+            dao.upsertEpisodes(initialEntities[1].map { it.copy(cacheKey = "key2") })
+            dao.upsertEpisodes(initialEntities[2].map { it.copy(cacheKey = "key3") })
+
+            // Verify initial state
+            dao.getEpisodesByCacheKey("key1").test {
+                assertEquals(2, awaitItem().size)
+                cancel()
+            }
+
+            // When - Replace episodes with mixed cache keys
+            val newEntities = listOf(
+                episodeEntity.copy(id = 999L, cacheKey = "key1"),
+                episodeEntity.copy(id = 998L, cacheKey = "key1"),
+                episodeEntity.copy(id = 997L, cacheKey = "key2")
+            )
+            dao.replaceEpisodes(newEntities)
+
+            // Then - Verify key1 was replaced
+            dao.getEpisodesByCacheKey("key1").test {
+                val key1Episodes = awaitItem()
+                assertEquals(2, key1Episodes.size)
+                assertTrue(key1Episodes.any { it.id == 999L })
+                assertTrue(key1Episodes.any { it.id == 998L })
+                assertFalse(key1Episodes.any { it.id == initialEntities[0][0].id })
+                cancel()
+            }
+
+            // Then - Verify key2 was replaced
+            dao.getEpisodesByCacheKey("key2").test {
+                val key2Episodes = awaitItem()
+                assertEquals(1, key2Episodes.size)
+                assertTrue(key2Episodes.any { it.id == 997L })
+                assertFalse(key2Episodes.any { it.id == initialEntities[1][0].id })
+                cancel()
+            }
+
+            // Then - Verify key3 was not affected
+            dao.getEpisodesByCacheKey("key3").test {
+                val key3Episodes = awaitItem()
+                assertEquals(2, key3Episodes.size)
+                assertTrue(key3Episodes.any { it.id == initialEntities[2][0].id })
+                assertTrue(key3Episodes.any { it.id == initialEntities[2][1].id })
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given episodes with same cache key, When replaceEpisodes is called, Then old episodes are deleted and new episodes are inserted`() =
+        runTest {
+            // Given - Insert initial episodes
+            val initialEpisodes = episodeEntities.take(3).map { it.copy(cacheKey = "trending") }
+            dao.upsertEpisodes(initialEpisodes)
+
+            // When - Replace with new episodes
+            val newEpisodes = listOf(
+                episodeEntity.copy(id = 100L, cacheKey = "trending"),
+                episodeEntity.copy(id = 101L, cacheKey = "trending")
+            )
+            dao.replaceEpisodes(newEpisodes)
+
+            // Then - Verify old episodes are gone and new episodes exist
+            dao.getEpisodesByCacheKey("trending").test {
+                val episodes = awaitItem()
+                assertEquals(2, episodes.size)
+                assertTrue(episodes.any { it.id == 100L })
+                assertTrue(episodes.any { it.id == 101L })
+                assertFalse(episodes.any { it.id in initialEpisodes.map { e -> e.id } })
+                cancel()
+            }
+        }
+
+    @Test
     fun `Given some episode entity liked and some episode entities, When getLikedEpisodes is called, Then liked episodes are returned`() =
         runTest {
             // Given

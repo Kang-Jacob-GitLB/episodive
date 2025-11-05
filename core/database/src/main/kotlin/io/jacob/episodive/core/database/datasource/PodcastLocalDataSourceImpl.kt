@@ -28,6 +28,10 @@ class PodcastLocalDataSourceImpl(
         podcastDao.deletePodcastsByCacheKey(cacheKey)
     }
 
+    override suspend fun replacePodcasts(podcasts: List<PodcastEntity>) {
+        podcastDao.replacePodcasts(podcasts)
+    }
+
     override fun getPodcast(id: Long): Flow<PodcastEntity?> {
         return podcastDao.getPodcast(id)
     }

@@ -116,6 +116,22 @@ class EpisodeLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When replaceEpisodes is called, Then replaceEpisodes of dao is called`() =
+        runTest {
+            // Given
+            coEvery { episodeDao.replaceEpisodes(any()) } just Runs
+
+            // When
+            dataSource.replaceEpisodes(episodeEntities)
+
+            // Then
+            coVerify { episodeDao.replaceEpisodes(episodeEntities) }
+            confirmVerified(
+                episodeDao,
+            )
+        }
+
+    @Test
     fun `Given dependencies, When getEpisode is called, Then getEpisode of dao is called`() =
         runTest {
             // Given

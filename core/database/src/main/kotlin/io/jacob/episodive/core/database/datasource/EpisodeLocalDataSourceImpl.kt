@@ -30,6 +30,10 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         episodeDao.deleteEpisodesByCacheKey(cacheKey)
     }
 
+    override suspend fun replaceEpisodes(episodes: List<EpisodeEntity>) {
+        episodeDao.replaceEpisodes(episodes)
+    }
+
     override fun getEpisode(id: Long): Flow<EpisodeEntity?> {
         return episodeDao.getEpisode(id)
     }

@@ -133,6 +133,83 @@ class PodcastDaoTest {
         }
 
     @Test
+    fun `Given existing podcasts with different cache keys, When replacePodcasts is called, Then podcasts are replaced by cache key`() =
+        runTest {
+            // Given - Insert initial podcasts with different cache keys
+            val initialEntities = podcastEntities.chunked(2)
+            dao.upsertPodcasts(initialEntities[0].map { it.copy(cacheKey = "key1") })
+            dao.upsertPodcasts(initialEntities[1].map { it.copy(cacheKey = "key2") })
+            dao.upsertPodcasts(initialEntities[2].map { it.copy(cacheKey = "key3") })
+
+            // Verify initial state
+            dao.getPodcastsByCacheKey("key1").test {
+                assertEquals(2, awaitItem().size)
+                cancel()
+            }
+
+            // When - Replace podcasts with mixed cache keys
+            val newEntities = listOf(
+                podcastEntity.copy(id = 999L, cacheKey = "key1"),
+                podcastEntity.copy(id = 998L, cacheKey = "key1"),
+                podcastEntity.copy(id = 997L, cacheKey = "key2")
+            )
+            dao.replacePodcasts(newEntities)
+
+            // Then - Verify key1 was replaced
+            dao.getPodcastsByCacheKey("key1").test {
+                val key1Podcasts = awaitItem()
+                assertEquals(2, key1Podcasts.size)
+                assertTrue(key1Podcasts.any { it.id == 999L })
+                assertTrue(key1Podcasts.any { it.id == 998L })
+                assertFalse(key1Podcasts.any { it.id == initialEntities[0][0].id })
+                cancel()
+            }
+
+            // Then - Verify key2 was replaced
+            dao.getPodcastsByCacheKey("key2").test {
+                val key2Podcasts = awaitItem()
+                assertEquals(1, key2Podcasts.size)
+                assertTrue(key2Podcasts.any { it.id == 997L })
+                assertFalse(key2Podcasts.any { it.id == initialEntities[1][0].id })
+                cancel()
+            }
+
+            // Then - Verify key3 was not affected
+            dao.getPodcastsByCacheKey("key3").test {
+                val key3Podcasts = awaitItem()
+                assertEquals(2, key3Podcasts.size)
+                assertTrue(key3Podcasts.any { it.id == initialEntities[2][0].id })
+                assertTrue(key3Podcasts.any { it.id == initialEntities[2][1].id })
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given podcasts with same cache key, When replacePodcasts is called, Then old podcasts are deleted and new podcasts are inserted`() =
+        runTest {
+            // Given - Insert initial podcasts
+            val initialPodcasts = podcastEntities.take(3).map { it.copy(cacheKey = "trending") }
+            dao.upsertPodcasts(initialPodcasts)
+
+            // When - Replace with new podcasts
+            val newPodcasts = listOf(
+                podcastEntity.copy(id = 100L, cacheKey = "trending"),
+                podcastEntity.copy(id = 101L, cacheKey = "trending")
+            )
+            dao.replacePodcasts(newPodcasts)
+
+            // Then - Verify old podcasts are gone and new podcasts exist
+            dao.getPodcastsByCacheKey("trending").test {
+                val podcasts = awaitItem()
+                assertEquals(2, podcasts.size)
+                assertTrue(podcasts.any { it.id == 100L })
+                assertTrue(podcasts.any { it.id == 101L })
+                assertFalse(podcasts.any { it.id in initialPodcasts.map { p -> p.id } })
+                cancel()
+            }
+        }
+
+    @Test
     fun `Given some podcast entities, When getPodcastsByCacheKey is called, Then the correct podcasts are returned`() =
         runTest {
             // Given

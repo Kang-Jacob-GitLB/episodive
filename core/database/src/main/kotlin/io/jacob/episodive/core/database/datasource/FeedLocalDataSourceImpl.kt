@@ -75,6 +75,22 @@ class FeedLocalDataSourceImpl @Inject constructor(
         feedDao.deleteSoundbitesByCacheKey(cacheKey)
     }
 
+    override suspend fun replaceTrendingFeeds(feeds: List<TrendingFeedEntity>) {
+        feedDao.replaceTrendingFeeds(feeds)
+    }
+
+    override suspend fun replaceRecentFeeds(feeds: List<RecentFeedEntity>) {
+        feedDao.replaceRecentFeeds(feeds)
+    }
+
+    override suspend fun replaceRecentNewFeeds(feeds: List<RecentNewFeedEntity>) {
+        feedDao.replaceRecentNewFeeds(feeds)
+    }
+
+    override suspend fun replaceSoundbites(soundbites: List<SoundbiteEntity>) {
+        feedDao.replaceSoundbites(soundbites)
+    }
+
     override fun getTrendingFeedsByCacheKey(cacheKey: String): Flow<List<TrendingFeedEntity>> {
         return feedDao.getTrendingFeedsByCacheKey(cacheKey)
     }

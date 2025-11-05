@@ -28,6 +28,14 @@ interface PodcastDao {
     @Query("DELETE FROM podcasts WHERE cacheKey = :cacheKey")
     suspend fun deletePodcastsByCacheKey(cacheKey: String)
 
+    @Transaction
+    suspend fun replacePodcasts(podcasts: List<PodcastEntity>) {
+        podcasts.groupBy { it.cacheKey }.forEach { (cacheKey, podcastGroup) ->
+            deletePodcastsByCacheKey(cacheKey)
+            upsertPodcasts(podcastGroup)
+        }
+    }
+
     @Query("SELECT * FROM podcasts WHERE id = :id ORDER BY cachedAt DESC LIMIT 1")
     fun getPodcast(id: Long): Flow<PodcastEntity?>
 

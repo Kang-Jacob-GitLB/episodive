@@ -108,6 +108,19 @@ class PodcastLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When replacePodcasts is called, Then replacePodcasts of dao is called`() =
+        runTest {
+            // Given
+            coEvery { podcastDao.replacePodcasts(any()) } just Runs
+
+            // When
+            dataSource.replacePodcasts(podcastEntities)
+
+            // Then
+            coVerify { podcastDao.replacePodcasts(podcastEntities) }
+        }
+
+    @Test
     fun `Given dependencies, When getPodcast is called, Then getPodcast of dao is called`() =
         runTest {
             // Given
