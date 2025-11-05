@@ -7,7 +7,7 @@ import io.jacob.episodive.core.model.mapper.toLongMillis
 import javax.inject.Inject
 
 class ResumeEpisodeUseCase @Inject constructor(
-    @MainPlayerRepository private val playerRepository: PlayerRepository,
+    @param:MainPlayerRepository private val playerRepository: PlayerRepository,
 ) {
     operator fun invoke(playedEpisode: Episode) {
         playerRepository.play(playedEpisode)

@@ -24,7 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ClipViewModel @Inject constructor(
     private val getClipEpisodesUseCase: GetClipEpisodesUseCase,
-    @ClipPlayerRepository private val playerRepository: PlayerRepository,
+    @param:ClipPlayerRepository private val playerRepository: PlayerRepository,
     private val playAndAddClipsUseCase: PlayAndAddClipsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
 ) : ViewModel() {
