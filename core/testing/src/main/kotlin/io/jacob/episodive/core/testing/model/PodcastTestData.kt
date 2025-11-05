@@ -1,7 +1,6 @@
 package io.jacob.episodive.core.testing.model
 
 import io.jacob.episodive.core.model.Category
-import io.jacob.episodive.core.model.FollowedPodcast
 import io.jacob.episodive.core.model.Medium
 import io.jacob.episodive.core.model.Podcast
 import kotlin.time.Instant
@@ -360,13 +359,3 @@ val podcastTestDataList = listOf(
 )
 
 val podcastTestData = podcastTestDataList.first()
-
-val followedPodcastTestDataList = podcastTestDataList.map {
-    FollowedPodcast(
-        podcast = it,
-        followedAt = Instant.fromEpochSeconds(1757990593),
-        isNotificationEnabled = false,
-    )
-}
-
-val followedPodcastTestData = followedPodcastTestDataList.first()
