@@ -53,7 +53,7 @@ class PodcastLocalDataSourceImpl(
     }
 
     override suspend fun toggleFollowed(id: Long): Boolean {
-        return toggleFollowed(id)
+        return podcastDao.toggleFollowed(id)
     }
 
     override fun getFollowedPodcasts(): Flow<List<FollowedPodcastEntity>> {

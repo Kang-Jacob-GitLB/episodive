@@ -182,7 +182,7 @@ class PodcastLocalDataSourceTest {
     fun `Given dependencies, When isFollowed is called, Then isFollowed of dao is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.isFollowed(any()) } returns mockk()
+            coEvery { podcastDao.isFollowed(any()) } returns false
 
             // When
             dataSource.isFollowed(podcastEntity.id)
@@ -195,7 +195,7 @@ class PodcastLocalDataSourceTest {
     fun `Given dependencies, When toggleFollowed is called, Then toggleFollowed of dao is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.toggleFollowed(any()) } returns mockk()
+            coEvery { podcastDao.toggleFollowed(any()) } returns false
 
             // When
             dataSource.toggleFollowed(podcastEntity.id)

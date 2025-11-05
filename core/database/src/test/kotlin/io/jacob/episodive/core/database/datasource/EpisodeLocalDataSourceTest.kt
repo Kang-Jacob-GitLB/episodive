@@ -208,7 +208,7 @@ class EpisodeLocalDataSourceTest {
     fun `Given dependencies, When isLiked is called, Then isLiked of dao is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.isLiked(any()) } returns mockk()
+            coEvery { episodeDao.isLiked(any()) } returns false
 
             // When
             dataSource.isLiked(episodeEntity.id)
