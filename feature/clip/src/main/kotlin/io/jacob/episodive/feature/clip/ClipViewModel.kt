@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.di.ClipPlayerRepository
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetClipEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayAndAddClipsUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.model.ClipEpisode
@@ -27,6 +28,7 @@ class ClipViewModel @Inject constructor(
     @param:ClipPlayerRepository private val playerRepository: PlayerRepository,
     private val playAndAddClipsUseCase: PlayAndAddClipsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
+    private val toggleLikedUseCase: ToggleLikedUseCase,
 ) : ViewModel() {
     private val clipEpisodes: StateFlow<List<ClipEpisode>> = getClipEpisodesUseCase(40)
         .stateIn(
@@ -67,6 +69,7 @@ class ClipViewModel @Inject constructor(
             when (action) {
                 is ClipAction.PlayIndex -> playIndex(action.index)
                 is ClipAction.ClickEpisode -> playEpisode(action.episode)
+                is ClipAction.ToggleEpisodeLiked -> toggleEpisodeLiked(action.episode)
                 is ClipAction.ClickPodcast -> clickPodcast(action.podcastId)
                 is ClipAction.Resume -> resume()
                 is ClipAction.Pause -> pause()
@@ -100,6 +103,11 @@ class ClipViewModel @Inject constructor(
         playEpisodeUseCase(episode)
     }
 
+    private fun toggleEpisodeLiked(episode: Episode) = viewModelScope.launch {
+        toggleLikedUseCase(episode.id)
+    }
+
+
     private fun clickPodcast(podcastId: Long) = viewModelScope.launch {
         _effect.emit(ClipEffect.NavigateToPodcast(podcastId))
     }
@@ -120,6 +128,7 @@ sealed interface ClipState {
 sealed interface ClipAction {
     data class PlayIndex(val index: Int) : ClipAction
     data class ClickEpisode(val episode: Episode) : ClipAction
+    data class ToggleEpisodeLiked(val episode: Episode) : ClipAction
     data class ClickPodcast(val podcastId: Long) : ClipAction
     data object Resume : ClipAction
     data object Pause : ClipAction

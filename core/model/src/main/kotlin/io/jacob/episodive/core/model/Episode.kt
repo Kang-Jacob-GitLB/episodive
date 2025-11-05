@@ -48,6 +48,8 @@ data class Episode(
                 status != null ||
                 contentLink != null
 
+    val isLiked: Boolean = likedAt != null
+
     val progress: Float = duration?.let {
         if (it == Duration.ZERO) 0f
         else position.toIntSeconds().toFloat() / it.toIntSeconds()

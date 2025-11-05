@@ -410,7 +410,6 @@ private fun LikedContent(
                         .padding(horizontal = 16.dp)
                         .animateItem(),
                     episode = likedEpisode,
-                    isLiked = true,
                     onClick = { onLikedEpisodeClick(likedEpisode) },
                     onToggleLiked = { onToggleLiked(likedEpisode) }
                 )

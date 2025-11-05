@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.episode.GetLiveEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetMyRandomEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetPlayingEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
@@ -39,6 +40,7 @@ class HomeViewModel @Inject constructor(
     getLiveEpisodesUseCase: GetLiveEpisodesUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val resumeEpisodeUseCase: ResumeEpisodeUseCase,
+    private val toggleLikedUseCase: ToggleLikedUseCase,
 ) : ViewModel() {
 
     private val localTrendingPodcasts = getUserDataUseCase().flatMapLatest { userData ->
@@ -101,6 +103,7 @@ class HomeViewModel @Inject constructor(
             when (action) {
                 is HomeAction.PlayEpisode -> playEpisode(action.episode)
                 is HomeAction.ResumeEpisode -> resumeEpisode(action.playedEpisode)
+                is HomeAction.ToggleEpisodeLiked -> toggleEpisodeLiked(action.episode)
                 is HomeAction.ClickPodcast -> clickPodcast(action.podcastId)
             }
         }
@@ -117,6 +120,11 @@ class HomeViewModel @Inject constructor(
     private fun resumeEpisode(playedEpisode: Episode) = viewModelScope.launch {
         resumeEpisodeUseCase(playedEpisode)
     }
+
+    private fun toggleEpisodeLiked(episode: Episode) = viewModelScope.launch {
+        toggleLikedUseCase(episode.id)
+    }
+
 
     private fun clickPodcast(podcastId: Long) = viewModelScope.launch {
         _effect.emit(HomeEffect.NavigateToPodcast(podcastId))
@@ -146,6 +154,7 @@ sealed interface HomeState {
 sealed interface HomeAction {
     data class PlayEpisode(val episode: Episode) : HomeAction
     data class ResumeEpisode(val playedEpisode: Episode) : HomeAction
+    data class ToggleEpisodeLiked(val episode: Episode) : HomeAction
     data class ClickPodcast(val podcastId: Long) : HomeAction
 }
 

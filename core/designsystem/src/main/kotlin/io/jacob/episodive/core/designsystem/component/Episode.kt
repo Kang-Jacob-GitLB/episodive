@@ -57,6 +57,7 @@ fun EpisodesSection(
     title: String,
     episodes: List<Episode>,
     onEpisodeClick: (Episode) -> Unit,
+    onToggleEpisodeLiked: (Episode) -> Unit,
 ) {
     SectionHeader(
         modifier = modifier,
@@ -73,9 +74,8 @@ fun EpisodesSection(
                     episode = episode,
                     progress = 0f,
                     isLoading = false,
-                    isLiked = false,
                     onClick = { onEpisodeClick(episode) },
-                    onToggleLiked = { /* TODO */ }
+                    onToggleLiked = { onToggleEpisodeLiked(episode) }
                 )
             }
         }
@@ -88,7 +88,6 @@ fun EpisodeItem(
     episode: Episode,
     progress: Float = 0f,
     isLoading: Boolean = false,
-    isLiked: Boolean,
     onClick: () -> Unit,
     onToggleLiked: () -> Unit,
 ) {
@@ -158,7 +157,7 @@ fun EpisodeItem(
 
             EpisodiveIconToggleButton(
                 modifier = Modifier.size(32.dp),
-                checked = isLiked,
+                checked = episode.isLiked,
                 onCheckedChange = { onToggleLiked() },
                 colors = IconButtonDefaults.iconToggleButtonColors(
                     checkedContainerColor = Color.Transparent,
@@ -448,6 +447,8 @@ fun EpisodeClipItem(
     isPlaying: Boolean,
     remaining: Duration,
     onClick: () -> Unit,
+    onPlayEpisode: () -> Unit,
+    onToggleEpisodeLiked: () -> Unit,
 ) {
     val episode = clipEpisode.episode
 
@@ -531,8 +532,8 @@ fun EpisodeClipItem(
                 Spacer(modifier = Modifier.weight(1f))
 
                 EpisodiveIconToggleButton(
-                    checked = false,
-                    onCheckedChange = { /* TODO */ },
+                    checked = episode.isLiked,
+                    onCheckedChange = { onToggleEpisodeLiked() },
                     colors = IconButtonDefaults.iconToggleButtonColors(
                         checkedContainerColor = Color.Transparent,
                         checkedContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -556,8 +557,8 @@ fun EpisodeClipItem(
                 )
 
                 EpisodiveIconToggleButton(
-                    checked = false,
-                    onCheckedChange = { /* TODO */ },
+                    checked = false, // TODO
+                    onCheckedChange = { onPlayEpisode() },
                     colors = IconButtonDefaults.iconToggleButtonColors(
                         checkedContainerColor = MaterialTheme.colorScheme.primary,
                         checkedContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -589,10 +590,9 @@ fun EpisodeClipItem(
 private fun EpisodeItemPreview() {
     EpisodiveTheme {
         EpisodeItem(
-            episode = episodeTestData,
+            episode = episodeTestData.copy(likedAt = Instant.fromEpochSeconds(1234)),
             progress = 0f,
             isLoading = false,
-            isLiked = false,
             onClick = {},
             onToggleLiked = {},
         )
@@ -605,7 +605,7 @@ private fun PlayingEpisodesPreview() {
     EpisodiveTheme {
         PlayingEpisodeItem(
             playedEpisode = episodeTestData,
-            onClick = {}
+            onClick = {},
         )
     }
 }
@@ -616,7 +616,7 @@ private fun PlayedEpisodesPreview() {
     EpisodiveTheme {
         PlayedEpisodeItem(
             playedEpisode = episodeTestData,
-            onClick = {}
+            onClick = {},
         )
     }
 }
@@ -627,7 +627,7 @@ private fun EpisodeDetailItemPreview() {
     EpisodiveTheme {
         EpisodeDetailItem(
             episode = episodeTestData,
-            onClick = {}
+            onClick = {},
         )
     }
 }
@@ -644,7 +644,9 @@ private fun EpisodeClipItemPreview() {
             ),
             isPlaying = true,
             remaining = 45.seconds,
-            onClick = {}
+            onClick = {},
+            onPlayEpisode = {},
+            onToggleEpisodeLiked = {},
         )
     }
 }

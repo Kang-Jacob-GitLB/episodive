@@ -85,6 +85,7 @@ internal fun HomeRoute(
             liveEpisodes = s.liveEpisodes,
             onPlayEpisode = { viewModel.sendAction(HomeAction.PlayEpisode(it)) },
             onResumeEpisode = { viewModel.sendAction(HomeAction.ResumeEpisode(it)) },
+            onToggleEpisodeLiked = { viewModel.sendAction(HomeAction.ToggleEpisodeLiked(it)) },
             onPodcastClick = { viewModel.sendAction(HomeAction.ClickPodcast(it)) },
         )
 
@@ -105,6 +106,7 @@ private fun HomeScreen(
     liveEpisodes: List<Episode>,
     onPlayEpisode: (Episode) -> Unit = {},
     onResumeEpisode: (Episode) -> Unit = {},
+    onToggleEpisodeLiked: (Episode) -> Unit = {},
     onPodcastClick: (Long) -> Unit = {},
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -192,7 +194,8 @@ private fun HomeScreen(
                             EpisodesSection(
                                 title = stringResource(R.string.feature_home_section_random_episodes),
                                 episodes = randomEpisodes,
-                                onEpisodeClick = onPlayEpisode
+                                onEpisodeClick = onPlayEpisode,
+                                onToggleEpisodeLiked = onToggleEpisodeLiked
                             )
                         }
 
@@ -243,7 +246,8 @@ private fun HomeScreen(
                             EpisodesSection(
                                 title = stringResource(R.string.feature_home_section_live_episodes),
                                 episodes = liveEpisodes,
-                                onEpisodeClick = onPlayEpisode
+                                onEpisodeClick = onPlayEpisode,
+                                onToggleEpisodeLiked = onToggleEpisodeLiked,
                             )
                         }
 
