@@ -88,25 +88,45 @@ class EpisodeRepositoryImpl @Inject constructor(
     override fun getEpisodeById(id: Long): Flow<Episode?> {
         val query = EpisodeQuery.EpisodeId(id)
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisode(id).map { entity ->
-                    entity?.let { listOf(it) } ?: emptyList()
+        return combine(
+            Cacher(
+                remoteUpdater = remoteUpdater.create(query),
+                sourceFactory = {
+                    localDataSource.getEpisode(id).map { entity ->
+                        entity?.let { listOf(it) } ?: emptyList()
+                    }
                 }
+            ).flow,
+            localDataSource.getLikedEpisodes()
+        ) { episodes, liked ->
+            val likedMap = liked.associateBy { it.id }
+            episodes.ifEmpty { null }?.firstOrNull()?.let { episode ->
+                episode.toEpisode().copy(
+                    likedAt = likedMap[episode.id]?.likedAt
+                )
             }
-        ).flow.map { it.ifEmpty { null }?.firstOrNull()?.toEpisode() }
+        }
     }
 
     override fun getLiveEpisodes(max: Int?): Flow<List<Episode>> {
         val query = EpisodeQuery.Live
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key)
+        return combine(
+            Cacher(
+                remoteUpdater = remoteUpdater.create(query),
+                sourceFactory = {
+                    localDataSource.getEpisodesByCacheKey(query.key)
+                }
+            ).flow,
+            localDataSource.getLikedEpisodes()
+        ) { episodes, liked ->
+            val likedMap = liked.associateBy { it.id }
+            episodes.map { episode ->
+                episode.toEpisode().copy(
+                    likedAt = likedMap[episode.id]?.likedAt
+                )
             }
-        ).flow.map { it.toEpisodes() }
+        }
     }
 
     override fun getRandomEpisodes(
@@ -117,12 +137,22 @@ class EpisodeRepositoryImpl @Inject constructor(
     ): Flow<List<Episode>> {
         val query = EpisodeQuery.Random
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key)
+        return combine(
+            Cacher(
+                remoteUpdater = remoteUpdater.create(query),
+                sourceFactory = {
+                    localDataSource.getEpisodesByCacheKey(query.key)
+                }
+            ).flow,
+            localDataSource.getLikedEpisodes()
+        ) { episodes, liked ->
+            val likedMap = liked.associateBy { it.id }
+            episodes.map { episode ->
+                episode.toEpisode().copy(
+                    likedAt = likedMap[episode.id]?.likedAt
+                )
             }
-        ).flow.map { it.toEpisodes() }
+        }
     }
 
     override fun getRecentEpisodes(
@@ -131,12 +161,22 @@ class EpisodeRepositoryImpl @Inject constructor(
     ): Flow<List<Episode>> {
         val query = EpisodeQuery.Recent
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key)
+        return combine(
+            Cacher(
+                remoteUpdater = remoteUpdater.create(query),
+                sourceFactory = {
+                    localDataSource.getEpisodesByCacheKey(query.key)
+                }
+            ).flow,
+            localDataSource.getLikedEpisodes()
+        ) { episodes, liked ->
+            val likedMap = liked.associateBy { it.id }
+            episodes.map { episode ->
+                episode.toEpisode().copy(
+                    likedAt = likedMap[episode.id]?.likedAt
+                )
             }
-        ).flow.map { it.toEpisodes() }
+        }
     }
 
     override fun getLikedEpisodes(query: String?): Flow<List<Episode>> {

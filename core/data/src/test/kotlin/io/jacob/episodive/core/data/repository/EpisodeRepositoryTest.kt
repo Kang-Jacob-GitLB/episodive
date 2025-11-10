@@ -171,6 +171,9 @@ class EpisodeRepositoryTest {
             coEvery {
                 localDataSource.getEpisode(episodeId)
             } returns flowOf(episodeEntities.first())
+            coEvery {
+                localDataSource.getLikedEpisodes()
+            } returns flowOf(emptyList())
 
             // When
             repository.getEpisodeById(episodeId).test {
@@ -179,9 +182,10 @@ class EpisodeRepositoryTest {
                 assertEquals(episodeTestData.id, result?.id)
                 awaitComplete()
             }
-            coVerifySequence {
+            coVerify {
                 remoteUpdater.create(query)
                 localDataSource.getEpisode(episodeId)
+                localDataSource.getLikedEpisodes()
             }
         }
 
@@ -197,6 +201,9 @@ class EpisodeRepositoryTest {
             coEvery {
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
             } returns flowOf(episodeEntities)
+            coEvery {
+                localDataSource.getLikedEpisodes()
+            } returns flowOf(emptyList())
 
             // When
             repository.getLiveEpisodes(max = 10).test {
@@ -206,9 +213,10 @@ class EpisodeRepositoryTest {
                 assertEquals(episodeTestDataList, result)
                 awaitComplete()
             }
-            coVerifySequence {
+            coVerify {
                 remoteUpdater.create(expectedQuery)
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
+                localDataSource.getLikedEpisodes()
             }
         }
 
@@ -224,6 +232,9 @@ class EpisodeRepositoryTest {
             coEvery {
                 localDataSource.getEpisodesByCacheKey(query.key)
             } returns flowOf(episodeEntities)
+            coEvery {
+                localDataSource.getLikedEpisodes()
+            } returns flowOf(emptyList())
 
             // When
             repository.getRandomEpisodes().test {
@@ -234,9 +245,10 @@ class EpisodeRepositoryTest {
                 assertEquals(episodeTestDataList, result)
                 awaitComplete()
             }
-            coVerifySequence {
+            coVerify {
                 remoteUpdater.create(query)
                 localDataSource.getEpisodesByCacheKey(query.key)
+                localDataSource.getLikedEpisodes()
             }
         }
 
@@ -252,6 +264,9 @@ class EpisodeRepositoryTest {
             coEvery {
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
             } returns flowOf(episodeEntities)
+            coEvery {
+                localDataSource.getLikedEpisodes()
+            } returns flowOf(emptyList())
 
             // When
             repository.getRecentEpisodes(max = 10).test {
@@ -261,9 +276,10 @@ class EpisodeRepositoryTest {
                 assertEquals(episodeTestDataList, result)
                 awaitComplete()
             }
-            coVerifySequence {
+            coVerify {
                 remoteUpdater.create(expectedQuery)
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
+                localDataSource.getLikedEpisodes()
             }
         }
 
