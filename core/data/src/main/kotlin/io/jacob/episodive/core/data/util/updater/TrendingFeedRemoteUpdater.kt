@@ -33,7 +33,7 @@ class TrendingFeedRemoteUpdater(
     }
 
     override suspend fun saveToLocal(entity: List<TrendingFeedEntity>) {
-        localDataSource.upsertTrendingFeeds(entity)
+        localDataSource.replaceTrendingFeeds(entity)
     }
 
     override suspend fun isExpired(cached: List<TrendingFeedEntity>): Boolean {
@@ -42,9 +42,5 @@ class TrendingFeedRemoteUpdater(
             ?: return true
         val now = Clock.System.now()
         return now - oldestCache > query.timeToLive
-    }
-
-    override suspend fun deleteLocal() {
-        localDataSource.deleteTrendingFeedsByCacheKey(query.key)
     }
 }

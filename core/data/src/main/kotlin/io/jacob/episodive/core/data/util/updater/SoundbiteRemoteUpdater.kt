@@ -27,7 +27,7 @@ class SoundbiteRemoteUpdater(
     }
 
     override suspend fun saveToLocal(entity: List<SoundbiteEntity>) {
-        localDataSource.upsertSoundbites(entity)
+        localDataSource.replaceSoundbites(entity)
     }
 
     override suspend fun isExpired(cached: List<SoundbiteEntity>): Boolean {
@@ -36,9 +36,5 @@ class SoundbiteRemoteUpdater(
             ?: return true
         val now = Clock.System.now()
         return now - oldestCache > query.timeToLive
-    }
-
-    override suspend fun deleteLocal() {
-        localDataSource.deleteSoundbitesByCacheKey(query.key)
     }
 }

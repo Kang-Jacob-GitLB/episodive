@@ -27,7 +27,7 @@ class RecentNewFeedRemoteUpdater(
     }
 
     override suspend fun saveToLocal(entity: List<RecentNewFeedEntity>) {
-        localDataSource.upsertRecentNewFeeds(entity)
+        localDataSource.replaceRecentNewFeeds(entity)
     }
 
     override suspend fun isExpired(cached: List<RecentNewFeedEntity>): Boolean {
@@ -36,9 +36,5 @@ class RecentNewFeedRemoteUpdater(
             ?: return true
         val now = Clock.System.now()
         return now - oldestCache > query.timeToLive
-    }
-
-    override suspend fun deleteLocal() {
-        localDataSource.deleteRecentNewFeedsByCacheKey(query.key)
     }
 }

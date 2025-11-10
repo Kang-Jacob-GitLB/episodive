@@ -38,7 +38,7 @@ class PodcastRemoteUpdater @AssistedInject constructor(
     }
 
     override suspend fun saveToLocal(entity: List<PodcastEntity>) {
-        localDataSource.upsertPodcasts(entity)
+        localDataSource.replacePodcasts(entity)
     }
 
     override suspend fun isExpired(cached: List<PodcastEntity>): Boolean {
@@ -47,14 +47,5 @@ class PodcastRemoteUpdater @AssistedInject constructor(
             ?: return true
         val now = Clock.System.now()
         return now - oldestCache > query.timeToLive
-    }
-
-    override suspend fun deleteLocal() {
-        when (query) {
-            is PodcastQuery.Search,
-            is PodcastQuery.Medium -> localDataSource.deletePodcastsByCacheKey(query.key)
-
-            is PodcastQuery.FeedId -> {}
-        }
     }
 }
