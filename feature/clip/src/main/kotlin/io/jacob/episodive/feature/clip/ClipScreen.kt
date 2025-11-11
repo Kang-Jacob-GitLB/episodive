@@ -21,7 +21,6 @@ import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
-import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.testing.model.episodeTestDataList
@@ -67,7 +66,7 @@ internal fun ClipRoute(
         is ClipState.Success -> {
             ClipScreen(
                 modifier = modifier,
-                clipEpisodes = s.clipEpisodes,
+                episodes = s.episodes,
                 indexOfPlaying = s.indexOfPlaying,
                 progress = s.progress,
                 isPlaying = s.isPlaying,
@@ -86,7 +85,7 @@ internal fun ClipRoute(
 @Composable
 private fun ClipScreen(
     modifier: Modifier = Modifier,
-    clipEpisodes: List<ClipEpisode>,
+    episodes: List<Episode>,
     indexOfPlaying: Int = 0,
     progress: Progress,
     isPlaying: Boolean,
@@ -98,7 +97,7 @@ private fun ClipScreen(
 ) {
     EpisodeClipPager(
         modifier = modifier,
-        clipEpisodes = clipEpisodes,
+        episodes = episodes,
         indexOfPlaying = indexOfPlaying,
         progress = progress,
         isPlaying = isPlaying,
@@ -113,7 +112,7 @@ private fun ClipScreen(
 @Composable
 fun EpisodeClipPager(
     modifier: Modifier = Modifier,
-    clipEpisodes: List<ClipEpisode>,
+    episodes: List<Episode>,
     indexOfPlaying: Int = 0,
     progress: Progress,
     isPlaying: Boolean,
@@ -124,7 +123,7 @@ fun EpisodeClipPager(
 ) {
     val pagerState = rememberPagerState(
         initialPage = indexOfPlaying,
-        pageCount = { clipEpisodes.size }
+        pageCount = { episodes.size }
     )
 
     // indexOfPlaying이 변경되면 pager를 해당 페이지로 이동
@@ -148,23 +147,23 @@ fun EpisodeClipPager(
     VerticalPager(
         state = pagerState,
         modifier = modifier.fillMaxSize(),
-        key = { clipEpisodes[it].episode.id },
+        key = { episodes[it].id },
         pageSpacing = 32.dp, // 이전/다음 컨텐츠가 보이는 간격
         contentPadding = PaddingValues(vertical = 80.dp, horizontal = 24.dp) // 상하 여백으로 이전/다음 미리보기
     ) { page ->
         EpisodeClipItem(
             modifier = Modifier.fillMaxSize(),
-            clipEpisode = clipEpisodes[page],
+            episode = episodes[page],
             isPlaying = isPlaying && page == indexOfPlaying,
             remaining = progress.remaining,
             onClick = {
-                onEpisodeClick(clipEpisodes[page].episode)
+                onEpisodeClick(episodes[page])
             },
             onPlayEpisode = {
-                onEpisodeClick(clipEpisodes[page].episode)
+                onEpisodeClick(episodes[page])
             },
             onToggleEpisodeLiked = {
-                onToggleEpisodeLiked(clipEpisodes[page].episode)
+                onToggleEpisodeLiked(episodes[page])
             },
         )
     }
@@ -175,9 +174,8 @@ fun EpisodeClipPager(
 private fun ClipScreenPreview() {
     EpisodiveTheme {
         ClipScreen(
-            clipEpisodes = episodeTestDataList.map {
-                ClipEpisode(
-                    episode = it,
+            episodes = episodeTestDataList.map {
+                it.copy(
                     clipStartTime = Instant.fromEpochMilliseconds(60_000L),
                     clipDuration = 1278.seconds,
                 )

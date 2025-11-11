@@ -1,7 +1,6 @@
 package io.jacob.episodive.core.domain.usecase.player
 
 import io.jacob.episodive.core.domain.repository.PlayerRepository
-import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.Runs
@@ -34,8 +33,7 @@ class PlayAndAddClipsUseCaseTest {
     }
 
     private val clipEpisodes = episodeTestDataList.map {
-        ClipEpisode(
-            episode = it,
+        it.copy(
             clipStartTime = Instant.fromEpochSeconds(2000L),
             clipDuration = 15000L.seconds,
         )
@@ -48,24 +46,25 @@ class PlayAndAddClipsUseCaseTest {
             coEvery { playerRepository.playClips(any()) } just Runs
             coEvery { playerRepository.addClipTrack(any()) } just Runs
             coEvery { playerRepository.playlist } returns flowOf(
-                clipEpisodes.take(1).map { it.episode })
+                clipEpisodes.take(1)
+            )
 
             // When
             useCase(
-                clipEpisodes = clipEpisodes.take(1)
+                episodes = clipEpisodes.take(1)
             )
             useCase(
-                clipEpisodes = clipEpisodes
+                episodes = clipEpisodes
             )
 
             // Then
             coVerifySequence {
                 playerRepository.playClips(
-                    clipEpisodes = clipEpisodes.take(1)
+                    episodes = clipEpisodes.take(1)
                 )
                 playerRepository.playlist
                 playerRepository.addClipTracks(
-                    clipEpisodes = clipEpisodes.drop(1)
+                    episodes = clipEpisodes.drop(1)
                 )
             }
         }

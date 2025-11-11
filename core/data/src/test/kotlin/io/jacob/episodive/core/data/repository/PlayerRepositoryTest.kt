@@ -2,7 +2,6 @@ package io.jacob.episodive.core.data.repository
 
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.repository.PlayerRepository
-import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -62,8 +61,7 @@ class PlayerRepositoryTest {
     fun `Given dependencies, When playClip is called, Then calls playerDataSource playClip`() {
         // When
         repository.playClip(
-            ClipEpisode(
-                episode = episodeTestData,
+            episodeTestData.copy(
                 clipStartTime = Instant.fromEpochSeconds(10000L),
                 clipDuration = 50.seconds,
             )
@@ -77,9 +75,8 @@ class PlayerRepositoryTest {
     fun `Given dependencies, When playClips is called, Then calls playerDataSource playClips`() {
         // When
         repository.playClips(
-            clipEpisodes = listOf(
-                ClipEpisode(
-                    episode = episodeTestData,
+            episodes = listOf(
+                episodeTestData.copy(
                     clipStartTime = Instant.fromEpochSeconds(10000L),
                     clipDuration = 50.seconds,
                 )
@@ -229,8 +226,7 @@ class PlayerRepositoryTest {
     @Test
     fun `Given dependencies, When addClicpTrack is called, Then calls playerDataSource addClipTrack`() {
         // When
-        val clipEpisode = ClipEpisode(
-            episode = episodeTestData,
+        val clipEpisode = episodeTestData.copy(
             clipStartTime = Instant.fromEpochSeconds(10000L),
             clipDuration = 50.seconds,
         )
@@ -244,8 +240,7 @@ class PlayerRepositoryTest {
     fun `Given dependencies, When addClipTracks is called, Then calls playerDataSource addClipTracks`() {
         // When
         val clipEpisodes = listOf(
-            ClipEpisode(
-                episode = episodeTestData,
+            episodeTestData.copy(
                 clipStartTime = Instant.fromEpochSeconds(10000L),
                 clipDuration = 50.seconds,
             )

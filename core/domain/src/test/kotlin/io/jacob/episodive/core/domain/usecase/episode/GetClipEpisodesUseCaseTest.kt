@@ -3,6 +3,7 @@ package io.jacob.episodive.core.domain.usecase.episode
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.FeedRepository
+import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.soundbiteTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -45,7 +47,7 @@ class GetClipEpisodesUseCaseTest {
                 // Use case emits progressively as each episode is collected
                 // soundbiteTestDataList has 10 items
                 // Each episode collection triggers an emission with accumulated results
-                var lastEmission = emptyList<io.jacob.episodive.core.model.ClipEpisode>()
+                var lastEmission = emptyList<Episode>()
                 var emissionCount = 0
 
                 // Collect all emissions until we get the final list with 10 items
@@ -53,7 +55,7 @@ class GetClipEpisodesUseCaseTest {
                     lastEmission = awaitItem()
                     emissionCount++
                     // Each emission should be non-empty and growing
-                    assert(lastEmission.isNotEmpty())
+                    assertTrue(lastEmission.isNotEmpty())
                 }
 
                 // Final emission should contain all 10 clip episodes

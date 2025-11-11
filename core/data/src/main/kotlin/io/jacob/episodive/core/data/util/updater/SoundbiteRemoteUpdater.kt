@@ -13,7 +13,9 @@ class SoundbiteRemoteUpdater(
     private val localDataSource: FeedLocalDataSource,
     private val remoteDataSource: FeedRemoteDataSource,
     override val query: FeedQuery,
-) : RemoteUpdater<FeedQuery, List<SoundbiteResponse>, List<SoundbiteEntity>>(query) {
+) : RemoteUpdater<FeedQuery, List<SoundbiteResponse>, List<SoundbiteEntity>, List<SoundbiteEntity>>(
+    query
+) {
 
     override suspend fun fetchFromRemote(): List<SoundbiteResponse> {
         return when (query) {
@@ -22,7 +24,7 @@ class SoundbiteRemoteUpdater(
         }
     }
 
-    override suspend fun mapToEntities(response: List<SoundbiteResponse>): List<SoundbiteEntity> {
+    override suspend fun convertToEntity(response: List<SoundbiteResponse>): List<SoundbiteEntity> {
         return response.toSoundbites().toSoundbiteEntities(query.key)
     }
 
@@ -30,10 +32,9 @@ class SoundbiteRemoteUpdater(
         localDataSource.replaceSoundbites(entity)
     }
 
-    override suspend fun isExpired(cached: List<SoundbiteEntity>): Boolean {
-        if (cached.isEmpty()) return true
-        val oldestCache = cached.minByOrNull { it.cachedAt }?.cachedAt
-            ?: return true
+    override suspend fun isExpired(output: List<SoundbiteEntity>): Boolean {
+        if (output.isEmpty()) return true
+        val oldestCache = output.minBy { it.cachedAt }.cachedAt
         val now = Clock.System.now()
         return now - oldestCache > query.timeToLive
     }

@@ -48,7 +48,7 @@ class PodcastDaoTest {
             dao.getPodcast(podcastEntity.id).test {
                 val podcast = awaitItem()
                 // Then
-                assertEquals(podcastEntity.id, podcast?.id)
+                assertEquals(podcastEntity.id, podcast?.podcast?.id)
                 cancel()
             }
         }
@@ -64,7 +64,7 @@ class PodcastDaoTest {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(10, podcasts.size)
-                val podcastIds = podcasts.map { it.id }
+                val podcastIds = podcasts.map { it.podcast.id }
                 val entityIds = podcastEntities.map { it.id }
                 assertTrue(podcastIds.containsAll(entityIds))
                 cancel()
@@ -84,7 +84,7 @@ class PodcastDaoTest {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(9, podcasts.size)
-                assertFalse(podcasts.contains(podcastEntity))
+                assertFalse(podcasts.map { it.podcast }.contains(podcastEntity))
                 cancel()
             }
         }
@@ -124,7 +124,7 @@ class PodcastDaoTest {
                 val remainingSize = entities[1].size + entities[2].size
                 assertEquals(remainingSize, podcasts.size)
                 val deletedIds = entities[0].map { it.id }
-                val entityIds = podcasts.map { it.id }
+                val entityIds = podcasts.map { it.podcast.id }
                 deletedIds.forEach { id ->
                     assertFalse(entityIds.contains(id))
                 }
@@ -159,9 +159,9 @@ class PodcastDaoTest {
             dao.getPodcastsByCacheKey("key1").test {
                 val key1Podcasts = awaitItem()
                 assertEquals(2, key1Podcasts.size)
-                assertTrue(key1Podcasts.any { it.id == 999L })
-                assertTrue(key1Podcasts.any { it.id == 998L })
-                assertFalse(key1Podcasts.any { it.id == initialEntities[0][0].id })
+                assertTrue(key1Podcasts.any { it.podcast.id == 999L })
+                assertTrue(key1Podcasts.any { it.podcast.id == 998L })
+                assertFalse(key1Podcasts.any { it.podcast.id == initialEntities[0][0].id })
                 cancel()
             }
 
@@ -169,8 +169,8 @@ class PodcastDaoTest {
             dao.getPodcastsByCacheKey("key2").test {
                 val key2Podcasts = awaitItem()
                 assertEquals(1, key2Podcasts.size)
-                assertTrue(key2Podcasts.any { it.id == 997L })
-                assertFalse(key2Podcasts.any { it.id == initialEntities[1][0].id })
+                assertTrue(key2Podcasts.any { it.podcast.id == 997L })
+                assertFalse(key2Podcasts.any { it.podcast.id == initialEntities[1][0].id })
                 cancel()
             }
 
@@ -178,8 +178,8 @@ class PodcastDaoTest {
             dao.getPodcastsByCacheKey("key3").test {
                 val key3Podcasts = awaitItem()
                 assertEquals(2, key3Podcasts.size)
-                assertTrue(key3Podcasts.any { it.id == initialEntities[2][0].id })
-                assertTrue(key3Podcasts.any { it.id == initialEntities[2][1].id })
+                assertTrue(key3Podcasts.any { it.podcast.id == initialEntities[2][0].id })
+                assertTrue(key3Podcasts.any { it.podcast.id == initialEntities[2][1].id })
                 cancel()
             }
         }
@@ -202,9 +202,9 @@ class PodcastDaoTest {
             dao.getPodcastsByCacheKey("trending").test {
                 val podcasts = awaitItem()
                 assertEquals(2, podcasts.size)
-                assertTrue(podcasts.any { it.id == 100L })
-                assertTrue(podcasts.any { it.id == 101L })
-                assertFalse(podcasts.any { it.id in initialPodcasts.map { p -> p.id } })
+                assertTrue(podcasts.any { it.podcast.id == 100L })
+                assertTrue(podcasts.any { it.podcast.id == 101L })
+                assertFalse(podcasts.any { it.podcast.id in initialPodcasts.map { p -> p.id } })
                 cancel()
             }
         }
@@ -225,7 +225,7 @@ class PodcastDaoTest {
                 // Then
                 assertEquals(entities[0].size, podcasts.size)
                 val podcastIds = entities[0].map { it.id }
-                val entityIds = podcasts.map { it.id }
+                val entityIds = podcasts.map { it.podcast.id }
                 assertTrue(podcastIds.containsAll(entityIds))
                 cancel()
             }
@@ -257,7 +257,7 @@ class PodcastDaoTest {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(followed.size, podcasts.size)
-                val entityIds = podcasts.map { it.id }
+                val entityIds = podcasts.map { it.podcast.id }
                 assertTrue(followed.containsAll(entityIds))
             }
         }
@@ -315,7 +315,7 @@ class PodcastDaoTest {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(followed.size - 1, podcasts.size)
-                val entityIds = podcasts.map { it.id }
+                val entityIds = podcasts.map { it.podcast.id }
                 assertFalse(entityIds.contains(podcastEntities[3].id))
                 cancel()
             }

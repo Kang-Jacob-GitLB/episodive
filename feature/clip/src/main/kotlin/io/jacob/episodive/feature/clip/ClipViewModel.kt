@@ -9,7 +9,6 @@ import io.jacob.episodive.core.domain.usecase.episode.GetClipEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayAndAddClipsUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
-import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Progress
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,13 +23,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ClipViewModel @Inject constructor(
-    private val getClipEpisodesUseCase: GetClipEpisodesUseCase,
+    getClipEpisodesUseCase: GetClipEpisodesUseCase,
     @param:ClipPlayerRepository private val playerRepository: PlayerRepository,
     private val playAndAddClipsUseCase: PlayAndAddClipsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val toggleLikedUseCase: ToggleLikedUseCase,
 ) : ViewModel() {
-    private val clipEpisodes: StateFlow<List<ClipEpisode>> = getClipEpisodesUseCase(40)
+    private val episodes: StateFlow<List<Episode>> = getClipEpisodesUseCase(40)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -38,7 +37,7 @@ class ClipViewModel @Inject constructor(
         )
 
     val state: StateFlow<ClipState> = combine(
-        clipEpisodes,
+        episodes,
         playerRepository.indexOfList,
         playerRepository.progress,
         playerRepository.isPlaying,
@@ -82,8 +81,8 @@ class ClipViewModel @Inject constructor(
     }
 
     private fun playWhenReady() = viewModelScope.launch {
-        clipEpisodes.collectLatest { clipEpisodes ->
-            playAndAddClipsUseCase(clipEpisodes)
+        episodes.collectLatest { episodes ->
+            playAndAddClipsUseCase(episodes)
         }
     }
 
@@ -116,7 +115,7 @@ class ClipViewModel @Inject constructor(
 sealed interface ClipState {
     object Loading : ClipState
     data class Success(
-        val clipEpisodes: List<ClipEpisode>,
+        val episodes: List<Episode>,
         val indexOfPlaying: Int = 0,
         val progress: Progress,
         val isPlaying: Boolean,

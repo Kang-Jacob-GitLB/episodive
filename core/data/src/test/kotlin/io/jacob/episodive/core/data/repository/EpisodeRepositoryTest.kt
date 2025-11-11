@@ -4,9 +4,7 @@ import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
-import io.jacob.episodive.core.database.mapper.toEpisodeEntities
-import io.jacob.episodive.core.database.model.LikedEpisodeEntity
-import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
+import io.jacob.episodive.core.database.mapper.toEpisodeDtos
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.testing.model.episodeTestData
@@ -40,7 +38,7 @@ class EpisodeRepositoryTest {
         remoteUpdater = remoteUpdater,
     )
 
-    private val episodeEntities = episodeTestDataList.toEpisodeEntities("test_key")
+    private val episodeDtos = episodeTestDataList.toEpisodeDtos("test_key")
 
     @After
     fun teardown() {
@@ -59,7 +57,7 @@ class EpisodeRepositoryTest {
             } returns mockk<EpisodeRemoteUpdater>(relaxed = true)
             coEvery {
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
-            } returns flowOf(episodeEntities)
+            } returns flowOf(episodeDtos)
 
             // When
             repository.searchEpisodesByPerson(person, max = 10).test {
@@ -87,7 +85,7 @@ class EpisodeRepositoryTest {
             } returns mockk<EpisodeRemoteUpdater>(relaxed = true)
             coEvery {
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
-            } returns flowOf(episodeEntities)
+            } returns flowOf(episodeDtos)
 
             // When
             repository.getEpisodesByFeedId(feedId, max = 10).test {
@@ -115,7 +113,7 @@ class EpisodeRepositoryTest {
             } returns mockk<EpisodeRemoteUpdater>(relaxed = true)
             coEvery {
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
-            } returns flowOf(episodeEntities)
+            } returns flowOf(episodeDtos)
 
             // When
             repository.getEpisodesByFeedUrl(feedUrl, max = 10).test {
@@ -143,7 +141,7 @@ class EpisodeRepositoryTest {
             } returns mockk<EpisodeRemoteUpdater>(relaxed = true)
             coEvery {
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
-            } returns flowOf(episodeEntities)
+            } returns flowOf(episodeDtos)
 
             // When
             repository.getEpisodesByPodcastGuid(guid, max = 10).test {
@@ -170,10 +168,7 @@ class EpisodeRepositoryTest {
             } returns mockk<EpisodeRemoteUpdater>(relaxed = true)
             coEvery {
                 localDataSource.getEpisode(episodeId)
-            } returns flowOf(episodeEntities.first())
-            coEvery {
-                localDataSource.getLikedEpisodes()
-            } returns flowOf(emptyList())
+            } returns flowOf(episodeDtos.first())
 
             // When
             repository.getEpisodeById(episodeId).test {
@@ -185,7 +180,6 @@ class EpisodeRepositoryTest {
             coVerify {
                 remoteUpdater.create(query)
                 localDataSource.getEpisode(episodeId)
-                localDataSource.getLikedEpisodes()
             }
         }
 
@@ -200,10 +194,7 @@ class EpisodeRepositoryTest {
             } returns mockk<EpisodeRemoteUpdater>(relaxed = true)
             coEvery {
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
-            } returns flowOf(episodeEntities)
-            coEvery {
-                localDataSource.getLikedEpisodes()
-            } returns flowOf(emptyList())
+            } returns flowOf(episodeDtos)
 
             // When
             repository.getLiveEpisodes(max = 10).test {
@@ -216,7 +207,6 @@ class EpisodeRepositoryTest {
             coVerify {
                 remoteUpdater.create(expectedQuery)
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
-                localDataSource.getLikedEpisodes()
             }
         }
 
@@ -231,10 +221,7 @@ class EpisodeRepositoryTest {
             } returns mockk<EpisodeRemoteUpdater>(relaxed = true)
             coEvery {
                 localDataSource.getEpisodesByCacheKey(query.key)
-            } returns flowOf(episodeEntities)
-            coEvery {
-                localDataSource.getLikedEpisodes()
-            } returns flowOf(emptyList())
+            } returns flowOf(episodeDtos)
 
             // When
             repository.getRandomEpisodes().test {
@@ -248,7 +235,6 @@ class EpisodeRepositoryTest {
             coVerify {
                 remoteUpdater.create(query)
                 localDataSource.getEpisodesByCacheKey(query.key)
-                localDataSource.getLikedEpisodes()
             }
         }
 
@@ -263,10 +249,7 @@ class EpisodeRepositoryTest {
             } returns mockk<EpisodeRemoteUpdater>(relaxed = true)
             coEvery {
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
-            } returns flowOf(episodeEntities)
-            coEvery {
-                localDataSource.getLikedEpisodes()
-            } returns flowOf(emptyList())
+            } returns flowOf(episodeDtos)
 
             // When
             repository.getRecentEpisodes(max = 10).test {
@@ -279,7 +262,6 @@ class EpisodeRepositoryTest {
             coVerify {
                 remoteUpdater.create(expectedQuery)
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
-                localDataSource.getLikedEpisodes()
             }
         }
 
@@ -287,33 +269,23 @@ class EpisodeRepositoryTest {
     fun `When getLikedEpisodes, Then calls localDataSource directly`() =
         runTest {
             // Given
-            coEvery { localDataSource.getEpisodes() } returns flowOf(episodeEntities)
-            coEvery { localDataSource.getLikedEpisodes() } returns flowOf(
-                listOf(
-                    LikedEpisodeEntity(
-                        id = 42551776753L,
-                        likedAt = Instant.fromEpochSeconds(1757883600),
-                    ),
-                    LikedEpisodeEntity(
-                        id = 42551776758L,
-                        likedAt = Instant.fromEpochSeconds(1757797200),
-                    ),
-                )
-            )
+            val dtos = episodeDtos.mapIndexed { index, dto ->
+                dto.copy(likedAt = Instant.fromEpochSeconds(1757883600L + index))
+            }
+            coEvery { localDataSource.getLikedEpisodes() } returns flowOf(dtos)
 
             // When
             repository.getLikedEpisodes().test {
                 val result = awaitItem()
                 // Then
-                assertEquals(2, result.size)
-                assertEquals(episodeTestDataList[0].id, result[0].id)
-                assertEquals(episodeTestDataList[1].id, result[1].id)
+                assertEquals(10, result.size)
+                assertEquals(dtos[0].episode.id, result[0].id)
+                assertEquals(dtos[1].episode.id, result[1].id)
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
-                localDataSource.getEpisodes()
                 localDataSource.getLikedEpisodes()
             }
         }
@@ -322,37 +294,26 @@ class EpisodeRepositoryTest {
     fun `When getPlayingEpisodes, Then calls localDataSource directly`() =
         runTest {
             // Given
-            coEvery { localDataSource.getEpisodes() } returns flowOf(episodeEntities)
-            coEvery { localDataSource.getPlayedEpisodes() } returns flowOf(
-                listOf(
-                    PlayedEpisodeEntity(
-                        id = 42551776753L,
-                        playedAt = Instant.fromEpochSeconds(1757883600),
-                        position = 0.seconds,
-                        isCompleted = false
-                    ),
-                    PlayedEpisodeEntity(
-                        id = 42551776758L,
-                        playedAt = Instant.fromEpochSeconds(1757797200),
-                        position = 0.seconds,
-                        isCompleted = false
-                    )
+            val dtos = episodeDtos.mapIndexed { index, dto ->
+                dto.copy(
+                    playedAt = Instant.fromEpochSeconds(1757883600L + index),
+                    isCompleted = index < 5,
                 )
-            )
+            }
+            coEvery { localDataSource.getPlayedEpisodes() } returns flowOf(dtos)
 
             // When
             repository.getPlayingEpisodes().test {
                 val result = awaitItem()
                 // Then
-                assertEquals(2, result.size)
-                assertEquals(episodeTestDataList[0].id, result[0].id)
-                assertEquals(episodeTestDataList[1].id, result[1].id)
+                assertEquals(5, result.size)
+                assertEquals(dtos[5].episode.id, result[0].id)
+                assertEquals(dtos[6].episode.id, result[1].id)
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
-                localDataSource.getEpisodes()
                 localDataSource.getPlayedEpisodes()
             }
         }
@@ -361,37 +322,26 @@ class EpisodeRepositoryTest {
     fun `When getPlayedEpisodes, Then calls localDataSource directly`() =
         runTest {
             // Given
-            coEvery { localDataSource.getEpisodes() } returns flowOf(episodeEntities)
-            coEvery { localDataSource.getPlayedEpisodes() } returns flowOf(
-                listOf(
-                    PlayedEpisodeEntity(
-                        id = 42551776753L,
-                        playedAt = Instant.fromEpochSeconds(1757883600),
-                        position = 0.seconds,
-                        isCompleted = true
-                    ),
-                    PlayedEpisodeEntity(
-                        id = 42551776758L,
-                        playedAt = Instant.fromEpochSeconds(1757797200),
-                        position = 0.seconds,
-                        isCompleted = true
-                    )
+            val dtos = episodeDtos.mapIndexed { index, dto ->
+                dto.copy(
+                    playedAt = Instant.fromEpochSeconds(1757883600L + index),
+                    isCompleted = index < 5,
                 )
-            )
+            }
+            coEvery { localDataSource.getPlayedEpisodes() } returns flowOf(dtos)
 
             // When
             repository.getPlayedEpisodes().test {
                 val result = awaitItem()
                 // Then
-                assertEquals(2, result.size)
-                assertEquals(episodeTestDataList[0].id, result[0].id)
-                assertEquals(episodeTestDataList[1].id, result[1].id)
+                assertEquals(5, result.size)
+                assertEquals(dtos[0].episode.id, result[0].id)
+                assertEquals(dtos[1].episode.id, result[1].id)
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
-                localDataSource.getEpisodes()
                 localDataSource.getPlayedEpisodes()
             }
         }
@@ -400,37 +350,28 @@ class EpisodeRepositoryTest {
     fun `When getAllPlayedEpisodes, Then calls localDataSource directly`() =
         runTest {
             // Given
-            coEvery { localDataSource.getEpisodes() } returns flowOf(episodeEntities)
-            coEvery { localDataSource.getPlayedEpisodes() } returns flowOf(
-                listOf(
-                    PlayedEpisodeEntity(
-                        id = 42551776753L,
-                        playedAt = Instant.fromEpochSeconds(1757883600),
-                        position = 0.seconds,
-                        isCompleted = false
-                    ),
-                    PlayedEpisodeEntity(
-                        id = 42551776758L,
-                        playedAt = Instant.fromEpochSeconds(1757797200),
-                        position = 0.seconds,
-                        isCompleted = true
-                    )
+            val dtos = episodeDtos.mapIndexed { index, dto ->
+                dto.copy(
+                    playedAt = Instant.fromEpochSeconds(1757883600L + index),
+                    isCompleted = index < 5,
                 )
-            )
+            }
+            coEvery { localDataSource.getPlayedEpisodes() } returns flowOf(dtos)
 
             // When
             repository.getAllPlayedEpisodes().test {
                 val result = awaitItem()
                 // Then
-                assertEquals(2, result.size)
-                assertEquals(episodeTestDataList[0].id, result[0].id)
-                assertEquals(episodeTestDataList[1].id, result[1].id)
+                assertEquals(10, result.size)
+                assertEquals(dtos[0].episode.id, result[0].id)
+                assertEquals(dtos[1].episode.id, result[1].id)
+                assertEquals(dtos[5].episode.id, result[5].id)
+                assertEquals(dtos[6].episode.id, result[6].id)
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
-                localDataSource.getEpisodes()
                 localDataSource.getPlayedEpisodes()
             }
         }

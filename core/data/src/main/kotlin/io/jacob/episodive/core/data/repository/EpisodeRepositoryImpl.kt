@@ -13,7 +13,6 @@ import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import kotlin.time.Clock
@@ -28,7 +27,7 @@ class EpisodeRepositoryImpl @Inject constructor(
 
     override fun searchEpisodesByPerson(
         person: String,
-        max: Int?
+        max: Int?,
     ): Flow<List<Episode>> {
         val query = EpisodeQuery.Person(person)
 
@@ -43,7 +42,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     override fun getEpisodesByFeedId(
         feedId: Long,
         max: Int?,
-        since: Instant?
+        since: Instant?,
     ): Flow<List<Episode>> {
         val query = EpisodeQuery.FeedId(feedId)
 
@@ -58,7 +57,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     override fun getEpisodesByFeedUrl(
         feedUrl: String,
         max: Int?,
-        since: Instant?
+        since: Instant?,
     ): Flow<List<Episode>> {
         val query = EpisodeQuery.FeedUrl(feedUrl)
 
@@ -73,7 +72,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     override fun getEpisodesByPodcastGuid(
         guid: String,
         max: Int?,
-        since: Instant?
+        since: Instant?,
     ): Flow<List<Episode>> {
         val query = EpisodeQuery.PodcastGuid(guid)
 
@@ -88,172 +87,88 @@ class EpisodeRepositoryImpl @Inject constructor(
     override fun getEpisodeById(id: Long): Flow<Episode?> {
         val query = EpisodeQuery.EpisodeId(id)
 
-        return combine(
-            Cacher(
-                remoteUpdater = remoteUpdater.create(query),
-                sourceFactory = {
-                    localDataSource.getEpisode(id).map { entity ->
-                        entity?.let { listOf(it) } ?: emptyList()
-                    }
+        return Cacher(
+            remoteUpdater = remoteUpdater.create(query),
+            sourceFactory = {
+                localDataSource.getEpisode(id).map { dto ->
+                    dto?.let { listOf(it) } ?: emptyList()
                 }
-            ).flow,
-            localDataSource.getLikedEpisodes()
-        ) { episodes, liked ->
-            val likedMap = liked.associateBy { it.id }
-            episodes.ifEmpty { null }?.firstOrNull()?.let { episode ->
-                episode.toEpisode().copy(
-                    likedAt = likedMap[episode.id]?.likedAt
-                )
             }
-        }
+        ).flow.map { it.firstOrNull()?.toEpisode() }
     }
 
     override fun getLiveEpisodes(max: Int?): Flow<List<Episode>> {
         val query = EpisodeQuery.Live
 
-        return combine(
-            Cacher(
-                remoteUpdater = remoteUpdater.create(query),
-                sourceFactory = {
-                    localDataSource.getEpisodesByCacheKey(query.key)
-                }
-            ).flow,
-            localDataSource.getLikedEpisodes()
-        ) { episodes, liked ->
-            val likedMap = liked.associateBy { it.id }
-            episodes.map { episode ->
-                episode.toEpisode().copy(
-                    likedAt = likedMap[episode.id]?.likedAt
-                )
+        return Cacher(
+            remoteUpdater = remoteUpdater.create(query),
+            sourceFactory = {
+                localDataSource.getEpisodesByCacheKey(query.key)
             }
-        }
+        ).flow.map { it.toEpisodes() }
     }
 
     override fun getRandomEpisodes(
         max: Int?,
         language: String?,
         includeCategories: List<Category>,
-        excludeCategories: List<Category>
+        excludeCategories: List<Category>,
     ): Flow<List<Episode>> {
         val query = EpisodeQuery.Random
 
-        return combine(
-            Cacher(
-                remoteUpdater = remoteUpdater.create(query),
-                sourceFactory = {
-                    localDataSource.getEpisodesByCacheKey(query.key)
-                }
-            ).flow,
-            localDataSource.getLikedEpisodes()
-        ) { episodes, liked ->
-            val likedMap = liked.associateBy { it.id }
-            episodes.map { episode ->
-                episode.toEpisode().copy(
-                    likedAt = likedMap[episode.id]?.likedAt
-                )
+        return Cacher(
+            remoteUpdater = remoteUpdater.create(query),
+            sourceFactory = {
+                localDataSource.getEpisodesByCacheKey(query.key)
             }
-        }
+        ).flow.map { it.toEpisodes() }
     }
 
     override fun getRecentEpisodes(
         max: Int?,
-        excludeString: String?
+        excludeString: String?,
     ): Flow<List<Episode>> {
         val query = EpisodeQuery.Recent
 
-        return combine(
-            Cacher(
-                remoteUpdater = remoteUpdater.create(query),
-                sourceFactory = {
-                    localDataSource.getEpisodesByCacheKey(query.key)
-                }
-            ).flow,
-            localDataSource.getLikedEpisodes()
-        ) { episodes, liked ->
-            val likedMap = liked.associateBy { it.id }
-            episodes.map { episode ->
-                episode.toEpisode().copy(
-                    likedAt = likedMap[episode.id]?.likedAt
-                )
+        return Cacher(
+            remoteUpdater = remoteUpdater.create(query),
+            sourceFactory = {
+                localDataSource.getEpisodesByCacheKey(query.key)
             }
-        }
+        ).flow.map { it.toEpisodes() }
     }
 
     override fun getLikedEpisodes(query: String?): Flow<List<Episode>> {
-        return combine(
-            localDataSource.getEpisodes(),
-            localDataSource.getLikedEpisodes()
-        ) { episodes, liked ->
-            val episodeMap = episodes.associateBy { it.id }
-            liked.mapNotNull { likedEpisode ->
-                episodeMap[likedEpisode.id]?.let { episode ->
-                    if (query == null || episode.matchesQuery(query)) {
-                        episode.toEpisode().copy(likedAt = likedEpisode.likedAt)
-                    } else null
-                }
-            }
+        return localDataSource.getLikedEpisodes().map { episodes ->
+            episodes
+                .filter { query == null || it.episode.matchesQuery(query) }
+                .toEpisodes()
         }
     }
 
     override fun getPlayingEpisodes(query: String?): Flow<List<Episode>> {
-        return combine(
-            localDataSource.getEpisodes(),
-            localDataSource.getPlayedEpisodes()
-        ) { episodes, played ->
-            val episodeMap = episodes.associateBy { it.id }
-            played.filter { !it.isCompleted }
-                .mapNotNull { playedEpisode ->
-                    episodeMap[playedEpisode.id]?.let { episode ->
-                        if (query == null || episode.matchesQuery(query)) {
-                            episode.toEpisode().copy(
-                                playedAt = playedEpisode.playedAt,
-                                position = playedEpisode.position,
-                                isCompleted = playedEpisode.isCompleted,
-                            )
-                        } else null
-                    }
-                }
+        return localDataSource.getPlayedEpisodes().map { episodes ->
+            episodes
+                .filter { it.isCompleted == false }
+                .filter { query == null || it.episode.matchesQuery(query) }
+                .toEpisodes()
         }
     }
 
     override fun getPlayedEpisodes(query: String?): Flow<List<Episode>> {
-        return combine(
-            localDataSource.getEpisodes(),
-            localDataSource.getPlayedEpisodes()
-        ) { episodes, played ->
-            val episodeMap = episodes.associateBy { it.id }
-            played.filter { it.isCompleted }
-                .mapNotNull { playedEpisode ->
-                    episodeMap[playedEpisode.id]?.let { episode ->
-                        if (query == null || episode.matchesQuery(query)) {
-                            episode.toEpisode().copy(
-                                playedAt = playedEpisode.playedAt,
-                                position = playedEpisode.position,
-                                isCompleted = playedEpisode.isCompleted,
-                            )
-                        } else null
-                    }
-                }
+        return localDataSource.getPlayedEpisodes().map { episodes ->
+            episodes
+                .filter { it.isCompleted == true }
+                .filter { query == null || it.episode.matchesQuery(query) }
+                .toEpisodes()
         }
     }
 
     override fun getAllPlayedEpisodes(query: String?): Flow<List<Episode>> {
-        return combine(
-            localDataSource.getEpisodes(),
-            localDataSource.getPlayedEpisodes(),
-        ) { episodes, played ->
-            val episodeMap = episodes.associateBy { it.id }
-            played.mapNotNull { playedEpisode ->
-                episodeMap[playedEpisode.id]?.let { episode ->
-                    if (query == null || episode.matchesQuery(query)) {
-                        episode.toEpisode().copy(
-                            playedAt = playedEpisode.playedAt,
-                            position = playedEpisode.position,
-                            isCompleted = playedEpisode.isCompleted,
-                        )
-                    } else null
-                }
-            }
+        return localDataSource.getPlayedEpisodes().map { episodes ->
+            episodes
+                .filter { query == null || it.episode.matchesQuery(query) }
+                .toEpisodes()
         }
     }
 
@@ -264,7 +179,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     override suspend fun updatePlayed(
         id: Long,
         position: Duration,
-        isCompleted: Boolean
+        isCompleted: Boolean,
     ) {
         localDataSource.upsertPlayed(
             PlayedEpisodeEntity(

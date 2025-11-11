@@ -12,7 +12,6 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toPodcast
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -80,21 +79,10 @@ class PodcastRepositoryImpl @Inject constructor(
     }
 
     override fun getFollowedPodcasts(query: String?): Flow<List<Podcast>> {
-        return combine(
-            localDataSource.getPodcasts(),
-            localDataSource.getFollowedPodcasts(),
-        ) { podcasts, followed ->
-            val podcastMap = podcasts.associateBy { it.id }
-            followed.mapNotNull { followedPodcast ->
-                podcastMap[followedPodcast.id]?.let { podcast ->
-                    if (query == null || podcast.matchesQuery(query)) {
-                        podcast.toPodcast().copy(
-                            followedAt = followedPodcast.followedAt,
-                            isNotificationEnabled = followedPodcast.isNotificationEnabled,
-                        )
-                    } else null
-                }
-            }
+        return localDataSource.getFollowedPodcasts().map { podcasts ->
+            podcasts
+                .filter { query == null || it.podcast.matchesQuery(query) }
+                .toPodcasts()
         }
     }
 

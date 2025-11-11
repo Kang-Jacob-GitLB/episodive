@@ -6,7 +6,6 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.exoplayer.ExoPlayer
-import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.mapper.toDurationMillis
@@ -160,19 +159,21 @@ class PlayerDataSourceImpl @Inject constructor(
         player.playWhenReady = true
     }
 
-    override fun playClip(clipEpisode: ClipEpisode) {
-        Timber.i("url: ${clipEpisode.episode.enclosureUrl}, clipStartTime: ${clipEpisode.clipStartTime}, clipDuration: ${clipEpisode.clipDuration}")
+    override fun playClip(episode: Episode) {
+        Timber.i("url: ${episode.enclosureUrl}, clipStartTime: ${episode.clipStartTime}, clipDuration: ${episode.clipDuration}")
         val mediaItem = MediaItem.Builder()
-            .setUri(clipEpisode.episode.enclosureUrl)
-            .setTag(clipEpisode.episode)
-            .setClippingConfiguration(
-                MediaItem.ClippingConfiguration.Builder()
-                    .setStartPositionMs(clipEpisode.clipStartTime.toEpochMilliseconds())
-                    .setEndPositionMs(
-                        clipEpisode.clipStartTime.toEpochMilliseconds() + clipEpisode.clipDuration.inWholeMilliseconds
+            .setUri(episode.enclosureUrl)
+            .setTag(episode)
+            .apply {
+                if (episode.isClip) {
+                    setClippingConfiguration(
+                        MediaItem.ClippingConfiguration.Builder()
+                            .setStartPositionMs(episode.clipStartPositionMs)
+                            .setEndPositionMs(episode.clipEndPositionMs)
+                            .build()
                     )
-                    .build()
-            )
+                }
+            }
             .build()
 
         player.setMediaItem(mediaItem)
@@ -180,22 +181,24 @@ class PlayerDataSourceImpl @Inject constructor(
         player.playWhenReady = true
     }
 
-    override fun playClips(clipEpisodes: List<ClipEpisode>, indexToPlay: Int?) {
-        clipEpisodes.forEachIndexed { index, clipEpisode ->
-            Timber.i("[$index] url: ${clipEpisode.episode.enclosureUrl}, clipStartTime: ${clipEpisode.clipStartTime}, clipDuration: ${clipEpisode.clipDuration}")
+    override fun playClips(episodes: List<Episode>, indexToPlay: Int?) {
+        episodes.forEachIndexed { index, episode ->
+            Timber.i("[$index] url: ${episode.enclosureUrl}, clipStartTime: ${episode.clipStartTime}, clipDuration: ${episode.clipDuration}")
         }
-        val mediaItems = clipEpisodes.map {
+        val mediaItems = episodes.map {
             MediaItem.Builder()
-                .setUri(it.episode.enclosureUrl)
-                .setTag(it.episode)
-                .setClippingConfiguration(
-                    MediaItem.ClippingConfiguration.Builder()
-                        .setStartPositionMs(it.clipStartTime.toEpochMilliseconds())
-                        .setEndPositionMs(
-                            it.clipStartTime.toEpochMilliseconds() + it.clipDuration.inWholeMilliseconds
+                .setUri(it.enclosureUrl)
+                .setTag(it)
+                .apply {
+                    if (it.isClip) {
+                        setClippingConfiguration(
+                            MediaItem.ClippingConfiguration.Builder()
+                                .setStartPositionMs(it.clipStartPositionMs)
+                                .setEndPositionMs(it.clipEndPositionMs)
+                                .build()
                         )
-                        .build()
-                )
+                    }
+                }
                 .build()
         }
 
@@ -320,18 +323,20 @@ class PlayerDataSourceImpl @Inject constructor(
         }
     }
 
-    override fun addClipTrack(clipEpisode: ClipEpisode, index: Int?) {
+    override fun addClipTrack(episode: Episode, index: Int?) {
         val mediaItem = MediaItem.Builder()
-            .setUri(clipEpisode.episode.enclosureUrl)
-            .setTag(clipEpisode.episode)
-            .setClippingConfiguration(
-                MediaItem.ClippingConfiguration.Builder()
-                    .setStartPositionMs(clipEpisode.clipStartTime.toEpochMilliseconds())
-                    .setEndPositionMs(
-                        clipEpisode.clipStartTime.toEpochMilliseconds() + clipEpisode.clipDuration.inWholeMilliseconds
+            .setUri(episode.enclosureUrl)
+            .setTag(episode)
+            .apply {
+                if (episode.isClip) {
+                    setClippingConfiguration(
+                        MediaItem.ClippingConfiguration.Builder()
+                            .setStartPositionMs(episode.clipStartPositionMs)
+                            .setEndPositionMs(episode.clipEndPositionMs)
+                            .build()
                     )
-                    .build()
-            )
+                }
+            }
             .build()
 
         index?.let {
@@ -341,19 +346,21 @@ class PlayerDataSourceImpl @Inject constructor(
         }
     }
 
-    override fun addClipTracks(clipEpisodes: List<ClipEpisode>, index: Int?) {
-        val mediaItems = clipEpisodes.map {
+    override fun addClipTracks(episodes: List<Episode>, index: Int?) {
+        val mediaItems = episodes.map {
             MediaItem.Builder()
-                .setUri(it.episode.enclosureUrl)
-                .setTag(it.episode)
-                .setClippingConfiguration(
-                    MediaItem.ClippingConfiguration.Builder()
-                        .setStartPositionMs(it.clipStartTime.toEpochMilliseconds())
-                        .setEndPositionMs(
-                            it.clipStartTime.toEpochMilliseconds() + it.clipDuration.inWholeMilliseconds
+                .setUri(it.enclosureUrl)
+                .setTag(it)
+                .apply {
+                    if (it.isClip) {
+                        setClippingConfiguration(
+                            MediaItem.ClippingConfiguration.Builder()
+                                .setStartPositionMs(it.clipStartPositionMs)
+                                .setEndPositionMs(it.clipEndPositionMs)
+                                .build()
                         )
-                        .build()
-                )
+                    }
+                }
                 .build()
         }
 

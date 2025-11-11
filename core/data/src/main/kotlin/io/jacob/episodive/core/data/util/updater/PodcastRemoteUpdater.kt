@@ -6,6 +6,7 @@ import dagger.assisted.AssistedInject
 import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.mapper.toPodcastEntities
+import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toPodcasts
@@ -16,7 +17,7 @@ class PodcastRemoteUpdater @AssistedInject constructor(
     private val localDataSource: PodcastLocalDataSource,
     private val remoteDataSource: PodcastRemoteDataSource,
     @Assisted("query") override val query: PodcastQuery,
-) : RemoteUpdater<PodcastQuery, List<PodcastResponse>, List<PodcastEntity>>(query) {
+) : RemoteUpdater<PodcastQuery, List<PodcastResponse>, List<PodcastEntity>, List<PodcastDto>>(query) {
 
     @AssistedFactory
     interface Factory {
@@ -33,7 +34,7 @@ class PodcastRemoteUpdater @AssistedInject constructor(
         }
     }
 
-    override suspend fun mapToEntities(response: List<PodcastResponse>): List<PodcastEntity> {
+    override suspend fun convertToEntity(response: List<PodcastResponse>): List<PodcastEntity> {
         return response.toPodcasts().toPodcastEntities(query.key)
     }
 
@@ -41,10 +42,9 @@ class PodcastRemoteUpdater @AssistedInject constructor(
         localDataSource.replacePodcasts(entity)
     }
 
-    override suspend fun isExpired(cached: List<PodcastEntity>): Boolean {
-        if (cached.isEmpty()) return true
-        val oldestCache = cached.minByOrNull { it.cachedAt }?.cachedAt
-            ?: return true
+    override suspend fun isExpired(output: List<PodcastDto>): Boolean {
+        if (output.isEmpty()) return true
+        val oldestCache = output.minBy { it.podcast.cachedAt }.podcast.cachedAt
         val now = Clock.System.now()
         return now - oldestCache > query.timeToLive
     }
