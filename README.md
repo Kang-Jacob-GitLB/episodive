@@ -5,22 +5,19 @@ Podcast Index Api 활용한 팟캐스트 앱
 
 # 화면
 
-|       화면       | 스크린샷                                                                                                                                                                                                                                                                                                                                        |
-|:--------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **OnBoarding** | <img src="docs/images/screenshot-onboarding-1-initial.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-onboarding-2-categories.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-onboarding-3-podcasts.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-onboarding-4-complete.png" width="200"> |
-|    **Home**    | <img src="docs/images/screenshot-home.png" width="200">                                                                                                                                                                                                                                                                                     |
-|   **Search**   | <img src="docs/images/screenshot-search-1-discover.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-search-2-history.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-search-3-result.png" width="200">                                                                                                       |
-|  **Podcast**   | <img src="docs/images/screenshot-podcast.png" width="200">                                                                                                                                                                                                                                                                                  |
-|   **Player**   | <img src="docs/images/screenshot-player.png" width="200">                                                                                                                                                                                                                                                                                   |
+|                   **홈**                    |                    **검색**                    |                    **보관함**                    |                   **클립**                   |                   **플레이어**                   |
+|:------------------------------------------:|:--------------------------------------------:|:---------------------------------------------:|:------------------------------------------:|:--------------------------------------------:|
+| <img src="docs/gifs/home.gif" width="140"> | <img src="docs/gifs/search.gif" width="140"> | <img src="docs/gifs/library.gif" width="140"> | <img src="docs/gifs/clip.gif" width="140"> | <img src="docs/gifs/player.gif" width="140"> |
 
 # 주요 기능
 
 - **온보딩**: 선호 카테고리 및 팟캐스트 선택으로 개인화된 경험 제공
 - **홈**: 최근 재생 에피소드, 트렌딩 팟캐스트, 랜덤 에피소드, 라이브 방송 등 다양한 콘텐츠 피드
 - **검색**: 팟캐스트 및 에피소드 검색, 최근 검색 히스토리, 최신 콘텐츠 탐색
+- **라이브러리**: 구독, 좋아요, 재생 기록 등 사용자 데이터 관리
+- **클립**: 사운드바이트 및 짧은 구간 미리듣기 기능
 - **팟캐스트 상세**: 팟캐스트 정보 및 에피소드 목록 제공
 - **오디오 플레이어**: ExoPlayer 기반의 백그라운드 재생 지원
-- **라이브러리**: 구독, 좋아요, 재생 기록 등 사용자 데이터 관리
 
 # 아키텍처
 

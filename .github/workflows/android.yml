@@ -34,6 +34,7 @@ jobs:
             .idea/**
             .github/**
             .claude/**
+            docs/**
 
   build:
     needs: check-for-changes
