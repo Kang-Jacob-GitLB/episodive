@@ -5,6 +5,10 @@ Podcast Index Api 활용한 팟캐스트 앱
 
 # 화면
 
+| 화면    | 스크린샷                     |
+|:------|:-------------------------|
+| **홈** | ![홈](docs/gifs/home.gif) |
+
 |       화면       | 스크린샷                                                                                                                                                                                                                                                                                                                                                                                                       |
 |:--------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **OnBoarding** | <img src="docs/images/screenshot-onboarding-1-initial.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-onboarding-2-categories.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-onboarding-3-podcasts.png" width="200"> &nbsp;&nbsp; <img src="docs/images/screenshot-onboarding-4-complete.png" width="200">                                                                |
