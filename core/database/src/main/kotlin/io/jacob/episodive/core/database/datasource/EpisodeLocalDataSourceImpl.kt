@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.database.datasource
 
 import io.jacob.episodive.core.database.dao.EpisodeDao
+import io.jacob.episodive.core.database.model.EpisodeDto
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
@@ -34,15 +35,15 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         episodeDao.replaceEpisodes(episodes)
     }
 
-    override fun getEpisode(id: Long): Flow<EpisodeEntity?> {
+    override fun getEpisode(id: Long): Flow<EpisodeDto?> {
         return episodeDao.getEpisode(id)
     }
 
-    override fun getEpisodes(): Flow<List<EpisodeEntity>> {
+    override fun getEpisodes(): Flow<List<EpisodeDto>> {
         return episodeDao.getEpisodes()
     }
 
-    override fun getEpisodesByCacheKey(cacheKey: String): Flow<List<EpisodeEntity>> {
+    override fun getEpisodesByCacheKey(cacheKey: String): Flow<List<EpisodeDto>> {
         return episodeDao.getEpisodesByCacheKey(cacheKey)
     }
 
@@ -62,7 +63,7 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         return episodeDao.toggleLiked(id)
     }
 
-    override fun getLikedEpisodes(): Flow<List<LikedEpisodeEntity>> {
+    override fun getLikedEpisodes(): Flow<List<EpisodeDto>> {
         return episodeDao.getLikedEpisodes()
     }
 
@@ -74,7 +75,7 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         episodeDao.removePlayed(id)
     }
 
-    override fun getPlayedEpisodes(): Flow<List<PlayedEpisodeEntity>> {
+    override fun getPlayedEpisodes(): Flow<List<EpisodeDto>> {
         return episodeDao.getPlayedEpisodes()
     }
 }

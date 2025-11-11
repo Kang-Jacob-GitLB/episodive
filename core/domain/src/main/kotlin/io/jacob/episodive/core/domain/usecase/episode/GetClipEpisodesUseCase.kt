@@ -2,13 +2,17 @@ package io.jacob.episodive.core.domain.usecase.episode
 
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.FeedRepository
-import io.jacob.episodive.core.model.ClipEpisode
+import io.jacob.episodive.core.model.Episode
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -16,7 +20,7 @@ class GetClipEpisodesUseCase @Inject constructor(
     private val feedRepository: FeedRepository,
     private val episodeRepository: EpisodeRepository
 ) {
-    operator fun invoke(max: Int = 20): Flow<List<ClipEpisode>> {
+    operator fun invoke(max: Int = 20): Flow<List<Episode>> {
         return feedRepository.getRecentSoundbites().flatMapLatest { soundbites ->
             val limitedSoundbites = soundbites.take(max)
             Timber.i("size of soundbites: ${limitedSoundbites.size}")
@@ -26,30 +30,42 @@ class GetClipEpisodesUseCase @Inject constructor(
             }
 
             channelFlow {
-                // Map to store all clip episodes by their index
-                val clipEpisodesMap = mutableMapOf<Int, ClipEpisode>()
-                var globalIndex = 0
+                // Create flows for each episode that continuously observe changes
+                val allEpisodeFlows = mutableListOf<Flow<Episode>>()
+                val chunks = limitedSoundbites.chunked(5)
 
-                limitedSoundbites.chunked(5).forEach { chunk ->
-                    // For each chunk, start collecting all episodes in parallel
-                    chunk.forEach { soundbite ->
-                        val currentIndex = globalIndex++
-                        launch {
+                // Process each chunk
+                chunks.forEachIndexed { index, chunk ->
+                    // Create flows in parallel for this chunk
+                    val chunkFlows = chunk.map { soundbite ->
+                        async {
                             episodeRepository.getEpisodeById(soundbite.episodeId)
                                 .filterNotNull()
-                                .collect { episode ->
-                                    clipEpisodesMap[currentIndex] = ClipEpisode(
-                                        episode = episode,
+                                .map { episode ->
+                                    episode.copy(
                                         clipStartTime = soundbite.startTime,
                                         clipDuration = soundbite.duration,
                                     )
-                                    // Emit current accumulated state in order
-                                    val sortedList = clipEpisodesMap.entries
-                                        .sortedBy { it.key }
-                                        .map { it.value }
-                                    send(sortedList)
                                 }
                         }
+                    }.awaitAll()
+
+                    allEpisodeFlows.addAll(chunkFlows)
+
+                    val isLastChunk = index == chunks.lastIndex
+                    if (isLastChunk) {
+                        // Last chunk: collect continuously for real-time updates
+                        combine(allEpisodeFlows) { episodes ->
+                            episodes.toList()
+                        }.collect { episodes ->
+                            send(episodes)
+                        }
+                    } else {
+                        // Not last chunk: emit once for progressive loading
+                        val currentEpisodes = combine(allEpisodeFlows) { episodes ->
+                            episodes.toList()
+                        }.first()
+                        send(currentEpisodes)
                     }
                 }
             }

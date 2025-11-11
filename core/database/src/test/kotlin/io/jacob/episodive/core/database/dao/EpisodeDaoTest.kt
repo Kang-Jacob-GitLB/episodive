@@ -56,9 +56,9 @@ class EpisodeDaoTest {
             dao.getEpisode(episodeTestData.id).test {
                 val episode = awaitItem()
                 // Then
-                assertEquals(episodeEntity.id, episode?.id)
+                assertEquals(episodeEntity.id, episode?.episode?.id)
                 assertEquals(
-                    now.plus(2.minutes), episode?.cachedAt
+                    now.plus(2.minutes), episode?.episode?.cachedAt
                 )
                 cancel()
             }
@@ -75,7 +75,7 @@ class EpisodeDaoTest {
                 val episodes = awaitItem()
                 // Then
                 val episodeIds = episodeEntities.map { it.id }
-                val entityIds = episodes.map { it.id }
+                val entityIds = episodes.map { it.episode.id }
                 assertTrue(episodeIds.containsAll(entityIds))
                 cancel()
             }
@@ -97,7 +97,7 @@ class EpisodeDaoTest {
                 // Then
                 assertEquals(entities[0].size, episodes.size)
                 val episodeIds = entities[0].map { it.id }
-                val entityIds = episodes.map { it.id }
+                val entityIds = episodes.map { it.episode.id }
                 assertTrue(episodeIds.containsAll(entityIds))
                 cancel()
             }
@@ -114,7 +114,7 @@ class EpisodeDaoTest {
             dao.getEpisodes().test {
                 val episodes = awaitItem()
                 // Then
-                assertFalse(episodes.contains(episodeEntity))
+                assertFalse(episodes.map { it.episode }.contains(episodeEntity))
                 cancel()
             }
         }
@@ -182,9 +182,9 @@ class EpisodeDaoTest {
             dao.getEpisodesByCacheKey("key1").test {
                 val key1Episodes = awaitItem()
                 assertEquals(2, key1Episodes.size)
-                assertTrue(key1Episodes.any { it.id == 999L })
-                assertTrue(key1Episodes.any { it.id == 998L })
-                assertFalse(key1Episodes.any { it.id == initialEntities[0][0].id })
+                assertTrue(key1Episodes.any { it.episode.id == 999L })
+                assertTrue(key1Episodes.any { it.episode.id == 998L })
+                assertFalse(key1Episodes.any { it.episode.id == initialEntities[0][0].id })
                 cancel()
             }
 
@@ -192,8 +192,8 @@ class EpisodeDaoTest {
             dao.getEpisodesByCacheKey("key2").test {
                 val key2Episodes = awaitItem()
                 assertEquals(1, key2Episodes.size)
-                assertTrue(key2Episodes.any { it.id == 997L })
-                assertFalse(key2Episodes.any { it.id == initialEntities[1][0].id })
+                assertTrue(key2Episodes.any { it.episode.id == 997L })
+                assertFalse(key2Episodes.any { it.episode.id == initialEntities[1][0].id })
                 cancel()
             }
 
@@ -201,8 +201,8 @@ class EpisodeDaoTest {
             dao.getEpisodesByCacheKey("key3").test {
                 val key3Episodes = awaitItem()
                 assertEquals(2, key3Episodes.size)
-                assertTrue(key3Episodes.any { it.id == initialEntities[2][0].id })
-                assertTrue(key3Episodes.any { it.id == initialEntities[2][1].id })
+                assertTrue(key3Episodes.any { it.episode.id == initialEntities[2][0].id })
+                assertTrue(key3Episodes.any { it.episode.id == initialEntities[2][1].id })
                 cancel()
             }
         }
@@ -225,9 +225,9 @@ class EpisodeDaoTest {
             dao.getEpisodesByCacheKey("trending").test {
                 val episodes = awaitItem()
                 assertEquals(2, episodes.size)
-                assertTrue(episodes.any { it.id == 100L })
-                assertTrue(episodes.any { it.id == 101L })
-                assertFalse(episodes.any { it.id in initialEpisodes.map { e -> e.id } })
+                assertTrue(episodes.any { it.episode.id == 100L })
+                assertTrue(episodes.any { it.episode.id == 101L })
+                assertFalse(episodes.any { it.episode.id in initialEpisodes.map { e -> e.id } })
                 cancel()
             }
         }
@@ -247,9 +247,9 @@ class EpisodeDaoTest {
 
             // Then
             assertEquals(3, likedEpisodes.size)
-            assertEquals(episodeEntities[2].id, likedEpisodes[0].id)
-            assertEquals(episodeEntities[1].id, likedEpisodes[1].id)
-            assertEquals(episodeEntities[0].id, likedEpisodes[2].id)
+            assertEquals(episodeEntities[2].id, likedEpisodes[0].episode.id)
+            assertEquals(episodeEntities[1].id, likedEpisodes[1].episode.id)
+            assertEquals(episodeEntities[0].id, likedEpisodes[2].episode.id)
         }
 
     @Test
@@ -267,9 +267,9 @@ class EpisodeDaoTest {
                 val likedEpisodes = awaitItem()
                 // Then
                 assertEquals(3, likedEpisodes.size)
-                assertEquals(episodeEntities[2].id, likedEpisodes[0].id)
-                assertEquals(episodeEntities[1].id, likedEpisodes[1].id)
-                assertEquals(episodeEntities[0].id, likedEpisodes[2].id)
+                assertEquals(episodeEntities[2].id, likedEpisodes[0].episode.id)
+                assertEquals(episodeEntities[1].id, likedEpisodes[1].episode.id)
+                assertEquals(episodeEntities[0].id, likedEpisodes[2].episode.id)
                 cancel()
             }
         }
@@ -294,6 +294,7 @@ class EpisodeDaoTest {
         runTest {
             // Given
             val likedAt = Clock.System.now()
+            dao.upsertEpisodes(episodeEntities)
             dao.addLiked(LikedEpisodeEntity(episodeEntities[0].id, likedAt))
             dao.addLiked(LikedEpisodeEntity(episodeEntities[1].id, likedAt.plus(1.minutes)))
 
@@ -304,7 +305,7 @@ class EpisodeDaoTest {
                 val likedEpisodes = awaitItem()
                 // Then
                 assertEquals(1, likedEpisodes.size)
-                assertEquals(episodeEntities[1].id, likedEpisodes[0].id)
+                assertEquals(episodeEntities[1].id, likedEpisodes[0].episode.id)
                 cancel()
             }
 
@@ -315,8 +316,8 @@ class EpisodeDaoTest {
                 val likedEpisodes = awaitItem()
                 // Then
                 assertEquals(2, likedEpisodes.size)
-                assertEquals(episodeEntities[1].id, likedEpisodes[0].id)
-                assertEquals(episodeEntities[0].id, likedEpisodes[1].id)
+                assertEquals(episodeEntities[1].id, likedEpisodes[0].episode.id)
+                assertEquals(episodeEntities[0].id, likedEpisodes[1].episode.id)
                 cancel()
             }
         }
@@ -357,9 +358,9 @@ class EpisodeDaoTest {
                 val playedEpisodes = awaitItem()
                 // Then
                 assertEquals(3, playedEpisodes.size)
-                assertEquals(episodeEntities[2].id, playedEpisodes[0].id)
-                assertEquals(episodeEntities[1].id, playedEpisodes[1].id)
-                assertEquals(episodeEntities[0].id, playedEpisodes[2].id)
+                assertEquals(episodeEntities[2].id, playedEpisodes[0].episode.id)
+                assertEquals(episodeEntities[1].id, playedEpisodes[1].episode.id)
+                assertEquals(episodeEntities[0].id, playedEpisodes[2].episode.id)
             }
         }
 }

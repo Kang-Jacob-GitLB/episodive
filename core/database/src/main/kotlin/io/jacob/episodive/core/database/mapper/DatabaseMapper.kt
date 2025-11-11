@@ -1,6 +1,9 @@
 package io.jacob.episodive.core.database.mapper
 
+import androidx.annotation.RestrictTo
+import io.jacob.episodive.core.database.model.EpisodeDto
 import io.jacob.episodive.core.database.model.EpisodeEntity
+import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.database.model.RecentFeedEntity
 import io.jacob.episodive.core.database.model.RecentNewFeedEntity
@@ -13,47 +16,76 @@ import io.jacob.episodive.core.model.RecentNewFeed
 import io.jacob.episodive.core.model.Soundbite
 import io.jacob.episodive.core.model.TrendingFeed
 import kotlin.time.Clock
+import kotlin.time.Duration
 import kotlin.time.Instant
 
-fun PodcastEntity.toPodcast(): Podcast =
+fun PodcastDto.toPodcast(): Podcast =
     Podcast(
-        id = id,
-        podcastGuid = podcastGuid,
-        title = title,
-        url = url,
-        originalUrl = originalUrl,
-        link = link,
-        description = description,
-        author = author,
-        ownerName = ownerName,
-        image = image,
-        artwork = artwork,
-        lastUpdateTime = lastUpdateTime,
-        lastCrawlTime = lastCrawlTime,
-        lastParseTime = lastParseTime,
-        lastGoodHttpStatusTime = lastGoodHttpStatusTime,
-        lastHttpStatus = lastHttpStatus,
-        contentType = contentType,
-        itunesId = itunesId,
-        itunesType = itunesType,
-        generator = generator,
-        language = language,
-        explicit = explicit,
-        type = type,
-        medium = medium,
-        dead = dead,
-        chash = chash,
-        episodeCount = episodeCount,
-        crawlErrors = crawlErrors,
-        parseErrors = parseErrors,
-        categories = categories,
-        locked = locked,
-        imageUrlHash = imageUrlHash,
-        newestItemPublishTime = newestItemPublishTime,
+        id = podcast.id,
+        podcastGuid = podcast.podcastGuid,
+        title = podcast.title,
+        url = podcast.url,
+        originalUrl = podcast.originalUrl,
+        link = podcast.link,
+        description = podcast.description,
+        author = podcast.author,
+        ownerName = podcast.ownerName,
+        image = podcast.image,
+        artwork = podcast.artwork,
+        lastUpdateTime = podcast.lastUpdateTime,
+        lastCrawlTime = podcast.lastCrawlTime,
+        lastParseTime = podcast.lastParseTime,
+        lastGoodHttpStatusTime = podcast.lastGoodHttpStatusTime,
+        lastHttpStatus = podcast.lastHttpStatus,
+        contentType = podcast.contentType,
+        itunesId = podcast.itunesId,
+        itunesType = podcast.itunesType,
+        generator = podcast.generator,
+        language = podcast.language,
+        explicit = podcast.explicit,
+        type = podcast.type,
+        medium = podcast.medium,
+        dead = podcast.dead,
+        chash = podcast.chash,
+        episodeCount = podcast.episodeCount,
+        crawlErrors = podcast.crawlErrors,
+        parseErrors = podcast.parseErrors,
+        categories = podcast.categories,
+        locked = podcast.locked,
+        imageUrlHash = podcast.imageUrlHash,
+        newestItemPublishTime = podcast.newestItemPublishTime,
+        followedAt = followedAt,
+        isNotificationEnabled = isNotificationEnabled ?: false,
     )
 
-fun List<PodcastEntity>.toPodcasts(): List<Podcast> =
+fun List<PodcastDto>.toPodcasts(): List<Podcast> =
     map { it.toPodcast() }
+
+@RestrictTo(RestrictTo.Scope.TESTS)
+fun Podcast.toPodcastDto(
+    cacheKey: String,
+    cachedAt: Instant = Clock.System.now(),
+): PodcastDto =
+    PodcastDto(
+        podcast = toPodcastEntity(
+            cacheKey = cacheKey,
+            cachedAt = cachedAt,
+        ),
+        followedAt = followedAt,
+        isNotificationEnabled = isNotificationEnabled,
+    )
+
+@RestrictTo(RestrictTo.Scope.TESTS)
+fun List<Podcast>.toPodcastDtos(
+    cacheKey: String,
+    cachedAt: Instant = Clock.System.now(),
+): List<PodcastDto> =
+    map {
+        it.toPodcastDto(
+            cacheKey = cacheKey,
+            cachedAt = cachedAt,
+        )
+    }
 
 fun Podcast.toPodcastEntity(
     cacheKey: String,
@@ -99,7 +131,7 @@ fun Podcast.toPodcastEntity(
 
 fun List<Podcast>.toPodcastEntities(
     cacheKey: String,
-    cachedAt: Instant = Clock.System.now()
+    cachedAt: Instant = Clock.System.now(),
 ): List<PodcastEntity> =
     map {
         it.toPodcastEntity(
@@ -108,43 +140,75 @@ fun List<Podcast>.toPodcastEntities(
         )
     }
 
-fun EpisodeEntity.toEpisode(): Episode =
+fun EpisodeDto.toEpisode(): Episode =
     Episode(
-        id = id,
-        guid = guid,
-        title = title,
-        link = link,
-        description = description,
-        datePublished = datePublished,
-        dateCrawled = dateCrawled,
-        enclosureUrl = enclosureUrl,
-        enclosureType = enclosureType,
-        enclosureLength = enclosureLength,
-        startTime = startTime,
-        endTime = endTime,
-        status = status,
-        contentLink = contentLink,
-        duration = duration,
-        explicit = explicit,
-        episode = episode,
-        episodeType = episodeType,
-        season = season,
-        image = image,
-        feedItunesId = feedItunesId,
-        feedImage = feedImage,
-        feedId = feedId,
-        feedUrl = feedUrl,
-        feedAuthor = feedAuthor,
-        feedTitle = feedTitle,
-        feedLanguage = feedLanguage,
-        categories = categories,
-        chaptersUrl = chaptersUrl,
-        transcriptUrl = transcriptUrl,
-        transcripts = transcripts,
+        id = episode.id,
+        guid = episode.guid,
+        title = episode.title,
+        link = episode.link,
+        description = episode.description,
+        datePublished = episode.datePublished,
+        dateCrawled = episode.dateCrawled,
+        enclosureUrl = episode.enclosureUrl,
+        enclosureType = episode.enclosureType,
+        enclosureLength = episode.enclosureLength,
+        startTime = episode.startTime,
+        endTime = episode.endTime,
+        status = episode.status,
+        contentLink = episode.contentLink,
+        duration = episode.duration,
+        explicit = episode.explicit,
+        episode = episode.episode,
+        episodeType = episode.episodeType,
+        season = episode.season,
+        image = episode.image,
+        feedItunesId = episode.feedItunesId,
+        feedImage = episode.feedImage,
+        feedId = episode.feedId,
+        feedUrl = episode.feedUrl,
+        feedAuthor = episode.feedAuthor,
+        feedTitle = episode.feedTitle,
+        feedLanguage = episode.feedLanguage,
+        categories = episode.categories,
+        chaptersUrl = episode.chaptersUrl,
+        transcriptUrl = episode.transcriptUrl,
+        transcripts = episode.transcripts,
+        likedAt = likedAt,
+        playedAt = playedAt,
+        position = position ?: Duration.ZERO,
+        isCompleted = isCompleted ?: false,
     )
 
-fun List<EpisodeEntity>.toEpisodes(): List<Episode> =
+fun List<EpisodeDto>.toEpisodes(): List<Episode> =
     map { it.toEpisode() }
+
+@RestrictTo(RestrictTo.Scope.TESTS)
+fun Episode.toEpisodeDto(
+    cacheKey: String,
+    cachedAt: Instant = Clock.System.now(),
+): EpisodeDto =
+    EpisodeDto(
+        episode = toEpisodeEntity(
+            cacheKey = cacheKey,
+            cachedAt = cachedAt,
+        ),
+        likedAt = likedAt,
+        playedAt = playedAt,
+        position = position,
+        isCompleted = isCompleted,
+    )
+
+@RestrictTo(RestrictTo.Scope.TESTS)
+fun List<Episode>.toEpisodeDtos(
+    cacheKey: String,
+    cachedAt: Instant = Clock.System.now(),
+): List<EpisodeDto> =
+    map {
+        it.toEpisodeDto(
+            cacheKey = cacheKey,
+            cachedAt = cachedAt,
+        )
+    }
 
 fun Episode.toEpisodeEntity(
     cacheKey: String,

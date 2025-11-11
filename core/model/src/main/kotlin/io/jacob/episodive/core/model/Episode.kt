@@ -40,6 +40,8 @@ data class Episode(
     val playedAt: Instant? = null,
     val position: Duration = Duration.ZERO,
     val isCompleted: Boolean = false,
+    val clipStartTime: Instant? = null, // for soundbite
+    val clipDuration: Duration? = null, // for soundbite
 ) {
     val isLive: Boolean
         get() = enclosureLength == 0L ||
@@ -59,4 +61,8 @@ data class Episode(
         if (it == Duration.ZERO) null
         else it - position
     }
+
+    val clipStartPositionMs: Long = clipStartTime?.toEpochMilliseconds() ?: 0L
+    val clipEndPositionMs: Long = clipStartPositionMs + (clipDuration?.inWholeMilliseconds ?: 0L)
+    val isClip: Boolean = clipStartTime != null && clipDuration != null
 }

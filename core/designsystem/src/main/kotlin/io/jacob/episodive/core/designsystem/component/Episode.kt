@@ -42,7 +42,6 @@ import io.jacob.episodive.core.designsystem.R
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
-import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toIntSeconds
@@ -443,15 +442,13 @@ fun EpisodeDetailItem(
 @Composable
 fun EpisodeClipItem(
     modifier: Modifier = Modifier,
-    clipEpisode: ClipEpisode,
+    episode: Episode,
     isPlaying: Boolean,
     remaining: Duration,
     onClick: () -> Unit,
     onPlayEpisode: () -> Unit,
     onToggleEpisodeLiked: () -> Unit,
 ) {
-    val episode = clipEpisode.episode
-
     Surface(
         modifier = modifier.fillMaxSize(),
         shape = MaterialTheme.shapes.largeIncreased,
@@ -637,8 +634,7 @@ private fun EpisodeDetailItemPreview() {
 private fun EpisodeClipItemPreview() {
     EpisodiveTheme {
         EpisodeClipItem(
-            clipEpisode = ClipEpisode(
-                episode = episodeTestData,
+            episode = episodeTestData.copy(
                 clipStartTime = Instant.fromEpochSeconds(30),
                 clipDuration = 60.seconds,
             ),

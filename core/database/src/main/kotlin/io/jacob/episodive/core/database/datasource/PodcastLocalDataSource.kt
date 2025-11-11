@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.database.datasource
 
 import io.jacob.episodive.core.database.model.FollowedPodcastEntity
+import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -11,13 +12,13 @@ interface PodcastLocalDataSource {
     suspend fun deletePodcasts()
     suspend fun deletePodcastsByCacheKey(cacheKey: String)
     suspend fun replacePodcasts(podcasts: List<PodcastEntity>)
-    fun getPodcast(id: Long): Flow<PodcastEntity?>
-    fun getPodcasts(): Flow<List<PodcastEntity>>
-    fun getPodcastsByCacheKey(cacheKey: String): Flow<List<PodcastEntity>>
+    fun getPodcast(id: Long): Flow<PodcastDto?>
+    fun getPodcasts(): Flow<List<PodcastDto>>
+    fun getPodcastsByCacheKey(cacheKey: String): Flow<List<PodcastDto>>
 
     suspend fun addFollowed(followedPodcastEntity: FollowedPodcastEntity)
     suspend fun removeFollowed(id: Long)
     fun isFollowed(id: Long): Boolean
     suspend fun toggleFollowed(id: Long): Boolean
-    fun getFollowedPodcasts(): Flow<List<FollowedPodcastEntity>>
+    fun getFollowedPodcasts(): Flow<List<PodcastDto>>
 }

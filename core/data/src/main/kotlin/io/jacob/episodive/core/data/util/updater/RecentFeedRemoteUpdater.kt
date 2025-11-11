@@ -14,7 +14,9 @@ class RecentFeedRemoteUpdater(
     private val localDataSource: FeedLocalDataSource,
     private val remoteDataSource: FeedRemoteDataSource,
     override val query: FeedQuery,
-) : RemoteUpdater<FeedQuery, List<RecentFeedResponse>, List<RecentFeedEntity>>(query) {
+) : RemoteUpdater<FeedQuery, List<RecentFeedResponse>, List<RecentFeedEntity>, List<RecentFeedEntity>>(
+    query
+) {
 
     override suspend fun fetchFromRemote(): List<RecentFeedResponse> {
         return when (query) {
@@ -28,7 +30,7 @@ class RecentFeedRemoteUpdater(
         }
     }
 
-    override suspend fun mapToEntities(response: List<RecentFeedResponse>): List<RecentFeedEntity> {
+    override suspend fun convertToEntity(response: List<RecentFeedResponse>): List<RecentFeedEntity> {
         return response.toRecentFeeds().toRecentFeedEntities(query.key)
     }
 
@@ -36,10 +38,9 @@ class RecentFeedRemoteUpdater(
         localDataSource.replaceRecentFeeds(entity)
     }
 
-    override suspend fun isExpired(cached: List<RecentFeedEntity>): Boolean {
-        if (cached.isEmpty()) return true
-        val oldestCache = cached.minByOrNull { it.cachedAt }?.cachedAt
-            ?: return true
+    override suspend fun isExpired(output: List<RecentFeedEntity>): Boolean {
+        if (output.isEmpty()) return true
+        val oldestCache = output.minBy { it.cachedAt }.cachedAt
         val now = Clock.System.now()
         return now - oldestCache > query.timeToLive
     }

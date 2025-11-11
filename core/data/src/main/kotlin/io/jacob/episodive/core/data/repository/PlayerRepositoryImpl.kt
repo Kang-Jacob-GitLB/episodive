@@ -1,7 +1,6 @@
 package io.jacob.episodive.core.data.repository
 
 import io.jacob.episodive.core.domain.repository.PlayerRepository
-import io.jacob.episodive.core.model.ClipEpisode
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Playback
 import io.jacob.episodive.core.model.Progress
@@ -22,12 +21,12 @@ class PlayerRepositoryImpl @Inject constructor(
         playerDataSource.play(episodes, indexToPlay)
     }
 
-    override fun playClip(clipEpisode: ClipEpisode) {
-        playerDataSource.playClip(clipEpisode)
+    override fun playClip(episode: Episode) {
+        playerDataSource.playClip(episode)
     }
 
-    override fun playClips(clipEpisodes: List<ClipEpisode>, indexToPlay: Int?) {
-        playerDataSource.playClips(clipEpisodes, indexToPlay)
+    override fun playClips(episodes: List<Episode>, indexToPlay: Int?) {
+        playerDataSource.playClips(episodes, indexToPlay)
     }
 
     override fun playIndex(index: Int) {
@@ -90,12 +89,12 @@ class PlayerRepositoryImpl @Inject constructor(
         playerDataSource.addTrack(episodes, index)
     }
 
-    override fun addClipTrack(clipEpisode: ClipEpisode, index: Int?) {
-        playerDataSource.addClipTrack(clipEpisode, index)
+    override fun addClipTrack(episode: Episode, index: Int?) {
+        playerDataSource.addClipTrack(episode, index)
     }
 
-    override fun addClipTracks(clipEpisodes: List<ClipEpisode>, index: Int?) {
-        playerDataSource.addClipTracks(clipEpisodes, index)
+    override fun addClipTracks(episodes: List<Episode>, index: Int?) {
+        playerDataSource.addClipTracks(episodes, index)
     }
 
     override fun removeTrack(index: Int) {

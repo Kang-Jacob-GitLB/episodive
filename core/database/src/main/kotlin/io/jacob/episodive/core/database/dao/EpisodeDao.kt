@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
+import io.jacob.episodive.core.database.model.EpisodeDto
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
@@ -37,14 +38,55 @@ interface EpisodeDao {
         }
     }
 
-    @Query("SELECT * FROM episodes WHERE id = :id ORDER BY cachedAt DESC LIMIT 1")
-    fun getEpisode(id: Long): Flow<EpisodeEntity?>
+    @Query(
+        """
+        SELECT
+            episodes.*,
+            liked_episodes.likedAt,
+            played_episodes.playedAt,
+            played_episodes.position,
+            played_episodes.isCompleted
+        FROM episodes
+        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
+        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+        WHERE episodes.id = :id
+        ORDER BY episodes.cachedAt DESC
+        LIMIT 1
+    """
+    )
+    fun getEpisode(id: Long): Flow<EpisodeDto?>
 
-    @Query("SELECT * FROM episodes")
-    fun getEpisodes(): Flow<List<EpisodeEntity>>
+    @Query(
+        """
+        SELECT
+            episodes.*,
+            liked_episodes.likedAt,
+            played_episodes.playedAt,
+            played_episodes.position,
+            played_episodes.isCompleted
+        FROM episodes
+        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
+        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+    """
+    )
+    fun getEpisodes(): Flow<List<EpisodeDto>>
 
-    @Query("SELECT * FROM episodes WHERE cacheKey = :cacheKey ORDER BY datePublished DESC")
-    fun getEpisodesByCacheKey(cacheKey: String): Flow<List<EpisodeEntity>>
+    @Query(
+        """
+        SELECT
+            episodes.*,
+            liked_episodes.likedAt,
+            played_episodes.playedAt,
+            played_episodes.position,
+            played_episodes.isCompleted
+        FROM episodes
+        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
+        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+        WHERE episodes.cacheKey = :cacheKey
+        ORDER BY episodes.datePublished DESC
+    """
+    )
+    fun getEpisodesByCacheKey(cacheKey: String): Flow<List<EpisodeDto>>
 
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -72,8 +114,21 @@ interface EpisodeDao {
         }
     }
 
-    @Query("SELECT * FROM liked_episodes ORDER BY likedAt DESC")
-    fun getLikedEpisodes(): Flow<List<LikedEpisodeEntity>>
+    @Query(
+        """
+        SELECT
+            episodes.*,
+            liked_episodes.likedAt,
+            played_episodes.playedAt,
+            played_episodes.position,
+            played_episodes.isCompleted
+        FROM episodes
+        INNER JOIN liked_episodes ON episodes.id = liked_episodes.id
+        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+        ORDER BY liked_episodes.likedAt DESC
+    """
+    )
+    fun getLikedEpisodes(): Flow<List<EpisodeDto>>
 
 
     @Upsert
@@ -82,6 +137,19 @@ interface EpisodeDao {
     @Query("DELETE FROM played_episodes WHERE id = :id")
     suspend fun removePlayed(id: Long)
 
-    @Query("SELECT * FROM played_episodes ORDER BY playedAt DESC")
-    fun getPlayedEpisodes(): Flow<List<PlayedEpisodeEntity>>
+    @Query(
+        """
+        SELECT
+            episodes.*,
+            liked_episodes.likedAt,
+            played_episodes.playedAt,
+            played_episodes.position,
+            played_episodes.isCompleted
+        FROM episodes
+        INNER JOIN played_episodes ON episodes.id = played_episodes.id
+        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
+        ORDER BY played_episodes.playedAt DESC
+    """
+    )
+    fun getPlayedEpisodes(): Flow<List<EpisodeDto>>
 }

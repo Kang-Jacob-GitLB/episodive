@@ -2,6 +2,7 @@ package io.jacob.episodive.core.database.datasource
 
 import io.jacob.episodive.core.database.dao.PodcastDao
 import io.jacob.episodive.core.database.model.FollowedPodcastEntity
+import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -32,15 +33,15 @@ class PodcastLocalDataSourceImpl(
         podcastDao.replacePodcasts(podcasts)
     }
 
-    override fun getPodcast(id: Long): Flow<PodcastEntity?> {
+    override fun getPodcast(id: Long): Flow<PodcastDto?> {
         return podcastDao.getPodcast(id)
     }
 
-    override fun getPodcasts(): Flow<List<PodcastEntity>> {
+    override fun getPodcasts(): Flow<List<PodcastDto>> {
         return podcastDao.getPodcasts()
     }
 
-    override fun getPodcastsByCacheKey(cacheKey: String): Flow<List<PodcastEntity>> {
+    override fun getPodcastsByCacheKey(cacheKey: String): Flow<List<PodcastDto>> {
         return podcastDao.getPodcastsByCacheKey(cacheKey)
     }
 
@@ -60,7 +61,7 @@ class PodcastLocalDataSourceImpl(
         return podcastDao.toggleFollowed(id)
     }
 
-    override fun getFollowedPodcasts(): Flow<List<FollowedPodcastEntity>> {
+    override fun getFollowedPodcasts(): Flow<List<PodcastDto>> {
         return podcastDao.getFollowedPodcasts()
     }
 }

@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
 import io.jacob.episodive.core.database.model.FollowedPodcastEntity
+import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Clock
@@ -36,14 +37,45 @@ interface PodcastDao {
         }
     }
 
-    @Query("SELECT * FROM podcasts WHERE id = :id ORDER BY cachedAt DESC LIMIT 1")
-    fun getPodcast(id: Long): Flow<PodcastEntity?>
+    @Query(
+        """
+        SELECT
+            podcasts.*,
+            followed_podcasts.followedAt,
+            followed_podcasts.isNotificationEnabled
+        FROM podcasts
+        LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
+        WHERE podcasts.id = :id
+        ORDER BY podcasts.cachedAt DESC
+        LIMIT 1
+    """
+    )
+    fun getPodcast(id: Long): Flow<PodcastDto?>
 
-    @Query("SELECT * FROM podcasts")
-    fun getPodcasts(): Flow<List<PodcastEntity>>
+    @Query(
+        """
+        SELECT
+            podcasts.*,
+            followed_podcasts.followedAt,
+            followed_podcasts.isNotificationEnabled
+        FROM podcasts
+        LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
+    """
+    )
+    fun getPodcasts(): Flow<List<PodcastDto>>
 
-    @Query("SELECT * FROM podcasts WHERE cacheKey = :cacheKey")
-    fun getPodcastsByCacheKey(cacheKey: String): Flow<List<PodcastEntity>>
+    @Query(
+        """
+        SELECT
+            podcasts.*,
+            followed_podcasts.followedAt,
+            followed_podcasts.isNotificationEnabled
+        FROM podcasts
+        LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
+        WHERE podcasts.cacheKey = :cacheKey
+    """
+    )
+    fun getPodcastsByCacheKey(cacheKey: String): Flow<List<PodcastDto>>
 
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -72,6 +104,16 @@ interface PodcastDao {
         }
     }
 
-    @Query("SELECT * FROM followed_podcasts ORDER BY followedAt DESC")
-    fun getFollowedPodcasts(): Flow<List<FollowedPodcastEntity>>
+    @Query(
+        """
+        SELECT
+            podcasts.*,
+            followed_podcasts.followedAt,
+            followed_podcasts.isNotificationEnabled
+        FROM podcasts
+        INNER JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
+        ORDER BY followed_podcasts.followedAt DESC
+    """
+    )
+    fun getFollowedPodcasts(): Flow<List<PodcastDto>>
 }

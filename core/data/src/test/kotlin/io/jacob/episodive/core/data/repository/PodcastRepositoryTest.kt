@@ -4,8 +4,7 @@ import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
-import io.jacob.episodive.core.database.mapper.toPodcastEntities
-import io.jacob.episodive.core.database.model.FollowedPodcastEntity
+import io.jacob.episodive.core.database.mapper.toPodcastDtos
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.testing.model.podcastTestData
@@ -38,7 +37,7 @@ class PodcastRepositoryTest {
         remoteUpdater = remoteUpdater,
     )
 
-    private val podcastEntities = podcastTestDataList.toPodcastEntities("test_key")
+    private val podcastDtos = podcastTestDataList.toPodcastDtos("test_key")
 
     @After
     fun teardown() {
@@ -56,7 +55,7 @@ class PodcastRepositoryTest {
             } returns mockk<PodcastRemoteUpdater>(relaxed = true)
             coEvery {
                 localDataSource.getPodcastsByCacheKey(query.key)
-            } returns flowOf(podcastEntities)
+            } returns flowOf(podcastDtos)
 
             // When
             repository.searchPodcasts(search).test {
@@ -83,7 +82,7 @@ class PodcastRepositoryTest {
             } returns mockk<PodcastRemoteUpdater>(relaxed = true)
             coEvery {
                 localDataSource.getPodcast(feedId)
-            } returns flowOf(podcastEntities.first())
+            } returns flowOf(podcastDtos.first())
 
             // When
             repository.getPodcastByFeedId(feedId).test {
@@ -145,7 +144,7 @@ class PodcastRepositoryTest {
             } returns mockk<PodcastRemoteUpdater>(relaxed = true)
             coEvery {
                 localDataSource.getPodcastsByCacheKey(query.key)
-            } returns flowOf(podcastEntities)
+            } returns flowOf(podcastDtos)
 
             // When
             repository.getPodcastsByMedium(medium).test {
@@ -165,27 +164,19 @@ class PodcastRepositoryTest {
     fun `Given dependencies, When getFollowedPodcasts is called, Then calls methods of dataSources`() =
         runTest {
             // Given
-            coEvery { localDataSource.getPodcasts() } returns flowOf(podcastEntities)
-            coEvery { localDataSource.getFollowedPodcasts() } returns flowOf(
-                listOf(
-                    FollowedPodcastEntity(
-                        id = 5778530,
-                        followedAt = Instant.fromEpochSeconds(1757568578),
-                        isNotificationEnabled = true,
-                    ),
-                    FollowedPodcastEntity(
-                        id = 391008,
-                        followedAt = Instant.fromEpochSeconds(1698800122),
-                        isNotificationEnabled = true,
-                    ),
+            val dtos = podcastDtos.mapIndexed { index, dto ->
+                dto.copy(
+                    followedAt = Instant.fromEpochSeconds(1757568578L + index),
+                    isNotificationEnabled = true,
                 )
-            )
+            }
+            coEvery { localDataSource.getFollowedPodcasts() } returns flowOf(dtos)
 
             // When
             repository.getFollowedPodcasts().test {
                 val result = awaitItem()
                 // Then
-                assertEquals(2, result.size)
+                assertEquals(10, result.size)
                 assertEquals(podcastTestDataList[0].id, result[0].id)
                 assertEquals(podcastTestDataList[1].id, result[1].id)
                 awaitComplete()
@@ -193,7 +184,6 @@ class PodcastRepositoryTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcasts()
                 localDataSource.getFollowedPodcasts()
             }
         }

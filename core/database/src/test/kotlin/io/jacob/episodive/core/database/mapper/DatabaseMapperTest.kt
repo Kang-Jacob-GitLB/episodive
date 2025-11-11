@@ -27,12 +27,12 @@ class DatabaseMapperTest {
     private val cachedAt = Clock.System.now()
 
     @Test
-    fun `toPodcast converts PodcastEntity to Podcast correctly`() {
+    fun `toPodcast converts PodcastDto to Podcast correctly`() {
         // Given
-        val podcastEntity = podcastTestData.toPodcastEntity(cacheKey, cachedAt)
+        val podcastDto = podcastTestData.toPodcastDto(cacheKey, cachedAt)
 
         // When
-        val podcast = podcastEntity.toPodcast()
+        val podcast = podcastDto.toPodcast()
 
         // Then
         assertEquals(podcastTestData.id, podcast.id)
@@ -43,12 +43,12 @@ class DatabaseMapperTest {
     }
 
     @Test
-    fun `toPodcasts converts list of PodcastEntity to list of Podcast correctly`() {
+    fun `toPodcasts converts list of PodcastDto to list of Podcast correctly`() {
         // Given
-        val podcastEntities = podcastTestDataList.toPodcastEntities(cacheKey, cachedAt)
+        val podcastDtos = podcastTestDataList.toPodcastDtos(cacheKey, cachedAt)
 
         // When
-        val podcasts = podcastEntities.toPodcasts()
+        val podcasts = podcastDtos.toPodcasts()
 
         // Then
         assertEquals(podcastTestDataList.size, podcasts.size)
@@ -87,10 +87,10 @@ class DatabaseMapperTest {
     @Test
     fun `toEpisode converts EpisodeEntity to Episode correctly`() {
         // Given
-        val episodeEntity = episodeTestData.toEpisodeEntity(cacheKey, cachedAt)
+        val episodeDto = episodeTestData.toEpisodeDto(cacheKey, cachedAt)
 
         // When
-        val episode = episodeEntity.toEpisode()
+        val episode = episodeDto.toEpisode()
 
         // Then
         assertEquals(episodeTestData.id, episode.id)
@@ -103,10 +103,10 @@ class DatabaseMapperTest {
     @Test
     fun `toEpisodes converts list of EpisodeEntity to list of Episode correctly`() {
         // Given
-        val episodeEntities = episodeTestDataList.toEpisodeEntities(cacheKey, cachedAt)
+        val episodeDtos = episodeTestDataList.toEpisodeDtos(cacheKey, cachedAt)
 
         // When
-        val episodes = episodeEntities.toEpisodes()
+        val episodes = episodeDtos.toEpisodes()
 
         // Then
         assertEquals(episodeTestDataList.size, episodes.size)
