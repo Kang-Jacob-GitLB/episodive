@@ -1,6 +1,5 @@
 package io.jacob.episodive.core.domain.repository
 
-import io.jacob.episodive.core.model.FollowedPodcast
 import io.jacob.episodive.core.model.Podcast
 import kotlinx.coroutines.flow.Flow
 
@@ -21,9 +20,7 @@ interface PodcastRepository {
         max: Int? = null,
     ): Flow<List<Podcast>>
 
-    fun getFollowedPodcasts(query: String? = null): Flow<List<FollowedPodcast>>
+    fun getFollowedPodcasts(query: String? = null): Flow<List<Podcast>>
 
     suspend fun toggleFollowed(id: Long): Boolean
-
-    suspend fun addFolloweds(ids: List<Long>): Boolean
 }

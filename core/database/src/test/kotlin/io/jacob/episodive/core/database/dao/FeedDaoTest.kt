@@ -13,6 +13,7 @@ import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -97,6 +98,30 @@ class FeedDaoTest {
         }
 
     @Test
+    fun `Given trending feeds with different cache keys, When replaceTrendingFeeds, Then replaced by cache key`() =
+        runTest {
+            // Given - Insert initial feeds
+            val initialFeeds = trendingFeedEntities.take(3).map { it.copy(cacheKey = "key1") }
+            dao.upsertTrendingFeeds(initialFeeds)
+
+            // When - Replace with new feeds
+            val newFeeds = listOf(
+                trendingFeedEntities[5].copy(id = 100L, cacheKey = "key1"),
+                trendingFeedEntities[6].copy(id = 101L, cacheKey = "key1")
+            )
+            dao.replaceTrendingFeeds(newFeeds)
+
+            // Then
+            dao.getTrendingFeedsByCacheKey("key1").test {
+                val items = awaitItem()
+                assertEquals(2, items.size)
+                assertTrue(items.any { it.id == 100L })
+                assertTrue(items.any { it.id == 101L })
+                cancel()
+            }
+        }
+
+    @Test
     fun `Given recent feeds, When upsertRecentFeeds, Then upserted correctly`() =
         runTest {
             // Given
@@ -148,6 +173,30 @@ class FeedDaoTest {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentFeedEntities.size)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given recent feeds with different cache keys, When replaceRecentFeeds, Then replaced by cache key`() =
+        runTest {
+            // Given - Insert initial feeds
+            val initialFeeds = recentFeedEntities.take(3).map { it.copy(cacheKey = "key1") }
+            dao.upsertRecentFeeds(initialFeeds)
+
+            // When - Replace with new feeds
+            val newFeeds = listOf(
+                recentFeedEntities[5].copy(id = 200L, cacheKey = "key1"),
+                recentFeedEntities[6].copy(id = 201L, cacheKey = "key1")
+            )
+            dao.replaceRecentFeeds(newFeeds)
+
+            // Then
+            dao.getRecentFeedsByCacheKey("key1").test {
+                val items = awaitItem()
+                assertEquals(2, items.size)
+                assertTrue(items.any { it.id == 200L })
+                assertTrue(items.any { it.id == 201L })
                 cancel()
             }
         }
@@ -209,6 +258,30 @@ class FeedDaoTest {
         }
 
     @Test
+    fun `Given recent new feeds with different cache keys, When replaceRecentNewFeeds, Then replaced by cache key`() =
+        runTest {
+            // Given - Insert initial feeds
+            val initialFeeds = recentNewFeedEntities.take(3).map { it.copy(cacheKey = "key1") }
+            dao.upsertRecentNewFeeds(initialFeeds)
+
+            // When - Replace with new feeds
+            val newFeeds = listOf(
+                recentNewFeedEntities[5].copy(id = 300L, cacheKey = "key1"),
+                recentNewFeedEntities[6].copy(id = 301L, cacheKey = "key1")
+            )
+            dao.replaceRecentNewFeeds(newFeeds)
+
+            // Then
+            dao.getRecentNewFeedsByCacheKey("key1").test {
+                val items = awaitItem()
+                assertEquals(2, items.size)
+                assertTrue(items.any { it.id == 300L })
+                assertTrue(items.any { it.id == 301L })
+                cancel()
+            }
+        }
+
+    @Test
     fun `Given soundbites, When upsertSoundbites, Then upserted correctly`() =
         runTest {
             // Given
@@ -260,6 +333,30 @@ class FeedDaoTest {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, soundbiteEntities.size)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given soundbites with different cache keys, When replaceSoundbites, Then replaced by cache key`() =
+        runTest {
+            // Given - Insert initial soundbites
+            val initialSoundbites = soundbiteEntities.take(3).map { it.copy(cacheKey = "key1") }
+            dao.upsertSoundbites(initialSoundbites)
+
+            // When - Replace with new soundbites
+            val newSoundbites = listOf(
+                soundbiteEntities[5].copy(episodeId = 400L, cacheKey = "key1"),
+                soundbiteEntities[6].copy(episodeId = 401L, cacheKey = "key1")
+            )
+            dao.replaceSoundbites(newSoundbites)
+
+            // Then
+            dao.getSoundbitesByCacheKey("key1").test {
+                val items = awaitItem()
+                assertEquals(2, items.size)
+                assertTrue(items.any { it.episodeId == 400L })
+                assertTrue(items.any { it.episodeId == 401L })
                 cancel()
             }
         }

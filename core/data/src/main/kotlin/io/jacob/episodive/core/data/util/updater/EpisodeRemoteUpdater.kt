@@ -6,10 +6,8 @@ import dagger.assisted.AssistedInject
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
-import io.jacob.episodive.core.database.mapper.toEpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
-import io.jacob.episodive.core.network.mapper.toEpisode
 import io.jacob.episodive.core.network.mapper.toEpisodes
 import io.jacob.episodive.core.network.model.EpisodeResponse
 import kotlin.time.Clock
@@ -18,14 +16,14 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
     private val localDataSource: EpisodeLocalDataSource,
     private val remoteDataSource: EpisodeRemoteDataSource,
     @Assisted("query") override val query: EpisodeQuery,
-) : BaseRemoteUpdater<EpisodeEntity, EpisodeQuery, EpisodeResponse>(query) {
+) : RemoteUpdater<EpisodeQuery, List<EpisodeResponse>, List<EpisodeEntity>>(query) {
 
     @AssistedFactory
     interface Factory {
         fun create(@Assisted("query") query: EpisodeQuery): EpisodeRemoteUpdater
     }
 
-    override suspend fun fetchFromRemote(query: EpisodeQuery): List<EpisodeResponse> {
+    override suspend fun fetchFromRemote(): List<EpisodeResponse> {
         return when (query) {
             is EpisodeQuery.Person -> remoteDataSource.searchEpisodesByPerson(
                 person = query.person,
@@ -50,37 +48,18 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
             is EpisodeQuery.Live -> remoteDataSource.getLiveEpisodes(max = 6)
             is EpisodeQuery.Random -> remoteDataSource.getRandomEpisodes(max = 6)
             is EpisodeQuery.Recent -> remoteDataSource.getRecentEpisodes(max = 6)
-            else -> emptyList()
-        }
-    }
-
-    override suspend fun fetchFromRemoteSingle(query: EpisodeQuery): EpisodeResponse? {
-        return when (query) {
             is EpisodeQuery.EpisodeId -> remoteDataSource.getEpisodeById(query.episodeId)
-            else -> null
+                ?.let { listOf(it) }
+                ?: emptyList()
         }
     }
 
-    override suspend fun mapToEntities(
-        responses: List<EpisodeResponse>,
-        query: EpisodeQuery,
-    ): List<EpisodeEntity> {
-        return responses.toEpisodes().toEpisodeEntities(query.key)
+    override suspend fun mapToEntities(response: List<EpisodeResponse>): List<EpisodeEntity> {
+        return response.toEpisodes().toEpisodeEntities(query.key)
     }
 
-    override suspend fun mapToEntity(
-        response: EpisodeResponse?,
-        query: EpisodeQuery,
-    ): EpisodeEntity? {
-        return response?.toEpisode()?.toEpisodeEntity(query.key)
-    }
-
-    override suspend fun saveToLocal(entities: List<EpisodeEntity>) {
-        localDataSource.upsertEpisodes(entities)
-    }
-
-    override suspend fun saveToLocal(entity: EpisodeEntity?) {
-        entity?.let { localDataSource.upsertEpisode(it) }
+    override suspend fun saveToLocal(entity: List<EpisodeEntity>) {
+        localDataSource.replaceEpisodes(entity)
     }
 
     override suspend fun isExpired(cached: List<EpisodeEntity>): Boolean {
@@ -89,26 +68,5 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
             ?: return true
         val now = Clock.System.now()
         return now - oldestCache > query.timeToLive
-    }
-
-    override suspend fun isExpired(cached: EpisodeEntity?): Boolean {
-        if (cached == null) return true
-        val oldCached = cached.cachedAt
-        val now = Clock.System.now()
-        return now - oldCached > query.timeToLive
-    }
-
-    override suspend fun deleteLocal(query: EpisodeQuery) {
-        when (query) {
-            is EpisodeQuery.Person,
-            is EpisodeQuery.FeedId,
-            is EpisodeQuery.FeedUrl,
-            is EpisodeQuery.PodcastGuid,
-            is EpisodeQuery.Live,
-            is EpisodeQuery.Random,
-            is EpisodeQuery.Recent -> localDataSource.deleteEpisodesByCacheKey(query.key)
-
-            is EpisodeQuery.EpisodeId -> {}
-        }
     }
 }

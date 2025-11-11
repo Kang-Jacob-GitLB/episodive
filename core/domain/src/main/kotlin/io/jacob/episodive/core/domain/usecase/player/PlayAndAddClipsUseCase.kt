@@ -8,7 +8,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 class PlayAndAddClipsUseCase @Inject constructor(
-    @ClipPlayerRepository private val playerRepository: PlayerRepository,
+    @param:ClipPlayerRepository private val playerRepository: PlayerRepository,
 ) {
     private var isPlayedOnce = false
 

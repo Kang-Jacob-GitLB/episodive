@@ -5,6 +5,8 @@ import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
+import io.jacob.episodive.core.database.model.LikedEpisodeEntity
+import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.testing.model.episodeTestData
@@ -19,11 +21,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 class EpisodeRepositoryTest {
     @get:Rule
@@ -170,6 +171,9 @@ class EpisodeRepositoryTest {
             coEvery {
                 localDataSource.getEpisode(episodeId)
             } returns flowOf(episodeEntities.first())
+            coEvery {
+                localDataSource.getLikedEpisodes()
+            } returns flowOf(emptyList())
 
             // When
             repository.getEpisodeById(episodeId).test {
@@ -178,9 +182,10 @@ class EpisodeRepositoryTest {
                 assertEquals(episodeTestData.id, result?.id)
                 awaitComplete()
             }
-            coVerifySequence {
+            coVerify {
                 remoteUpdater.create(query)
                 localDataSource.getEpisode(episodeId)
+                localDataSource.getLikedEpisodes()
             }
         }
 
@@ -196,6 +201,9 @@ class EpisodeRepositoryTest {
             coEvery {
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
             } returns flowOf(episodeEntities)
+            coEvery {
+                localDataSource.getLikedEpisodes()
+            } returns flowOf(emptyList())
 
             // When
             repository.getLiveEpisodes(max = 10).test {
@@ -205,9 +213,10 @@ class EpisodeRepositoryTest {
                 assertEquals(episodeTestDataList, result)
                 awaitComplete()
             }
-            coVerifySequence {
+            coVerify {
                 remoteUpdater.create(expectedQuery)
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
+                localDataSource.getLikedEpisodes()
             }
         }
 
@@ -223,6 +232,9 @@ class EpisodeRepositoryTest {
             coEvery {
                 localDataSource.getEpisodesByCacheKey(query.key)
             } returns flowOf(episodeEntities)
+            coEvery {
+                localDataSource.getLikedEpisodes()
+            } returns flowOf(emptyList())
 
             // When
             repository.getRandomEpisodes().test {
@@ -233,9 +245,10 @@ class EpisodeRepositoryTest {
                 assertEquals(episodeTestDataList, result)
                 awaitComplete()
             }
-            coVerifySequence {
+            coVerify {
                 remoteUpdater.create(query)
                 localDataSource.getEpisodesByCacheKey(query.key)
+                localDataSource.getLikedEpisodes()
             }
         }
 
@@ -251,6 +264,9 @@ class EpisodeRepositoryTest {
             coEvery {
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
             } returns flowOf(episodeEntities)
+            coEvery {
+                localDataSource.getLikedEpisodes()
+            } returns flowOf(emptyList())
 
             // When
             repository.getRecentEpisodes(max = 10).test {
@@ -260,9 +276,10 @@ class EpisodeRepositoryTest {
                 assertEquals(episodeTestDataList, result)
                 awaitComplete()
             }
-            coVerifySequence {
+            coVerify {
                 remoteUpdater.create(expectedQuery)
                 localDataSource.getEpisodesByCacheKey(expectedQuery.key)
+                localDataSource.getLikedEpisodes()
             }
         }
 
@@ -270,101 +287,167 @@ class EpisodeRepositoryTest {
     fun `When getLikedEpisodes, Then calls localDataSource directly`() =
         runTest {
             // Given
-            coEvery { localDataSource.getLikedEpisodes() } returns flowOf(mockk(relaxed = true))
+            coEvery { localDataSource.getEpisodes() } returns flowOf(episodeEntities)
+            coEvery { localDataSource.getLikedEpisodes() } returns flowOf(
+                listOf(
+                    LikedEpisodeEntity(
+                        id = 42551776753L,
+                        likedAt = Instant.fromEpochSeconds(1757883600),
+                    ),
+                    LikedEpisodeEntity(
+                        id = 42551776758L,
+                        likedAt = Instant.fromEpochSeconds(1757797200),
+                    ),
+                )
+            )
 
             // When
             repository.getLikedEpisodes().test {
-                awaitItem()
+                val result = awaitItem()
+                // Then
+                assertEquals(2, result.size)
+                assertEquals(episodeTestDataList[0].id, result[0].id)
+                assertEquals(episodeTestDataList[1].id, result[1].id)
                 awaitComplete()
             }
 
             // Then
-            coVerify { localDataSource.getLikedEpisodes() }
+            coVerifySequence {
+                localDataSource.getEpisodes()
+                localDataSource.getLikedEpisodes()
+            }
         }
 
     @Test
     fun `When getPlayingEpisodes, Then calls localDataSource directly`() =
         runTest {
             // Given
-            coEvery { localDataSource.getPlayingEpisodes() } returns flowOf(mockk(relaxed = true))
+            coEvery { localDataSource.getEpisodes() } returns flowOf(episodeEntities)
+            coEvery { localDataSource.getPlayedEpisodes() } returns flowOf(
+                listOf(
+                    PlayedEpisodeEntity(
+                        id = 42551776753L,
+                        playedAt = Instant.fromEpochSeconds(1757883600),
+                        position = 0.seconds,
+                        isCompleted = false
+                    ),
+                    PlayedEpisodeEntity(
+                        id = 42551776758L,
+                        playedAt = Instant.fromEpochSeconds(1757797200),
+                        position = 0.seconds,
+                        isCompleted = false
+                    )
+                )
+            )
 
             // When
             repository.getPlayingEpisodes().test {
-                awaitItem()
+                val result = awaitItem()
+                // Then
+                assertEquals(2, result.size)
+                assertEquals(episodeTestDataList[0].id, result[0].id)
+                assertEquals(episodeTestDataList[1].id, result[1].id)
                 awaitComplete()
             }
 
             // Then
-            coVerify { localDataSource.getPlayingEpisodes() }
+            coVerifySequence {
+                localDataSource.getEpisodes()
+                localDataSource.getPlayedEpisodes()
+            }
         }
 
     @Test
     fun `When getPlayedEpisodes, Then calls localDataSource directly`() =
         runTest {
             // Given
-            coEvery { localDataSource.getPlayedEpisodes() } returns flowOf(mockk(relaxed = true))
+            coEvery { localDataSource.getEpisodes() } returns flowOf(episodeEntities)
+            coEvery { localDataSource.getPlayedEpisodes() } returns flowOf(
+                listOf(
+                    PlayedEpisodeEntity(
+                        id = 42551776753L,
+                        playedAt = Instant.fromEpochSeconds(1757883600),
+                        position = 0.seconds,
+                        isCompleted = true
+                    ),
+                    PlayedEpisodeEntity(
+                        id = 42551776758L,
+                        playedAt = Instant.fromEpochSeconds(1757797200),
+                        position = 0.seconds,
+                        isCompleted = true
+                    )
+                )
+            )
 
             // When
             repository.getPlayedEpisodes().test {
-                awaitItem()
+                val result = awaitItem()
+                // Then
+                assertEquals(2, result.size)
+                assertEquals(episodeTestDataList[0].id, result[0].id)
+                assertEquals(episodeTestDataList[1].id, result[1].id)
                 awaitComplete()
             }
 
             // Then
-            coVerify { localDataSource.getPlayedEpisodes() }
+            coVerifySequence {
+                localDataSource.getEpisodes()
+                localDataSource.getPlayedEpisodes()
+            }
         }
 
     @Test
     fun `When getAllPlayedEpisodes, Then calls localDataSource directly`() =
         runTest {
             // Given
-            coEvery { localDataSource.getAllPlayedEpisodes() } returns flowOf(mockk(relaxed = true))
+            coEvery { localDataSource.getEpisodes() } returns flowOf(episodeEntities)
+            coEvery { localDataSource.getPlayedEpisodes() } returns flowOf(
+                listOf(
+                    PlayedEpisodeEntity(
+                        id = 42551776753L,
+                        playedAt = Instant.fromEpochSeconds(1757883600),
+                        position = 0.seconds,
+                        isCompleted = false
+                    ),
+                    PlayedEpisodeEntity(
+                        id = 42551776758L,
+                        playedAt = Instant.fromEpochSeconds(1757797200),
+                        position = 0.seconds,
+                        isCompleted = true
+                    )
+                )
+            )
 
             // When
             repository.getAllPlayedEpisodes().test {
-                awaitItem()
+                val result = awaitItem()
+                // Then
+                assertEquals(2, result.size)
+                assertEquals(episodeTestDataList[0].id, result[0].id)
+                assertEquals(episodeTestDataList[1].id, result[1].id)
                 awaitComplete()
             }
 
             // Then
-            coVerify { localDataSource.getAllPlayedEpisodes() }
-        }
-
-    @Test
-    fun `Given episode is liked, When toggleLiked, Then removes liked and returns false`() =
-        runTest {
-            // Given
-            val episodeId = 123L
-            coEvery { localDataSource.isLiked(episodeId) } returns flowOf(true)
-            coEvery { localDataSource.removeLiked(episodeId) } returns Unit
-
-            // When
-            val result = repository.toggleLiked(episodeId)
-
-            // Then
-            assertFalse(result)
             coVerifySequence {
-                localDataSource.isLiked(episodeId)
-                localDataSource.removeLiked(episodeId)
+                localDataSource.getEpisodes()
+                localDataSource.getPlayedEpisodes()
             }
         }
 
     @Test
-    fun `Given episode is not liked, When toggleLiked, Then adds liked and returns true`() =
+    fun `Given dependencies, When toggleLiked, Then calls localDataSource toggleLiked`() =
         runTest {
             // Given
             val episodeId = 123L
-            coEvery { localDataSource.isLiked(episodeId) } returns flowOf(false)
-            coEvery { localDataSource.addLiked(any()) } returns Unit
+            coEvery { localDataSource.toggleLiked(episodeId) } returns true
 
             // When
-            val result = repository.toggleLiked(episodeId)
+            repository.toggleLiked(episodeId)
 
             // Then
-            assertTrue(result)
             coVerifySequence {
-                localDataSource.isLiked(episodeId)
-                localDataSource.addLiked(any())
+                localDataSource.toggleLiked(episodeId)
             }
         }
 

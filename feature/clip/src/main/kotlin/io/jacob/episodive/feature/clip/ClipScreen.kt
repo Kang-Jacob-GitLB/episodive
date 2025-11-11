@@ -73,6 +73,7 @@ internal fun ClipRoute(
                 isPlaying = s.isPlaying,
                 onPageChanged = { viewModel.sendAction(ClipAction.PlayIndex(it)) },
                 onEpisodeClick = { viewModel.sendAction(ClipAction.ClickEpisode(it)) },
+                onToggleEpisodeLiked = { viewModel.sendAction(ClipAction.ToggleEpisodeLiked(it)) },
                 onPodcastClick = { viewModel.sendAction(ClipAction.ClickPodcast(it)) },
                 onShowSnackbar = onShowSnackbar,
             )
@@ -91,8 +92,9 @@ private fun ClipScreen(
     isPlaying: Boolean,
     onPageChanged: (Int) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
+    onToggleEpisodeLiked: (Episode) -> Unit = {},
     onPodcastClick: (Long) -> Unit = {},
-    onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean = { _, _ -> false }
+    onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean = { _, _ -> false },
 ) {
     EpisodeClipPager(
         modifier = modifier,
@@ -102,6 +104,7 @@ private fun ClipScreen(
         isPlaying = isPlaying,
         onPageChanged = onPageChanged,
         onEpisodeClick = onEpisodeClick,
+        onToggleEpisodeLiked = onToggleEpisodeLiked,
         onPodcastClick = onPodcastClick,
     )
 
@@ -116,6 +119,7 @@ fun EpisodeClipPager(
     isPlaying: Boolean,
     onPageChanged: (Int) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
+    onToggleEpisodeLiked: (Episode) -> Unit = {},
     onPodcastClick: (Long) -> Unit = {},
 ) {
     val pagerState = rememberPagerState(
@@ -155,6 +159,12 @@ fun EpisodeClipPager(
             remaining = progress.remaining,
             onClick = {
                 onEpisodeClick(clipEpisodes[page].episode)
+            },
+            onPlayEpisode = {
+                onEpisodeClick(clipEpisodes[page].episode)
+            },
+            onToggleEpisodeLiked = {
+                onToggleEpisodeLiked(clipEpisodes[page].episode)
             },
         )
     }

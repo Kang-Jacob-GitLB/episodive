@@ -19,7 +19,4 @@ interface RecentSearchDao {
 
     @Query("DELETE FROM recent_searches")
     suspend fun clearRecentSearches()
-
-    @Query("SELECT COUNT(*) FROM recent_searches")
-    suspend fun getRecentSearchesCount(): Int
 }

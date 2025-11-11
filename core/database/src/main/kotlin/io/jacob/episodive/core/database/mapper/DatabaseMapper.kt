@@ -1,18 +1,12 @@
 package io.jacob.episodive.core.database.mapper
 
 import io.jacob.episodive.core.database.model.EpisodeEntity
-import io.jacob.episodive.core.database.model.FollowedPodcastDto
-import io.jacob.episodive.core.database.model.LikedEpisodeDto
-import io.jacob.episodive.core.database.model.PlayedEpisodeDto
 import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.database.model.RecentFeedEntity
 import io.jacob.episodive.core.database.model.RecentNewFeedEntity
 import io.jacob.episodive.core.database.model.SoundbiteEntity
 import io.jacob.episodive.core.database.model.TrendingFeedEntity
 import io.jacob.episodive.core.model.Episode
-import io.jacob.episodive.core.model.FollowedPodcast
-import io.jacob.episodive.core.model.LikedEpisode
-import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.RecentFeed
 import io.jacob.episodive.core.model.RecentNewFeed
@@ -202,39 +196,6 @@ fun List<Episode>.toEpisodeEntities(
             cachedAt = cachedAt,
         )
     }
-
-fun FollowedPodcastDto.toFollowedPodcast(): FollowedPodcast =
-    FollowedPodcast(
-        podcast = podcast?.toPodcast()
-            ?: throw IllegalStateException("FollowedPodcastDto.podcast is null"),
-        followedAt = followedAt,
-        isNotificationEnabled = isNotificationEnabled,
-    )
-
-fun List<FollowedPodcastDto>.toFollowedPodcasts(): List<FollowedPodcast> =
-    map { it.toFollowedPodcast() }
-
-fun LikedEpisodeDto.toLikedEpisode(): LikedEpisode =
-    LikedEpisode(
-        episode = episode?.toEpisode()
-            ?: throw IllegalStateException("LikedEpisodeDto.episode is null"),
-        likedAt = likedAt,
-    )
-
-fun List<LikedEpisodeDto>.toLikedEpisodes(): List<LikedEpisode> =
-    map { it.toLikedEpisode() }
-
-fun PlayedEpisodeDto.toPlayedEpisode(): PlayedEpisode =
-    PlayedEpisode(
-        episode = episode?.toEpisode()
-            ?: throw IllegalStateException("PlayedEpisodeDto.episode is null"),
-        playedAt = playedAt,
-        position = position,
-        isCompleted = isCompleted,
-    )
-
-fun List<PlayedEpisodeDto>.toPlayedEpisodes(): List<PlayedEpisode> =
-    map { it.toPlayedEpisode() }
 
 fun TrendingFeed.toTrendingFeedEntity(
     cacheKey: String,

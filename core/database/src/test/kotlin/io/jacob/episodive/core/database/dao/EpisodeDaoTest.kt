@@ -117,7 +117,6 @@ class EpisodeDaoTest {
                 assertFalse(episodes.contains(episodeEntity))
                 cancel()
             }
-            assertEquals(9, dao.getEpisodeCount().first())
         }
 
     @Test
@@ -134,7 +133,6 @@ class EpisodeDaoTest {
                 assertTrue(episodes.isEmpty())
                 cancel()
             }
-            assertEquals(0, dao.getEpisodeCount().first())
         }
 
     @Test
@@ -155,7 +153,83 @@ class EpisodeDaoTest {
                 assertTrue(episodes.isEmpty())
                 cancel()
             }
-            assertEquals(6, dao.getEpisodeCount().first())
+        }
+
+    @Test
+    fun `Given existing episodes with different cache keys, When replaceEpisodes is called, Then episodes are replaced by cache key`() =
+        runTest {
+            // Given - Insert initial episodes with different cache keys
+            val initialEntities = episodeEntities.chunked(2)
+            dao.upsertEpisodes(initialEntities[0].map { it.copy(cacheKey = "key1") })
+            dao.upsertEpisodes(initialEntities[1].map { it.copy(cacheKey = "key2") })
+            dao.upsertEpisodes(initialEntities[2].map { it.copy(cacheKey = "key3") })
+
+            // Verify initial state
+            dao.getEpisodesByCacheKey("key1").test {
+                assertEquals(2, awaitItem().size)
+                cancel()
+            }
+
+            // When - Replace episodes with mixed cache keys
+            val newEntities = listOf(
+                episodeEntity.copy(id = 999L, cacheKey = "key1"),
+                episodeEntity.copy(id = 998L, cacheKey = "key1"),
+                episodeEntity.copy(id = 997L, cacheKey = "key2")
+            )
+            dao.replaceEpisodes(newEntities)
+
+            // Then - Verify key1 was replaced
+            dao.getEpisodesByCacheKey("key1").test {
+                val key1Episodes = awaitItem()
+                assertEquals(2, key1Episodes.size)
+                assertTrue(key1Episodes.any { it.id == 999L })
+                assertTrue(key1Episodes.any { it.id == 998L })
+                assertFalse(key1Episodes.any { it.id == initialEntities[0][0].id })
+                cancel()
+            }
+
+            // Then - Verify key2 was replaced
+            dao.getEpisodesByCacheKey("key2").test {
+                val key2Episodes = awaitItem()
+                assertEquals(1, key2Episodes.size)
+                assertTrue(key2Episodes.any { it.id == 997L })
+                assertFalse(key2Episodes.any { it.id == initialEntities[1][0].id })
+                cancel()
+            }
+
+            // Then - Verify key3 was not affected
+            dao.getEpisodesByCacheKey("key3").test {
+                val key3Episodes = awaitItem()
+                assertEquals(2, key3Episodes.size)
+                assertTrue(key3Episodes.any { it.id == initialEntities[2][0].id })
+                assertTrue(key3Episodes.any { it.id == initialEntities[2][1].id })
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given episodes with same cache key, When replaceEpisodes is called, Then old episodes are deleted and new episodes are inserted`() =
+        runTest {
+            // Given - Insert initial episodes
+            val initialEpisodes = episodeEntities.take(3).map { it.copy(cacheKey = "trending") }
+            dao.upsertEpisodes(initialEpisodes)
+
+            // When - Replace with new episodes
+            val newEpisodes = listOf(
+                episodeEntity.copy(id = 100L, cacheKey = "trending"),
+                episodeEntity.copy(id = 101L, cacheKey = "trending")
+            )
+            dao.replaceEpisodes(newEpisodes)
+
+            // Then - Verify old episodes are gone and new episodes exist
+            dao.getEpisodesByCacheKey("trending").test {
+                val episodes = awaitItem()
+                assertEquals(2, episodes.size)
+                assertTrue(episodes.any { it.id == 100L })
+                assertTrue(episodes.any { it.id == 101L })
+                assertFalse(episodes.any { it.id in initialEpisodes.map { e -> e.id } })
+                cancel()
+            }
         }
 
     @Test
@@ -173,9 +247,9 @@ class EpisodeDaoTest {
 
             // Then
             assertEquals(3, likedEpisodes.size)
-            assertEquals(episodeEntities[2].id, likedEpisodes[0].episode?.id)
-            assertEquals(episodeEntities[1].id, likedEpisodes[1].episode?.id)
-            assertEquals(episodeEntities[0].id, likedEpisodes[2].episode?.id)
+            assertEquals(episodeEntities[2].id, likedEpisodes[0].id)
+            assertEquals(episodeEntities[1].id, likedEpisodes[1].id)
+            assertEquals(episodeEntities[0].id, likedEpisodes[2].id)
         }
 
     @Test
@@ -189,22 +263,13 @@ class EpisodeDaoTest {
             dao.upsertEpisodes(episodeEntities)
 
             // When
-            dao.getLikedEpisodes(query = "science").test {
-                val likedEpisodes = awaitItem()
-                // Then
-                assertEquals(1, likedEpisodes.size)
-                assertEquals(episodeEntities[1].id, likedEpisodes[0].episode?.id)
-                cancel()
-            }
-
-            // When
-            dao.getLikedEpisodes(query = "1. ").test {
+            dao.getLikedEpisodes().test {
                 val likedEpisodes = awaitItem()
                 // Then
                 assertEquals(3, likedEpisodes.size)
-                assertEquals(episodeEntities[2].id, likedEpisodes[0].episode?.id)
-                assertEquals(episodeEntities[1].id, likedEpisodes[1].episode?.id)
-                assertEquals(episodeEntities[0].id, likedEpisodes[2].episode?.id)
+                assertEquals(episodeEntities[2].id, likedEpisodes[0].id)
+                assertEquals(episodeEntities[1].id, likedEpisodes[1].id)
+                assertEquals(episodeEntities[0].id, likedEpisodes[2].id)
                 cancel()
             }
         }
@@ -218,76 +283,42 @@ class EpisodeDaoTest {
             dao.upsertEpisode(episodeEntity)
 
             // When
-            val isLiked = dao.isLiked(episodeEntity.id).first()
+            val isLiked = dao.isLiked(episodeEntity.id)
 
             // Then
             assertTrue(isLiked)
         }
 
     @Test
-    fun `Given some episode entities likes, When some episode entities removed, Then getLikedEpisodeCount returns correct count`() =
+    fun `Given some episode entities liked, When toggleLiked is called, Then getLikedEpisodes returns correct`() =
         runTest {
             // Given
             val likedAt = Clock.System.now()
             dao.addLiked(LikedEpisodeEntity(episodeEntities[0].id, likedAt))
             dao.addLiked(LikedEpisodeEntity(episodeEntities[1].id, likedAt.plus(1.minutes)))
-            dao.addLiked(LikedEpisodeEntity(episodeEntities[2].id, likedAt.plus(2.minutes)))
-            dao.upsertEpisodes(episodeEntities)
-            assertEquals(3, dao.getLikedEpisodeCount().first())
 
             // When
-            dao.removeLiked(episodeEntities[0].id)
-            assertEquals(2, dao.getLikedEpisodeCount().first())
+            dao.toggleLiked(episodeEntities[0].id)
+
+            dao.getLikedEpisodes().test {
+                val likedEpisodes = awaitItem()
+                // Then
+                assertEquals(1, likedEpisodes.size)
+                assertEquals(episodeEntities[1].id, likedEpisodes[0].id)
+                cancel()
+            }
 
             // When
-            dao.removeLiked(episodeEntities[1].id)
-            assertEquals(1, dao.getLikedEpisodeCount().first())
+            dao.toggleLiked(episodeEntities[0].id)
 
-            // When
-            dao.removeLiked(episodeEntities[2].id)
-            assertEquals(0, dao.getLikedEpisodeCount().first())
-        }
-
-    @Test
-    fun `Given some episode entities, When getPlayingEpisodes is called, Then playing episodes are returned`() =
-        runTest {
-            // Given
-            val now = Clock.System.now()
-            dao.upsertPlayed(
-                PlayedEpisodeEntity(
-                    id = episodeEntities[0].id,
-                    playedAt = now,
-                    position = 1000.seconds,
-                    isCompleted = false
-                )
-            )
-            dao.upsertPlayed(
-                PlayedEpisodeEntity(
-                    id = episodeEntities[1].id,
-                    playedAt = now.plus(1.minutes),
-                    position = 2000.seconds,
-                    isCompleted = false
-                )
-            )
-            dao.upsertPlayed(
-                PlayedEpisodeEntity(
-                    id = episodeEntities[2].id,
-                    playedAt = now.plus(2.minutes),
-                    position = 3000.seconds,
-                    isCompleted = true
-                )
-            )
-            dao.upsertEpisodes(episodeEntities)
-
-            // When
-            val playingEpisodes = dao.getPlayingEpisodes().first()
-
-            // Then
-            assertEquals(2, playingEpisodes.size)
-            assertEquals(episodeEntities[1].id, playingEpisodes[0].episode?.id)
-            assertEquals(2000.seconds, playingEpisodes[0].position)
-            assertEquals(episodeEntities[0].id, playingEpisodes[1].episode?.id)
-            assertEquals(1000.seconds, playingEpisodes[1].position)
+            dao.getLikedEpisodes().test {
+                val likedEpisodes = awaitItem()
+                // Then
+                assertEquals(2, likedEpisodes.size)
+                assertEquals(episodeEntities[1].id, likedEpisodes[0].id)
+                assertEquals(episodeEntities[0].id, likedEpisodes[1].id)
+                cancel()
+            }
         }
 
     @Test
@@ -322,96 +353,13 @@ class EpisodeDaoTest {
             dao.upsertEpisodes(episodeEntities)
 
             // When
-            val playedEpisodes = dao.getPlayedEpisodes().first()
-
-            // Then
-            assertEquals(1, playedEpisodes.size)
-            assertEquals(episodeEntities[2].id, playedEpisodes[0].episode?.id)
-            assertEquals(3000.seconds, playedEpisodes[0].position)
-        }
-
-    @Test
-    fun `Given some episode entities, When getAllPlayedEpisodes is called, Then all played episodes are returned`() =
-        runTest {
-            // Given
-            val now = Clock.System.now()
-            dao.upsertPlayed(
-                PlayedEpisodeEntity(
-                    id = episodeEntities[0].id,
-                    playedAt = now,
-                    position = 1000.seconds,
-                    isCompleted = false
-                )
-            )
-            dao.upsertPlayed(
-                PlayedEpisodeEntity(
-                    id = episodeEntities[1].id,
-                    playedAt = now.plus(1.minutes),
-                    position = 2000.seconds,
-                    isCompleted = false
-                )
-            )
-            dao.upsertPlayed(
-                PlayedEpisodeEntity(
-                    id = episodeEntities[2].id,
-                    playedAt = now.plus(2.minutes),
-                    position = 3000.seconds,
-                    isCompleted = true
-                )
-            )
-            dao.upsertEpisodes(episodeEntities)
-
-            // When
-            val allPlayedEpisodes = dao.getAllPlayedEpisodes().first()
-
-            // Then
-            assertEquals(3, allPlayedEpisodes.size)
-            assertEquals(episodeEntities[2].id, allPlayedEpisodes[0].episode?.id)
-            assertEquals(episodeEntities[1].id, allPlayedEpisodes[1].episode?.id)
-            assertEquals(episodeEntities[0].id, allPlayedEpisodes[2].episode?.id)
-            assertEquals(3000.seconds, allPlayedEpisodes[0].position)
-            assertEquals(2000.seconds, allPlayedEpisodes[1].position)
-            assertEquals(1000.seconds, allPlayedEpisodes[2].position)
-        }
-
-    @Test
-    fun `Given some episode entities, When upsert and remove, Then getPlayingEpisodeCount returns correct count`() =
-        runTest {
-            // Given
-            val now = Clock.System.now()
-            dao.upsertPlayed(
-                PlayedEpisodeEntity(
-                    id = episodeEntities[0].id,
-                    playedAt = now,
-                    position = 1000.seconds,
-                    isCompleted = false
-                )
-            )
-            dao.upsertPlayed(
-                PlayedEpisodeEntity(
-                    id = episodeEntities[1].id,
-                    playedAt = now.plus(1.minutes),
-                    position = 2000.seconds,
-                    isCompleted = false
-                )
-            )
-            dao.upsertPlayed(
-                PlayedEpisodeEntity(
-                    id = episodeEntities[2].id,
-                    playedAt = now.plus(2.minutes),
-                    position = 3000.seconds,
-                    isCompleted = true
-                )
-            )
-            dao.upsertEpisodes(episodeEntities)
-            assertEquals(2, dao.getPlayingEpisodeCount().first())
-
-            // When
-            dao.removePlayed(episodeEntities[0].id)
-            assertEquals(1, dao.getPlayingEpisodeCount().first())
-
-            // When
-            dao.removePlayed(episodeEntities[1].id)
-            assertEquals(0, dao.getPlayingEpisodeCount().first())
+            dao.getPlayedEpisodes().test {
+                val playedEpisodes = awaitItem()
+                // Then
+                assertEquals(3, playedEpisodes.size)
+                assertEquals(episodeEntities[2].id, playedEpisodes[0].id)
+                assertEquals(episodeEntities[1].id, playedEpisodes[1].id)
+                assertEquals(episodeEntities[0].id, playedEpisodes[2].id)
+            }
         }
 }

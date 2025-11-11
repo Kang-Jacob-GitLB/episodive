@@ -42,14 +42,22 @@ class GetClipEpisodesUseCaseTest {
 
             // When
             useCase().test {
-                // Use case emits in batches of 5 episodes
+                // Use case emits progressively as each episode is collected
                 // soundbiteTestDataList has 10 items
-                // Emits: 5, 10 (2 emissions total)
-                val firstBatch = awaitItem()
-                assertEquals(5, firstBatch.size)
+                // Each episode collection triggers an emission with accumulated results
+                var lastEmission = emptyList<io.jacob.episodive.core.model.ClipEpisode>()
+                var emissionCount = 0
 
-                val secondBatch = awaitItem()
-                assertEquals(10, secondBatch.size)
+                // Collect all emissions until we get the final list with 10 items
+                while (emissionCount < 10) {
+                    lastEmission = awaitItem()
+                    emissionCount++
+                    // Each emission should be non-empty and growing
+                    assert(lastEmission.isNotEmpty())
+                }
+
+                // Final emission should contain all 10 clip episodes
+                assertEquals(10, lastEmission.size)
 
                 cancelAndIgnoreRemainingEvents()
             }

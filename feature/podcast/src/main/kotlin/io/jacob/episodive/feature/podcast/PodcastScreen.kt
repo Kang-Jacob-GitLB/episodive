@@ -72,6 +72,7 @@ internal fun PodcastRoute(
                 dominantColor = Color(s.dominantColor),
                 onFollowClick = { viewModel.sendAction(PodcastAction.ToggleFollowed) },
                 onEpisodeClick = { viewModel.sendAction(PodcastAction.PlayEpisode(it)) },
+                onToggleLikedEpisode = { viewModel.sendAction(PodcastAction.ToggleLikedEpisode(it)) },
                 onBackClick = onBackClick,
                 onShowSnackbar = onShowSnackbar
             )
@@ -90,6 +91,7 @@ private fun PodcastScreen(
     dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
     onFollowClick: () -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
+    onToggleLikedEpisode: (Episode) -> Unit = {},
     onBackClick: () -> Unit = {},
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
@@ -142,9 +144,8 @@ private fun PodcastScreen(
                     EpisodeItem(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         episode = episode,
-                        isLiked = false,
                         onClick = { onEpisodeClick(episode) },
-                        onToggleLiked = { /* TODO */ },
+                        onToggleLiked = { onToggleLikedEpisode(episode) },
                     )
                 }
             }

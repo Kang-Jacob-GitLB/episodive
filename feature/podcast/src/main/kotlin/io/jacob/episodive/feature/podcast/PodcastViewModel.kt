@@ -7,6 +7,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.episode.GetEpisodesByPodcastIdUseCase
+import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.image.GetDominantColorFromUrlUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
@@ -33,6 +34,7 @@ class PodcastViewModel @AssistedInject constructor(
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
+    private val toggleLikedUseCase: ToggleLikedUseCase,
     private val getDominantColorFromUrlUseCase: GetDominantColorFromUrlUseCase,
     @Assisted("id") val id: Long,
 ) : ViewModel() {
@@ -56,7 +58,7 @@ class PodcastViewModel @AssistedInject constructor(
         if (podcast == null) {
             PodcastState.Error("Podcast not found")
         } else {
-            val isFollowed = followedPodcasts.any { it.podcast.id == podcast.id }
+            val isFollowed = followedPodcasts.any { it.id == podcast.id }
             Timber.i("episode size=${episodes.size}, isFollowed=$isFollowed")
             PodcastState.Success(
                 podcast = podcast,
@@ -82,6 +84,7 @@ class PodcastViewModel @AssistedInject constructor(
             when (action) {
                 is PodcastAction.ToggleFollowed -> toggleFollowed()
                 is PodcastAction.PlayEpisode -> playEpisode(action.episode)
+                is PodcastAction.ToggleLikedEpisode -> toggleLikedEpisode(action.episode)
             }
         }
     }
@@ -96,6 +99,10 @@ class PodcastViewModel @AssistedInject constructor(
 
     private fun playEpisode(episode: Episode) = viewModelScope.launch {
         playEpisodeUseCase(episode)
+    }
+
+    private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {
+        toggleLikedUseCase(episode.id)
     }
 }
 
@@ -114,4 +121,5 @@ sealed interface PodcastState {
 sealed interface PodcastAction {
     data object ToggleFollowed : PodcastAction
     data class PlayEpisode(val episode: Episode) : PodcastAction
+    data class ToggleLikedEpisode(val episode: Episode) : PodcastAction
 }

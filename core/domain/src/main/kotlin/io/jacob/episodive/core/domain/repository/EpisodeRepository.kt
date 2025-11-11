@@ -2,8 +2,6 @@ package io.jacob.episodive.core.domain.repository
 
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
-import io.jacob.episodive.core.model.LikedEpisode
-import io.jacob.episodive.core.model.PlayedEpisode
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
 import kotlin.time.Instant
@@ -48,13 +46,13 @@ interface EpisodeRepository {
         excludeString: String? = null,
     ): Flow<List<Episode>>
 
-    fun getLikedEpisodes(query: String? = null): Flow<List<LikedEpisode>>
+    fun getLikedEpisodes(query: String? = null): Flow<List<Episode>>
 
-    fun getPlayingEpisodes(query: String? = null): Flow<List<PlayedEpisode>>
+    fun getPlayingEpisodes(query: String? = null): Flow<List<Episode>>
 
-    fun getPlayedEpisodes(query: String? = null): Flow<List<PlayedEpisode>>
+    fun getPlayedEpisodes(query: String? = null): Flow<List<Episode>>
 
-    fun getAllPlayedEpisodes(query: String? = null): Flow<List<PlayedEpisode>>
+    fun getAllPlayedEpisodes(query: String? = null): Flow<List<Episode>>
 
     suspend fun toggleLiked(id: Long): Boolean
 

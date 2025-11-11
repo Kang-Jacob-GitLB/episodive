@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.episode.GetRecentEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetTrendingPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.search.ClearRecentSearchesUseCase
@@ -39,6 +40,7 @@ class SearchViewModel @Inject constructor(
     getRecentEpisodesUseCase: GetRecentEpisodesUseCase,
     getTrendingPodcastsUseCase: GetTrendingPodcastsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
+    private val toggleLikedUseCase: ToggleLikedUseCase,
     getRecentSearchesUseCase: GetRecentSearchesUseCase,
     private val upsertRecentSearchUseCase: UpsertRecentSearchUseCase,
     private val deleteRecentSearchUseCase: DeleteRecentSearchUseCase,
@@ -104,6 +106,7 @@ class SearchViewModel @Inject constructor(
                 is SearchAction.ClickCategory -> clickCategory(action.category)
                 is SearchAction.ClickPodcast -> clickPodcast(action.podcast)
                 is SearchAction.ClickEpisode -> clickEpisode(action.episode)
+                is SearchAction.ToggleEpisodeLiked -> toggleLikedEpisode(action.episode)
             }
         }
     }
@@ -145,6 +148,10 @@ class SearchViewModel @Inject constructor(
         playEpisodeUseCase(episode)
 //        _effect.emit(SearchEffect.NavigateToEpisode(episode))
     }
+
+    private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {
+        toggleLikedUseCase(episode.id)
+    }
 }
 
 sealed interface SearchState {
@@ -172,6 +179,7 @@ sealed interface SearchAction {
     data class ClickCategory(val category: Category) : SearchAction
     data class ClickPodcast(val podcast: Podcast) : SearchAction
     data class ClickEpisode(val episode: Episode) : SearchAction
+    data class ToggleEpisodeLiked(val episode: Episode) : SearchAction
 }
 
 sealed interface SearchEffect {

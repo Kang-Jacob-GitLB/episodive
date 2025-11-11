@@ -11,7 +11,6 @@ import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -95,24 +94,6 @@ class RecentSearchRepositoryTest {
             // Then
             coVerifySequence {
                 recentSearchLocalDataSource.clearRecentSearches()
-            }
-        }
-
-    @Test
-    fun `Given dependencies, When getRecentSearchesCount called, Then call dataSource method`() =
-        runTest {
-            // Given
-            coEvery {
-                recentSearchLocalDataSource.getRecentSearchesCount()
-            } returns 5
-
-            // When
-            val result = repository.getRecentSearchesCount()
-
-            // Then
-            assertEquals(5, result)
-            coVerifySequence {
-                recentSearchLocalDataSource.getRecentSearchesCount()
             }
         }
 }

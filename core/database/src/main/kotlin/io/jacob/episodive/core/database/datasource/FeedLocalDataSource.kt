@@ -23,6 +23,10 @@ interface FeedLocalDataSource {
     suspend fun deleteSoundbite(episodeId: Long)
     suspend fun deleteSoundbites()
     suspend fun deleteSoundbitesByCacheKey(cacheKey: String)
+    suspend fun replaceTrendingFeeds(feeds: List<TrendingFeedEntity>)
+    suspend fun replaceRecentFeeds(feeds: List<RecentFeedEntity>)
+    suspend fun replaceRecentNewFeeds(feeds: List<RecentNewFeedEntity>)
+    suspend fun replaceSoundbites(soundbites: List<SoundbiteEntity>)
     fun getTrendingFeedsByCacheKey(cacheKey: String): Flow<List<TrendingFeedEntity>>
     fun getRecentFeedsByCacheKey(cacheKey: String): Flow<List<RecentFeedEntity>>
     fun getRecentNewFeedsByCacheKey(cacheKey: String): Flow<List<RecentNewFeedEntity>>

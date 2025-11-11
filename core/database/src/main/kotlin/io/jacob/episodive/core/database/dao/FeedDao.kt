@@ -2,6 +2,7 @@ package io.jacob.episodive.core.database.dao
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import io.jacob.episodive.core.database.model.RecentFeedEntity
 import io.jacob.episodive.core.database.model.RecentNewFeedEntity
@@ -32,6 +33,14 @@ interface FeedDao {
     @Query("DELETE FROM trending_feeds WHERE cacheKey = :cacheKey")
     suspend fun deleteTrendingFeedsByCacheKey(cacheKey: String)
 
+    @Transaction
+    suspend fun replaceTrendingFeeds(feeds: List<TrendingFeedEntity>) {
+        feeds.groupBy { it.cacheKey }.forEach { (cacheKey, feedGroup) ->
+            deleteTrendingFeedsByCacheKey(cacheKey)
+            upsertTrendingFeeds(feedGroup)
+        }
+    }
+
     @Query("DELETE FROM recent_feeds WHERE id = :id")
     suspend fun deleteRecentFeed(id: Long)
 
@@ -40,6 +49,14 @@ interface FeedDao {
 
     @Query("DELETE FROM recent_feeds WHERE cacheKey = :cacheKey")
     suspend fun deleteRecentFeedsByCacheKey(cacheKey: String)
+
+    @Transaction
+    suspend fun replaceRecentFeeds(feeds: List<RecentFeedEntity>) {
+        feeds.groupBy { it.cacheKey }.forEach { (cacheKey, feedGroup) ->
+            deleteRecentFeedsByCacheKey(cacheKey)
+            upsertRecentFeeds(feedGroup)
+        }
+    }
 
     @Query("DELETE FROM recent_new_feeds WHERE id = :id")
     suspend fun deleteRecentNewFeed(id: Long)
@@ -50,6 +67,14 @@ interface FeedDao {
     @Query("DELETE FROM recent_new_feeds WHERE cacheKey = :cacheKey")
     suspend fun deleteRecentNewFeedsByCacheKey(cacheKey: String)
 
+    @Transaction
+    suspend fun replaceRecentNewFeeds(feeds: List<RecentNewFeedEntity>) {
+        feeds.groupBy { it.cacheKey }.forEach { (cacheKey, feedGroup) ->
+            deleteRecentNewFeedsByCacheKey(cacheKey)
+            upsertRecentNewFeeds(feedGroup)
+        }
+    }
+
     @Query("DELETE FROM soundbites WHERE episodeId = :episodeId")
     suspend fun deleteSoundbite(episodeId: Long)
 
@@ -58,6 +83,14 @@ interface FeedDao {
 
     @Query("DELETE FROM soundbites WHERE cacheKey = :cacheKey")
     suspend fun deleteSoundbitesByCacheKey(cacheKey: String)
+
+    @Transaction
+    suspend fun replaceSoundbites(soundbites: List<SoundbiteEntity>) {
+        soundbites.groupBy { it.cacheKey }.forEach { (cacheKey, soundbiteGroup) ->
+            deleteSoundbitesByCacheKey(cacheKey)
+            upsertSoundbites(soundbiteGroup)
+        }
+    }
 
     @Query("SELECT * FROM trending_feeds WHERE cacheKey = :cacheKey")
     fun getTrendingFeedsByCacheKey(cacheKey: String): Flow<List<TrendingFeedEntity>>

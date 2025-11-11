@@ -1,8 +1,5 @@
 package io.jacob.episodive.core.database.mapper
 
-import io.jacob.episodive.core.database.model.FollowedPodcastDto
-import io.jacob.episodive.core.database.model.LikedEpisodeDto
-import io.jacob.episodive.core.database.model.PlayedEpisodeDto
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
@@ -20,8 +17,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import kotlin.time.Clock
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.Instant
 
 class DatabaseMapperTest {
 
@@ -145,127 +140,6 @@ class DatabaseMapperTest {
             assertEquals(cacheKey, entity.cacheKey)
             assertEquals(cachedAt, entity.cachedAt)
         }
-    }
-
-    @Test
-    fun `toFollowedPodcast converts FollowedPodcastDto to FollowedPodcast correctly`() {
-        // Given
-        val podcastEntity = podcastTestData.toPodcastEntity(cacheKey, cachedAt)
-        val followedAt = Instant.fromEpochSeconds(1758000000)
-        val followedPodcastDto = FollowedPodcastDto(
-            podcast = podcastEntity,
-            followedAt = followedAt,
-            isNotificationEnabled = true
-        )
-
-        // When
-        val followedPodcast = followedPodcastDto.toFollowedPodcast()
-
-        // Then
-        assertEquals(podcastTestData.id, followedPodcast.podcast.id)
-        assertEquals(followedAt, followedPodcast.followedAt)
-        assertEquals(true, followedPodcast.isNotificationEnabled)
-    }
-
-    @Test
-    fun `toFollowedPodcasts converts list of FollowedPodcastDto to list of FollowedPodcast correctly`() {
-        // Given
-        val podcastEntity = podcastTestData.toPodcastEntity(cacheKey, cachedAt)
-        val followedPodcastDtos = listOf(
-            FollowedPodcastDto(
-                podcast = podcastEntity,
-                followedAt = Instant.fromEpochSeconds(1758000000),
-                isNotificationEnabled = true
-            )
-        )
-
-        // When
-        val followedPodcasts = followedPodcastDtos.toFollowedPodcasts()
-
-        // Then
-        assertEquals(1, followedPodcasts.size)
-        assertEquals(podcastTestData.id, followedPodcasts.first().podcast.id)
-    }
-
-    @Test
-    fun `toLikedEpisode converts LikedEpisodeDto to LikedEpisode correctly`() {
-        // Given
-        val episodeEntity = episodeTestData.toEpisodeEntity(cacheKey, cachedAt)
-        val likedAt = Instant.fromEpochSeconds(1758000000)
-        val likedEpisodeDto = LikedEpisodeDto(
-            episode = episodeEntity,
-            likedAt = likedAt
-        )
-
-        // When
-        val likedEpisode = likedEpisodeDto.toLikedEpisode()
-
-        // Then
-        assertEquals(episodeTestData.id, likedEpisode.episode.id)
-        assertEquals(likedAt, likedEpisode.likedAt)
-    }
-
-    @Test
-    fun `toLikedEpisodes converts list of LikedEpisodeDto to list of LikedEpisode correctly`() {
-        // Given
-        val episodeEntity = episodeTestData.toEpisodeEntity(cacheKey, cachedAt)
-        val likedEpisodeDtos = listOf(
-            LikedEpisodeDto(
-                episode = episodeEntity,
-                likedAt = Instant.fromEpochSeconds(1758000000)
-            )
-        )
-
-        // When
-        val likedEpisodes = likedEpisodeDtos.toLikedEpisodes()
-
-        // Then
-        assertEquals(1, likedEpisodes.size)
-        assertEquals(episodeTestData.id, likedEpisodes.first().episode.id)
-    }
-
-    @Test
-    fun `toPlayedEpisode converts PlayedEpisodeDto to PlayedEpisode correctly`() {
-        // Given
-        val episodeEntity = episodeTestData.toEpisodeEntity(cacheKey, cachedAt)
-        val playedAt = Instant.fromEpochSeconds(1758000000)
-        val playedEpisodeDto = PlayedEpisodeDto(
-            episode = episodeEntity,
-            playedAt = playedAt,
-            position = 500.seconds,
-            isCompleted = false
-        )
-
-        // When
-        val playedEpisode = playedEpisodeDto.toPlayedEpisode()
-
-        // Then
-        assertEquals(episodeTestData.id, playedEpisode.episode.id)
-        assertEquals(playedAt, playedEpisode.playedAt)
-        assertEquals(500.seconds, playedEpisode.position)
-        assertEquals(false, playedEpisode.isCompleted)
-    }
-
-    @Test
-    fun `toPlayedEpisodes converts list of PlayedEpisodeDto to list of PlayedEpisode correctly`() {
-        // Given
-        val episodeEntity = episodeTestData.toEpisodeEntity(cacheKey, cachedAt)
-        val playedEpisodeDtos = listOf(
-            PlayedEpisodeDto(
-                episode = episodeEntity,
-                playedAt = Instant.fromEpochSeconds(1758000000),
-                position = 500.seconds,
-                isCompleted = false
-            )
-        )
-
-        // When
-        val playedEpisodes = playedEpisodeDtos.toPlayedEpisodes()
-
-        // Then
-        assertEquals(1, playedEpisodes.size)
-        assertEquals(episodeTestData.id, playedEpisodes.first().episode.id)
-        assertEquals(500.seconds, playedEpisodes.first().position)
     }
 
     @Test
@@ -492,50 +366,5 @@ class DatabaseMapperTest {
         assertEquals(soundbiteTestDataList.size, soundbites.size)
         assertEquals(soundbiteTestDataList.first().enclosureUrl, soundbites.first().enclosureUrl)
         assertEquals(soundbiteTestDataList.last().enclosureUrl, soundbites.last().enclosureUrl)
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun `toFollowedPodcast throws exception when podcast is null`() {
-        // Given
-        val followedPodcastDto = FollowedPodcastDto(
-            podcast = null,
-            followedAt = Instant.fromEpochSeconds(1758000000),
-            isNotificationEnabled = true
-        )
-
-        // When
-        followedPodcastDto.toFollowedPodcast()
-
-        // Then - exception is thrown
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun `toLikedEpisode throws exception when episode is null`() {
-        // Given
-        val likedEpisodeDto = LikedEpisodeDto(
-            episode = null,
-            likedAt = Instant.fromEpochSeconds(1758000000)
-        )
-
-        // When
-        likedEpisodeDto.toLikedEpisode()
-
-        // Then - exception is thrown
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun `toPlayedEpisode throws exception when episode is null`() {
-        // Given
-        val playedEpisodeDto = PlayedEpisodeDto(
-            episode = null,
-            playedAt = Instant.fromEpochSeconds(1758000000),
-            position = 500.seconds,
-            isCompleted = false
-        )
-
-        // When
-        playedEpisodeDto.toPlayedEpisode()
-
-        // Then - exception is thrown
     }
 }

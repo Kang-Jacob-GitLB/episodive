@@ -95,21 +95,4 @@ class RecentSearchLocalDataSourceTest {
                 recentSearchDao.clearRecentSearches()
             }
         }
-
-    @Test
-    fun `Given dependencies, When getRecentSearchesCount called, Then called dao method`() =
-        runTest {
-            // Given
-            coEvery {
-                recentSearchDao.getRecentSearchesCount()
-            } returns 0
-
-            // When
-            dataSource.getRecentSearchesCount()
-
-            // Then
-            coVerifySequence {
-                recentSearchDao.getRecentSearchesCount()
-            }
-        }
 }

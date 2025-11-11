@@ -64,15 +64,11 @@ import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
-import io.jacob.episodive.core.model.FollowedPodcast
-import io.jacob.episodive.core.model.LikedEpisode
-import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
 import io.jacob.episodive.core.model.mapper.toHumanReadable
-import io.jacob.episodive.core.testing.model.followedPodcastTestDataList
-import io.jacob.episodive.core.testing.model.likedEpisodeTestDataList
-import io.jacob.episodive.core.testing.model.playedEpisodeTestDataList
+import io.jacob.episodive.core.testing.model.episodeTestDataList
+import io.jacob.episodive.core.testing.model.podcastTestDataList
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -133,16 +129,16 @@ private fun LibraryScreen(
     onFind: (String) -> Unit,
     section: LibrarySection,
     onSectionChange: (LibrarySection) -> Unit = {},
-    playedEpisodes: List<PlayedEpisode>,
-    likedEpisodes: List<LikedEpisode>,
-    followedPodcasts: List<FollowedPodcast>,
+    playedEpisodes: List<Episode>,
+    likedEpisodes: List<Episode>,
+    followedPodcasts: List<Podcast>,
     preferredCategories: List<Category>,
     selectableCategories: List<SelectableCategory>,
-    onPlayedEpisodeClick: (PlayedEpisode) -> Unit = {},
+    onPlayedEpisodeClick: (Episode) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
     onPodcastClick: (Podcast) -> Unit = {},
-    onToggleLikedEpisode: (LikedEpisode) -> Unit = {},
-    onToggleFollowedPodcast: (FollowedPodcast) -> Unit = {},
+    onToggleLikedEpisode: (Episode) -> Unit = {},
+    onToggleFollowedPodcast: (Podcast) -> Unit = {},
     onTogglePreferredCategory: (Category) -> Unit = {},
 ) {
     var showFind by remember { mutableStateOf(false) }
@@ -200,7 +196,7 @@ private fun LibraryScreen(
                 paddingValues = paddingValues,
                 nestedScrollConnection = nestedScrollConnection,
                 likedEpisodes = likedEpisodes,
-                onLikedEpisodeClick = { onEpisodeClick(it.episode) },
+                onLikedEpisodeClick = { onEpisodeClick(it) },
                 onToggleLiked = onToggleLikedEpisode
             )
 
@@ -209,7 +205,7 @@ private fun LibraryScreen(
                 paddingValues = paddingValues,
                 nestedScrollConnection = nestedScrollConnection,
                 followedPodcasts = followedPodcasts,
-                onFollowedPodcastClick = { onPodcastClick(it.podcast) },
+                onFollowedPodcastClick = { onPodcastClick(it) },
                 onToggleFollowed = onToggleFollowedPodcast
             )
 
@@ -231,11 +227,11 @@ private fun AllSectionContent(
     scrollState: LazyListState,
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
-    playedEpisodes: List<PlayedEpisode>,
-    likedEpisodes: List<LikedEpisode>,
-    followedPodcasts: List<FollowedPodcast>,
+    playedEpisodes: List<Episode>,
+    likedEpisodes: List<Episode>,
+    followedPodcasts: List<Podcast>,
     preferredCategories: List<Category>,
-    onPlayedEpisodeClick: (PlayedEpisode) -> Unit,
+    onPlayedEpisodeClick: (Episode) -> Unit,
     onEpisodeClick: (Episode) -> Unit,
     onPodcastClick: (Podcast) -> Unit,
 ) {
@@ -261,7 +257,7 @@ private fun AllSectionContent(
                 if (likedEpisodes.isNotEmpty()) {
                     EpisodeRowSection(
                         title = stringResource(R.string.feature_library_section_liked_episodes),
-                        episodes = likedEpisodes.map { it.episode },
+                        episodes = likedEpisodes,
                         onEpisodeClick = onEpisodeClick,
                     )
                 }
@@ -269,7 +265,7 @@ private fun AllSectionContent(
                 if (followedPodcasts.isNotEmpty()) {
                     PodcastsSection(
                         title = stringResource(R.string.feature_library_section_followed_podcasts),
-                        podcasts = followedPodcasts.map { it.podcast },
+                        podcasts = followedPodcasts,
                         onPodcastClick = onPodcastClick,
                     )
                 }
@@ -311,13 +307,13 @@ private fun RecentlyListenedContent(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
-    playedEpisodes: List<PlayedEpisode>,
-    onPlayedEpisodeClick: (PlayedEpisode) -> Unit,
+    playedEpisodes: List<Episode>,
+    onPlayedEpisodeClick: (Episode) -> Unit,
 ) {
     val groupedEpisodes = remember(playedEpisodes) {
-        playedEpisodes.groupBy { playedEpisode ->
-            playedEpisode.playedAt.toHumanReadable()
-        }
+        playedEpisodes
+            .filter { it.playedAt != null }
+            .groupBy { it.playedAt!!.toHumanReadable() }
     }
 
     LazyColumn(
@@ -345,7 +341,7 @@ private fun RecentlyListenedContent(
 
             items(
                 items = episodes,
-                key = { it.episode.id },
+                key = { it.id },
                 contentType = { "episode" }
             ) { playedEpisode ->
                 PlayedEpisodeItem(
@@ -370,14 +366,14 @@ private fun LikedContent(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
-    likedEpisodes: List<LikedEpisode>,
-    onLikedEpisodeClick: (LikedEpisode) -> Unit,
-    onToggleLiked: (LikedEpisode) -> Unit,
+    likedEpisodes: List<Episode>,
+    onLikedEpisodeClick: (Episode) -> Unit,
+    onToggleLiked: (Episode) -> Unit,
 ) {
     val groupedEpisodes = remember(likedEpisodes) {
-        likedEpisodes.groupBy { likedEpisode ->
-            likedEpisode.likedAt.toHumanReadable()
-        }
+        likedEpisodes
+            .filter { it.likedAt != null }
+            .groupBy { it.likedAt!!.toHumanReadable() }
     }
 
     LazyColumn(
@@ -405,7 +401,7 @@ private fun LikedContent(
 
             items(
                 items = episodes,
-                key = { it.episode.id },
+                key = { it.id },
                 contentType = { "episode" }
             ) { likedEpisode ->
                 EpisodeItem(
@@ -413,8 +409,7 @@ private fun LikedContent(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .animateItem(),
-                    episode = likedEpisode.episode,
-                    isLiked = true,
+                    episode = likedEpisode,
                     onClick = { onLikedEpisodeClick(likedEpisode) },
                     onToggleLiked = { onToggleLiked(likedEpisode) }
                 )
@@ -432,14 +427,14 @@ private fun FollowedContent(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
-    followedPodcasts: List<FollowedPodcast>,
-    onFollowedPodcastClick: (FollowedPodcast) -> Unit,
-    onToggleFollowed: (FollowedPodcast) -> Unit,
+    followedPodcasts: List<Podcast>,
+    onFollowedPodcastClick: (Podcast) -> Unit,
+    onToggleFollowed: (Podcast) -> Unit,
 ) {
     val groupedPodcasts = remember(followedPodcasts) {
-        followedPodcasts.groupBy { followedPodcast ->
-            followedPodcast.followedAt.toHumanReadable()
-        }
+        followedPodcasts
+            .filter { it.followedAt != null }
+            .groupBy { it.followedAt!!.toHumanReadable() }
     }
 
     LazyColumn(
@@ -467,7 +462,7 @@ private fun FollowedContent(
 
             items(
                 items = podcasts,
-                key = { it.podcast.id },
+                key = { it.id },
                 contentType = { "podcast" }
             ) { followedPodcast ->
                 PodcastDetailItem(
@@ -475,7 +470,7 @@ private fun FollowedContent(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .animateItem(),
-                    podcast = followedPodcast.podcast,
+                    podcast = followedPodcast,
                     isFollowed = true,
                     onClick = { onFollowedPodcastClick(followedPodcast) },
                     onToggleFollowed = { onToggleFollowed(followedPodcast) }
@@ -648,8 +643,8 @@ private fun FindOrFilter(
 private fun PlayedEpisodeRowSection(
     modifier: Modifier = Modifier,
     title: String,
-    playedEpisodes: List<PlayedEpisode>,
-    onPlayedEpisodeClick: (PlayedEpisode) -> Unit,
+    playedEpisodes: List<Episode>,
+    onPlayedEpisodeClick: (Episode) -> Unit,
 ) {
     SectionHeader(
         modifier = modifier,
@@ -671,7 +666,7 @@ private fun PlayedEpisodeRowSection(
         ) {
             items(
                 count = playedEpisodes.size,
-                key = { playedEpisodes[it].episode.id },
+                key = { playedEpisodes[it].id },
             ) {
                 PlayedEpisodeItem(
                     modifier = Modifier.width(250.dp),
@@ -768,9 +763,9 @@ private fun LibraryScreenPreview() {
             onQueryChange = {},
             onFind = {},
             section = LibrarySection.All,
-            playedEpisodes = playedEpisodeTestDataList,
-            likedEpisodes = likedEpisodeTestDataList,
-            followedPodcasts = followedPodcastTestDataList,
+            playedEpisodes = episodeTestDataList,
+            likedEpisodes = episodeTestDataList,
+            followedPodcasts = podcastTestDataList,
             preferredCategories = Category.entries,
             selectableCategories = Category.entries.map { category ->
                 SelectableCategory(

@@ -58,9 +58,6 @@ class FeedRepositoryTest {
                 anyConstructed<TrendingFeedRemoteUpdater>().load(any<List<TrendingFeedEntity>>())
             } returns Unit
             coEvery {
-                anyConstructed<TrendingFeedRemoteUpdater>().load(null as TrendingFeedEntity?)
-            } returns Unit
-            coEvery {
                 localDataSource.getTrendingFeedsByCacheKey(any())
             } returns flowOf(emptyList())
 
@@ -92,9 +89,6 @@ class FeedRepositoryTest {
                 anyConstructed<RecentFeedRemoteUpdater>().load(any<List<RecentFeedEntity>>())
             } returns Unit
             coEvery {
-                anyConstructed<RecentFeedRemoteUpdater>().load(null as RecentFeedEntity?)
-            } returns Unit
-            coEvery {
                 localDataSource.getRecentFeedsByCacheKey(any())
             } returns flowOf(emptyList())
 
@@ -123,9 +117,6 @@ class FeedRepositoryTest {
                 anyConstructed<RecentNewFeedRemoteUpdater>().load(any<List<RecentNewFeedEntity>>())
             } returns Unit
             coEvery {
-                anyConstructed<RecentNewFeedRemoteUpdater>().load(null as RecentNewFeedEntity?)
-            } returns Unit
-            coEvery {
                 localDataSource.getRecentNewFeedsByCacheKey(any())
             } returns flowOf(emptyList())
 
@@ -149,9 +140,6 @@ class FeedRepositoryTest {
             mockkConstructor(SoundbiteRemoteUpdater::class)
             coEvery {
                 anyConstructed<SoundbiteRemoteUpdater>().load(any<List<SoundbiteEntity>>())
-            } returns Unit
-            coEvery {
-                anyConstructed<SoundbiteRemoteUpdater>().load(null as SoundbiteEntity?)
             } returns Unit
             coEvery {
                 localDataSource.getSoundbitesByCacheKey(any())

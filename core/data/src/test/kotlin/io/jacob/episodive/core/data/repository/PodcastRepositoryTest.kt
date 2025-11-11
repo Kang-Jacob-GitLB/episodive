@@ -5,6 +5,7 @@ import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.mapper.toPodcastEntities
+import io.jacob.episodive.core.database.model.FollowedPodcastEntity
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.testing.model.podcastTestData
@@ -19,10 +20,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import kotlin.time.Instant
 
 class PodcastRepositoryTest {
     @get:Rule
@@ -165,70 +165,52 @@ class PodcastRepositoryTest {
     fun `Given dependencies, When getFollowedPodcasts is called, Then calls methods of dataSources`() =
         runTest {
             // Given
-            coEvery {
-                localDataSource.getFollowedPodcasts()
-            } returns flowOf(mockk(relaxed = true))
+            coEvery { localDataSource.getPodcasts() } returns flowOf(podcastEntities)
+            coEvery { localDataSource.getFollowedPodcasts() } returns flowOf(
+                listOf(
+                    FollowedPodcastEntity(
+                        id = 5778530,
+                        followedAt = Instant.fromEpochSeconds(1757568578),
+                        isNotificationEnabled = true,
+                    ),
+                    FollowedPodcastEntity(
+                        id = 391008,
+                        followedAt = Instant.fromEpochSeconds(1698800122),
+                        isNotificationEnabled = true,
+                    ),
+                )
+            )
 
             // When
             repository.getFollowedPodcasts().test {
-                awaitItem()
+                val result = awaitItem()
+                // Then
+                assertEquals(2, result.size)
+                assertEquals(podcastTestDataList[0].id, result[0].id)
+                assertEquals(podcastTestDataList[1].id, result[1].id)
                 awaitComplete()
             }
 
             // Then
-            coVerify { localDataSource.getFollowedPodcasts() }
-        }
-
-    @Test
-    fun `Given podcast is followed, When toggleFollowed is called, Then call removeFollowed`() =
-        runTest {
-            // Given
-            val podcastId = 12345L
-            coEvery { localDataSource.isFollowed(any()) } returns flowOf(true)
-            coEvery { localDataSource.removeFollowed(any()) } returns Unit
-
-            // When
-            val result = repository.toggleFollowed(podcastId)
-
-            // Then
-            assertFalse(result)
             coVerifySequence {
-                localDataSource.isFollowed(podcastId)
-                localDataSource.removeFollowed(podcastId)
+                localDataSource.getPodcasts()
+                localDataSource.getFollowedPodcasts()
             }
         }
 
     @Test
-    fun `Given podcast is not followed, When toggleFollowed is called, Then call addFollowed`() =
+    fun `Given dependencies, When toggleFollowed is called, Then call methods of dataSources`() =
         runTest {
             // Given
             val podcastId = 12345L
-            coEvery { localDataSource.isFollowed(any()) } returns flowOf(false)
-            coEvery { localDataSource.addFollowed(any()) } returns Unit
+            coEvery { localDataSource.toggleFollowed(podcastId) } returns true
 
             // When
-            val result = repository.toggleFollowed(podcastId)
+            repository.toggleFollowed(podcastId)
 
             // Then
-            assertTrue(result)
             coVerifySequence {
-                localDataSource.isFollowed(podcastId)
-                localDataSource.addFollowed(match { it.id == podcastId })
+                localDataSource.toggleFollowed(podcastId)
             }
-        }
-
-    @Test
-    fun `Given ids, When addFolloweds is called, Then call addFolloweds of localDataSource`() =
-        runTest {
-            // Given
-            val ids = listOf(1L, 2L, 3L)
-            coEvery { localDataSource.addFolloweds(any()) } returns Unit
-
-            // When
-            val result = repository.addFolloweds(ids)
-
-            // Then
-            assertTrue(result)
-            coVerify { localDataSource.addFolloweds(match { it.size == ids.size }) }
         }
 }

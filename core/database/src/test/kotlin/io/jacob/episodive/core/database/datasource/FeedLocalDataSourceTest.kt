@@ -255,6 +255,58 @@ class FeedLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When replaceTrendingFeeds, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.replaceTrendingFeeds(any()) } just Runs
+
+            // When
+            dataSource.replaceTrendingFeeds(trendingFeedEntities)
+
+            // Then
+            coVerify { feedDao.replaceTrendingFeeds(trendingFeedEntities) }
+        }
+
+    @Test
+    fun `Given dependencies, When replaceRecentFeeds, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.replaceRecentFeeds(any()) } just Runs
+
+            // When
+            dataSource.replaceRecentFeeds(recentFeedEntities)
+
+            // Then
+            coVerify { feedDao.replaceRecentFeeds(recentFeedEntities) }
+        }
+
+    @Test
+    fun `Given dependencies, When replaceRecentNewFeeds, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.replaceRecentNewFeeds(any()) } just Runs
+
+            // When
+            dataSource.replaceRecentNewFeeds(recentNewFeedEntities)
+
+            // Then
+            coVerify { feedDao.replaceRecentNewFeeds(recentNewFeedEntities) }
+        }
+
+    @Test
+    fun `Given dependencies, When replaceSoundbites, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.replaceSoundbites(any()) } just Runs
+
+            // When
+            dataSource.replaceSoundbites(soundbiteEntities)
+
+            // Then
+            coVerify { feedDao.replaceSoundbites(soundbiteEntities) }
+        }
+
+    @Test
     fun `Given dependencies, When getTrendingFeedsByCacheKey, Then call dao's method`() =
         runTest {
             // Given

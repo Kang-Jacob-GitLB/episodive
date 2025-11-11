@@ -35,7 +35,7 @@ class PlayerViewModel @Inject constructor(
     private val updatePlayedEpisodeUseCase: UpdatePlayedEpisodeUseCase,
     private val getPodcastUseCase: GetPodcastUseCase,
     private val getDominantColorFromUrlUseCase: GetDominantColorFromUrlUseCase,
-    @MainPlayerRepository private val playerRepository: PlayerRepository,
+    @param:MainPlayerRepository private val playerRepository: PlayerRepository,
 ) : ViewModel() {
     private val playingEpisode = combine(
         playerRepository.nowPlaying,
@@ -50,7 +50,7 @@ class PlayerViewModel @Inject constructor(
     private val isLiked = playerRepository.nowPlaying.mapNotNull { it?.id }
         .flatMapLatest { episodeId ->
             getLikedEpisodesUseCase().mapNotNull { likedEpisodes ->
-                likedEpisodes.any { it.episode.id == episodeId }
+                likedEpisodes.any { it.id == episodeId }
             }
         }
 

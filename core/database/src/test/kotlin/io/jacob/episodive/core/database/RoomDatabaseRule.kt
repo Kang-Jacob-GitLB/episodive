@@ -13,6 +13,7 @@ class RoomDatabaseRule : TestWatcher() {
     override fun starting(description: Description?) {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(context, EpisodiveDatabase::class.java)
+            .allowMainThreadQueries()
             .build()
     }
 

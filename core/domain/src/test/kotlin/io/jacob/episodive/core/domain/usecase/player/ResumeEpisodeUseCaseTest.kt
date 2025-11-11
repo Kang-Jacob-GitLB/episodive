@@ -2,7 +2,6 @@ package io.jacob.episodive.core.domain.usecase.player
 
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.model.Episode
-import io.jacob.episodive.core.model.PlayedEpisode
 import io.jacob.episodive.core.model.mapper.toLongMillis
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -38,8 +37,7 @@ class ResumeEpisodeUseCaseTest {
     fun `Given dependencies, when invoke called, then repository called`() =
         runTest {
             // Given
-            val playedEpisode = PlayedEpisode(
-                episode = episodeTestData,
+            val playedEpisode = episodeTestData.copy(
                 playedAt = Clock.System.now(),
                 position = 1000L.seconds,
                 isCompleted = false,
@@ -52,7 +50,7 @@ class ResumeEpisodeUseCaseTest {
 
             // Then
             verifySequence {
-                playerRepository.play(playedEpisode.episode)
+                playerRepository.play(playedEpisode)
                 playerRepository.seekTo(playedEpisode.position.toLongMillis())
             }
         }
