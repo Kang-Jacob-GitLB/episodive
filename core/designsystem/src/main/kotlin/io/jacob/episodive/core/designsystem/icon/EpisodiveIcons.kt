@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
+import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.ShortText
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -77,6 +78,7 @@ object EpisodiveIcons {
     val Language = Icons.Rounded.Language
     val LibraryBooks = Icons.AutoMirrored.Rounded.LibraryBooks
     val LibraryBooksBorder = Icons.AutoMirrored.Outlined.LibraryBooks
+    val List = Icons.AutoMirrored.Rounded.List
     val MoreVert = Icons.Rounded.MoreVert
     val Pause = Icons.Rounded.Pause
     val PersonAdd = Icons.Rounded.PersonAddAlt1

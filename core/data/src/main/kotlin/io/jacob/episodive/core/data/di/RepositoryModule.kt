@@ -95,9 +95,11 @@ object RepositoryModule {
     @MainPlayerRepository
     fun provideMainPlayerRepository(
         @MainPlayerDataSource mainPlayerDataSource: PlayerDataSource,
+        episodeLocalDataSource: EpisodeLocalDataSource,
     ): PlayerRepository {
         return PlayerRepositoryImpl(
             playerDataSource = mainPlayerDataSource,
+            episodeLocalDataSource = episodeLocalDataSource,
         )
     }
 
@@ -106,9 +108,11 @@ object RepositoryModule {
     @ClipPlayerRepository
     fun provideClipPlayerRepository(
         @ClipPlayerDataSource clipPlayerDataSource: PlayerDataSource,
+        episodeLocalDataSource: EpisodeLocalDataSource,
     ): PlayerRepository {
         return PlayerRepositoryImpl(
             playerDataSource = clipPlayerDataSource,
+            episodeLocalDataSource = episodeLocalDataSource,
         )
     }
 

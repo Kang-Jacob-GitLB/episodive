@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.data.repository
 
+import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Playback
@@ -7,11 +8,14 @@ import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import kotlin.time.Duration
 
 class PlayerRepositoryImpl @Inject constructor(
-    private val playerDataSource: PlayerDataSource
+    private val playerDataSource: PlayerDataSource,
+    episodeLocalDataSource: EpisodeLocalDataSource,
 ) : PlayerRepository {
     override fun play(episode: Episode) {
         playerDataSource.play(episode)
@@ -110,7 +114,22 @@ class PlayerRepositoryImpl @Inject constructor(
     }
 
     override val nowPlaying: Flow<Episode?> = playerDataSource.nowPlaying
-    override val playlist: Flow<List<Episode>> = playerDataSource.playlist
+    override val playlist: Flow<List<Episode>> = combine(
+        playerDataSource.playlist,
+        episodeLocalDataSource.getEpisodes(),
+    ) { playlist, episodes ->
+        playlist.map { episode ->
+            val ep = episodes.find { it.episode.id == episode.id } ?: return@map episode
+            episode.copy(
+                duration = ep.episode.duration,
+                likedAt = ep.likedAt,
+                playedAt = ep.playedAt,
+                position = ep.position ?: Duration.ZERO,
+                isCompleted = ep.isCompleted ?: false,
+            )
+        }
+    }
+
     override val indexOfList: Flow<Int> = playerDataSource.indexOfList
     override val progress: Flow<Progress> = playerDataSource.progress
     override val playback: Flow<Playback> = playerDataSource.playback.map { Playback.fromValue(it) }

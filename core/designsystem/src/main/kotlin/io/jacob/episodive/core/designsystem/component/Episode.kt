@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
@@ -78,6 +80,30 @@ fun EpisodesSection(
                 )
             }
         }
+    }
+}
+
+fun LazyListScope.episodeItems(
+    itemModifier: Modifier = Modifier,
+    episodes: List<Episode>,
+    playingIndex: Int,
+    onEpisodeClick: (Episode) -> Unit,
+    onToggleEpisodeLiked: (Episode) -> Unit,
+) {
+    itemsIndexed(
+        items = episodes,
+        key = { _, episode ->
+            episode.id
+        }
+    ) { index, episode ->
+        EpisodeItem(
+            modifier = itemModifier,
+            episode = episode,
+            progress = 0f,
+            isLoading = index == playingIndex,
+            onClick = { onEpisodeClick(episode) },
+            onToggleLiked = { onToggleEpisodeLiked(episode) }
+        )
     }
 }
 
@@ -554,7 +580,7 @@ fun EpisodeClipItem(
                 )
 
                 EpisodiveIconToggleButton(
-                    checked = false, // TODO
+                    checked = isPlaying,
                     onCheckedChange = { onPlayEpisode() },
                     colors = IconButtonDefaults.iconToggleButtonColors(
                         checkedContainerColor = MaterialTheme.colorScheme.primary,

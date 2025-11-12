@@ -112,6 +112,11 @@ interface PodcastDao {
             followed_podcasts.isNotificationEnabled
         FROM podcasts
         INNER JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
+        WHERE podcasts.cachedAt = (
+            SELECT MAX(cachedAt)
+            FROM podcasts p2
+            WHERE p2.id = podcasts.id
+        )
         ORDER BY followed_podcasts.followedAt DESC
     """
     )

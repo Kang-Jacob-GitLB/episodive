@@ -10,6 +10,7 @@ import io.jacob.episodive.core.domain.usecase.episode.GetEpisodesByPodcastIdUseC
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.image.GetDominantColorFromUrlUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
+import io.jacob.episodive.core.domain.usecase.player.PlayEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
@@ -34,6 +35,7 @@ class PodcastViewModel @AssistedInject constructor(
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
+    private val playEpisodesUseCase: PlayEpisodesUseCase,
     private val toggleLikedUseCase: ToggleLikedUseCase,
     private val getDominantColorFromUrlUseCase: GetDominantColorFromUrlUseCase,
     @Assisted("id") val id: Long,
@@ -97,8 +99,13 @@ class PodcastViewModel @AssistedInject constructor(
         toggleFollowedUseCase(id)
     }
 
-    private fun playEpisode(episode: Episode) = viewModelScope.launch {
-        playEpisodeUseCase(episode)
+    private fun playEpisode(episode: Episode) {
+        val state = state.value
+        if (state !is PodcastState.Success) return
+        val indexToPlay = state.episodes.indexOfFirst { it.id == episode.id }
+        if (indexToPlay == -1) return
+        val episodes = state.episodes.subList(0, indexToPlay + 1).reversed()
+        playEpisodesUseCase(episodes = episodes, playEpisode = episode)
     }
 
     private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {

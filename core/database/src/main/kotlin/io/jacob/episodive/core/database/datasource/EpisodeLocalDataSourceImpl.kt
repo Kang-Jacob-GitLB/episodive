@@ -7,6 +7,7 @@ import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
+import kotlin.time.Duration
 
 class EpisodeLocalDataSourceImpl @Inject constructor(
     private val episodeDao: EpisodeDao,
@@ -33,6 +34,10 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
 
     override suspend fun replaceEpisodes(episodes: List<EpisodeEntity>) {
         episodeDao.replaceEpisodes(episodes)
+    }
+
+    override suspend fun updateDurationOfEpisodes(id: Long, duration: Duration) {
+        episodeDao.updateDurationOfEpisodes(id, duration)
     }
 
     override fun getEpisode(id: Long): Flow<EpisodeDto?> {

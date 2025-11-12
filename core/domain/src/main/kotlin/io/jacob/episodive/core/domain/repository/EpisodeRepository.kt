@@ -57,4 +57,6 @@ interface EpisodeRepository {
     suspend fun toggleLiked(id: Long): Boolean
 
     suspend fun updatePlayed(id: Long, position: Duration, isCompleted: Boolean)
+
+    suspend fun updateDurationOfEpisodes(id: Long, duration: Duration)
 }

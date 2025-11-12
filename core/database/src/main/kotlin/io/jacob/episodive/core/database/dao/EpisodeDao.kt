@@ -12,6 +12,7 @@ import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Clock
+import kotlin.time.Duration
 
 @Dao
 interface EpisodeDao {
@@ -37,6 +38,9 @@ interface EpisodeDao {
             upsertEpisodes(episodeGroup)
         }
     }
+
+    @Query("UPDATE episodes SET duration = :duration WHERE id = :id")
+    suspend fun updateDurationOfEpisodes(id: Long, duration: Duration)
 
     @Query(
         """
@@ -67,6 +71,11 @@ interface EpisodeDao {
         FROM episodes
         LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
         LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+        WHERE episodes.cachedAt = (
+            SELECT MAX(cachedAt)
+            FROM episodes e2
+            WHERE e2.id = episodes.id
+        )
     """
     )
     fun getEpisodes(): Flow<List<EpisodeDto>>
@@ -125,6 +134,11 @@ interface EpisodeDao {
         FROM episodes
         INNER JOIN liked_episodes ON episodes.id = liked_episodes.id
         LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+        WHERE episodes.cachedAt = (
+            SELECT MAX(cachedAt)
+            FROM episodes e2
+            WHERE e2.id = episodes.id
+        )
         ORDER BY liked_episodes.likedAt DESC
     """
     )
@@ -148,6 +162,11 @@ interface EpisodeDao {
         FROM episodes
         INNER JOIN played_episodes ON episodes.id = played_episodes.id
         LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
+        WHERE episodes.cachedAt = (
+            SELECT MAX(cachedAt)
+            FROM episodes e2
+            WHERE e2.id = episodes.id
+        )
         ORDER BY played_episodes.playedAt DESC
     """
     )
