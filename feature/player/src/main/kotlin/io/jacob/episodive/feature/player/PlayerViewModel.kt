@@ -127,7 +127,9 @@ class PlayerViewModel @Inject constructor(
                 is PlayerAction.SeekForward -> seekForward()
                 is PlayerAction.Speed -> speed(action.speed)
                 is PlayerAction.ClickPodcast -> clickPodcast(action.podcast)
-                is PlayerAction.ToggleLike -> toggleLikedEpisode()
+                is PlayerAction.ClickEpisode -> clickEpisode(action.episode)
+                is PlayerAction.ToggleLike -> toggleCurrentEpisodeLiked()
+                is PlayerAction.ToggleEpisodeLiked -> toggleEpisodeLiked(action.episode)
                 is PlayerAction.ExpandPlayer -> expandPlayer()
                 is PlayerAction.CollapsePlayer -> collapsePlayer()
             }
@@ -182,11 +184,23 @@ class PlayerViewModel @Inject constructor(
         _effect.emit(PlayerEffect.NavigateToPodcast(podcast))
     }
 
-    private fun toggleLikedEpisode() = viewModelScope.launch {
+    private fun clickEpisode(episode: Episode) = viewModelScope.launch {
+        val currentState = state.value
+        if (currentState is PlayerState.Success) {
+            val index = currentState.playlist.indexOf(episode)
+            playerRepository.playIndex(index)
+        }
+    }
+
+    private fun toggleCurrentEpisodeLiked() = viewModelScope.launch {
         val currentState = state.value
         if (currentState is PlayerState.Success) {
             toggleLikedUseCase(currentState.nowPlaying.id)
         }
+    }
+
+    private fun toggleEpisodeLiked(episode: Episode) = viewModelScope.launch {
+        toggleLikedUseCase(episode.id)
     }
 
     private fun expandPlayer() = viewModelScope.launch {
@@ -227,7 +241,9 @@ sealed interface PlayerAction {
     data object SeekForward : PlayerAction
     data class Speed(val speed: Float) : PlayerAction
     data class ClickPodcast(val podcast: Podcast) : PlayerAction
+    data class ClickEpisode(val episode: Episode) : PlayerAction
     data object ToggleLike : PlayerAction
+    data class ToggleEpisodeLiked(val episode: Episode) : PlayerAction
     data object ExpandPlayer : PlayerAction
     data object CollapsePlayer : PlayerAction
 }

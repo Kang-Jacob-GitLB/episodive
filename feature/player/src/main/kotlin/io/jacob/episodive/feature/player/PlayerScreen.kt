@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -34,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -46,12 +49,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodiveCenterTopAppBar
+import io.jacob.episodive.core.designsystem.component.EpisodiveDragHandle
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.StateImage
+import io.jacob.episodive.core.designsystem.component.episodeItems
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.GradientColors
@@ -62,6 +67,7 @@ import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.mapper.toLongMillis
 import io.jacob.episodive.core.model.mapper.toMediaTime
 import io.jacob.episodive.core.testing.model.episodeTestData
+import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -128,6 +134,11 @@ fun PlayerBottomSheet(
                 onPodcastClick(podcastId)
                 collapse()
             },
+            playlist = s.playlist,
+            indexOfList = s.indexOfList,
+            onEpisodeClick = { viewModel.sendAction(PlayerAction.ClickEpisode(it)) },
+            onPlayIndex = { viewModel.sendAction(PlayerAction.PlayIndex(it)) },
+            onToggleEpisodeLiked = { viewModel.sendAction(PlayerAction.ToggleEpisodeLiked(it)) },
         )
     }
 }
@@ -151,9 +162,15 @@ private fun PlayerScreen(
     onPrevious: () -> Unit = {},
     onNext: () -> Unit = {},
     onPodcastClick: (Long) -> Unit = {},
+    playlist: List<Episode>,
+    indexOfList: Int,
+    onEpisodeClick: (Episode) -> Unit = {},
+    onPlayIndex: (Int) -> Unit = {},
+    onToggleEpisodeLiked: (Episode) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
+    var showPlaylistSheet by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier
@@ -244,6 +261,7 @@ private fun PlayerScreen(
                         onForward = onForward,
                         onPrevious = onPrevious,
                         onNext = onNext,
+                        onList = { showPlaylistSheet = true }
                     )
 
                     Spacer(modifier = Modifier.weight(1f))
@@ -260,6 +278,16 @@ private fun PlayerScreen(
         item {
             Spacer(modifier = Modifier.height(50.dp))
         }
+    }
+
+    if (showPlaylistSheet) {
+        PlaylistSheet(
+            playlist = playlist,
+            playingIndex = indexOfList,
+            onEpisodeClick = onEpisodeClick,
+            onToggleEpisodeLiked = onToggleEpisodeLiked,
+            onDismiss = { showPlaylistSheet = false }
+        )
     }
 }
 
@@ -357,17 +385,20 @@ private fun ControlPanelBottom(
     onForward: () -> Unit = {},
     onPrevious: () -> Unit = {},
     onNext: () -> Unit = {},
+    onList: () -> Unit = {},
 ) {
-    Box(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
-            .padding(top = 38.dp)
-            .padding(bottom = 50.dp),
-        contentAlignment = Alignment.Center,
+            .padding(top = 38.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             EpisodiveIconButton(
@@ -440,6 +471,25 @@ private fun ControlPanelBottom(
                 }
             )
         }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            EpisodiveIconButton(
+                onClick = onList,
+                icon = {
+                    Icon(
+                        modifier = Modifier.size(32.dp),
+                        imageVector = EpisodiveIcons.List,
+                        contentDescription = "List",
+                    )
+                }
+            )
+        }
     }
 }
 
@@ -469,6 +519,40 @@ private fun InfoSection(
     }
 }
 
+@Composable
+private fun PlaylistSheet(
+    modifier: Modifier = Modifier,
+    playlist: List<Episode>,
+    playingIndex: Int,
+    onEpisodeClick: (Episode) -> Unit = {},
+    onToggleEpisodeLiked: (Episode) -> Unit = {},
+    onDismiss: () -> Unit = {},
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+
+    ModalBottomSheet(
+        modifier = modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.statusBars),
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = { EpisodiveDragHandle() }
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            episodeItems(
+                episodes = playlist,
+                playingIndex = playingIndex,
+                onEpisodeClick = onEpisodeClick,
+                onToggleEpisodeLiked = onToggleEpisodeLiked
+            )
+        }
+    }
+}
+
 @DevicePreviews
 @Composable
 private fun PlayerScreenPreview() {
@@ -479,6 +563,8 @@ private fun PlayerScreenPreview() {
             progress = Progress(1000.seconds, 2000.seconds, 3000.seconds),
             isPlaying = true,
             isLike = false,
+            playlist = episodeTestDataList,
+            indexOfList = 0,
         )
     }
 }
@@ -488,5 +574,16 @@ private fun PlayerScreenPreview() {
 private fun InfoSectionPreview() {
     EpisodiveTheme {
         InfoSection(episode = episodeTestData)
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun PlaylistSheetPreview() {
+    EpisodiveTheme {
+        PlaylistSheet(
+            playlist = episodeTestDataList,
+            playingIndex = 0,
+        )
     }
 }

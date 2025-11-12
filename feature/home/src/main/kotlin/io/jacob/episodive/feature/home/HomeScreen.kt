@@ -1,6 +1,5 @@
 package io.jacob.episodive.feature.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
@@ -36,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodesSection
+import io.jacob.episodive.core.designsystem.component.EpisodiveDragHandle
 import io.jacob.episodive.core.designsystem.component.EpisodiveTopAppBar
 import io.jacob.episodive.core.designsystem.component.PlayingEpisodesSection
 import io.jacob.episodive.core.designsystem.component.PodcastsSection
@@ -116,8 +115,8 @@ private fun HomeScreen(
         var topBarHeight by remember { mutableStateOf(80.dp) }
         var contentHeight by remember { mutableStateOf(10.dp) }
 
-        val sheetExpandHeight = screenHeight - topBarHeight - 16.dp
-        val sheetPartiallyExpandHeight = screenHeight - topBarHeight - contentHeight - 16.dp
+        val sheetExpandHeight = screenHeight - topBarHeight - 32.dp
+        val sheetPartiallyExpandHeight = screenHeight - topBarHeight - contentHeight - 32.dp
 
         val sheetState = rememberBottomSheetScaffoldState(
             bottomSheetState = rememberStandardBottomSheetState(
@@ -157,18 +156,7 @@ private fun HomeScreen(
                 }
             },
             sheetPeekHeight = sheetPartiallyExpandHeight,
-            sheetDragHandle = {
-                Box(
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .height(4.dp)
-                        .width(40.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            shape = MaterialTheme.shapes.small
-                        )
-                )
-            },
+            sheetDragHandle = { EpisodiveDragHandle() },
             sheetContent = {
                 Box(
                     modifier = Modifier
