@@ -12,6 +12,7 @@ import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Clock
+import kotlin.time.Duration
 
 @Dao
 interface EpisodeDao {
@@ -37,6 +38,9 @@ interface EpisodeDao {
             upsertEpisodes(episodeGroup)
         }
     }
+
+    @Query("UPDATE episodes SET duration = :duration WHERE id = :id")
+    suspend fun updateDurationOfEpisodes(id: Long, duration: Duration)
 
     @Query(
         """

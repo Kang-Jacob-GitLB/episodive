@@ -15,7 +15,7 @@ import kotlin.time.Duration
 
 class PlayerRepositoryImpl @Inject constructor(
     private val playerDataSource: PlayerDataSource,
-    private val episodeLocalDataSource: EpisodeLocalDataSource,
+    episodeLocalDataSource: EpisodeLocalDataSource,
 ) : PlayerRepository {
     override fun play(episode: Episode) {
         playerDataSource.play(episode)
@@ -121,6 +121,7 @@ class PlayerRepositoryImpl @Inject constructor(
         playlist.map { episode ->
             val ep = episodes.find { it.episode.id == episode.id } ?: return@map episode
             episode.copy(
+                duration = ep.episode.duration,
                 likedAt = ep.likedAt,
                 playedAt = ep.playedAt,
                 position = ep.position ?: Duration.ZERO,

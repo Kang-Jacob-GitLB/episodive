@@ -5,6 +5,7 @@ import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Duration
 
 interface EpisodeLocalDataSource {
     suspend fun upsertEpisode(episode: EpisodeEntity)
@@ -13,6 +14,7 @@ interface EpisodeLocalDataSource {
     suspend fun deleteEpisodes()
     suspend fun deleteEpisodesByCacheKey(cacheKey: String)
     suspend fun replaceEpisodes(episodes: List<EpisodeEntity>)
+    suspend fun updateDurationOfEpisodes(id: Long, duration: Duration)
     fun getEpisode(id: Long): Flow<EpisodeDto?>
     fun getEpisodes(): Flow<List<EpisodeDto>>
     fun getEpisodesByCacheKey(cacheKey: String): Flow<List<EpisodeDto>>

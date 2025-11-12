@@ -191,6 +191,10 @@ class EpisodeRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun updateDurationOfEpisodes(id: Long, duration: Duration) {
+        localDataSource.updateDurationOfEpisodes(id, duration)
+    }
+
     private fun EpisodeEntity.matchesQuery(query: String): Boolean {
         return title.contains(query, ignoreCase = true) ||
                 description?.contains(query, ignoreCase = true) == true ||

@@ -132,6 +132,19 @@ class EpisodeLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When updateDurationOfEpisodes is called, Then updateDurationOfEpisodes of dao is called`() =
+        runTest {
+            // Given
+            coEvery { episodeDao.updateDurationOfEpisodes(any(), any()) } just Runs
+
+            // When
+            dataSource.updateDurationOfEpisodes(episodeEntities[0].id, 2000.seconds)
+
+            // Then
+            coVerify { episodeDao.updateDurationOfEpisodes(any(), any()) }
+        }
+
+    @Test
     fun `Given dependencies, When getEpisode is called, Then getEpisode of dao is called`() =
         runTest {
             // Given

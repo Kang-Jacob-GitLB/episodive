@@ -10,10 +10,12 @@ import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
+import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -44,6 +46,21 @@ class EpisodeRepositoryTest {
     fun teardown() {
         confirmVerified(localDataSource, remoteDataSource, remoteUpdater)
     }
+
+    @Test
+    fun `Given dependencies, When updateDurationOfEpisodes is called, Then calls localDataSource updateDurationOfEpisodes`() =
+        runTest {
+            // Given
+            coEvery { localDataSource.updateDurationOfEpisodes(any(), any()) } just Runs
+
+            // When
+            repository.updateDurationOfEpisodes(123L, 30.seconds)
+
+            // Then
+            coVerifySequence {
+                localDataSource.updateDurationOfEpisodes(123L, 30.seconds)
+            }
+        }
 
     @Test
     fun `Given person, When searchEpisodesByPerson, Then creates correct query and calls sourceFactory`() =

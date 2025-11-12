@@ -260,6 +260,23 @@ class EpisodeDaoTest {
         }
 
     @Test
+    fun `Given som episode entities, When updateDurationOfEpisodes is called, Then duration is updated`() =
+        runTest {
+            // Given
+            dao.upsertEpisodes(episodeEntities)
+
+            // When
+            dao.updateDurationOfEpisodes(episodeEntities[0].id, 1000.seconds)
+
+            // Then
+            dao.getEpisodes().test {
+                val episodes = awaitItem()
+                assertEquals(1000.seconds, episodes[0].episode.duration)
+                cancel()
+            }
+        }
+
+    @Test
     fun `Given episodes with same cache key, When replaceEpisodes is called, Then old episodes are deleted and new episodes are inserted`() =
         runTest {
             // Given - Insert initial episodes
