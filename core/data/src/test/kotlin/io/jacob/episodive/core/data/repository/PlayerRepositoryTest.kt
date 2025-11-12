@@ -1,15 +1,21 @@
 package io.jacob.episodive.core.data.repository
 
 import app.cash.turbine.test
+import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
+import io.jacob.episodive.core.database.mapper.toEpisodeDtos
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import io.jacob.episodive.core.testing.model.episodeTestData
+import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coVerify
 import io.mockk.confirmVerified
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
@@ -20,9 +26,11 @@ class PlayerRepositoryTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val playerDataSource = mockk<PlayerDataSource>(relaxed = true)
+    private val episodeLocalDataSource = mockk<EpisodeLocalDataSource>(relaxed = true)
 
     private val repository: PlayerRepository = PlayerRepositoryImpl(
-        playerDataSource = playerDataSource
+        playerDataSource = playerDataSource,
+        episodeLocalDataSource = episodeLocalDataSource,
     )
 
     @After
@@ -36,7 +44,8 @@ class PlayerRepositoryTest {
         coVerify { playerDataSource.isShuffle }
         coVerify { playerDataSource.repeat }
         coVerify { playerDataSource.speed }
-        confirmVerified(playerDataSource)
+        coVerify { episodeLocalDataSource.getEpisodes() }
+        confirmVerified(playerDataSource, episodeLocalDataSource)
     }
 
     @Test
@@ -300,6 +309,142 @@ class PlayerRepositoryTest {
 
             // Then
             coVerify(exactly = 1) { playerDataSource.playlist }
+        }
+
+    @Test
+    fun `Given playlist and episodes with matching IDs, When accessing playlist, Then combines with liked and played info`() =
+        runTest {
+            // Given
+            val playlistEpisodes =
+                episodeTestDataList.take(3).map { it.copy(likedAt = null, playedAt = null) }
+            val likedAt = Instant.fromEpochSeconds(1757883600L)
+            val playedAt = Instant.fromEpochSeconds(1757883700L)
+            val position = 30.seconds
+
+            val episodeDtos = episodeTestDataList.toEpisodeDtos(cacheKey = "test")
+            val episodesFromDb = listOf(
+                episodeDtos[0].copy(
+                    likedAt = likedAt,
+                    playedAt = playedAt,
+                    position = position,
+                    isCompleted = false
+                ),
+                episodeDtos[1].copy(
+                    likedAt = null,
+                    playedAt = playedAt,
+                    position = 60.seconds,
+                    isCompleted = true
+                ),
+                episodeDtos[2]
+            )
+
+            every { playerDataSource.playlist } returns flowOf(playlistEpisodes)
+            every { episodeLocalDataSource.getEpisodes() } returns flowOf(episodesFromDb)
+
+            // Create a new repository instance for this test to avoid teardown conflicts
+            val testRepository = PlayerRepositoryImpl(
+                playerDataSource = playerDataSource,
+                episodeLocalDataSource = episodeLocalDataSource,
+            )
+
+            // When
+            testRepository.playlist.test {
+                val result = awaitItem()
+
+                // Then - First episode should have liked and played info
+                assertEquals(3, result.size)
+                assertEquals(likedAt, result[0].likedAt)
+                assertEquals(playedAt, result[0].playedAt)
+                assertEquals(position, result[0].position)
+                assertEquals(false, result[0].isCompleted)
+
+                // Then - Second episode should have played info but not liked
+                assertEquals(null, result[1].likedAt)
+                assertEquals(playedAt, result[1].playedAt)
+                assertEquals(60.seconds, result[1].position)
+                assertEquals(true, result[1].isCompleted)
+
+                // Then - Third episode should remain unchanged (no liked/played info in DB)
+                assertEquals(null, result[2].likedAt)
+                assertEquals(null, result[2].playedAt)
+
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerify(atLeast = 1) { playerDataSource.playlist }
+            coVerify(atLeast = 1) { episodeLocalDataSource.getEpisodes() }
+        }
+
+    @Test
+    fun `Given playlist with episode not in DB, When accessing playlist, Then returns episode unchanged`() =
+        runTest {
+            // Given
+            val playlistEpisodes = listOf(
+                episodeTestDataList[0],
+                episodeTestDataList[1],
+                episodeTestData.copy(id = 999L, likedAt = null, playedAt = null)
+            )
+            val episodeDtos = episodeTestDataList.toEpisodeDtos(cacheKey = "test")
+            val episodesFromDb = listOf(
+                episodeDtos[0].copy(likedAt = Instant.fromEpochSeconds(1757883600L)),
+                episodeDtos[1]
+            )
+
+            every { playerDataSource.playlist } returns flowOf(playlistEpisodes)
+            every { episodeLocalDataSource.getEpisodes() } returns flowOf(episodesFromDb)
+
+            // Create a new repository instance for this test to avoid teardown conflicts
+            val testRepository = PlayerRepositoryImpl(
+                playerDataSource = playerDataSource,
+                episodeLocalDataSource = episodeLocalDataSource,
+            )
+
+            // When
+            testRepository.playlist.test {
+                val result = awaitItem()
+
+                // Then - Third episode (ID 999) should remain unchanged
+                assertEquals(3, result.size)
+                assertEquals(999L, result[2].id)
+                assertEquals(null, result[2].likedAt)
+                assertEquals(null, result[2].playedAt)
+
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerify(atLeast = 1) { playerDataSource.playlist }
+            coVerify(atLeast = 1) { episodeLocalDataSource.getEpisodes() }
+        }
+
+    @Test
+    fun `Given empty playlist, When accessing playlist, Then returns empty list`() =
+        runTest {
+            // Given
+            val episodeDtos = episodeTestDataList.toEpisodeDtos(cacheKey = "test")
+            every { playerDataSource.playlist } returns flowOf(emptyList())
+            every { episodeLocalDataSource.getEpisodes() } returns flowOf(episodeDtos)
+
+            // Create a new repository instance for this test to avoid teardown conflicts
+            val testRepository = PlayerRepositoryImpl(
+                playerDataSource = playerDataSource,
+                episodeLocalDataSource = episodeLocalDataSource,
+            )
+
+            // When
+            testRepository.playlist.test {
+                val result = awaitItem()
+
+                // Then
+                assertEquals(0, result.size)
+
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerify(atLeast = 1) { playerDataSource.playlist }
+            coVerify(atLeast = 1) { episodeLocalDataSource.getEpisodes() }
         }
 
     @Test

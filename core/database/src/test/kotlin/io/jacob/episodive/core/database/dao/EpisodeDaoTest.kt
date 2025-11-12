@@ -82,6 +82,58 @@ class EpisodeDaoTest {
         }
 
     @Test
+    fun `Given episodes with duplicate IDs, When getEpisodes is called, Then only most recent cachedAt per ID is returned`() =
+        runTest {
+            // Given - Insert multiple episodes with same ID but different cachedAt times
+            val now = Instant.fromEpochSeconds(Clock.System.now().epochSeconds)
+            val duplicateId = 12345L
+
+            dao.upsertEpisode(
+                episodeEntity.copy(
+                    id = duplicateId,
+                    title = "Version 1",
+                    cachedAt = now
+                )
+            )
+            dao.upsertEpisode(
+                episodeEntity.copy(
+                    id = duplicateId,
+                    title = "Version 2",
+                    cachedAt = now.plus(1.minutes)
+                )
+            )
+            dao.upsertEpisode(
+                episodeEntity.copy(
+                    id = duplicateId,
+                    title = "Version 3 (Most Recent)",
+                    cachedAt = now.plus(2.minutes)
+                )
+            )
+
+            // Insert other episodes to ensure filtering works correctly
+            dao.upsertEpisodes(episodeEntities.take(3))
+
+            // When
+            dao.getEpisodes().test {
+                val episodes = awaitItem()
+
+                // Then - Should only have one episode with duplicateId
+                val episodesWithDuplicateId = episodes.filter { it.episode.id == duplicateId }
+                assertEquals(1, episodesWithDuplicateId.size)
+
+                // Then - Should be the most recent one (Version 3)
+                val mostRecentEpisode = episodesWithDuplicateId.first()
+                assertEquals("Version 3 (Most Recent)", mostRecentEpisode.episode.title)
+                assertEquals(now.plus(2.minutes), mostRecentEpisode.episode.cachedAt)
+
+                // Then - Total count should be duplicateId + other episodes (3)
+                assertEquals(4, episodes.size)
+
+                cancel()
+            }
+        }
+
+    @Test
     fun `Given some episode entities, When getEpisodesByCacheKey is called, Then the episodes with the cache key are returned`() =
         runTest {
             // Given
