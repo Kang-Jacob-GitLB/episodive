@@ -602,7 +602,7 @@ private fun SpeedSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val decimalFormat = DecimalFormat("#.#")
-    val manualSpeed = listOf(0.5f, 1f, 1.5f, 2f, 3.5f)
+    val manualSpeed = remember { listOf(0.5f, 1f, 1.5f, 2f, 3.5f) }
     val isDefaultSpeed = speed == 1f
 
     ModalBottomSheet(
