@@ -110,8 +110,8 @@ local db
 - [x] progress bar
 - [x] controls
 - [ ] timestamp
-- [ ] playlist
-- [ ] playback speed
+- [x] playlist
+- [x] playback speed
 - [ ] sleep timer
 
 ---
