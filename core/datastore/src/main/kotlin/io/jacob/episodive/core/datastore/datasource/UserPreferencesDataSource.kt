@@ -10,5 +10,6 @@ interface UserPreferencesDataSource {
     suspend fun addCategories(categories: List<Category>)
     suspend fun removeCategory(category: Category)
     fun getCategories(): Flow<List<Category>>
+    suspend fun setSpeed(speed: Float)
     fun getUserPreferences(): Flow<UserPreferences>
 }

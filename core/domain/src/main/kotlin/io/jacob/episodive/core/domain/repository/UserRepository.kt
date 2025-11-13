@@ -11,5 +11,6 @@ interface UserRepository {
     suspend fun removeCategory(category: Category)
     suspend fun toggleCategory(category: Category): Boolean
     fun getCategories(): Flow<List<Category>>
+    suspend fun setSpeed(speed: Float)
     fun getUserData(): Flow<UserData>
 }

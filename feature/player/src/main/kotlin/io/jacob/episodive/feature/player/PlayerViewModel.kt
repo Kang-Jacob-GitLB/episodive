@@ -10,6 +10,8 @@ import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.image.GetDominantColorFromUrlUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
+import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
+import io.jacob.episodive.core.domain.usecase.user.SetSpeedUseCase
 import io.jacob.episodive.core.domain.util.combine
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
@@ -21,6 +23,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapNotNull
@@ -36,6 +40,8 @@ class PlayerViewModel @Inject constructor(
     private val getPodcastUseCase: GetPodcastUseCase,
     private val getDominantColorFromUrlUseCase: GetDominantColorFromUrlUseCase,
     @param:MainPlayerRepository private val playerRepository: PlayerRepository,
+    private val setSpeedUseCase: SetSpeedUseCase,
+    private val getUserDataUseCase: GetUserDataUseCase,
 ) : ViewModel() {
     private val playingEpisode = combine(
         playerRepository.nowPlaying,
@@ -111,6 +117,15 @@ class PlayerViewModel @Inject constructor(
                 }
             }
         }
+        viewModelScope.launch {
+            getUserDataUseCase()
+                .mapNotNull { it.speed }
+                .distinctUntilChanged()
+                .first()
+                .let { speed ->
+                    playerRepository.setSpeed(speed)
+                }
+        }
     }
 
     private fun handleActions() = viewModelScope.launch {
@@ -176,8 +191,9 @@ class PlayerViewModel @Inject constructor(
         playerRepository.seekForward()
     }
 
-    private fun speed(speed: Float) {
+    private fun speed(speed: Float) = viewModelScope.launch {
         playerRepository.setSpeed(speed)
+        setSpeedUseCase(speed)
     }
 
     private fun clickPodcast(podcast: Podcast) = viewModelScope.launch {

@@ -2,7 +2,9 @@ package io.jacob.episodive.core.datastore.store
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.jacob.episodive.core.datastore.model.UserPreferences
 import io.jacob.episodive.core.model.Category
@@ -14,15 +16,16 @@ import java.util.Locale
 import javax.inject.Inject
 
 class UserPreferencesStore @Inject constructor(
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
 ) {
     object UserPreferencesKeys {
-        val isFirstLaunch = stringPreferencesKey("is_first_launch")
+        val isFirstLaunch = booleanPreferencesKey("is_first_launch")
         val categories = stringPreferencesKey("categories")
+        val speed = floatPreferencesKey("speed")
     }
 
     suspend fun setFirstLaunch(isFirstLaunch: Boolean) {
-        dataStore.edit { it[UserPreferencesKeys.isFirstLaunch] = isFirstLaunch.toString() }
+        dataStore.edit { it[UserPreferencesKeys.isFirstLaunch] = isFirstLaunch }
     }
 
     suspend fun addCategory(category: Category) {
@@ -62,14 +65,18 @@ class UserPreferencesStore @Inject constructor(
             preferences[UserPreferencesKeys.categories]?.toCategories() ?: emptyList()
         }
 
+    suspend fun setSpeed(speed: Float) {
+        dataStore.edit { it[UserPreferencesKeys.speed] = speed }
+    }
+
     fun getUserPreferences(): Flow<UserPreferences> =
         dataStore.data.map { preferences ->
             UserPreferences(
-                isFirstLaunch = preferences[UserPreferencesKeys.isFirstLaunch]?.toBoolean()
-                    ?: true,
+                isFirstLaunch = preferences[UserPreferencesKeys.isFirstLaunch] ?: true,
                 language = Locale.getDefault().language,
                 categories = preferences[UserPreferencesKeys.categories]?.toCategories()
                     ?: emptyList(),
+                speed = preferences[UserPreferencesKeys.speed] ?: 1f
             )
         }
 }

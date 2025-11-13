@@ -618,7 +618,7 @@ private fun SpeedSheet(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "${decimalFormat.format(speed)}배속",
+                text = "${decimalFormat.format(speed)}${stringResource(R.string.feature_player_speed)}",
                 style = MaterialTheme.typography.headlineMedium,
                 color = if (isDefaultSpeed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
             )

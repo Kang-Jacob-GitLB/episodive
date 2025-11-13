@@ -44,6 +44,10 @@ class UserRepositoryImpl @Inject constructor(
         return userPreferencesDataSource.getCategories()
     }
 
+    override suspend fun setSpeed(speed: Float) {
+        userPreferencesDataSource.setSpeed(speed)
+    }
+
     override fun getUserData(): Flow<UserData> {
         return userPreferencesDataSource.getUserPreferences()
             .map { it.toUserData() }

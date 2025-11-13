@@ -29,6 +29,10 @@ class UserPreferencesDataSourceImpl @Inject constructor(
         return store.getCategories()
     }
 
+    override suspend fun setSpeed(speed: Float) {
+        store.setSpeed(speed)
+    }
+
     override fun getUserPreferences(): Flow<UserPreferences> {
         return store.getUserPreferences()
     }

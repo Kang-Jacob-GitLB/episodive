@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_player_more_info">추가 정보</string>
+    <string name="feature_player_speed">배속</string>
 </resources>

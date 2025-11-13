@@ -95,6 +95,19 @@ class UserPreferencesDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When setSpeed, Then call store's method`() =
+        runTest {
+            // Given
+            coEvery { store.setSpeed(any()) } just Runs
+
+            // When
+            dataSource.setSpeed(1f)
+
+            // Then
+            coVerify { store.setSpeed(1f) }
+        }
+
+    @Test
     fun `Given dependencies, When getUserPreferences, Then call store's method`() =
         runTest {
             // Given

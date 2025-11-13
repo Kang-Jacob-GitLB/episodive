@@ -19,7 +19,8 @@ class DataStoreMapperTest {
         val userPreferences = UserPreferences(
             isFirstLaunch = false,
             language = "en-US",
-            categories = listOf(Category.ARTS, Category.BUSINESS, Category.COMEDY)
+            categories = listOf(Category.ARTS, Category.BUSINESS, Category.COMEDY),
+            speed = 1f,
         )
 
         // When
@@ -33,6 +34,7 @@ class DataStoreMapperTest {
         assertEquals(Category.ARTS, userData.categories[0])
         assertEquals(Category.BUSINESS, userData.categories[1])
         assertEquals(Category.COMEDY, userData.categories[2])
+        assertEquals(1f, userData.speed)
     }
 
     @Test
@@ -41,7 +43,8 @@ class DataStoreMapperTest {
         val userData = UserData(
             isFirstLaunch = true,
             language = "ko-KR",
-            categories = listOf(Category.NEWS, Category.EDUCATION, Category.TECHNOLOGY)
+            categories = listOf(Category.NEWS, Category.EDUCATION, Category.TECHNOLOGY),
+            speed = 1f,
         )
 
         // When
@@ -55,6 +58,7 @@ class DataStoreMapperTest {
         assertEquals(Category.NEWS, userPreferences.categories[0])
         assertEquals(Category.EDUCATION, userPreferences.categories[1])
         assertEquals(Category.TECHNOLOGY, userPreferences.categories[2])
+        assertEquals(1f, userData.speed)
     }
 
     @Test
@@ -63,7 +67,8 @@ class DataStoreMapperTest {
         val userPreferences = UserPreferences(
             isFirstLaunch = true,
             language = "fr-FR",
-            categories = emptyList()
+            categories = emptyList(),
+            speed = 1f,
         )
 
         // When
@@ -74,6 +79,7 @@ class DataStoreMapperTest {
         assertEquals(userPreferences.language, userData.language)
         assertEquals(userPreferences.categories, userData.categories)
         assertEquals(0, userData.categories.size)
+        assertEquals(1f, userData.speed)
     }
 
     @Test
@@ -82,7 +88,8 @@ class DataStoreMapperTest {
         val userData = UserData(
             isFirstLaunch = false,
             language = "de-DE",
-            categories = emptyList()
+            categories = emptyList(),
+            speed = 1f,
         )
 
         // When
@@ -93,6 +100,7 @@ class DataStoreMapperTest {
         assertEquals(userData.language, userPreferences.language)
         assertEquals(userData.categories, userPreferences.categories)
         assertEquals(0, userPreferences.categories.size)
+        assertEquals(1f, userData.speed)
     }
 
     @Test
@@ -125,7 +133,8 @@ class DataStoreMapperTest {
                 Category.TRUE_CRIME,
                 Category.TV,
                 Category.FILM
-            )
+            ),
+            speed = 1f,
         )
 
         // When
@@ -142,6 +151,7 @@ class DataStoreMapperTest {
         originalUserData.categories.forEachIndexed { index, category ->
             assertEquals(category, backToUserData.categories[index])
         }
+        assertEquals(1f, backToUserData.speed)
     }
 
     @Test
@@ -173,7 +183,8 @@ class DataStoreMapperTest {
                 Category.CHEMISTRY,
                 Category.MATHEMATICS,
                 Category.SOCIAL
-            )
+            ),
+            speed = 1f,
         )
 
         // When
@@ -190,6 +201,7 @@ class DataStoreMapperTest {
         originalUserPreferences.categories.forEachIndexed { index, category ->
             assertEquals(category, backToUserPreferences.categories[index])
         }
+        assertEquals(1f, backToUserPreferences.speed)
     }
 
     @Test
@@ -225,7 +237,8 @@ class DataStoreMapperTest {
             val userData = UserData(
                 isFirstLaunch = true,
                 language = languageCode,
-                categories = listOf(Category.NEWS)
+                categories = listOf(Category.NEWS),
+                speed = 1f
             )
 
             // When
@@ -234,6 +247,7 @@ class DataStoreMapperTest {
 
             // Then
             assertEquals("Language code $languageCode should be preserved", languageCode, backToUserData.language)
+            assertEquals(1f, backToUserData.speed)
         }
     }
 
@@ -245,7 +259,8 @@ class DataStoreMapperTest {
             val userData = UserData(
                 isFirstLaunch = false,
                 language = "en-US",
-                categories = listOf(category)
+                categories = listOf(category),
+                speed = 1f
             )
 
             // When
@@ -254,6 +269,7 @@ class DataStoreMapperTest {
 
             // Then
             assertEquals("Category $category should be preserved", category, backToUserData.categories.single())
+            assertEquals(1f, backToUserData.speed)
         }
     }
 }

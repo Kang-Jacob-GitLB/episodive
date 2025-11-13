@@ -143,6 +143,15 @@ class UserPreferencesStoreTest {
     }
 
     @Test
+    fun setSpeed_updatesSpeedPreference() = runTest {
+        userPreferencesStore.setSpeed(1.5f)
+
+        val result = userPreferencesStore.getUserPreferences().first()
+        assertEquals(1.5f, result.speed)
+    }
+
+
+    @Test
     fun getUserPreferences_withDefaultValues_returnsDefaults() = runTest {
         val result = userPreferencesStore.getUserPreferences().first()
 

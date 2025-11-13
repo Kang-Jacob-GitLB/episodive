@@ -6,4 +6,5 @@ data class UserPreferences(
     val isFirstLaunch: Boolean,
     val language: String,
     val categories: List<Category>,
+    val speed: Float,
 )
