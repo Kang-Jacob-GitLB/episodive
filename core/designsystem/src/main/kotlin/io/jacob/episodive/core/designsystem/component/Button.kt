@@ -9,6 +9,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -135,6 +136,7 @@ fun EpisodiveTextButton(
     modifier: Modifier = Modifier,
     shape: Shape = ButtonDefaults.shape,
     enabled: Boolean = true,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     content: @Composable RowScope.() -> Unit,
 ) {
     TextButton(
@@ -142,9 +144,10 @@ fun EpisodiveTextButton(
         modifier = modifier,
         shape = shape,
         enabled = enabled,
-//        colors = ButtonDefaults.textButtonColors(
-//            contentColor = MaterialTheme.colorScheme.onBackground,
-//        ),
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = MaterialTheme.colorScheme.onBackground,
+        ),
+        contentPadding = contentPadding,
         content = content,
     )
 }
@@ -155,6 +158,7 @@ fun EpisodiveTextButton(
     modifier: Modifier = Modifier,
     shape: Shape = ButtonDefaults.shape,
     enabled: Boolean = true,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     text: @Composable () -> Unit,
     leadingIcon: @Composable (() -> Unit)? = null,
 ) {
@@ -163,6 +167,7 @@ fun EpisodiveTextButton(
         modifier = modifier,
         shape = shape,
         enabled = enabled,
+        contentPadding = contentPadding,
     ) {
         EpisodiveButtonContent(
             text = text,

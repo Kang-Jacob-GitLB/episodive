@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -48,11 +49,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveCenterTopAppBar
+import io.jacob.episodive.core.designsystem.component.EpisodiveDial
 import io.jacob.episodive.core.designsystem.component.EpisodiveDragHandle
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
+import io.jacob.episodive.core.designsystem.component.EpisodiveTextButton
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.StateImage
@@ -71,6 +75,7 @@ import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.text.DecimalFormat
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -139,6 +144,8 @@ fun PlayerBottomSheet(
             onEpisodeClick = { viewModel.sendAction(PlayerAction.ClickEpisode(it)) },
             onPlayIndex = { viewModel.sendAction(PlayerAction.PlayIndex(it)) },
             onToggleEpisodeLiked = { viewModel.sendAction(PlayerAction.ToggleEpisodeLiked(it)) },
+            speed = s.speed,
+            onSpeedChange = { viewModel.sendAction(PlayerAction.Speed(it)) },
         )
     }
 }
@@ -167,9 +174,12 @@ private fun PlayerScreen(
     onEpisodeClick: (Episode) -> Unit = {},
     onPlayIndex: (Int) -> Unit = {},
     onToggleEpisodeLiked: (Episode) -> Unit = {},
+    speed: Float,
+    onSpeedChange: (Float) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
+    var showSpeedSheet by remember { mutableStateOf(false) }
     var showPlaylistSheet by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -261,7 +271,9 @@ private fun PlayerScreen(
                         onForward = onForward,
                         onPrevious = onPrevious,
                         onNext = onNext,
-                        onList = { showPlaylistSheet = true }
+                        onSpeed = { showSpeedSheet = true },
+                        speed = speed,
+                        onList = { showPlaylistSheet = true },
                     )
 
                     Spacer(modifier = Modifier.weight(1f))
@@ -278,6 +290,14 @@ private fun PlayerScreen(
         item {
             Spacer(modifier = Modifier.height(50.dp))
         }
+    }
+
+    if (showSpeedSheet) {
+        SpeedSheet(
+            speed = speed,
+            onSpeedChange = onSpeedChange,
+            onDismiss = { showSpeedSheet = false }
+        )
     }
 
     if (showPlaylistSheet) {
@@ -385,6 +405,8 @@ private fun ControlPanelBottom(
     onForward: () -> Unit = {},
     onPrevious: () -> Unit = {},
     onNext: () -> Unit = {},
+    onSpeed: () -> Unit = {},
+    speed: Float,
     onList: () -> Unit = {},
 ) {
     Column(
@@ -402,10 +424,11 @@ private fun ControlPanelBottom(
             verticalAlignment = Alignment.CenterVertically
         ) {
             EpisodiveIconButton(
+                modifier = Modifier.size(56.dp),
                 onClick = onBackward,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(40.dp),
                         imageVector = EpisodiveIcons.Replay10,
                         contentDescription = "Replay",
                     )
@@ -413,10 +436,11 @@ private fun ControlPanelBottom(
             )
 
             EpisodiveIconButton(
+                modifier = Modifier.size(56.dp),
                 onClick = onPrevious,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(48.dp),
                         imageVector = EpisodiveIcons.SkipPrevious,
                         contentDescription = "Previous",
                     )
@@ -429,14 +453,14 @@ private fun ControlPanelBottom(
                 onCheckedChange = { onPlayOrPause() },
                 icon = {
                     Icon(
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(40.dp),
                         imageVector = EpisodiveIcons.PlayArrow,
                         contentDescription = "Play",
                     )
                 },
                 checkedIcon = {
                     Icon(
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(40.dp),
                         imageVector = EpisodiveIcons.Pause,
                         contentDescription = "Pause",
                     )
@@ -450,10 +474,11 @@ private fun ControlPanelBottom(
             )
 
             EpisodiveIconButton(
+                modifier = Modifier.size(56.dp),
                 onClick = onNext,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(48.dp),
                         imageVector = EpisodiveIcons.SkipNext,
                         contentDescription = "Next",
                     )
@@ -461,10 +486,11 @@ private fun ControlPanelBottom(
             )
 
             EpisodiveIconButton(
+                modifier = Modifier.size(56.dp),
                 onClick = onForward,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(40.dp),
                         imageVector = EpisodiveIcons.Forward30,
                         contentDescription = "Forward",
                     )
@@ -476,10 +502,24 @@ private fun ControlPanelBottom(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp),
-            horizontalArrangement = Arrangement.End,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val decimalFormat = DecimalFormat("#.#")
+
+            EpisodiveTextButton(
+                modifier = Modifier.size(56.dp),
+                onClick = onSpeed,
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text(
+                    style = MaterialTheme.typography.titleLarge,
+                    text = "${decimalFormat.format(speed)}x"
+                )
+            }
+
             EpisodiveIconButton(
+                modifier = Modifier.size(56.dp),
                 onClick = onList,
                 icon = {
                     Icon(
@@ -553,6 +593,71 @@ private fun PlaylistSheet(
     }
 }
 
+@Composable
+private fun SpeedSheet(
+    modifier: Modifier = Modifier,
+    speed: Float,
+    onSpeedChange: (Float) -> Unit = {},
+    onDismiss: () -> Unit = {},
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val decimalFormat = DecimalFormat("#.#")
+    val manualSpeed = remember { listOf(0.5f, 1f, 1.5f, 2f, 3.5f) }
+    val isDefaultSpeed = speed == 1f
+
+    ModalBottomSheet(
+        modifier = modifier
+            .fillMaxWidth(),
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = { EpisodiveDragHandle() }
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "${decimalFormat.format(speed)}${stringResource(R.string.feature_player_speed)}",
+                style = MaterialTheme.typography.headlineMedium,
+                color = if (isDefaultSpeed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+            )
+
+            EpisodiveDial(
+                value = speed,
+                onValueChange = onSpeedChange,
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+            ) {
+                manualSpeed.forEach { speed ->
+                    EpisodiveButton(
+                        modifier = Modifier
+                            .size(48.dp),
+                        onClick = { onSpeedChange(speed) },
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(0.dp),
+                        buttonColors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    ) {
+                        Text(
+                            text = decimalFormat.format(speed),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+    }
+}
+
 @DevicePreviews
 @Composable
 private fun PlayerScreenPreview() {
@@ -565,6 +670,7 @@ private fun PlayerScreenPreview() {
             isLike = false,
             playlist = episodeTestDataList,
             indexOfList = 0,
+            speed = 1f,
         )
     }
 }
@@ -584,6 +690,16 @@ private fun PlaylistSheetPreview() {
         PlaylistSheet(
             playlist = episodeTestDataList,
             playingIndex = 0,
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun SpeedSheetPreview() {
+    EpisodiveTheme {
+        SpeedSheet(
+            speed = 1f,
         )
     }
 }
