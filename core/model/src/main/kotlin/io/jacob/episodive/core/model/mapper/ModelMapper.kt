@@ -6,13 +6,16 @@ import io.jacob.episodive.core.model.Feed
 import io.jacob.episodive.core.model.Medium
 import io.jacob.episodive.core.model.RecentFeed
 import io.jacob.episodive.core.model.TrendingFeed
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -37,6 +40,73 @@ fun Instant.toHumanReadable(): String {
         .withLocale(Locale.getDefault())
 
     return javaLocalDateTime.format(outputFormatter)
+}
+
+fun Instant.toRelativeDate(): String {
+    val locale = Locale.getDefault()
+    val timeZone = TimeZone.currentSystemDefault()
+    val now = Clock.System.now()
+
+    // Convert to LocalDate for comparison
+    val thisDate = this.toLocalDateTime(timeZone).date
+    val todayDate = now.toLocalDateTime(timeZone).date
+    val yesterdayDate = now.minus(1, DateTimeUnit.DAY, timeZone).toLocalDateTime(timeZone).date
+    val dayBeforeYesterdayDate =
+        now.minus(2, DateTimeUnit.DAY, timeZone).toLocalDateTime(timeZone).date
+
+    val thisYear = now.toLocalDateTime(timeZone).year
+
+    return when {
+        thisDate == todayDate -> {
+            if (locale.language == "ko") "오늘" else "Today"
+        }
+
+        thisDate == yesterdayDate -> {
+            if (locale.language == "ko") "어제" else "Yesterday"
+        }
+
+        thisDate == dayBeforeYesterdayDate -> {
+            if (locale.language == "ko") "그저께" else "2 days ago"
+        }
+
+        thisDate.year == thisYear -> {
+            // This year: show month and day only
+            val localDateTime = this.toLocalDateTime(timeZone)
+            val javaLocalDateTime = LocalDateTime.of(
+                localDateTime.year,
+                localDateTime.month.number,
+                localDateTime.day,
+                0, 0, 0
+            )
+
+            if (locale.language == "ko") {
+                val formatter = DateTimeFormatter.ofPattern("M월 d일")
+                javaLocalDateTime.format(formatter)
+            } else {
+                val formatter = DateTimeFormatter.ofPattern("MMM d")
+                javaLocalDateTime.format(formatter)
+            }
+        }
+
+        else -> {
+            // Different year: show year, month, and day
+            val localDateTime = this.toLocalDateTime(timeZone)
+            val javaLocalDateTime = LocalDateTime.of(
+                localDateTime.year,
+                localDateTime.month.number,
+                localDateTime.day,
+                0, 0, 0
+            )
+
+            if (locale.language == "ko") {
+                val formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일")
+                javaLocalDateTime.format(formatter)
+            } else {
+                val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+                javaLocalDateTime.format(formatter)
+            }
+        }
+    }
 }
 
 fun Int.toDurationSeconds(): Duration = seconds

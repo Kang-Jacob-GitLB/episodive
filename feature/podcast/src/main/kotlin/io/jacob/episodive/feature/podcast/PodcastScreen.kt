@@ -67,7 +67,6 @@ internal fun PodcastRoute(
                 modifier = modifier,
                 podcast = s.podcast,
                 episodes = s.episodes,
-                isFollowed = s.isFollowed,
                 dominantColor = Color(s.dominantColor),
                 onFollowClick = { viewModel.sendAction(PodcastAction.ToggleFollowed) },
                 onEpisodeClick = { viewModel.sendAction(PodcastAction.PlayEpisode(it)) },
@@ -86,12 +85,11 @@ private fun PodcastScreen(
     modifier: Modifier = Modifier,
     podcast: Podcast,
     episodes: List<Episode>,
-    isFollowed: Boolean,
     dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    onFollowClick: () -> Unit = {},
-    onEpisodeClick: (Episode) -> Unit = {},
-    onToggleLikedEpisode: (Episode) -> Unit = {},
-    onBackClick: () -> Unit = {},
+    onFollowClick: () -> Unit,
+    onEpisodeClick: (Episode) -> Unit,
+    onToggleLikedEpisode: (Episode) -> Unit,
+    onBackClick: () -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     val listState = rememberLazyListState()
@@ -114,7 +112,6 @@ private fun PodcastScreen(
                 PodcastHeader(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     podcast = podcast,
-                    isFollowed = isFollowed,
                     dominantColor = dominantColor,
                     onFollowClick = onFollowClick,
                 )
@@ -178,9 +175,10 @@ private fun PodcastHeader(
     modifier: Modifier = Modifier,
     podcast: Podcast,
     dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    isFollowed: Boolean,
     onFollowClick: () -> Unit,
 ) {
+    val isFollowed = podcast.isFollowed
+
     EpisodiveGradientBackground(
         gradientColors = GradientColors(
             top = dominantColor,
@@ -246,9 +244,9 @@ private fun PodcastScreenPreview() {
         PodcastScreen(
             podcast = podcastTestData,
             episodes = episodeTestDataList,
-            isFollowed = false,
             onFollowClick = {},
             onEpisodeClick = {},
+            onToggleLikedEpisode = {},
             onBackClick = {},
             onShowSnackbar = { _, _ -> false }
         )

@@ -47,6 +47,7 @@ import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toIntSeconds
+import io.jacob.episodive.core.model.mapper.toRelativeDate
 import io.jacob.episodive.core.testing.model.episodeTestData
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -148,7 +149,7 @@ fun EpisodeItem(
 
             val subTitle = "%s • %s".format(
                 episode.datePublished.toHumanReadable(),
-                episode.duration?.toHumanReadable() ?: episode.feedTitle
+                episode.feedTitle ?: episode.duration?.toHumanReadable() ?: ""
             ).trim()
 
             Text(
@@ -281,7 +282,8 @@ fun PlayingEpisodeItem(
                     .width(98.dp)
             ) {
                 Text(
-                    text = playedEpisode.feedTitle ?: "",
+                    text = playedEpisode.playedAt?.toRelativeDate() ?: playedEpisode.feedTitle
+                    ?: "",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,

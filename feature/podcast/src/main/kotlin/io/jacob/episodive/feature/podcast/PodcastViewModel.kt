@@ -9,9 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.episode.GetEpisodesByPodcastIdUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.image.GetDominantColorFromUrlUseCase
-import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodesUseCase
-import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.model.Episode
@@ -26,15 +24,12 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @HiltViewModel(assistedFactory = PodcastViewModel.Factory::class)
 class PodcastViewModel @AssistedInject constructor(
     getPodcastUseCase: GetPodcastUseCase,
     getEpisodesByPodcastIdUseCase: GetEpisodesByPodcastIdUseCase,
-    getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
-    private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val playEpisodesUseCase: PlayEpisodesUseCase,
     private val toggleLikedUseCase: ToggleLikedUseCase,
     private val getDominantColorFromUrlUseCase: GetDominantColorFromUrlUseCase,
@@ -54,18 +49,14 @@ class PodcastViewModel @AssistedInject constructor(
     val state: StateFlow<PodcastState> = combine(
         getPodcastUseCase(id),
         getEpisodesByPodcastIdUseCase(id),
-        getFollowedPodcastsUseCase(),
         dominantColor,
-    ) { podcast, episodes, followedPodcasts, dominantColor ->
+    ) { podcast, episodes, dominantColor ->
         if (podcast == null) {
             PodcastState.Error("Podcast not found")
         } else {
-            val isFollowed = followedPodcasts.any { it.id == podcast.id }
-            Timber.i("episode size=${episodes.size}, isFollowed=$isFollowed")
             PodcastState.Success(
                 podcast = podcast,
                 episodes = episodes,
-                isFollowed = isFollowed,
                 dominantColor = dominantColor,
             )
         }
@@ -118,7 +109,6 @@ sealed interface PodcastState {
     data class Success(
         val podcast: Podcast,
         val episodes: List<Episode>,
-        val isFollowed: Boolean,
         val dominantColor: ULong,
     ) : PodcastState
 

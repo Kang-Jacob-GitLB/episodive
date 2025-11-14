@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -378,7 +379,7 @@ fun PodcastSimpleItem(
             Text(
                 text = podcast.title,
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -386,7 +387,7 @@ fun PodcastSimpleItem(
             Text(
                 text = podcast.ownerName.ifEmpty { podcast.author },
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -394,12 +395,22 @@ fun PodcastSimpleItem(
 
         EpisodiveOutlinedButton(
             onClick = onToggleFollowed,
-            content = {
-                Text(
-                    stringResource(R.string.core_designsystem_follow)
-                )
-            }
-        )
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = if (podcast.isFollowed) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onBackground
+                },
+            ),
+        ) {
+            Text(
+                text = stringResource(
+                    if (podcast.isFollowed) R.string.core_designsystem_unfollow
+                    else R.string.core_designsystem_follow
+                ),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
     }
 }
 

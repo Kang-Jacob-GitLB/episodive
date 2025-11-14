@@ -41,8 +41,8 @@ class PodcastRepositoryImpl @Inject constructor(
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),
             sourceFactory = {
-                localDataSource.getPodcast(feedId).map { entity ->
-                    entity?.let { listOf(it) } ?: emptyList()
+                localDataSource.getPodcast(feedId).map { dto ->
+                    dto?.let { listOf(it) } ?: emptyList()
                 }
             }
         ).flow.map { it.ifEmpty { null }?.firstOrNull()?.toPodcast() }
