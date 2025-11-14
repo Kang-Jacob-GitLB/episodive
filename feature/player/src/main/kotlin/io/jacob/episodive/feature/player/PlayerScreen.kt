@@ -1,10 +1,12 @@
 package io.jacob.episodive.feature.player
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -60,6 +63,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveSeeker
 import io.jacob.episodive.core.designsystem.component.EpisodiveTextButton
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
+import io.jacob.episodive.core.designsystem.component.PodcastSimpleItem
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.component.episodeItems
@@ -71,6 +75,7 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
+import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toMediaTime
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
@@ -84,7 +89,7 @@ import kotlin.time.Duration.Companion.seconds
 fun PlayerBottomSheet(
     modifier: Modifier = Modifier,
     viewModel: PlayerViewModel = hiltViewModel(),
-    onPodcastClick: (Long) -> Unit = {},
+    onPodcastClick: (Long) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -94,7 +99,7 @@ fun PlayerBottomSheet(
     LaunchedEffect(Unit) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is PlayerEffect.NavigateToPodcast -> {}
+                is PlayerEffect.NavigateToPodcast -> onPodcastClick(effect.podcast.id)
                 is PlayerEffect.ShowPlayerBottomSheet -> {}
                 is PlayerEffect.HidePlayerBottomSheet -> sheetState.hide()
             }
@@ -137,8 +142,8 @@ fun PlayerBottomSheet(
             onForward = { viewModel.sendAction(PlayerAction.SeekForward) },
             onPrevious = { viewModel.sendAction(PlayerAction.Previous) },
             onNext = { viewModel.sendAction(PlayerAction.Next) },
-            onPodcastClick = { podcastId ->
-                onPodcastClick(podcastId)
+            onPodcastClick = {
+                viewModel.sendAction(PlayerAction.ClickPodcast(it))
                 collapse()
             },
             playlist = s.playlist,
@@ -149,6 +154,7 @@ fun PlayerBottomSheet(
             speed = s.speed,
             onSpeedChange = { viewModel.sendAction(PlayerAction.Speed(it)) },
             chapters = s.chapters,
+            onTogglePodcastFollowed = { viewModel.sendAction(PlayerAction.TogglePodcastFollowed(it)) }
         )
     }
 }
@@ -163,23 +169,24 @@ private fun PlayerScreen(
     isPlaying: Boolean,
     isLike: Boolean,
     dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    onCollapse: () -> Unit = {},
-    onToggleLike: () -> Unit = {},
-    onSeekTo: (Long) -> Unit = {},
-    onPlayOrPause: () -> Unit = {},
-    onBackward: () -> Unit = {},
-    onForward: () -> Unit = {},
-    onPrevious: () -> Unit = {},
-    onNext: () -> Unit = {},
-    onPodcastClick: (Long) -> Unit = {},
+    onCollapse: () -> Unit,
+    onToggleLike: () -> Unit,
+    onSeekTo: (Long) -> Unit,
+    onPlayOrPause: () -> Unit,
+    onBackward: () -> Unit,
+    onForward: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onPodcastClick: (Podcast) -> Unit,
     playlist: List<Episode>,
     indexOfList: Int,
-    onEpisodeClick: (Episode) -> Unit = {},
-    onPlayIndex: (Int) -> Unit = {},
-    onToggleEpisodeLiked: (Episode) -> Unit = {},
+    onEpisodeClick: (Episode) -> Unit,
+    onPlayIndex: (Int) -> Unit,
+    onToggleEpisodeLiked: (Episode) -> Unit,
     speed: Float,
-    onSpeedChange: (Float) -> Unit = {},
+    onSpeedChange: (Float) -> Unit,
     chapters: List<Chapter>,
+    onTogglePodcastFollowed: (Podcast) -> Unit,
 ) {
     val listState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
@@ -195,7 +202,7 @@ private fun PlayerScreen(
             EpisodiveGradientBackground(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillParentMaxHeight(0.92f),
+                    .fillParentMaxHeight(0.95f),
                 gradientColors = GradientColors(
                     top = dominantColor,
                 )
@@ -246,7 +253,7 @@ private fun PlayerScreen(
                     ) {
                         Text(
                             modifier = Modifier
-                                .clickable { onPodcastClick(podcast.id) },
+                                .clickable { onPodcastClick(podcast) },
                             text = podcast.title,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -284,13 +291,23 @@ private fun PlayerScreen(
                         speed = speed,
                         onList = { showPlaylistSheet = true },
                     )
+
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         }
 
         item {
-            InfoSection(
+            EpisodeInfoSection(
                 episode = nowPlaying
+            )
+        }
+
+        item {
+            PodcastInfoSection(
+                podcast = podcast,
+                onPodcastClick = { onPodcastClick(podcast) },
+                onToggleFollowed = { onTogglePodcastFollowed(podcast) }
             )
         }
 
@@ -517,28 +534,123 @@ private fun ControlPanelBottom(
 }
 
 @Composable
-private fun InfoSection(
+private fun CardSection(
+    modifier: Modifier = Modifier,
+    title: String,
+    onClick: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .padding(horizontal = 16.dp)
+    ) {
+        Card(
+            modifier = modifier
+                .animateContentSize(),
+            onClick = onClick,
+            shape = MaterialTheme.shapes.extraLarge,
+        ) {
+            SectionHeader(
+                modifier = Modifier.padding(vertical = 16.dp),
+                title = title,
+                titleStyle = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+            ) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun EpisodeInfoSection(
     modifier: Modifier = Modifier,
     episode: Episode,
 ) {
-    Card(
-        modifier = modifier.padding(16.dp),
-    ) {
-        SectionHeader(
-            modifier = Modifier.padding(vertical = 16.dp),
-            title = stringResource(R.string.feature_player_more_info),
-            contentPadding = PaddingValues(horizontal = 16.dp),
-        ) {
-            HtmlTextContainer(text = episode.description ?: "") {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+    var isExpanded by remember { mutableStateOf(false) }
 
-            Spacer(modifier = Modifier.height(16.dp))
+    CardSection(
+        modifier = modifier,
+        title = stringResource(R.string.feature_player_episode_info),
+        onClick = { isExpanded = !isExpanded }
+    ) {
+        Text(
+            text = episode.datePublished.toHumanReadable(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        HtmlTextContainer(
+            text = episode.description ?: ""
+        ) {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = if (isExpanded) Int.MAX_VALUE else 3,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = stringResource(
+                if (isExpanded) R.string.feature_player_show_less
+                else R.string.feature_player_show_more
+            ),
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+@Composable
+private fun PodcastInfoSection(
+    modifier: Modifier = Modifier,
+    podcast: Podcast,
+    onPodcastClick: () -> Unit = {},
+    onToggleFollowed: () -> Unit = {},
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    CardSection(
+        modifier = modifier.padding(vertical = 16.dp),
+        title = stringResource(R.string.feature_player_podcast_info),
+        onClick = { isExpanded = !isExpanded }
+    ) {
+        HtmlTextContainer(
+            text = podcast.description
+        ) {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = if (isExpanded) Int.MAX_VALUE else 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = stringResource(
+                if (isExpanded) R.string.feature_player_show_less
+                else R.string.feature_player_show_more
+            ),
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        PodcastSimpleItem(
+            podcast = podcast,
+            onClick = onPodcastClick,
+            onToggleFollowed = onToggleFollowed,
+        )
     }
 }
 
@@ -651,23 +763,45 @@ private fun PlayerScreenPreview() {
             progress = Progress(1000.seconds, 2000.seconds, 6000.seconds),
             isPlaying = true,
             isLike = false,
+            onCollapse = {},
+            onToggleLike = {},
+            onSeekTo = {},
+            onPlayOrPause = {},
+            onBackward = {},
+            onForward = {},
+            onPrevious = {},
+            onNext = {},
+            onPodcastClick = {},
             playlist = episodeTestDataList,
             indexOfList = 0,
+            onEpisodeClick = {},
+            onPlayIndex = {},
+            onToggleEpisodeLiked = {},
             speed = 1f,
+            onSpeedChange = {},
             chapters = listOf(
                 Chapter("Chapter 1", 0.seconds, 500.seconds),
                 Chapter("Chapter 2", 500.seconds, 1500.seconds),
                 Chapter("Chapter 3", 1500.seconds, 2500.seconds),
-            )
+            ),
+            onTogglePodcastFollowed = {},
         )
     }
 }
 
 @DevicePreviews
 @Composable
-private fun InfoSectionPreview() {
+private fun EpisodeInfoSectionPreview() {
     EpisodiveTheme {
-        InfoSection(episode = episodeTestData)
+        EpisodeInfoSection(episode = episodeTestData)
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun PodcastInfoSectionPreview() {
+    EpisodiveTheme {
+        PodcastInfoSection(podcast = podcastTestData)
     }
 }
 

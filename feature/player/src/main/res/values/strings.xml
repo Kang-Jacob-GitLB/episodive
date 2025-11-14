@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_player_more_info">More Info</string>
+    <string name="feature_player_episode_info">Episode Info</string>
+    <string name="feature_player_podcast_info">Podcast Info</string>
     <string name="feature_player_speed">x</string>
+    <string name="feature_player_show_more">See More</string>
+    <string name="feature_player_show_less">Show Less</string>
 </resources>

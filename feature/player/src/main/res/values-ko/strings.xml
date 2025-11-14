@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_player_more_info">추가 정보</string>
+    <string name="feature_player_episode_info">에피소드 정보</string>
+    <string name="feature_player_podcast_info">팟캐스트 정보</string>
     <string name="feature_player_speed">배속</string>
+    <string name="feature_player_show_more">더보기</string>
+    <string name="feature_player_show_less">간단히</string>
 </resources>

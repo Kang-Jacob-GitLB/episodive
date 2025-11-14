@@ -10,7 +10,6 @@ import io.jacob.episodive.core.domain.usecase.user.GetPreferredCategoriesUseCase
 import io.jacob.episodive.core.domain.usecase.user.SetFirstLaunchOffUseCase
 import io.jacob.episodive.core.domain.usecase.user.ToggleCategoryUseCase
 import io.jacob.episodive.core.model.Category
-import io.jacob.episodive.core.model.FollowablePodcast
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
 import kotlinx.coroutines.delay
@@ -51,24 +50,10 @@ class OnboardingViewModel @Inject constructor(
                 )
             }.let { flowOf(it) }
         }
-    private val _podcasts: Flow<List<FollowablePodcast>> =
-        combine(
-            getRecommendedPodcastsUseCase(),
-            getFollowedPodcastsUseCase(),
-        ) { recommendedPodcasts, followedPodcasts ->
-            val followedIds = followedPodcasts.map { it.id }.toSet()
-            Timber.d("recommendedPodcasts: ${recommendedPodcasts.size}, followedIds: $followedIds")
-            recommendedPodcasts.map { podcast ->
-                FollowablePodcast(
-                    podcast = podcast,
-                    isFollow = followedIds.contains(podcast.id),
-                )
-            }
-        }
 
     val state: StateFlow<OnboardingState> = combine(
         _categories,
-        _podcasts
+        getRecommendedPodcastsUseCase(),
     ) { categories, podcasts ->
         OnboardingState(
             categories = categories,
@@ -155,7 +140,7 @@ class OnboardingViewModel @Inject constructor(
 
 data class OnboardingState(
     val categories: List<SelectableCategory>,
-    val podcasts: List<FollowablePodcast>,
+    val podcasts: List<Podcast>,
 )
 
 sealed interface OnboardingAction {

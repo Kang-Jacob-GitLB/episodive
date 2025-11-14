@@ -40,4 +40,6 @@ data class Podcast(
     val newestItemPublishTime: Instant? = null,
     val followedAt: Instant? = null,
     val isNotificationEnabled: Boolean = false,
-)
+) {
+    val isFollowed: Boolean = followedAt != null
+}

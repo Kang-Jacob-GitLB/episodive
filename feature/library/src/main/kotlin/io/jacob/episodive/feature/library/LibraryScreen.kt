@@ -471,7 +471,6 @@ private fun FollowedContent(
                         .padding(horizontal = 16.dp)
                         .animateItem(),
                     podcast = followedPodcast,
-                    isFollowed = true,
                     onClick = { onFollowedPodcastClick(followedPodcast) },
                     onToggleFollowed = { onToggleFollowed(followedPodcast) }
                 )

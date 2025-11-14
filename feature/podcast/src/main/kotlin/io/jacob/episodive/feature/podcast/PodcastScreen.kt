@@ -2,7 +2,6 @@ package io.jacob.episodive.feature.podcast
 
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -34,7 +33,6 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.FadeTopBarLayout
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
-import io.jacob.episodive.core.designsystem.component.LoadingWheel
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.component.scrollbar.DraggableScrollbar
 import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
@@ -50,6 +48,7 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
 import kotlinx.coroutines.launch
+import io.jacob.episodive.core.designsystem.R as designR
 
 @Composable
 internal fun PodcastRoute(
@@ -220,7 +219,7 @@ private fun PodcastHeader(
                 buttonColors = ButtonDefaults.buttonColors(
                     containerColor = if (isFollowed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
                 ),
-                text = { Text(stringResource(if (isFollowed) R.string.feature_podcast_unfollow else R.string.feature_podcast_follow)) },
+                text = { Text(stringResource(if (isFollowed) designR.string.core_designsystem_unfollow else designR.string.core_designsystem_follow)) },
                 leadingIcon = {
                     Icon(
                         imageVector = if (isFollowed) EpisodiveIcons.PersonRemove else EpisodiveIcons.PersonAdd,
@@ -237,33 +236,6 @@ private fun PodcastHeader(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun LoadingScreen(
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        LoadingWheel()
-    }
-}
-
-@Composable
-private fun ErrorScreen(
-    modifier: Modifier = Modifier,
-    message: String,
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = message)
     }
 }
 

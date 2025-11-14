@@ -11,6 +11,7 @@ import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.image.GetDominantColorFromUrlUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
 import io.jacob.episodive.core.domain.usecase.user.SetSpeedUseCase
 import io.jacob.episodive.core.domain.util.combine
@@ -46,6 +47,7 @@ class PlayerViewModel @Inject constructor(
     private val setSpeedUseCase: SetSpeedUseCase,
     private val getUserDataUseCase: GetUserDataUseCase,
     private val getChaptersUseCase: GetChaptersUseCase,
+    private val toggleFollowedUseCase: ToggleFollowedUseCase,
 ) : ViewModel() {
     private val playingEpisode = combine(
         playerRepository.nowPlaying,
@@ -158,6 +160,7 @@ class PlayerViewModel @Inject constructor(
                 is PlayerAction.ClickEpisode -> clickEpisode(action.episode)
                 is PlayerAction.ToggleLike -> toggleCurrentEpisodeLiked()
                 is PlayerAction.ToggleEpisodeLiked -> toggleEpisodeLiked(action.episode)
+                is PlayerAction.TogglePodcastFollowed -> togglePodcastFollowed(action.podcast)
                 is PlayerAction.ExpandPlayer -> expandPlayer()
                 is PlayerAction.CollapsePlayer -> collapsePlayer()
             }
@@ -232,6 +235,10 @@ class PlayerViewModel @Inject constructor(
         toggleLikedUseCase(episode.id)
     }
 
+    private fun togglePodcastFollowed(podcast: Podcast) = viewModelScope.launch {
+        toggleFollowedUseCase(podcast.id)
+    }
+
     private fun expandPlayer() = viewModelScope.launch {
         _effect.emit(PlayerEffect.ShowPlayerBottomSheet)
     }
@@ -274,6 +281,7 @@ sealed interface PlayerAction {
     data class ClickEpisode(val episode: Episode) : PlayerAction
     data object ToggleLike : PlayerAction
     data class ToggleEpisodeLiked(val episode: Episode) : PlayerAction
+    data class TogglePodcastFollowed(val podcast: Podcast) : PlayerAction
     data object ExpandPlayer : PlayerAction
     data object CollapsePlayer : PlayerAction
 }

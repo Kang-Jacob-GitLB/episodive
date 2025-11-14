@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
@@ -90,11 +91,12 @@ fun EpisodiveScaffold(
 fun SectionHeader(
     modifier: Modifier = Modifier,
     title: String,
+    titleStyle: TextStyle = MaterialTheme.typography.headlineSmall,
     actionIcon: ImageVector? = null,
     actionIconContentDescription: String? = null,
     onActionClick: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    content: @Composable ColumnScope.() -> Unit = {}
+    content: @Composable ColumnScope.() -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -111,7 +113,7 @@ fun SectionHeader(
             Text(
                 modifier = Modifier.weight(1f),
                 text = title,
-                style = MaterialTheme.typography.headlineSmall,
+                style = titleStyle,
                 color = MaterialTheme.colorScheme.onSurface
             )
 

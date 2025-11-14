@@ -18,7 +18,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,7 +54,7 @@ import kotlin.time.Duration.Companion.seconds
 fun PlayerBar(
     modifier: Modifier = Modifier,
     viewModel: PlayerViewModel = hiltViewModel(),
-    onPodcastClick: (Long) -> Unit = {},
+    onPodcastClick: (Long) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -122,9 +121,9 @@ private fun PlayerBar(
     isLike: Boolean,
     chapters: List<Chapter>,
     dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    onExpand: () -> Unit = {},
-    onToggleLike: () -> Unit = {},
-    onPlayOrPause: () -> Unit = {},
+    onExpand: () -> Unit,
+    onToggleLike: () -> Unit,
+    onPlayOrPause: () -> Unit,
 ) {
     Card(
         modifier = modifier
@@ -236,13 +235,6 @@ private fun PlayerBar(
                 )
             }
 
-//            ProgressIndicator(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .align(Alignment.BottomCenter),
-//                progress = progress,
-//                chapters = chapters,
-//            )
             EpisodiveSeeker(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -255,36 +247,6 @@ private fun PlayerBar(
                 isControllable = false,
             )
         }
-    }
-}
-
-@Composable
-private fun ProgressIndicator(
-    modifier: Modifier = Modifier,
-    progress: Progress,
-    chapters: List<Chapter>,
-) {
-    Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
-    ) {
-        LinearProgressIndicator(
-            progress = { progress.bufferedRatio },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp)
-                .padding(horizontal = 10.dp),
-            color = MaterialTheme.colorScheme.outlineVariant,
-        )
-
-        LinearProgressIndicator(
-            progress = { progress.positionRatio },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp)
-                .padding(horizontal = 10.dp),
-            trackColor = Color.Transparent,
-        )
     }
 }
 
@@ -307,6 +269,9 @@ private fun PlayerBarPreview() {
                 Chapter("Chapter 2", 10.seconds, 80.seconds),
                 Chapter("Chapter 3", 80.seconds, 100.seconds),
             ),
+            onExpand = {},
+            onToggleLike = {},
+            onPlayOrPause = {},
         )
     }
 }

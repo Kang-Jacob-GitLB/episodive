@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
@@ -200,7 +201,6 @@ fun PodcastWithAuthorItem(
 fun PodcastDetailItem(
     modifier: Modifier = Modifier,
     podcast: Podcast,
-    isFollowed: Boolean,
     onClick: () -> Unit = {},
     onToggleFollowed: () -> Unit = {},
 ) {
@@ -242,7 +242,7 @@ fun PodcastDetailItem(
                     modifier = Modifier
                         .size(34.dp),
                     shape = MaterialTheme.shapes.medium,
-                    checked = isFollowed,
+                    checked = podcast.isFollowed,
                     onCheckedChange = { onToggleFollowed() },
                     icon = {
                         Icon(
@@ -348,6 +348,61 @@ fun PodcastDetailItem(
     }
 }
 
+@Composable
+fun PodcastSimpleItem(
+    modifier: Modifier = Modifier,
+    podcast: Podcast,
+    onClick: () -> Unit,
+    onToggleFollowed: () -> Unit,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        StateImage(
+            modifier = Modifier
+                .size(50.dp)
+                .clip(MaterialTheme.shapes.medium),
+            imageUrl = podcast.image,
+            contentDescription = podcast.title,
+        )
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = podcast.title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Text(
+                text = podcast.ownerName.ifEmpty { podcast.author },
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        EpisodiveOutlinedButton(
+            onClick = onToggleFollowed,
+            content = {
+                Text(
+                    stringResource(R.string.core_designsystem_follow)
+                )
+            }
+        )
+    }
+}
+
 @DevicePreviews
 @Composable
 private fun PodcastItemPreview() {
@@ -374,7 +429,18 @@ private fun PodcastDetailItemPreview() {
     EpisodiveTheme {
         PodcastDetailItem(
             podcast = podcastTestData,
-            isFollowed = false,
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun PodcastSimpleItemPreview() {
+    EpisodiveTheme {
+        PodcastSimpleItem(
+            podcast = podcastTestData,
+            onClick = {},
+            onToggleFollowed = {},
         )
     }
 }
