@@ -22,8 +22,6 @@ Navigation 4개 탭:
 ### 홈
 
 - [x] 최근 재생 에피소드 이어듣기 리스트 (horizontal)
-- [ ] 미리 듣기 리스트 (horizontal)
-    - /recent/soundbites
 - [x] 선호 최근 팟캐스트 리스트 (horizontal)
     - /recent/feeds (lang, cat)
 - [x] 랜덤 에피소드 리스트 (vertical 6)
@@ -89,7 +87,7 @@ local db
 ### 클립
 
 - [x] 구간 미리듣기
-- [ ] 에피소드 좋아요
+- [x] 에피소드 좋아요
 - [x] 에피소드 재생
 - [x] 클립 자동 넘어가기
 
@@ -109,11 +107,8 @@ local db
 - [x] description
 - [x] progress bar
 - [x] controls
-- [ ] timestamp
+- [ ] chapter
+- [ ] transcript
 - [x] playlist
 - [x] playback speed
 - [ ] sleep timer
-
----
-
-**최종 업데이트**: 2025-10-14

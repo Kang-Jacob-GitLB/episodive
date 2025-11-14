@@ -1,6 +1,5 @@
 package io.jacob.episodive.feature.player
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -29,14 +30,12 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,6 +45,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,6 +57,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveDragHandle
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
+import io.jacob.episodive.core.designsystem.component.EpisodiveSeeker
 import io.jacob.episodive.core.designsystem.component.EpisodiveTextButton
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.SectionHeader
@@ -65,10 +67,10 @@ import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.GradientColors
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
+import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
-import io.jacob.episodive.core.model.mapper.toLongMillis
 import io.jacob.episodive.core.model.mapper.toMediaTime
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
@@ -146,6 +148,7 @@ fun PlayerBottomSheet(
             onToggleEpisodeLiked = { viewModel.sendAction(PlayerAction.ToggleEpisodeLiked(it)) },
             speed = s.speed,
             onSpeedChange = { viewModel.sendAction(PlayerAction.Speed(it)) },
+            chapters = s.chapters,
         )
     }
 }
@@ -176,6 +179,7 @@ private fun PlayerScreen(
     onToggleEpisodeLiked: (Episode) -> Unit = {},
     speed: Float,
     onSpeedChange: (Float) -> Unit = {},
+    chapters: List<Chapter>,
 ) {
     val listState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
@@ -219,17 +223,19 @@ private fun PlayerScreen(
                         windowInsets = WindowInsets(0),
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.weight(1f))
 
                     StateImage(
                         modifier = Modifier
-                            .size(300.dp)
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .aspectRatio(1f)
                             .clip(MaterialTheme.shapes.extraExtraLarge),
                         imageUrl = nowPlaying.image.ifEmpty { nowPlaying.feedImage },
                         contentDescription = nowPlaying.title
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.weight(1f))
 
                     Column(
                         modifier = Modifier
@@ -261,8 +267,11 @@ private fun PlayerScreen(
                     ControlPanelProgress(
                         isPlaying = isPlaying,
                         progress = progress,
+                        chapters = chapters,
                         onSeekTo = onSeekTo
                     )
+
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     ControlPanelBottom(
                         isPlaying = isPlaying,
@@ -275,8 +284,6 @@ private fun PlayerScreen(
                         speed = speed,
                         onList = { showPlaylistSheet = true },
                     )
-
-                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
@@ -316,62 +323,24 @@ private fun ControlPanelProgress(
     modifier: Modifier = Modifier,
     isPlaying: Boolean,
     progress: Progress,
+    chapters: List<Chapter>,
     onSeekTo: (Long) -> Unit = {},
 ) {
-    var position by remember { mutableFloatStateOf(progress.positionRatio) }
-
-    LaunchedEffect(progress.position) {
-        position = progress.positionRatio
-    }
+    var chapterName by remember { mutableStateOf("") }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(24.dp),
+            .padding(horizontal = 24.dp),
     ) {
         Column(
             modifier = Modifier,
         ) {
-            Slider(
-                value = position,
-                onValueChange = { value ->
-                    position = value
-                },
-                onValueChangeFinished = {
-                    onSeekTo((position * progress.duration.toLongMillis()).toLong())
-                },
-                thumb = { sliderState ->
-                    val size = if (sliderState.isDragging) 24.dp else 16.dp
-                    Box(
-                        modifier = Modifier
-                            .size(size)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                    )
-                },
-                track = { sliderState ->
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
-                    )
-                    Box(
-                        Modifier
-                            .fillMaxWidth(progress.bufferedRatio)
-                            .height(8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.outlineVariant)
-                    )
-                    Box(
-                        Modifier
-                            .fillMaxWidth(sliderState.value)
-                            .height(8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                    )
-                }
+            EpisodiveSeeker(
+                progress = progress,
+                onSeekTo = onSeekTo,
+                chapters = chapters,
+                onChapterName = { chapterName = it }
             )
 
             Row(
@@ -381,15 +350,30 @@ private fun ControlPanelProgress(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
+                    modifier = Modifier.width(55.dp),
                     text = progress.position.toMediaTime(),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Start,
                 )
 
                 Text(
+                    modifier = Modifier
+                        .weight(1f),
+                    text = chapterName,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+
+                Text(
+                    modifier = Modifier.width(55.dp),
                     text = progress.duration.toMediaTime(),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.End,
                 )
             }
         }
@@ -412,8 +396,7 @@ private fun ControlPanelBottom(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .padding(top = 38.dp),
+            .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -665,12 +648,17 @@ private fun PlayerScreenPreview() {
         PlayerScreen(
             podcast = podcastTestData,
             nowPlaying = episodeTestData,
-            progress = Progress(1000.seconds, 2000.seconds, 3000.seconds),
+            progress = Progress(1000.seconds, 2000.seconds, 6000.seconds),
             isPlaying = true,
             isLike = false,
             playlist = episodeTestDataList,
             indexOfList = 0,
             speed = 1f,
+            chapters = listOf(
+                Chapter("Chapter 1", 0.seconds, 500.seconds),
+                Chapter("Chapter 2", 500.seconds, 1500.seconds),
+                Chapter("Chapter 3", 1500.seconds, 2500.seconds),
+            )
         )
     }
 }

@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.domain.repository
 
 import io.jacob.episodive.core.model.Category
+import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
@@ -59,4 +60,6 @@ interface EpisodeRepository {
     suspend fun updatePlayed(id: Long, position: Duration, isCompleted: Boolean)
 
     suspend fun updateDurationOfEpisodes(id: Long, duration: Duration)
+
+    suspend fun fetchChapters(url: String): List<Chapter>
 }

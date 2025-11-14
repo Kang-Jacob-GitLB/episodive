@@ -14,6 +14,9 @@ dependencies {
     implementation(projects.core.testing)
     implementation(projects.core.model)
 
+    //----- Seeker
+    implementation(libs.seeker)
+
     //----- Coil
     implementation(libs.coil.compose)
 

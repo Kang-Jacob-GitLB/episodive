@@ -4,6 +4,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import io.jacob.episodive.core.network.api.ChapterApi
 import io.jacob.episodive.core.network.api.EpisodeApi
 import io.jacob.episodive.core.network.api.FeedApi
 import io.jacob.episodive.core.network.api.PodcastApi
@@ -24,4 +25,8 @@ object ApiModule {
     @Provides
     @Singleton
     fun provideFeedApi(retrofit: Retrofit): FeedApi = retrofit.create(FeedApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideChapterApi(retrofit: Retrofit): ChapterApi = retrofit.create(ChapterApi::class.java)
 }

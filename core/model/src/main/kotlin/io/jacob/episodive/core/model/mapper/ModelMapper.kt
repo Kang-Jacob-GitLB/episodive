@@ -65,10 +65,10 @@ fun Duration.toHumanReadable(): String {
 
 fun Duration.toMediaTime(): String {
     return toComponents { hours, minutes, seconds, _ ->
-        buildString {
-            if (hours > 0) append("%02d:".format(hours))
-            append("%02d:".format(minutes))
-            append("%02d".format(seconds))
+        if (hours > 0) {
+            "$hours:%02d:%02d".format(minutes, seconds)
+        } else {
+            "$minutes:%02d".format(seconds)
         }
     }
 }

@@ -29,6 +29,7 @@ import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.domain.repository.RecentSearchRepository
 import io.jacob.episodive.core.domain.repository.UserRepository
+import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
@@ -59,11 +60,13 @@ object RepositoryModule {
     fun provideEpisodeRepository(
         episodeLocalDataSource: EpisodeLocalDataSource,
         episodeRemoteDataSource: EpisodeRemoteDataSource,
+        chapterRemoteDataSource: ChapterRemoteDataSource,
         episodeRemoteUpdater: EpisodeRemoteUpdater.Factory,
     ): EpisodeRepository {
         return EpisodeRepositoryImpl(
             localDataSource = episodeLocalDataSource,
             remoteDataSource = episodeRemoteDataSource,
+            chapterRemoteDataSource = chapterRemoteDataSource,
             remoteUpdater = episodeRemoteUpdater,
         )
     }
