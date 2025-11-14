@@ -36,11 +36,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
+import io.jacob.episodive.core.designsystem.component.EpisodiveSeeker
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
+import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
@@ -96,6 +98,7 @@ fun PlayerBar(
                 progress = s.progress,
                 isPlaying = s.isPlaying,
                 isLike = s.isLiked,
+                chapters = s.chapters,
                 dominantColor = Color(s.dominantColor),
                 onExpand = { viewModel.sendAction(PlayerAction.ExpandPlayer) },
                 onToggleLike = { viewModel.sendAction(PlayerAction.ToggleLike) },
@@ -117,6 +120,7 @@ private fun PlayerBar(
     progress: Progress,
     isPlaying: Boolean,
     isLike: Boolean,
+    chapters: List<Chapter>,
     dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
     onExpand: () -> Unit = {},
     onToggleLike: () -> Unit = {},
@@ -232,11 +236,23 @@ private fun PlayerBar(
                 )
             }
 
-            ProgressIndicator(
+//            ProgressIndicator(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .align(Alignment.BottomCenter),
+//                progress = progress,
+//                chapters = chapters,
+//            )
+            EpisodiveSeeker(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .align(Alignment.BottomCenter),
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 6.dp),
                 progress = progress,
+                onSeekTo = {},
+                chapters = chapters,
+                onChapterName = {},
+                isControllable = false,
             )
         }
     }
@@ -246,6 +262,7 @@ private fun PlayerBar(
 private fun ProgressIndicator(
     modifier: Modifier = Modifier,
     progress: Progress,
+    chapters: List<Chapter>,
 ) {
     Box(
         modifier = modifier.fillMaxWidth(),
@@ -285,6 +302,11 @@ private fun PlayerBarPreview() {
             ),
             isPlaying = false,
             isLike = false,
+            chapters = listOf(
+                Chapter("Chapter 1", 0.seconds, 10.seconds),
+                Chapter("Chapter 2", 10.seconds, 80.seconds),
+                Chapter("Chapter 3", 80.seconds, 100.seconds),
+            ),
         )
     }
 }
