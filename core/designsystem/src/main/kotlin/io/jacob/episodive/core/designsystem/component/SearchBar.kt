@@ -40,7 +40,7 @@ fun EpisodiveSearchBar(
     placeholder: @Composable () -> Unit = {},
     leadingIconOnCollapse: @Composable () -> Unit = {
         Icon(
-            EpisodiveIcons.SearchBorder,
+            EpisodiveIcons.Search,
             contentDescription = "Search"
         )
     },

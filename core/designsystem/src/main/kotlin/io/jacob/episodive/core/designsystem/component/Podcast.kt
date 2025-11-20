@@ -274,7 +274,7 @@ fun PodcastDetailItem(
                         EpisodiveIconText(
                             icon = {
                                 Icon(
-                                    imageVector = EpisodiveIcons.CreativeCommons,
+                                    imageVector = EpisodiveIcons.Owner,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(12.dp),

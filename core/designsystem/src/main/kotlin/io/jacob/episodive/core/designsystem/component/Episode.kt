@@ -175,7 +175,7 @@ fun EpisodeItem(
                 icon = {
                     Icon(
                         modifier = Modifier.size(24.dp),
-                        imageVector = EpisodiveIcons.PlayArrow,
+                        imageVector = EpisodiveIcons.Play,
                         contentDescription = "Like",
                     )
                 },
@@ -194,7 +194,7 @@ fun EpisodeItem(
                 icon = {
                     Icon(
                         modifier = Modifier.size(16.dp),
-                        imageVector = EpisodiveIcons.LikeBorder,
+                        imageVector = EpisodiveIcons.Like,
                         contentDescription = "Like",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
@@ -202,7 +202,7 @@ fun EpisodeItem(
                 checkedIcon = {
                     Icon(
                         modifier = Modifier.size(16.dp),
-                        imageVector = EpisodiveIcons.Like,
+                        imageVector = EpisodiveIcons.LikeFilled,
                         contentDescription = "Unlike",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
@@ -567,14 +567,14 @@ fun EpisodeClipItem(
                     ),
                     icon = {
                         Icon(
-                            imageVector = EpisodiveIcons.LikeBorder,
+                            imageVector = EpisodiveIcons.Like,
                             contentDescription = "Like",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     },
                     checkedIcon = {
                         Icon(
-                            imageVector = EpisodiveIcons.Like,
+                            imageVector = EpisodiveIcons.LikeFilled,
                             contentDescription = "Unlike",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -592,7 +592,7 @@ fun EpisodeClipItem(
                     ),
                     icon = {
                         Icon(
-                            imageVector = EpisodiveIcons.PlayArrow,
+                            imageVector = EpisodiveIcons.Play,
                             contentDescription = "Play",
                             tint = MaterialTheme.colorScheme.onSurface
                         )

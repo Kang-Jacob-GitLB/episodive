@@ -217,7 +217,7 @@ private fun PlayerScreen(
                         title = {},
                         navigationIcon = EpisodiveIcons.CaretDown,
                         navigationIconContentDescription = "Down",
-                        actionIcon = if (isLike) EpisodiveIcons.Like else EpisodiveIcons.LikeBorder,
+                        actionIcon = if (isLike) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
                         actionIconContentDescription = "Like",
                         onNavigationClick = onCollapse,
                         onActionClick = onToggleLike,
@@ -253,10 +253,13 @@ private fun PlayerScreen(
                     ) {
                         Text(
                             modifier = Modifier
+                                .fillMaxWidth()
+                                .basicMarquee()
                                 .clickable { onPodcastClick(podcast) },
                             text = podcast.title,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
                             maxLines = 1,
                         )
 
@@ -267,6 +270,7 @@ private fun PlayerScreen(
                             text = nowPlaying.title,
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
                             maxLines = 1,
                         )
                     }
@@ -454,7 +458,7 @@ private fun ControlPanelBottom(
                 icon = {
                     Icon(
                         modifier = Modifier.size(36.dp),
-                        imageVector = EpisodiveIcons.PlayArrow,
+                        imageVector = EpisodiveIcons.Play,
                         contentDescription = "Play",
                     )
                 },
@@ -524,7 +528,7 @@ private fun ControlPanelBottom(
                 icon = {
                     Icon(
                         modifier = Modifier.size(24.dp),
-                        imageVector = EpisodiveIcons.StackedView,
+                        imageVector = EpisodiveIcons.TransitionTop,
                         contentDescription = "List",
                     )
                 }

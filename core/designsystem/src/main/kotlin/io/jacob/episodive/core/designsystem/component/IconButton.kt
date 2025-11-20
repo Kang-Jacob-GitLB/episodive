@@ -209,7 +209,7 @@ private fun EpisodiveIconProgressButtonPreview() {
             progress = 0.5f,
         ) {
             Icon(
-                imageVector = EpisodiveIcons.PlayArrow,
+                imageVector = EpisodiveIcons.Play,
                 contentDescription = null,
             )
         }

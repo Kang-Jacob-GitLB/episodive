@@ -194,7 +194,7 @@ private fun PlayerBar(
                     icon = {
                         Icon(
                             modifier = Modifier.size(20.dp),
-                            imageVector = EpisodiveIcons.LikeBorder,
+                            imageVector = EpisodiveIcons.Like,
                             contentDescription = "Like",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -202,7 +202,7 @@ private fun PlayerBar(
                     checkedIcon = {
                         Icon(
                             modifier = Modifier.size(20.dp),
-                            imageVector = EpisodiveIcons.Like,
+                            imageVector = EpisodiveIcons.LikeFilled,
                             contentDescription = "Unlike",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -220,7 +220,7 @@ private fun PlayerBar(
                     ),
                     icon = {
                         Icon(
-                            imageVector = EpisodiveIcons.PlayArrow,
+                            imageVector = EpisodiveIcons.Play,
                             contentDescription = "Play",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
