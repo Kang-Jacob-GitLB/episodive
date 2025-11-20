@@ -234,7 +234,7 @@ private fun SectionHeaderPreview() {
     EpisodiveTheme {
         SectionHeader(
             title = "Preview",
-            actionIcon = EpisodiveIcons.KeyboardArrowRight,
+            actionIcon = EpisodiveIcons.CaretRight,
             actionIconContentDescription = "See All",
             onActionClick = {}
         ) {

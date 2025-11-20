@@ -40,7 +40,7 @@ fun StateImage(
     contentDescription: String?,
     contentScale: ContentScale = ContentScale.Crop,
     placeholderBrush: Brush = thumbnailPlaceholderDefaultBrush(),
-    fallbackIcon: ImageVector = EpisodiveIcons.ErrorOutline,
+    fallbackIcon: ImageVector = EpisodiveIcons.Error,
 ) {
     if (LocalInspectionMode.current) {
         Box(modifier = modifier.background(placeholderBrush))
@@ -95,7 +95,8 @@ fun StateImage(
             painter = imageLoader,
             contentDescription = contentDescription,
             contentScale = contentScale,
-            modifier = modifier,
+            modifier = Modifier
+                .fillMaxSize(),
         )
     }
 }

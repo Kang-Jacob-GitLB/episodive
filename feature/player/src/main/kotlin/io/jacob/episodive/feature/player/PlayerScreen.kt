@@ -215,9 +215,9 @@ private fun PlayerScreen(
                 ) {
                     EpisodiveCenterTopAppBar(
                         title = {},
-                        navigationIcon = EpisodiveIcons.KeyboardArrowDown,
+                        navigationIcon = EpisodiveIcons.CaretDown,
                         navigationIconContentDescription = "Down",
-                        actionIcon = if (isLike) EpisodiveIcons.Favorite else EpisodiveIcons.FavoriteBorder,
+                        actionIcon = if (isLike) EpisodiveIcons.Like else EpisodiveIcons.LikeBorder,
                         actionIconContentDescription = "Like",
                         onNavigationClick = onCollapse,
                         onActionClick = onToggleLike,
@@ -424,23 +424,23 @@ private fun ControlPanelBottom(
             verticalAlignment = Alignment.CenterVertically
         ) {
             EpisodiveIconButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(48.dp),
                 onClick = onBackward,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(40.dp),
-                        imageVector = EpisodiveIcons.Replay10,
+                        modifier = Modifier.size(32.dp),
+                        imageVector = EpisodiveIcons.Replay15,
                         contentDescription = "Replay",
                     )
                 }
             )
 
             EpisodiveIconButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(48.dp),
                 onClick = onPrevious,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(40.dp),
                         imageVector = EpisodiveIcons.SkipPrevious,
                         contentDescription = "Previous",
                     )
@@ -448,19 +448,19 @@ private fun ControlPanelBottom(
             )
 
             EpisodiveIconToggleButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(68.dp),
                 checked = isPlaying,
                 onCheckedChange = { onPlayOrPause() },
                 icon = {
                     Icon(
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(36.dp),
                         imageVector = EpisodiveIcons.PlayArrow,
                         contentDescription = "Play",
                     )
                 },
                 checkedIcon = {
                     Icon(
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(36.dp),
                         imageVector = EpisodiveIcons.Pause,
                         contentDescription = "Pause",
                     )
@@ -474,11 +474,11 @@ private fun ControlPanelBottom(
             )
 
             EpisodiveIconButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(48.dp),
                 onClick = onNext,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(40.dp),
                         imageVector = EpisodiveIcons.SkipNext,
                         contentDescription = "Next",
                     )
@@ -486,11 +486,11 @@ private fun ControlPanelBottom(
             )
 
             EpisodiveIconButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(48.dp),
                 onClick = onForward,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(32.dp),
                         imageVector = EpisodiveIcons.Forward30,
                         contentDescription = "Forward",
                     )
@@ -508,7 +508,7 @@ private fun ControlPanelBottom(
             val decimalFormat = DecimalFormat("#.#")
 
             EpisodiveTextButton(
-                modifier = Modifier.size(56.dp),
+//                modifier = Modifier.size(56.dp),
                 onClick = onSpeed,
                 contentPadding = PaddingValues(0.dp)
             ) {
@@ -519,12 +519,12 @@ private fun ControlPanelBottom(
             }
 
             EpisodiveIconButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(32.dp),
                 onClick = onList,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(32.dp),
-                        imageVector = EpisodiveIcons.List,
+                        modifier = Modifier.size(24.dp),
+                        imageVector = EpisodiveIcons.StackedView,
                         contentDescription = "List",
                     )
                 }

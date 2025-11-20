@@ -64,13 +64,13 @@ private fun EpisodiveNavigationBarPreview() {
         EpisodiveIcons.Home,
         EpisodiveIcons.Search,
         EpisodiveIcons.LibraryBooks,
-        EpisodiveIcons.AutoAwesome,
+        EpisodiveIcons.VoiceSample,
     )
     val unselectedIcon = listOf(
         EpisodiveIcons.HomeBorder,
         EpisodiveIcons.SearchBorder,
         EpisodiveIcons.LibraryBooksBorder,
-        EpisodiveIcons.AutoAwesomeBorder,
+        EpisodiveIcons.VoiceSampleBorder,
     )
 
     EpisodiveTheme {

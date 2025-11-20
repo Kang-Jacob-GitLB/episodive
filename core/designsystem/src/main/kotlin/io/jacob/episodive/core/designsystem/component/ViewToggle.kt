@@ -40,7 +40,7 @@ fun EpisodiveViewToggleButton(
             text = if (expanded) expandedText else compactText,
             trailingIcon = {
                 Icon(
-                    imageVector = if (expanded) EpisodiveIcons.ViewDay else EpisodiveIcons.ShortText,
+                    imageVector = if (expanded) EpisodiveIcons.Expand else EpisodiveIcons.Collapse,
                     contentDescription = null,
                 )
             },

@@ -274,7 +274,7 @@ fun PodcastDetailItem(
                         EpisodiveIconText(
                             icon = {
                                 Icon(
-                                    imageVector = EpisodiveIcons.Attribution,
+                                    imageVector = EpisodiveIcons.CreativeCommons,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(12.dp),
@@ -294,7 +294,7 @@ fun PodcastDetailItem(
                 EpisodiveIconText(
                     icon = {
                         Icon(
-                            imageVector = EpisodiveIcons.PublishedWithChanges,
+                            imageVector = EpisodiveIcons.PublicationDate,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(12.dp),
@@ -314,7 +314,7 @@ fun PodcastDetailItem(
                 EpisodiveIconText(
                     icon = {
                         Icon(
-                            imageVector = EpisodiveIcons.FormatListNumbered,
+                            imageVector = EpisodiveIcons.ListNumbered,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(12.dp),

@@ -47,8 +47,8 @@ enum class BottomBarDestination(
         baseRoute = LibraryBaseRoute::class,
     ),
     CLIP(
-        selectedIcon = EpisodiveIcons.AutoAwesome,
-        unselectedIcon = EpisodiveIcons.AutoAwesomeBorder,
+        selectedIcon = EpisodiveIcons.VoiceSample,
+        unselectedIcon = EpisodiveIcons.VoiceSampleBorder,
         iconTextId = clipR.string.feature_clip_title,
         route = ClipRoute::class,
         baseRoute = ClipBaseRoute::class,

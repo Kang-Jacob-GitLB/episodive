@@ -116,7 +116,7 @@ private fun EpisodiveTopAppBarPreview() {
     EpisodiveTheme {
         EpisodiveTopAppBar(
             title = { Text(text = "Title") },
-            navigationIcon = EpisodiveIcons.Search,
+            navigationIcon = EpisodiveIcons.SearchBorder,
             navigationIconContentDescription = "Navigation icon",
             actionIcon = EpisodiveIcons.MoreVert,
             actionIconContentDescription = "Action icon",
@@ -130,7 +130,7 @@ private fun EpisodiveCenterTopAppBarPreview() {
     EpisodiveTheme {
         EpisodiveCenterTopAppBar(
             title = { Text(text = "Title") },
-            navigationIcon = EpisodiveIcons.Search,
+            navigationIcon = EpisodiveIcons.SearchBorder,
             navigationIconContentDescription = "Navigation icon",
             actionIcon = EpisodiveIcons.MoreVert,
             actionIconContentDescription = "Action icon",

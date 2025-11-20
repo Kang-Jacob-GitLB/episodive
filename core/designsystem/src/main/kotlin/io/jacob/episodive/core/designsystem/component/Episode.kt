@@ -194,7 +194,7 @@ fun EpisodeItem(
                 icon = {
                     Icon(
                         modifier = Modifier.size(16.dp),
-                        imageVector = EpisodiveIcons.FavoriteBorder,
+                        imageVector = EpisodiveIcons.LikeBorder,
                         contentDescription = "Like",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
@@ -202,7 +202,7 @@ fun EpisodeItem(
                 checkedIcon = {
                     Icon(
                         modifier = Modifier.size(16.dp),
-                        imageVector = EpisodiveIcons.Favorite,
+                        imageVector = EpisodiveIcons.Like,
                         contentDescription = "Unlike",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
@@ -567,14 +567,14 @@ fun EpisodeClipItem(
                     ),
                     icon = {
                         Icon(
-                            imageVector = EpisodiveIcons.FavoriteBorder,
+                            imageVector = EpisodiveIcons.LikeBorder,
                             contentDescription = "Like",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     },
                     checkedIcon = {
                         Icon(
-                            imageVector = EpisodiveIcons.Favorite,
+                            imageVector = EpisodiveIcons.Like,
                             contentDescription = "Unlike",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
