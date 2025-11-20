@@ -8,7 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -32,6 +32,7 @@ fun EpisodiveSeeker(
     onSeekTo: (Long) -> Unit,
     chapters: List<Chapter>,
     onChapterName: (String) -> Unit,
+    onChapterIndex: (Int) -> Unit = {},
     isControllable: Boolean = true,
 ) {
     val state = rememberSeekerState()
@@ -42,10 +43,11 @@ fun EpisodiveSeeker(
     val gap by animateDpAsState(if (isDragging) 4.dp else 2.dp)
     val thumbRadius by animateDpAsState(if (isDragging) 10.dp else 6.dp)
 
-    var thumbPosition by remember { mutableStateOf(0f) }
+    var thumbPosition by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(state.currentSegment) {
         onChapterName(state.currentSegment.name)
+        onChapterIndex(chapters.indexOfFirst { it.title == state.currentSegment.name })
     }
 
     Seeker(

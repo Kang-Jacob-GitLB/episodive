@@ -53,6 +53,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.jacob.episodive.core.designsystem.component.ChapterItem
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveCenterTopAppBar
 import io.jacob.episodive.core.designsystem.component.EpisodiveDial
@@ -76,6 +77,7 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.mapper.toHumanReadable
+import io.jacob.episodive.core.model.mapper.toLongMillis
 import io.jacob.episodive.core.model.mapper.toMediaTime
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
@@ -192,6 +194,7 @@ private fun PlayerScreen(
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
     var showSpeedSheet by remember { mutableStateOf(false) }
     var showPlaylistSheet by remember { mutableStateOf(false) }
+    var chapterIndex by remember { mutableStateOf(0) }
 
     LazyColumn(
         modifier = modifier
@@ -202,7 +205,7 @@ private fun PlayerScreen(
             EpisodiveGradientBackground(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillParentMaxHeight(0.95f),
+                    .fillParentMaxHeight(0.92f),
                 gradientColors = GradientColors(
                     top = dominantColor,
                 )
@@ -279,7 +282,8 @@ private fun PlayerScreen(
                         isPlaying = isPlaying,
                         progress = progress,
                         chapters = chapters,
-                        onSeekTo = onSeekTo
+                        onSeekTo = onSeekTo,
+                        onChapterIndex = { chapterIndex = it }
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -305,6 +309,18 @@ private fun PlayerScreen(
             EpisodeInfoSection(
                 episode = nowPlaying
             )
+        }
+
+        if (chapters.isNotEmpty()) {
+            item {
+                ChapterSection(
+                    chapters = chapters,
+                    selectedChapterIndex = chapterIndex,
+                    onChapterClick = { chapter ->
+                        onSeekTo(chapter.startTime.toLongMillis())
+                    },
+                )
+            }
         }
 
         item {
@@ -346,6 +362,7 @@ private fun ControlPanelProgress(
     progress: Progress,
     chapters: List<Chapter>,
     onSeekTo: (Long) -> Unit = {},
+    onChapterIndex: (Int) -> Unit = {},
 ) {
     var chapterName by remember { mutableStateOf("") }
 
@@ -361,7 +378,8 @@ private fun ControlPanelProgress(
                 progress = progress,
                 onSeekTo = onSeekTo,
                 chapters = chapters,
-                onChapterName = { chapterName = it }
+                onChapterName = { chapterName = it },
+                onChapterIndex = onChapterIndex,
             )
 
             Row(
@@ -546,7 +564,7 @@ private fun CardSection(
 ) {
     Box(
         modifier = modifier
-            .padding(horizontal = 16.dp)
+            .padding(16.dp)
     ) {
         Card(
             modifier = modifier
@@ -621,7 +639,7 @@ private fun PodcastInfoSection(
     var isExpanded by remember { mutableStateOf(false) }
 
     CardSection(
-        modifier = modifier.padding(vertical = 16.dp),
+        modifier = modifier,
         title = stringResource(R.string.feature_player_podcast_info),
         onClick = { isExpanded = !isExpanded }
     ) {
@@ -655,6 +673,56 @@ private fun PodcastInfoSection(
             onClick = onPodcastClick,
             onToggleFollowed = onToggleFollowed,
         )
+    }
+}
+
+@Composable
+private fun ChapterSection(
+    modifier: Modifier = Modifier,
+    chapters: List<Chapter>,
+    selectedChapterIndex: Int,
+    onChapterClick: (Chapter) -> Unit = {},
+) {
+    val countLimit = 5
+    var isExpanded by remember { mutableStateOf(false) }
+
+    CardSection(
+        modifier = modifier,
+        title = stringResource(R.string.feature_player_chapter),
+        onClick = { isExpanded = !isExpanded }
+    ) {
+        val displayedChapters = if (isExpanded) {
+            chapters.withIndex().toList()
+        } else {
+            val startIndex = if (selectedChapterIndex < countLimit) {
+                0
+            } else {
+                minOf(selectedChapterIndex - 2, chapters.size - countLimit).coerceAtLeast(0)
+            }
+            val endIndex = (startIndex + countLimit).coerceAtMost(chapters.size)
+            chapters.withIndex().toList().subList(startIndex, endIndex)
+        }
+
+        displayedChapters.forEach { (index, chapter) ->
+            ChapterItem(
+                chapter = chapter,
+                isSelected = index == selectedChapterIndex,
+                onClick = { onChapterClick(chapter) }
+            )
+        }
+
+        if (chapters.size > countLimit) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = stringResource(
+                    if (isExpanded) R.string.feature_player_show_less
+                    else R.string.feature_player_show_more
+                ),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 
@@ -806,6 +874,22 @@ private fun EpisodeInfoSectionPreview() {
 private fun PodcastInfoSectionPreview() {
     EpisodiveTheme {
         PodcastInfoSection(podcast = podcastTestData)
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun ChapterSectionPreview() {
+    EpisodiveTheme {
+        ChapterSection(
+            chapters = listOf(
+                Chapter("Chapter 1", 0.seconds, 500.seconds),
+                Chapter("Chapter 2", 500.seconds, 1500.seconds),
+                Chapter("Chapter 3", 1500.seconds, 2500.seconds),
+            ),
+            selectedChapterIndex = 0,
+            onChapterClick = {}
+        )
     }
 }
 

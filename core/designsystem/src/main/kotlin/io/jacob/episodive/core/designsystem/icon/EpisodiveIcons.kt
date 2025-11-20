@@ -16,6 +16,8 @@ import io.jacob.episodive.core.designsystem.icon.tabler.FountainFilled
 import io.jacob.episodive.core.designsystem.icon.tabler.HeartFilled
 import io.jacob.episodive.core.designsystem.icon.tabler.HeartPlus
 import io.jacob.episodive.core.designsystem.icon.tabler.History
+import io.jacob.episodive.core.designsystem.icon.tabler.Label
+import io.jacob.episodive.core.designsystem.icon.tabler.LetterISmall
 import io.jacob.episodive.core.designsystem.icon.tabler.LetterXSmall
 import io.jacob.episodive.core.designsystem.icon.tabler.List
 import io.jacob.episodive.core.designsystem.icon.tabler.ListNumbers
@@ -53,6 +55,8 @@ object EpisodiveIcons {
     val History = Tabler.History
     val Home = Tabler.Blob
     val HomeFilled = Tabler.BlobFilled
+    val Label = Tabler.Label
+    val LetterI = Tabler.LetterISmall
     val LetterX = Tabler.LetterXSmall
     val Library = Tabler.Fountain
     val LibraryFilled = Tabler.FountainFilled
