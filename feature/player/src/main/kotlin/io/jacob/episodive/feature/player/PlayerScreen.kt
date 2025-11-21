@@ -63,9 +63,9 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveSeeker
 import io.jacob.episodive.core.designsystem.component.EpisodiveTextButton
+import io.jacob.episodive.core.designsystem.component.EpisodiveViewToggleButton
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.PodcastSimpleItem
-import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.component.episodeItems
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
@@ -559,6 +559,7 @@ private fun ControlPanelBottom(
 private fun CardSection(
     modifier: Modifier = Modifier,
     title: String,
+    expanded: Boolean,
     onClick: () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -567,17 +568,30 @@ private fun CardSection(
             .padding(16.dp)
     ) {
         Card(
-            modifier = modifier
+            modifier = Modifier
                 .animateContentSize(),
             onClick = onClick,
             shape = MaterialTheme.shapes.extraLarge,
         ) {
-            SectionHeader(
-                modifier = Modifier.padding(vertical = 16.dp),
-                title = title,
-                titleStyle = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                contentPadding = PaddingValues(horizontal = 16.dp),
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp, horizontal = 24.dp),
             ) {
+                EpisodiveViewToggleButton(
+                    modifier = Modifier.padding(bottom = 4.dp),
+                    expanded = expanded,
+                    onExpandedChange = { onClick() },
+                    contentPadding = PaddingValues(0.dp),
+                    text = {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = title,
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        )
+                    }
+                )
+
                 content()
             }
         }
@@ -594,6 +608,7 @@ private fun EpisodeInfoSection(
     CardSection(
         modifier = modifier,
         title = stringResource(R.string.feature_player_episode_info),
+        expanded = isExpanded,
         onClick = { isExpanded = !isExpanded }
     ) {
         Text(
@@ -615,17 +630,6 @@ private fun EpisodeInfoSection(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = stringResource(
-                if (isExpanded) R.string.feature_player_show_less
-                else R.string.feature_player_show_more
-            ),
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
     }
 }
 
@@ -641,6 +645,7 @@ private fun PodcastInfoSection(
     CardSection(
         modifier = modifier,
         title = stringResource(R.string.feature_player_podcast_info),
+        expanded = isExpanded,
         onClick = { isExpanded = !isExpanded }
     ) {
         HtmlTextContainer(
@@ -654,17 +659,6 @@ private fun PodcastInfoSection(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = stringResource(
-                if (isExpanded) R.string.feature_player_show_less
-                else R.string.feature_player_show_more
-            ),
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -689,6 +683,7 @@ private fun ChapterSection(
     CardSection(
         modifier = modifier,
         title = stringResource(R.string.feature_player_chapter),
+        expanded = isExpanded,
         onClick = { isExpanded = !isExpanded }
     ) {
         val displayedChapters = if (isExpanded) {

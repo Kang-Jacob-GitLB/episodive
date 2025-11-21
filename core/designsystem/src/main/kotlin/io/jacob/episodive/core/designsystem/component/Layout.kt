@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
@@ -52,7 +54,7 @@ fun EpisodiveScaffold(
     onNavigationClick: () -> Unit = {},
     onActionClick: () -> Unit = {},
     scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
-    content: @Composable (PaddingValues, NestedScrollConnection) -> Unit
+    content: @Composable (PaddingValues, NestedScrollConnection) -> Unit,
 ) {
     Scaffold(
         modifier = modifier,
@@ -105,8 +107,7 @@ fun SectionHeader(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 16.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -134,6 +135,8 @@ fun SectionHeader(
             modifier = Modifier.padding(contentPadding)
         ) {
             content()
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -143,7 +146,7 @@ fun SubSectionHeader(
     modifier: Modifier = Modifier,
     title: String,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    content: @Composable ColumnScope.() -> Unit = {}
+    content: @Composable ColumnScope.() -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -173,7 +176,7 @@ fun FadeTopBarLayout(
     offset: Int = 700,
     title: String,
     onBack: () -> Unit,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     val showTopBar by remember {
         derivedStateOf {

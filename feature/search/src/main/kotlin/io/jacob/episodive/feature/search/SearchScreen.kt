@@ -320,7 +320,7 @@ private fun RecentSearchesSection(
     SectionHeader(
         modifier = modifier,
         title = title,
-        actionIcon = EpisodiveIcons.Close,
+        actionIcon = EpisodiveIcons.PlaylistX,
         actionIconContentDescription = "Clear recent searches",
         onActionClick = onClearRecentSearches,
     ) {
