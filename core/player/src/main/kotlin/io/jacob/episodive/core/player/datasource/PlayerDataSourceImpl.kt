@@ -9,18 +9,27 @@ import androidx.media3.exoplayer.ExoPlayer
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.mapper.toDurationMillis
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.Duration
 
 class PlayerDataSourceImpl @Inject constructor(
-    val player: ExoPlayer
+    val player: ExoPlayer,
 ) : PlayerDataSource {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     private val listener = object : Player.Listener {
         override fun onTimelineChanged(timeline: Timeline, reason: Int) {
             Timber.d(
@@ -124,10 +133,6 @@ class PlayerDataSourceImpl @Inject constructor(
         override fun onPlayerError(error: PlaybackException) {
             Timber.e("errorCode: ${error.errorCode}, errorCodeName: ${error.errorCodeName}, message: ${error.message}, cause: ${error.cause}")
         }
-    }
-
-    init {
-        player.addListener(listener)
     }
 
     override fun play(episode: Episode) {
@@ -256,6 +261,11 @@ class PlayerDataSourceImpl @Inject constructor(
 
     override fun seekTo(position: Long) {
         player.seekTo(position)
+        _progress.value = Progress(
+            position = position.toDurationMillis(),
+            buffered = player.bufferedPosition.toDurationMillis(),
+            duration = player.duration.toDurationMillis(),
+        )
     }
 
     override fun seekBackward() {
@@ -380,6 +390,7 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     override fun release() {
+        scope.cancel()
         player.release()
         player.removeListener(listener)
     }
@@ -408,7 +419,16 @@ class PlayerDataSourceImpl @Inject constructor(
     private val _speed = MutableStateFlow(1.0f)
     override val speed: Flow<Float> = _speed
 
-    override val progress: Flow<Progress> = combine(
+    private val _progress = MutableStateFlow(
+        Progress(
+            position = Duration.ZERO,
+            buffered = Duration.ZERO,
+            duration = Duration.ZERO,
+        )
+    )
+    override val progress: Flow<Progress> = _progress
+
+    private val progressUpdater: Flow<Unit> = combine(
         _isPlaying,
         _playback
     ) { isPlaying, playback ->
@@ -416,26 +436,42 @@ class PlayerDataSourceImpl @Inject constructor(
     }.flatMapLatest { (isPlaying, playback) ->
         flow {
             while (isPlaying) {
-                emit(
-                    Progress(
-                        position = player.currentPosition.toDurationMillis(),
-                        buffered = player.bufferedPosition.toDurationMillis(),
-                        duration = player.duration.toDurationMillis(),
-                    )
-                )
+                val progressValue = withContext(Dispatchers.Main) {
+                    val duration = player.duration.toDurationMillis()
+                    if (duration.isPositive()) {
+                        Progress(
+                            position = player.currentPosition.toDurationMillis(),
+                            buffered = player.bufferedPosition.toDurationMillis(),
+                            duration = duration,
+                        )
+                    } else {
+                        null
+                    }
+                }
+                progressValue?.let { _progress.value = it }
                 delay(500L)
             }
 
             if (playback == Player.STATE_ENDED) {
-                val duration = player.duration.toDurationMillis()
-                emit(
-                    Progress(
-                        position = duration,
-                        buffered = duration,
-                        duration = duration,
-                    )
-                )
+                val progressValue = withContext(Dispatchers.Main) {
+                    val duration = player.duration.toDurationMillis()
+                    if (duration.isPositive()) {
+                        Progress(
+                            position = duration,
+                            buffered = duration,
+                            duration = duration,
+                        )
+                    } else {
+                        null
+                    }
+                }
+                progressValue?.let { _progress.value = it }
             }
         }
+    }
+
+    init {
+        player.addListener(listener)
+        progressUpdater.launchIn(scope)
     }
 }
