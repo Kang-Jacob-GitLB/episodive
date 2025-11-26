@@ -6,6 +6,7 @@ import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeDtos
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
+import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
@@ -32,11 +33,13 @@ class EpisodeRepositoryTest {
 
     private val localDataSource = mockk<EpisodeLocalDataSource>(relaxed = true)
     private val remoteDataSource = mockk<EpisodeRemoteDataSource>(relaxed = true)
+    private val chapterRemoteDataSource = mockk<ChapterRemoteDataSource>(relaxed = true)
     private val remoteUpdater = mockk<EpisodeRemoteUpdater.Factory>(relaxed = true)
 
     private val repository: EpisodeRepository = EpisodeRepositoryImpl(
         localDataSource = localDataSource,
         remoteDataSource = remoteDataSource,
+        chapterRemoteDataSource = chapterRemoteDataSource,
         remoteUpdater = remoteUpdater,
     )
 
