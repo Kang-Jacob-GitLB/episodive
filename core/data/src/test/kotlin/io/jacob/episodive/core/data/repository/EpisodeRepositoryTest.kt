@@ -47,23 +47,8 @@ class EpisodeRepositoryTest {
 
     @After
     fun teardown() {
-        confirmVerified(localDataSource, remoteDataSource, remoteUpdater)
+        confirmVerified(localDataSource, remoteDataSource, remoteUpdater, chapterRemoteDataSource)
     }
-
-    @Test
-    fun `Given dependencies, When updateDurationOfEpisodes is called, Then calls localDataSource updateDurationOfEpisodes`() =
-        runTest {
-            // Given
-            coEvery { localDataSource.updateDurationOfEpisodes(any(), any()) } just Runs
-
-            // When
-            repository.updateDurationOfEpisodes(123L, 30.seconds)
-
-            // Then
-            coVerifySequence {
-                localDataSource.updateDurationOfEpisodes(123L, 30.seconds)
-            }
-        }
 
     @Test
     fun `Given person, When searchEpisodesByPerson, Then creates correct query and calls sourceFactory`() =
@@ -431,6 +416,37 @@ class EpisodeRepositoryTest {
                         it.id == episodeId && it.position == position && it.isCompleted == isCompleted
                     }
                 )
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When updateDurationOfEpisodes is called, Then calls localDataSource updateDurationOfEpisodes`() =
+        runTest {
+            // Given
+            coEvery { localDataSource.updateDurationOfEpisodes(any(), any()) } just Runs
+
+            // When
+            repository.updateDurationOfEpisodes(123L, 30.seconds)
+
+            // Then
+            coVerifySequence {
+                localDataSource.updateDurationOfEpisodes(123L, 30.seconds)
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When fetchChapters is called, Then calls chapterRemoteDataSource fetchChapters`() =
+        runTest {
+            // Given
+            val url = "https://example.com/chapters.json"
+            coEvery { chapterRemoteDataSource.fetchChapters(any()) } returns emptyList()
+
+            // When
+            repository.fetchChapters(url)
+
+            // Then
+            coVerifySequence {
+                chapterRemoteDataSource.fetchChapters(url)
             }
         }
 }

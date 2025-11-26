@@ -106,4 +106,26 @@ class FlowExtTest {
             awaitComplete()
         }
     }
+
+    @Test
+    fun combine10Test() = runTest {
+        val combined = combine(
+            flowOf("a"),
+            flowOf("b"),
+            flowOf("c"),
+            flowOf("d"),
+            flowOf("e"),
+            flowOf("f"),
+            flowOf("g"),
+            flowOf("h"),
+            flowOf("i"),
+            flowOf("j"),
+        ) { a, b, c, d, e, f, g, h, i, j ->
+            a + b + c + d + e + f + g + h + i + j
+        }
+        combined.test {
+            assertEquals("abcdefghij", awaitItem())
+            awaitComplete()
+        }
+    }
 }
