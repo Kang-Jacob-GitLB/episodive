@@ -363,4 +363,73 @@ class PodcastDaoTest {
             // Then
             assertFalse(dao.isFollowed(podcastEntities[3].id))
         }
+
+    @Test
+    fun `Given a podcast, When addFollowed is called, Then getPodcast flow emits updated value`() =
+        runTest {
+            // Given - Insert podcast first
+            dao.upsertPodcast(podcastEntity)
+
+            dao.getPodcast(podcastEntity.id).test {
+                // Then - Initially no follow information
+                val initial = awaitItem()
+                assertEquals(podcastEntity.id, initial?.podcast?.id)
+                assertEquals(null, initial?.followedAt)
+                assertEquals(null, initial?.isNotificationEnabled)
+
+                // When - Add follow
+                val followedAt = Clock.System.now()
+                dao.addFollowed(
+                    FollowedPodcastEntity(
+                        id = podcastEntity.id,
+                        followedAt = followedAt,
+                        isNotificationEnabled = true
+                    )
+                )
+
+                // Then - Flow should emit updated value with follow information
+                val updated = awaitItem()
+                assertEquals(podcastEntity.id, updated?.podcast?.id)
+                // Check followedAt is not null (precision may be lost in Room storage)
+                assertTrue(updated?.followedAt != null)
+                assertEquals(true, updated?.isNotificationEnabled)
+
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given a followed podcast, When removeFollowed is called, Then getPodcast flow emits updated value`() =
+        runTest {
+            // Given - Insert podcast and follow it
+            dao.upsertPodcast(podcastEntity)
+            val followedAt = Clock.System.now()
+            dao.addFollowed(
+                FollowedPodcastEntity(
+                    id = podcastEntity.id,
+                    followedAt = followedAt,
+                    isNotificationEnabled = true
+                )
+            )
+
+            dao.getPodcast(podcastEntity.id).test {
+                // Then - Initially has follow information
+                val initial = awaitItem()
+                assertEquals(podcastEntity.id, initial?.podcast?.id)
+                // Check followedAt is not null (precision may be lost in Room storage)
+                assertTrue(initial?.followedAt != null)
+                assertEquals(true, initial?.isNotificationEnabled)
+
+                // When - Remove follow
+                dao.removeFollowed(podcastEntity.id)
+
+                // Then - Flow should emit updated value without follow information
+                val updated = awaitItem()
+                assertEquals(podcastEntity.id, updated?.podcast?.id)
+                assertEquals(null, updated?.followedAt)
+                assertEquals(null, updated?.isNotificationEnabled)
+
+                cancel()
+            }
+        }
 }

@@ -40,7 +40,7 @@ fun StateImage(
     contentDescription: String?,
     contentScale: ContentScale = ContentScale.Crop,
     placeholderBrush: Brush = thumbnailPlaceholderDefaultBrush(),
-    fallbackIcon: ImageVector = EpisodiveIcons.ErrorOutline,
+    fallbackIcon: ImageVector = EpisodiveIcons.Error,
 ) {
     if (LocalInspectionMode.current) {
         Box(modifier = modifier.background(placeholderBrush))
@@ -65,8 +65,10 @@ fun StateImage(
         contentAlignment = Alignment.Center
     ) {
         when (imagePainterState) {
-//            is AsyncImagePainter.State.Loading,
-            is AsyncImagePainter.State.Error -> {
+            is AsyncImagePainter.State.Empty,
+            is AsyncImagePainter.State.Loading,
+            is AsyncImagePainter.State.Error,
+                -> {
                 Timber.w("Image($imageUrl) load error: ${(imagePainterState as? AsyncImagePainter.State.Error)?.result?.throwable.toString()}")
                 Box(
                     modifier = Modifier
@@ -82,10 +84,10 @@ fun StateImage(
                 }
             }
 
-            else -> {
+            is AsyncImagePainter.State.Success -> {
                 Box(
                     modifier = Modifier
-                        .background(placeholderBrush)
+                        .background(MaterialTheme.colorScheme.onBackground)
                         .fillMaxSize()
                 )
             }
@@ -95,7 +97,8 @@ fun StateImage(
             painter = imageLoader,
             contentDescription = contentDescription,
             contentScale = contentScale,
-            modifier = modifier,
+            modifier = Modifier
+                .fillMaxSize(),
         )
     }
 }

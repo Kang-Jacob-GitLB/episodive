@@ -1,5 +1,6 @@
 package io.jacob.episodive.feature.home
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -143,9 +144,11 @@ private fun HomeScreen(
             },
             content = {
                 Column(
-                    modifier = Modifier.onSizeChanged { size ->
-                        contentHeight = with(density) { size.height.toDp() }
-                    }
+                    modifier = Modifier
+                        .animateContentSize()
+                        .onSizeChanged { size ->
+                            contentHeight = with(density) { size.height.toDp() }
+                        }
                 ) {
                     if (playingEpisodes.isNotEmpty()) {
                         PlayingEpisodesSection(
@@ -252,7 +255,7 @@ private fun HomeScreen(
 fun LazyListScope.itemWithDivider(
     key: Any? = null,
     contentType: Any? = null,
-    content: @Composable LazyItemScope.() -> Unit
+    content: @Composable LazyItemScope.() -> Unit,
 ) {
     item(key, contentType, content)
     item {

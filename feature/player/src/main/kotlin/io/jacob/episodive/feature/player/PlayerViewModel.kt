@@ -5,14 +5,17 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.di.MainPlayerRepository
 import io.jacob.episodive.core.domain.repository.PlayerRepository
+import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.image.GetDominantColorFromUrlUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
 import io.jacob.episodive.core.domain.usecase.user.SetSpeedUseCase
 import io.jacob.episodive.core.domain.util.combine
+import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
@@ -27,6 +30,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -42,6 +46,8 @@ class PlayerViewModel @Inject constructor(
     @param:MainPlayerRepository private val playerRepository: PlayerRepository,
     private val setSpeedUseCase: SetSpeedUseCase,
     private val getUserDataUseCase: GetUserDataUseCase,
+    private val getChaptersUseCase: GetChaptersUseCase,
+    private val toggleFollowedUseCase: ToggleFollowedUseCase,
 ) : ViewModel() {
     private val playingEpisode = combine(
         playerRepository.nowPlaying,
@@ -68,6 +74,13 @@ class PlayerViewModel @Inject constructor(
             flowOf(color)
         }
 
+    private val chapters = playerRepository.nowPlaying.map { it?.chaptersUrl }
+        .flatMapLatest { chaptersUrl ->
+            val chapters = chaptersUrl?.let { getChaptersUseCase(it) } ?: emptyList()
+            flowOf(chapters)
+        }
+
+
     val state: StateFlow<PlayerState> = combine(
         podcast,
         playerRepository.nowPlaying,
@@ -78,7 +91,8 @@ class PlayerViewModel @Inject constructor(
         playerRepository.speed,
         isLiked,
         dominantColor,
-    ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, isLiked, dominantColor ->
+        chapters,
+    ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, isLiked, dominantColor, chapters ->
         if (podcast != null && nowPlaying != null) {
             PlayerState.Success(
                 podcast = podcast,
@@ -90,6 +104,7 @@ class PlayerViewModel @Inject constructor(
                 speed = speed,
                 isLiked = isLiked,
                 dominantColor = dominantColor,
+                chapters = chapters,
             ) as PlayerState
         } else {
             PlayerState.Error("podcast or nowPlaying is null")
@@ -145,6 +160,7 @@ class PlayerViewModel @Inject constructor(
                 is PlayerAction.ClickEpisode -> clickEpisode(action.episode)
                 is PlayerAction.ToggleLike -> toggleCurrentEpisodeLiked()
                 is PlayerAction.ToggleEpisodeLiked -> toggleEpisodeLiked(action.episode)
+                is PlayerAction.TogglePodcastFollowed -> togglePodcastFollowed(action.podcast)
                 is PlayerAction.ExpandPlayer -> expandPlayer()
                 is PlayerAction.CollapsePlayer -> collapsePlayer()
             }
@@ -219,6 +235,10 @@ class PlayerViewModel @Inject constructor(
         toggleLikedUseCase(episode.id)
     }
 
+    private fun togglePodcastFollowed(podcast: Podcast) = viewModelScope.launch {
+        toggleFollowedUseCase(podcast.id)
+    }
+
     private fun expandPlayer() = viewModelScope.launch {
         _effect.emit(PlayerEffect.ShowPlayerBottomSheet)
     }
@@ -240,6 +260,7 @@ sealed interface PlayerState {
         val speed: Float,
         val isLiked: Boolean,
         val dominantColor: ULong,
+        val chapters: List<Chapter>,
     ) : PlayerState
 
     data class Error(val message: String) : PlayerState
@@ -260,6 +281,7 @@ sealed interface PlayerAction {
     data class ClickEpisode(val episode: Episode) : PlayerAction
     data object ToggleLike : PlayerAction
     data class ToggleEpisodeLiked(val episode: Episode) : PlayerAction
+    data class TogglePodcastFollowed(val podcast: Podcast) : PlayerAction
     data object ExpandPlayer : PlayerAction
     data object CollapsePlayer : PlayerAction
 }

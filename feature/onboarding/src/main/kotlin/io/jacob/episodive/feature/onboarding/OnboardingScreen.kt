@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -61,7 +62,6 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.GradientColors
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Category
-import io.jacob.episodive.core.model.FollowablePodcast
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
 import io.jacob.episodive.core.testing.model.podcastTestDataList
@@ -113,8 +113,8 @@ fun OnboardingScreen(
                 OnboardingPage.PodcastSelection ->
                     PodcastSelectionScreen(
                         modifier = modifier,
-                        followablePodcasts = state.podcasts,
-                        onPodcastCheckedChanged = { podcast ->
+                        podcasts = state.podcasts,
+                        onTogglePodcastFollowed = { podcast ->
                             viewModel.sendAction(OnboardingAction.ChoosePodcast(podcast))
                         },
                     )
@@ -285,8 +285,8 @@ private fun CategorySelectionScreen(
 @Composable
 private fun PodcastSelectionScreen(
     modifier: Modifier = Modifier,
-    followablePodcasts: List<FollowablePodcast>,
-    onPodcastCheckedChanged: (Podcast) -> Unit,
+    podcasts: List<Podcast>,
+    onTogglePodcastFollowed: (Podcast) -> Unit,
 ) {
     val lazyListState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
@@ -329,14 +329,13 @@ private fun PodcastSelectionScreen(
             }
 
             items(
-                count = followablePodcasts.size,
-                key = { followablePodcasts[it].podcast.id },
-            ) {
+                items = podcasts,
+                key = { it.id },
+            ) { podcast ->
                 PodcastDetailItem(
-                    podcast = followablePodcasts[it].podcast,
-                    isFollowed = followablePodcasts[it].isFollow,
-                    onClick = { onPodcastCheckedChanged(followablePodcasts[it].podcast) },
-                    onToggleFollowed = { onPodcastCheckedChanged(followablePodcasts[it].podcast) },
+                    podcast = podcast,
+                    onClick = { onTogglePodcastFollowed(podcast) },
+                    onToggleFollowed = { onTogglePodcastFollowed(podcast) },
                 )
             }
         }
@@ -345,12 +344,12 @@ private fun PodcastSelectionScreen(
                 .fillMaxHeight()
                 .padding(vertical = 12.dp)
                 .align(Alignment.TopEnd),
-            state = lazyListState.scrollbarState(itemsAvailable = followablePodcasts.size),
+            state = lazyListState.scrollbarState(itemsAvailable = podcasts.size),
             orientation = Orientation.Vertical,
             onThumbMoved = { thumbPosition ->
                 scope.launch {
-                    val itemIndex = (thumbPosition * followablePodcasts.size).toInt()
-                        .coerceIn(0, followablePodcasts.size - 1)
+                    val itemIndex = (thumbPosition * podcasts.size).toInt()
+                        .coerceIn(0, podcasts.size - 1)
                     lazyListState.scrollToItem(itemIndex)
                 }
             }
@@ -457,8 +456,8 @@ private fun CategorySelectionScreenPreview() {
 private fun PodcastSelectionScreenPreview() {
     EpisodiveTheme {
         PodcastSelectionScreen(
-            followablePodcasts = podcastTestDataList.map { FollowablePodcast(it, true) },
-            onPodcastCheckedChanged = {},
+            podcasts = podcastTestDataList,
+            onTogglePodcastFollowed = {},
         )
     }
 }

@@ -10,7 +10,9 @@ import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.model.Category
+import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -22,6 +24,7 @@ import kotlin.time.Instant
 class EpisodeRepositoryImpl @Inject constructor(
     private val localDataSource: EpisodeLocalDataSource,
     private val remoteDataSource: EpisodeRemoteDataSource,
+    private val chapterRemoteDataSource: ChapterRemoteDataSource,
     private val remoteUpdater: EpisodeRemoteUpdater.Factory,
 ) : EpisodeRepository {
 
@@ -193,6 +196,10 @@ class EpisodeRepositoryImpl @Inject constructor(
 
     override suspend fun updateDurationOfEpisodes(id: Long, duration: Duration) {
         localDataSource.updateDurationOfEpisodes(id, duration)
+    }
+
+    override suspend fun fetchChapters(url: String): List<Chapter> {
+        return chapterRemoteDataSource.fetchChapters(url)
     }
 
     private fun EpisodeEntity.matchesQuery(query: String): Boolean {

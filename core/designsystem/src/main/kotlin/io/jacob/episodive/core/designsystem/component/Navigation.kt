@@ -61,16 +61,16 @@ fun EpisodiveNavigationBar(
 private fun EpisodiveNavigationBarPreview() {
     val items = listOf("Home", "Search", "Library", "Clip")
     val selectedIcons = listOf(
-        EpisodiveIcons.Home,
-        EpisodiveIcons.Search,
-        EpisodiveIcons.LibraryBooks,
-        EpisodiveIcons.AutoAwesome,
+        EpisodiveIcons.HomeFilled,
+        EpisodiveIcons.SearchFilled,
+        EpisodiveIcons.LibraryFilled,
+        EpisodiveIcons.ClipFilled,
     )
     val unselectedIcon = listOf(
-        EpisodiveIcons.HomeBorder,
-        EpisodiveIcons.SearchBorder,
-        EpisodiveIcons.LibraryBooksBorder,
-        EpisodiveIcons.AutoAwesomeBorder,
+        EpisodiveIcons.Home,
+        EpisodiveIcons.Search,
+        EpisodiveIcons.Library,
+        EpisodiveIcons.Clip,
     )
 
     EpisodiveTheme {

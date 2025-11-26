@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.network.mapper
 
 import androidx.annotation.RestrictTo
+import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.RecentFeed
@@ -17,6 +18,8 @@ import io.jacob.episodive.core.model.mapper.toIntSeconds
 import io.jacob.episodive.core.model.mapper.toMap
 import io.jacob.episodive.core.model.mapper.toMedium
 import io.jacob.episodive.core.model.mapper.toSeconds
+import io.jacob.episodive.core.network.model.ChapterResponse
+import io.jacob.episodive.core.network.model.ChaptersResponse
 import io.jacob.episodive.core.network.model.EpisodeResponse
 import io.jacob.episodive.core.network.model.PodcastResponse
 import io.jacob.episodive.core.network.model.RecentFeedResponse
@@ -25,6 +28,7 @@ import io.jacob.episodive.core.network.model.RecentNewValueFeedResponse
 import io.jacob.episodive.core.network.model.SoundbiteResponse
 import io.jacob.episodive.core.network.model.TranscriptResponse
 import io.jacob.episodive.core.network.model.TrendingFeedResponse
+import kotlin.time.Duration.Companion.seconds
 
 fun PodcastResponse.toPodcast(): Podcast =
     Podcast(
@@ -379,3 +383,13 @@ fun Transcript.toTranscriptResponse(): TranscriptResponse =
 @RestrictTo(RestrictTo.Scope.TESTS)
 fun List<Transcript>.toTranscriptResponses(): List<TranscriptResponse> =
     map { it.toTranscriptResponse() }
+
+fun ChapterResponse.toChapter(): Chapter =
+    Chapter(
+        title = title,
+        startTime = startTime.seconds,
+        endTime = endTime.seconds,
+    )
+
+fun ChaptersResponse.toChapters(): List<Chapter> =
+    chapters.map { it.toChapter() }

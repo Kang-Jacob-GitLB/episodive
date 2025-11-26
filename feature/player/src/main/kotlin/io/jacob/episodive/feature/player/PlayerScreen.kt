@@ -1,16 +1,18 @@
 package io.jacob.episodive.feature.player
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -29,14 +32,12 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,9 +47,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.jacob.episodive.core.designsystem.component.ChapterItem
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveCenterTopAppBar
 import io.jacob.episodive.core.designsystem.component.EpisodiveDial
@@ -56,18 +61,22 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveDragHandle
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
+import io.jacob.episodive.core.designsystem.component.EpisodiveSeeker
 import io.jacob.episodive.core.designsystem.component.EpisodiveTextButton
+import io.jacob.episodive.core.designsystem.component.EpisodiveViewToggleButton
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
-import io.jacob.episodive.core.designsystem.component.SectionHeader
+import io.jacob.episodive.core.designsystem.component.PodcastSimpleItem
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.component.episodeItems
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.GradientColors
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
+import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
+import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toLongMillis
 import io.jacob.episodive.core.model.mapper.toMediaTime
 import io.jacob.episodive.core.testing.model.episodeTestData
@@ -82,7 +91,7 @@ import kotlin.time.Duration.Companion.seconds
 fun PlayerBottomSheet(
     modifier: Modifier = Modifier,
     viewModel: PlayerViewModel = hiltViewModel(),
-    onPodcastClick: (Long) -> Unit = {},
+    onPodcastClick: (Long) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -92,7 +101,7 @@ fun PlayerBottomSheet(
     LaunchedEffect(Unit) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is PlayerEffect.NavigateToPodcast -> {}
+                is PlayerEffect.NavigateToPodcast -> onPodcastClick(effect.podcast.id)
                 is PlayerEffect.ShowPlayerBottomSheet -> {}
                 is PlayerEffect.HidePlayerBottomSheet -> sheetState.hide()
             }
@@ -135,8 +144,8 @@ fun PlayerBottomSheet(
             onForward = { viewModel.sendAction(PlayerAction.SeekForward) },
             onPrevious = { viewModel.sendAction(PlayerAction.Previous) },
             onNext = { viewModel.sendAction(PlayerAction.Next) },
-            onPodcastClick = { podcastId ->
-                onPodcastClick(podcastId)
+            onPodcastClick = {
+                viewModel.sendAction(PlayerAction.ClickPodcast(it))
                 collapse()
             },
             playlist = s.playlist,
@@ -146,6 +155,8 @@ fun PlayerBottomSheet(
             onToggleEpisodeLiked = { viewModel.sendAction(PlayerAction.ToggleEpisodeLiked(it)) },
             speed = s.speed,
             onSpeedChange = { viewModel.sendAction(PlayerAction.Speed(it)) },
+            chapters = s.chapters,
+            onTogglePodcastFollowed = { viewModel.sendAction(PlayerAction.TogglePodcastFollowed(it)) }
         )
     }
 }
@@ -160,27 +171,30 @@ private fun PlayerScreen(
     isPlaying: Boolean,
     isLike: Boolean,
     dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    onCollapse: () -> Unit = {},
-    onToggleLike: () -> Unit = {},
-    onSeekTo: (Long) -> Unit = {},
-    onPlayOrPause: () -> Unit = {},
-    onBackward: () -> Unit = {},
-    onForward: () -> Unit = {},
-    onPrevious: () -> Unit = {},
-    onNext: () -> Unit = {},
-    onPodcastClick: (Long) -> Unit = {},
+    onCollapse: () -> Unit,
+    onToggleLike: () -> Unit,
+    onSeekTo: (Long) -> Unit,
+    onPlayOrPause: () -> Unit,
+    onBackward: () -> Unit,
+    onForward: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onPodcastClick: (Podcast) -> Unit,
     playlist: List<Episode>,
     indexOfList: Int,
-    onEpisodeClick: (Episode) -> Unit = {},
-    onPlayIndex: (Int) -> Unit = {},
-    onToggleEpisodeLiked: (Episode) -> Unit = {},
+    onEpisodeClick: (Episode) -> Unit,
+    onPlayIndex: (Int) -> Unit,
+    onToggleEpisodeLiked: (Episode) -> Unit,
     speed: Float,
-    onSpeedChange: (Float) -> Unit = {},
+    onSpeedChange: (Float) -> Unit,
+    chapters: List<Chapter>,
+    onTogglePodcastFollowed: (Podcast) -> Unit,
 ) {
     val listState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
     var showSpeedSheet by remember { mutableStateOf(false) }
     var showPlaylistSheet by remember { mutableStateOf(false) }
+    var chapterIndex by remember { mutableStateOf(0) }
 
     LazyColumn(
         modifier = modifier
@@ -204,9 +218,9 @@ private fun PlayerScreen(
                 ) {
                     EpisodiveCenterTopAppBar(
                         title = {},
-                        navigationIcon = EpisodiveIcons.KeyboardArrowDown,
+                        navigationIcon = EpisodiveIcons.CaretDown,
                         navigationIconContentDescription = "Down",
-                        actionIcon = if (isLike) EpisodiveIcons.Favorite else EpisodiveIcons.FavoriteBorder,
+                        actionIcon = if (isLike) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
                         actionIconContentDescription = "Like",
                         onNavigationClick = onCollapse,
                         onActionClick = onToggleLike,
@@ -219,17 +233,19 @@ private fun PlayerScreen(
                         windowInsets = WindowInsets(0),
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.weight(1f))
 
                     StateImage(
                         modifier = Modifier
-                            .size(300.dp)
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .aspectRatio(1f)
                             .clip(MaterialTheme.shapes.extraExtraLarge),
                         imageUrl = nowPlaying.image.ifEmpty { nowPlaying.feedImage },
                         contentDescription = nowPlaying.title
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.weight(1f))
 
                     Column(
                         modifier = Modifier
@@ -240,10 +256,13 @@ private fun PlayerScreen(
                     ) {
                         Text(
                             modifier = Modifier
-                                .clickable { onPodcastClick(podcast.id) },
+                                .fillMaxWidth()
+                                .basicMarquee()
+                                .clickable { onPodcastClick(podcast) },
                             text = podcast.title,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
                             maxLines = 1,
                         )
 
@@ -254,6 +273,7 @@ private fun PlayerScreen(
                             text = nowPlaying.title,
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
                             maxLines = 1,
                         )
                     }
@@ -261,8 +281,12 @@ private fun PlayerScreen(
                     ControlPanelProgress(
                         isPlaying = isPlaying,
                         progress = progress,
-                        onSeekTo = onSeekTo
+                        chapters = chapters,
+                        onSeekTo = onSeekTo,
+                        onChapterIndex = { chapterIndex = it }
                     )
+
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     ControlPanelBottom(
                         isPlaying = isPlaying,
@@ -276,14 +300,34 @@ private fun PlayerScreen(
                         onList = { showPlaylistSheet = true },
                     )
 
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         }
 
         item {
-            InfoSection(
+            EpisodeInfoSection(
                 episode = nowPlaying
+            )
+        }
+
+        if (chapters.isNotEmpty()) {
+            item {
+                ChapterSection(
+                    chapters = chapters,
+                    selectedChapterIndex = chapterIndex,
+                    onChapterClick = { chapter ->
+                        onSeekTo(chapter.startTime.toLongMillis())
+                    },
+                )
+            }
+        }
+
+        item {
+            PodcastInfoSection(
+                podcast = podcast,
+                onPodcastClick = { onPodcastClick(podcast) },
+                onToggleFollowed = { onTogglePodcastFollowed(podcast) }
             )
         }
 
@@ -316,62 +360,26 @@ private fun ControlPanelProgress(
     modifier: Modifier = Modifier,
     isPlaying: Boolean,
     progress: Progress,
+    chapters: List<Chapter>,
     onSeekTo: (Long) -> Unit = {},
+    onChapterIndex: (Int) -> Unit = {},
 ) {
-    var position by remember { mutableFloatStateOf(progress.positionRatio) }
-
-    LaunchedEffect(progress.position) {
-        position = progress.positionRatio
-    }
+    var chapterName by remember { mutableStateOf("") }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(24.dp),
+            .padding(horizontal = 24.dp),
     ) {
         Column(
             modifier = Modifier,
         ) {
-            Slider(
-                value = position,
-                onValueChange = { value ->
-                    position = value
-                },
-                onValueChangeFinished = {
-                    onSeekTo((position * progress.duration.toLongMillis()).toLong())
-                },
-                thumb = { sliderState ->
-                    val size = if (sliderState.isDragging) 24.dp else 16.dp
-                    Box(
-                        modifier = Modifier
-                            .size(size)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                    )
-                },
-                track = { sliderState ->
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
-                    )
-                    Box(
-                        Modifier
-                            .fillMaxWidth(progress.bufferedRatio)
-                            .height(8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.outlineVariant)
-                    )
-                    Box(
-                        Modifier
-                            .fillMaxWidth(sliderState.value)
-                            .height(8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                    )
-                }
+            EpisodiveSeeker(
+                progress = progress,
+                onSeekTo = onSeekTo,
+                chapters = chapters,
+                onChapterName = { chapterName = it },
+                onChapterIndex = onChapterIndex,
             )
 
             Row(
@@ -381,15 +389,30 @@ private fun ControlPanelProgress(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
+                    modifier = Modifier.width(55.dp),
                     text = progress.position.toMediaTime(),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Start,
                 )
 
                 Text(
+                    modifier = Modifier
+                        .weight(1f),
+                    text = chapterName,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+
+                Text(
+                    modifier = Modifier.width(55.dp),
                     text = progress.duration.toMediaTime(),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.End,
                 )
             }
         }
@@ -412,8 +435,7 @@ private fun ControlPanelBottom(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .padding(top = 38.dp),
+            .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -424,23 +446,23 @@ private fun ControlPanelBottom(
             verticalAlignment = Alignment.CenterVertically
         ) {
             EpisodiveIconButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(48.dp),
                 onClick = onBackward,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(40.dp),
-                        imageVector = EpisodiveIcons.Replay10,
+                        modifier = Modifier.size(32.dp),
+                        imageVector = EpisodiveIcons.Replay15,
                         contentDescription = "Replay",
                     )
                 }
             )
 
             EpisodiveIconButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(48.dp),
                 onClick = onPrevious,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(40.dp),
                         imageVector = EpisodiveIcons.SkipPrevious,
                         contentDescription = "Previous",
                     )
@@ -448,19 +470,19 @@ private fun ControlPanelBottom(
             )
 
             EpisodiveIconToggleButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(68.dp),
                 checked = isPlaying,
                 onCheckedChange = { onPlayOrPause() },
                 icon = {
                     Icon(
-                        modifier = Modifier.size(40.dp),
-                        imageVector = EpisodiveIcons.PlayArrow,
+                        modifier = Modifier.size(36.dp),
+                        imageVector = EpisodiveIcons.Play,
                         contentDescription = "Play",
                     )
                 },
                 checkedIcon = {
                     Icon(
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(36.dp),
                         imageVector = EpisodiveIcons.Pause,
                         contentDescription = "Pause",
                     )
@@ -474,11 +496,11 @@ private fun ControlPanelBottom(
             )
 
             EpisodiveIconButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(48.dp),
                 onClick = onNext,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(40.dp),
                         imageVector = EpisodiveIcons.SkipNext,
                         contentDescription = "Next",
                     )
@@ -486,11 +508,11 @@ private fun ControlPanelBottom(
             )
 
             EpisodiveIconButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(48.dp),
                 onClick = onForward,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(32.dp),
                         imageVector = EpisodiveIcons.Forward30,
                         contentDescription = "Forward",
                     )
@@ -508,7 +530,7 @@ private fun ControlPanelBottom(
             val decimalFormat = DecimalFormat("#.#")
 
             EpisodiveTextButton(
-                modifier = Modifier.size(56.dp),
+//                modifier = Modifier.size(56.dp),
                 onClick = onSpeed,
                 contentPadding = PaddingValues(0.dp)
             ) {
@@ -519,12 +541,12 @@ private fun ControlPanelBottom(
             }
 
             EpisodiveIconButton(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(32.dp),
                 onClick = onList,
                 icon = {
                     Icon(
-                        modifier = Modifier.size(32.dp),
-                        imageVector = EpisodiveIcons.List,
+                        modifier = Modifier.size(24.dp),
+                        imageVector = EpisodiveIcons.TransitionTop,
                         contentDescription = "List",
                     )
                 }
@@ -534,27 +556,167 @@ private fun ControlPanelBottom(
 }
 
 @Composable
-private fun InfoSection(
+private fun CardSection(
+    modifier: Modifier = Modifier,
+    title: String,
+    expanded: Boolean,
+    onClick: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .padding(16.dp)
+    ) {
+        Card(
+            modifier = Modifier
+                .animateContentSize(),
+            onClick = onClick,
+            shape = MaterialTheme.shapes.extraLarge,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp, horizontal = 24.dp),
+            ) {
+                EpisodiveViewToggleButton(
+                    modifier = Modifier.padding(bottom = 4.dp),
+                    expanded = expanded,
+                    onExpandedChange = { onClick() },
+                    contentPadding = PaddingValues(0.dp),
+                    text = {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = title,
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        )
+                    }
+                )
+
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun EpisodeInfoSection(
     modifier: Modifier = Modifier,
     episode: Episode,
 ) {
-    Card(
-        modifier = modifier.padding(16.dp),
-    ) {
-        SectionHeader(
-            modifier = Modifier.padding(vertical = 16.dp),
-            title = stringResource(R.string.feature_player_more_info),
-            contentPadding = PaddingValues(horizontal = 16.dp),
-        ) {
-            HtmlTextContainer(text = episode.description ?: "") {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+    var isExpanded by remember { mutableStateOf(false) }
 
-            Spacer(modifier = Modifier.height(16.dp))
+    CardSection(
+        modifier = modifier,
+        title = stringResource(R.string.feature_player_episode_info),
+        expanded = isExpanded,
+        onClick = { isExpanded = !isExpanded }
+    ) {
+        Text(
+            text = episode.datePublished.toHumanReadable(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        HtmlTextContainer(
+            text = episode.description ?: ""
+        ) {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = if (isExpanded) Int.MAX_VALUE else 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PodcastInfoSection(
+    modifier: Modifier = Modifier,
+    podcast: Podcast,
+    onPodcastClick: () -> Unit = {},
+    onToggleFollowed: () -> Unit = {},
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    CardSection(
+        modifier = modifier,
+        title = stringResource(R.string.feature_player_podcast_info),
+        expanded = isExpanded,
+        onClick = { isExpanded = !isExpanded }
+    ) {
+        HtmlTextContainer(
+            text = podcast.description
+        ) {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = if (isExpanded) Int.MAX_VALUE else 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        PodcastSimpleItem(
+            podcast = podcast,
+            onClick = onPodcastClick,
+            onToggleFollowed = onToggleFollowed,
+        )
+    }
+}
+
+@Composable
+private fun ChapterSection(
+    modifier: Modifier = Modifier,
+    chapters: List<Chapter>,
+    selectedChapterIndex: Int,
+    onChapterClick: (Chapter) -> Unit = {},
+) {
+    val countLimit = 5
+    var isExpanded by remember { mutableStateOf(false) }
+
+    CardSection(
+        modifier = modifier,
+        title = stringResource(R.string.feature_player_chapter),
+        expanded = isExpanded,
+        onClick = { isExpanded = !isExpanded }
+    ) {
+        val displayedChapters = if (isExpanded) {
+            chapters.withIndex().toList()
+        } else {
+            val startIndex = if (selectedChapterIndex < countLimit) {
+                0
+            } else {
+                minOf(selectedChapterIndex - 2, chapters.size - countLimit).coerceAtLeast(0)
+            }
+            val endIndex = (startIndex + countLimit).coerceAtMost(chapters.size)
+            chapters.withIndex().toList().subList(startIndex, endIndex)
+        }
+
+        displayedChapters.forEach { (index, chapter) ->
+            ChapterItem(
+                chapter = chapter,
+                isSelected = index == selectedChapterIndex,
+                onClick = { onChapterClick(chapter) }
+            )
+        }
+
+        if (chapters.size > countLimit) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = stringResource(
+                    if (isExpanded) R.string.feature_player_show_less
+                    else R.string.feature_player_show_more
+                ),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
     }
 }
@@ -665,21 +827,64 @@ private fun PlayerScreenPreview() {
         PlayerScreen(
             podcast = podcastTestData,
             nowPlaying = episodeTestData,
-            progress = Progress(1000.seconds, 2000.seconds, 3000.seconds),
+            progress = Progress(1000.seconds, 2000.seconds, 6000.seconds),
             isPlaying = true,
             isLike = false,
+            onCollapse = {},
+            onToggleLike = {},
+            onSeekTo = {},
+            onPlayOrPause = {},
+            onBackward = {},
+            onForward = {},
+            onPrevious = {},
+            onNext = {},
+            onPodcastClick = {},
             playlist = episodeTestDataList,
             indexOfList = 0,
+            onEpisodeClick = {},
+            onPlayIndex = {},
+            onToggleEpisodeLiked = {},
             speed = 1f,
+            onSpeedChange = {},
+            chapters = listOf(
+                Chapter("Chapter 1", 0.seconds, 500.seconds),
+                Chapter("Chapter 2", 500.seconds, 1500.seconds),
+                Chapter("Chapter 3", 1500.seconds, 2500.seconds),
+            ),
+            onTogglePodcastFollowed = {},
         )
     }
 }
 
 @DevicePreviews
 @Composable
-private fun InfoSectionPreview() {
+private fun EpisodeInfoSectionPreview() {
     EpisodiveTheme {
-        InfoSection(episode = episodeTestData)
+        EpisodeInfoSection(episode = episodeTestData)
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun PodcastInfoSectionPreview() {
+    EpisodiveTheme {
+        PodcastInfoSection(podcast = podcastTestData)
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun ChapterSectionPreview() {
+    EpisodiveTheme {
+        ChapterSection(
+            chapters = listOf(
+                Chapter("Chapter 1", 0.seconds, 500.seconds),
+                Chapter("Chapter 2", 500.seconds, 1500.seconds),
+                Chapter("Chapter 3", 1500.seconds, 2500.seconds),
+            ),
+            selectedChapterIndex = 0,
+            onChapterClick = {}
+        )
     }
 }
 

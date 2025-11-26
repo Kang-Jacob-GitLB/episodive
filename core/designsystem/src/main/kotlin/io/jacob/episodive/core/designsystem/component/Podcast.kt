@@ -11,10 +11,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -200,7 +202,6 @@ fun PodcastWithAuthorItem(
 fun PodcastDetailItem(
     modifier: Modifier = Modifier,
     podcast: Podcast,
-    isFollowed: Boolean,
     onClick: () -> Unit = {},
     onToggleFollowed: () -> Unit = {},
 ) {
@@ -242,7 +243,7 @@ fun PodcastDetailItem(
                     modifier = Modifier
                         .size(34.dp),
                     shape = MaterialTheme.shapes.medium,
-                    checked = isFollowed,
+                    checked = podcast.isFollowed,
                     onCheckedChange = { onToggleFollowed() },
                     icon = {
                         Icon(
@@ -273,7 +274,7 @@ fun PodcastDetailItem(
                         EpisodiveIconText(
                             icon = {
                                 Icon(
-                                    imageVector = EpisodiveIcons.Attribution,
+                                    imageVector = EpisodiveIcons.Owner,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(12.dp),
@@ -293,7 +294,7 @@ fun PodcastDetailItem(
                 EpisodiveIconText(
                     icon = {
                         Icon(
-                            imageVector = EpisodiveIcons.PublishedWithChanges,
+                            imageVector = EpisodiveIcons.PublicationDate,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(12.dp),
@@ -313,7 +314,7 @@ fun PodcastDetailItem(
                 EpisodiveIconText(
                     icon = {
                         Icon(
-                            imageVector = EpisodiveIcons.FormatListNumbered,
+                            imageVector = EpisodiveIcons.ListNumbered,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(12.dp),
@@ -348,6 +349,71 @@ fun PodcastDetailItem(
     }
 }
 
+@Composable
+fun PodcastSimpleItem(
+    modifier: Modifier = Modifier,
+    podcast: Podcast,
+    onClick: () -> Unit,
+    onToggleFollowed: () -> Unit,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        StateImage(
+            modifier = Modifier
+                .size(50.dp)
+                .clip(MaterialTheme.shapes.medium),
+            imageUrl = podcast.image,
+            contentDescription = podcast.title,
+        )
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = podcast.title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Text(
+                text = podcast.ownerName.ifEmpty { podcast.author },
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        EpisodiveOutlinedButton(
+            onClick = onToggleFollowed,
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = if (podcast.isFollowed) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onBackground
+                },
+            ),
+        ) {
+            Text(
+                text = stringResource(
+                    if (podcast.isFollowed) R.string.core_designsystem_unfollow
+                    else R.string.core_designsystem_follow
+                ),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+    }
+}
+
 @DevicePreviews
 @Composable
 private fun PodcastItemPreview() {
@@ -374,7 +440,18 @@ private fun PodcastDetailItemPreview() {
     EpisodiveTheme {
         PodcastDetailItem(
             podcast = podcastTestData,
-            isFollowed = false,
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun PodcastSimpleItemPreview() {
+    EpisodiveTheme {
+        PodcastSimpleItem(
+            podcast = podcastTestData,
+            onClick = {},
+            onToggleFollowed = {},
         )
     }
 }

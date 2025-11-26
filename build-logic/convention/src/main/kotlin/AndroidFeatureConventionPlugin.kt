@@ -25,6 +25,8 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 "implementation"(project(":core:testing"))
                 "implementation"(project(":core:model"))
 
+                "implementation"(libs.findLibrary("seeker").get())
+
                 "implementation"(libs.findLibrary("androidx.activity.compose").get())
                 "implementation"(libs.findLibrary("androidx.animation.compose").get())
                 "implementation"(libs.findLibrary("androidx.constraintlayout.compose").get())

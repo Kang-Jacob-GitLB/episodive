@@ -6,6 +6,7 @@ import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeDtos
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
+import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
@@ -32,11 +33,13 @@ class EpisodeRepositoryTest {
 
     private val localDataSource = mockk<EpisodeLocalDataSource>(relaxed = true)
     private val remoteDataSource = mockk<EpisodeRemoteDataSource>(relaxed = true)
+    private val chapterRemoteDataSource = mockk<ChapterRemoteDataSource>(relaxed = true)
     private val remoteUpdater = mockk<EpisodeRemoteUpdater.Factory>(relaxed = true)
 
     private val repository: EpisodeRepository = EpisodeRepositoryImpl(
         localDataSource = localDataSource,
         remoteDataSource = remoteDataSource,
+        chapterRemoteDataSource = chapterRemoteDataSource,
         remoteUpdater = remoteUpdater,
     )
 
@@ -44,23 +47,8 @@ class EpisodeRepositoryTest {
 
     @After
     fun teardown() {
-        confirmVerified(localDataSource, remoteDataSource, remoteUpdater)
+        confirmVerified(localDataSource, remoteDataSource, remoteUpdater, chapterRemoteDataSource)
     }
-
-    @Test
-    fun `Given dependencies, When updateDurationOfEpisodes is called, Then calls localDataSource updateDurationOfEpisodes`() =
-        runTest {
-            // Given
-            coEvery { localDataSource.updateDurationOfEpisodes(any(), any()) } just Runs
-
-            // When
-            repository.updateDurationOfEpisodes(123L, 30.seconds)
-
-            // Then
-            coVerifySequence {
-                localDataSource.updateDurationOfEpisodes(123L, 30.seconds)
-            }
-        }
 
     @Test
     fun `Given person, When searchEpisodesByPerson, Then creates correct query and calls sourceFactory`() =
@@ -428,6 +416,37 @@ class EpisodeRepositoryTest {
                         it.id == episodeId && it.position == position && it.isCompleted == isCompleted
                     }
                 )
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When updateDurationOfEpisodes is called, Then calls localDataSource updateDurationOfEpisodes`() =
+        runTest {
+            // Given
+            coEvery { localDataSource.updateDurationOfEpisodes(any(), any()) } just Runs
+
+            // When
+            repository.updateDurationOfEpisodes(123L, 30.seconds)
+
+            // Then
+            coVerifySequence {
+                localDataSource.updateDurationOfEpisodes(123L, 30.seconds)
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When fetchChapters is called, Then calls chapterRemoteDataSource fetchChapters`() =
+        runTest {
+            // Given
+            val url = "https://example.com/chapters.json"
+            coEvery { chapterRemoteDataSource.fetchChapters(any()) } returns emptyList()
+
+            // When
+            repository.fetchChapters(url)
+
+            // Then
+            coVerifySequence {
+                chapterRemoteDataSource.fetchChapters(url)
             }
         }
 }

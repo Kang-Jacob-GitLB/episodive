@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.designsystem.component
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
@@ -17,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import io.jacob.episodive.core.designsystem.component.EpisodiveButtonDefaults.OutlinedButtonBorderWidth
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.ThemePreviews
@@ -76,6 +78,9 @@ fun EpisodiveOutlinedButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = ButtonDefaults.shape,
+    colors: ButtonColors = ButtonDefaults.outlinedButtonColors(
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ),
     enabled: Boolean = true,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     content: @Composable RowScope.() -> Unit,
@@ -85,19 +90,11 @@ fun EpisodiveOutlinedButton(
         modifier = modifier,
         shape = shape,
         enabled = enabled,
-//        colors = ButtonDefaults.outlinedButtonColors(
-//            contentColor = MaterialTheme.colorScheme.primary,
-//        ),
-//        border = BorderStroke(
-//            width = EpisodiveButtonDefaults.OutlinedButtonBorderWidth,
-//            color = if (enabled) {
-//                MaterialTheme.colorScheme.primary
-//            } else {
-//                MaterialTheme.colorScheme.primary.copy(
-//                    alpha = EpisodiveButtonDefaults.DISABLED_OUTLINED_BUTTON_BORDER_ALPHA,
-//                )
-//            },
-//        ),
+        colors = colors,
+        border = BorderStroke(
+            width = OutlinedButtonBorderWidth,
+            color = colors.contentColor,
+        ),
         contentPadding = contentPadding,
         content = content,
     )

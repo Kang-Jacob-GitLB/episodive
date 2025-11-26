@@ -159,7 +159,7 @@ private fun LibraryScreen(
                 onSectionChange = onSectionChange
             )
         },
-        actionIcon = if (showFind) EpisodiveIcons.Close else EpisodiveIcons.SearchBorder,
+        actionIcon = if (showFind) EpisodiveIcons.Close else EpisodiveIcons.Search,
         actionIconContentDescription = "search",
         onActionClick = {
             showFind = !showFind
@@ -471,7 +471,6 @@ private fun FollowedContent(
                         .padding(horizontal = 16.dp)
                         .animateItem(),
                     podcast = followedPodcast,
-                    isFollowed = true,
                     onClick = { onFollowedPodcastClick(followedPodcast) },
                     onToggleFollowed = { onToggleFollowed(followedPodcast) }
                 )
@@ -559,7 +558,7 @@ private fun FindBar(
                 placeholder = { Text(stringResource(R.string.feature_library_find_your_library)) },
                 leadingIcon = {
                     IconButton(onClick = onDismiss) {
-                        Icon(EpisodiveIcons.SearchBorder, null)
+                        Icon(EpisodiveIcons.Search, null)
                     }
                 }
             )

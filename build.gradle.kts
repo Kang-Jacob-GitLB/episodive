@@ -11,3 +11,24 @@ plugins {
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.room) apply false
 }
+
+tasks.register<Exec>("generateCoverageReport") {
+    group = "verification"
+    description = "Generate a markdown coverage report from Jacoco XML reports (outputs to docs/)"
+
+    dependsOn(
+        subprojects.mapNotNull { subproject ->
+            subproject.tasks.findByName("createDebugCombinedCoverageReport")
+        }
+    )
+
+    workingDir = projectDir
+    commandLine("python3", "scripts/analyze_coverage.py")
+
+    val reportPath = layout.projectDirectory.file("docs/COVERAGE_REPORT.md").asFile.absolutePath
+
+    doLast {
+        println("\n✅ Coverage report generated successfully!")
+        println("📄 Location: $reportPath")
+    }
+}

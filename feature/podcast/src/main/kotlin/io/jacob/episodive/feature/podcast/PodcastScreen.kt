@@ -2,7 +2,6 @@ package io.jacob.episodive.feature.podcast
 
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -34,7 +33,6 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.FadeTopBarLayout
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
-import io.jacob.episodive.core.designsystem.component.LoadingWheel
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.component.scrollbar.DraggableScrollbar
 import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
@@ -50,6 +48,7 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
 import kotlinx.coroutines.launch
+import io.jacob.episodive.core.designsystem.R as designR
 
 @Composable
 internal fun PodcastRoute(
@@ -68,7 +67,6 @@ internal fun PodcastRoute(
                 modifier = modifier,
                 podcast = s.podcast,
                 episodes = s.episodes,
-                isFollowed = s.isFollowed,
                 dominantColor = Color(s.dominantColor),
                 onFollowClick = { viewModel.sendAction(PodcastAction.ToggleFollowed) },
                 onEpisodeClick = { viewModel.sendAction(PodcastAction.PlayEpisode(it)) },
@@ -87,12 +85,11 @@ private fun PodcastScreen(
     modifier: Modifier = Modifier,
     podcast: Podcast,
     episodes: List<Episode>,
-    isFollowed: Boolean,
     dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    onFollowClick: () -> Unit = {},
-    onEpisodeClick: (Episode) -> Unit = {},
-    onToggleLikedEpisode: (Episode) -> Unit = {},
-    onBackClick: () -> Unit = {},
+    onFollowClick: () -> Unit,
+    onEpisodeClick: (Episode) -> Unit,
+    onToggleLikedEpisode: (Episode) -> Unit,
+    onBackClick: () -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     val listState = rememberLazyListState()
@@ -115,7 +112,6 @@ private fun PodcastScreen(
                 PodcastHeader(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     podcast = podcast,
-                    isFollowed = isFollowed,
                     dominantColor = dominantColor,
                     onFollowClick = onFollowClick,
                 )
@@ -179,9 +175,10 @@ private fun PodcastHeader(
     modifier: Modifier = Modifier,
     podcast: Podcast,
     dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    isFollowed: Boolean,
     onFollowClick: () -> Unit,
 ) {
+    val isFollowed = podcast.isFollowed
+
     EpisodiveGradientBackground(
         gradientColors = GradientColors(
             top = dominantColor,
@@ -220,7 +217,7 @@ private fun PodcastHeader(
                 buttonColors = ButtonDefaults.buttonColors(
                     containerColor = if (isFollowed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
                 ),
-                text = { Text(stringResource(if (isFollowed) R.string.feature_podcast_unfollow else R.string.feature_podcast_follow)) },
+                text = { Text(stringResource(if (isFollowed) designR.string.core_designsystem_unfollow else designR.string.core_designsystem_follow)) },
                 leadingIcon = {
                     Icon(
                         imageVector = if (isFollowed) EpisodiveIcons.PersonRemove else EpisodiveIcons.PersonAdd,
@@ -240,33 +237,6 @@ private fun PodcastHeader(
     }
 }
 
-@Composable
-private fun LoadingScreen(
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        LoadingWheel()
-    }
-}
-
-@Composable
-private fun ErrorScreen(
-    modifier: Modifier = Modifier,
-    message: String,
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = message)
-    }
-}
-
 @DevicePreviews
 @Composable
 private fun PodcastScreenPreview() {
@@ -274,9 +244,9 @@ private fun PodcastScreenPreview() {
         PodcastScreen(
             podcast = podcastTestData,
             episodes = episodeTestDataList,
-            isFollowed = false,
             onFollowClick = {},
             onEpisodeClick = {},
+            onToggleLikedEpisode = {},
             onBackClick = {},
             onShowSnackbar = { _, _ -> false }
         )

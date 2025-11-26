@@ -1,106 +1,82 @@
 package io.jacob.episodive.core.designsystem.icon
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
-import androidx.compose.material.icons.automirrored.rounded.List
-import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
-import androidx.compose.material.icons.automirrored.rounded.ShortText
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.DeleteSweep
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ArrowDownward
-import androidx.compose.material.icons.rounded.Attribution
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.BarChart
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.ErrorOutline
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.FileDownload
-import androidx.compose.material.icons.rounded.FormatListNumbered
-import androidx.compose.material.icons.rounded.Forward30
-import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PersonAddAlt1
-import androidx.compose.material.icons.rounded.PersonRemoveAlt1
-import androidx.compose.material.icons.rounded.Place
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.PublishedWithChanges
-import androidx.compose.material.icons.rounded.Repeat
-import androidx.compose.material.icons.rounded.RepeatOn
-import androidx.compose.material.icons.rounded.RepeatOne
-import androidx.compose.material.icons.rounded.Replay10
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material.icons.rounded.ShuffleOn
-import androidx.compose.material.icons.rounded.SkipNext
-import androidx.compose.material.icons.rounded.SkipPrevious
-import androidx.compose.material.icons.rounded.Tag
-import androidx.compose.material.icons.rounded.ViewDay
+import io.jacob.episodive.core.designsystem.icon.tabler.ArrowLeft
+import io.jacob.episodive.core.designsystem.icon.tabler.ArrowsMoveVertical
+import io.jacob.episodive.core.designsystem.icon.tabler.Blob
+import io.jacob.episodive.core.designsystem.icon.tabler.BlobFilled
+import io.jacob.episodive.core.designsystem.icon.tabler.CalendarTime
+import io.jacob.episodive.core.designsystem.icon.tabler.Check
+import io.jacob.episodive.core.designsystem.icon.tabler.ChevronDown
+import io.jacob.episodive.core.designsystem.icon.tabler.ChevronRight
+import io.jacob.episodive.core.designsystem.icon.tabler.Container
+import io.jacob.episodive.core.designsystem.icon.tabler.ContainerFilled
+import io.jacob.episodive.core.designsystem.icon.tabler.CreativeCommonsBy
+import io.jacob.episodive.core.designsystem.icon.tabler.DotsVertical
+import io.jacob.episodive.core.designsystem.icon.tabler.Fold
+import io.jacob.episodive.core.designsystem.icon.tabler.Fountain
+import io.jacob.episodive.core.designsystem.icon.tabler.FountainFilled
+import io.jacob.episodive.core.designsystem.icon.tabler.HeartFilled
+import io.jacob.episodive.core.designsystem.icon.tabler.HeartPlus
+import io.jacob.episodive.core.designsystem.icon.tabler.History
+import io.jacob.episodive.core.designsystem.icon.tabler.Label
+import io.jacob.episodive.core.designsystem.icon.tabler.LetterISmall
+import io.jacob.episodive.core.designsystem.icon.tabler.LetterXSmall
+import io.jacob.episodive.core.designsystem.icon.tabler.List
+import io.jacob.episodive.core.designsystem.icon.tabler.ListNumbers
+import io.jacob.episodive.core.designsystem.icon.tabler.PhotoExclamation
+import io.jacob.episodive.core.designsystem.icon.tabler.PlayerPause
+import io.jacob.episodive.core.designsystem.icon.tabler.PlayerPlay
+import io.jacob.episodive.core.designsystem.icon.tabler.PlayerSkipBack
+import io.jacob.episodive.core.designsystem.icon.tabler.PlayerSkipForward
+import io.jacob.episodive.core.designsystem.icon.tabler.PlaylistX
+import io.jacob.episodive.core.designsystem.icon.tabler.Plus
+import io.jacob.episodive.core.designsystem.icon.tabler.RewindBackward15
+import io.jacob.episodive.core.designsystem.icon.tabler.RewindForward30
+import io.jacob.episodive.core.designsystem.icon.tabler.Tabler
+import io.jacob.episodive.core.designsystem.icon.tabler.TransitionTop
+import io.jacob.episodive.core.designsystem.icon.tabler.UsersMinus
+import io.jacob.episodive.core.designsystem.icon.tabler.UsersPlus
+import io.jacob.episodive.core.designsystem.icon.tabler.X
+import io.jacob.episodive.core.designsystem.icon.tabler.Zoom
+import io.jacob.episodive.core.designsystem.icon.tabler.ZoomFilled
 
 object EpisodiveIcons {
-    val Add = Icons.Rounded.Add
-    val ArrowBack = Icons.AutoMirrored.Rounded.ArrowBack
-    val ArrowDownward = Icons.Rounded.ArrowDownward
-    val Attribution = Icons.Rounded.Attribution
-    val AutoAwesome = Icons.Rounded.AutoAwesome
-    val AutoAwesomeBorder = Icons.Outlined.AutoAwesome
-    val BarChart = Icons.Rounded.BarChart
-    val Check = Icons.Rounded.Check
-    val Close = Icons.Rounded.Close
-    val DeleteSweep = Icons.Outlined.DeleteSweep
-    val ErrorOutline = Icons.Rounded.ErrorOutline
-    val Favorite = Icons.Rounded.Favorite
-    val FavoriteBorder = Icons.Outlined.FavoriteBorder
-    val FileDownload = Icons.Rounded.FileDownload
-    val FormatListNumbered = Icons.Rounded.FormatListNumbered
-    val Forward30 = Icons.Rounded.Forward30
-    val History = Icons.Rounded.History
-    val Home = Icons.Rounded.Home
-    val HomeBorder = Icons.Outlined.Home
-    val KeyboardArrowDown = Icons.Rounded.KeyboardArrowDown
-    val KeyboardArrowLeft = Icons.AutoMirrored.Rounded.KeyboardArrowLeft
-    val KeyboardArrowRight = Icons.AutoMirrored.Rounded.KeyboardArrowRight
-    val Language = Icons.Rounded.Language
-    val LibraryBooks = Icons.AutoMirrored.Rounded.LibraryBooks
-    val LibraryBooksBorder = Icons.AutoMirrored.Outlined.LibraryBooks
-    val List = Icons.AutoMirrored.Rounded.List
-    val MoreVert = Icons.Rounded.MoreVert
-    val Pause = Icons.Rounded.Pause
-    val PersonAdd = Icons.Rounded.PersonAddAlt1
-    val PersonRemove = Icons.Rounded.PersonRemoveAlt1
-    val Place = Icons.Rounded.Place
-    val PlayArrow = Icons.Rounded.PlayArrow
-    val PlaylistAdd = Icons.AutoMirrored.Rounded.PlaylistAdd
-    val PublishedWithChanges = Icons.Rounded.PublishedWithChanges
-    val Repeat = Icons.Rounded.Repeat
-    val RepeatOn = Icons.Rounded.RepeatOn
-    val RepeatOne = Icons.Rounded.RepeatOne
-    val Replay10 = Icons.Rounded.Replay10
-    val Search = Icons.Rounded.Search
-    val SearchBorder = Icons.Outlined.Search
-    val Settings = Icons.Rounded.Settings
-    val SettingsBorder = Icons.Outlined.Settings
-    val Share = Icons.Rounded.Share
-    val ShortText = Icons.AutoMirrored.Rounded.ShortText
-    val Shuffle = Icons.Rounded.Shuffle
-    val ShuffleOn = Icons.Rounded.ShuffleOn
-    val SkipNext = Icons.Rounded.SkipNext
-    val SkipPrevious = Icons.Rounded.SkipPrevious
-    val Tag = Icons.Rounded.Tag
-    val ViewDay = Icons.Rounded.ViewDay
+    val Add = Tabler.Plus
+    val ArrowBack = Tabler.ArrowLeft
+    val CaretDown = Tabler.ChevronDown
+    val CaretRight = Tabler.ChevronRight
+    val Check = Tabler.Check
+    val Clip = Tabler.Container
+    val ClipFilled = Tabler.ContainerFilled
+    val Close = Tabler.X
+    val Collapse = Tabler.Fold
+    val Error = Tabler.PhotoExclamation
+    val Expand = Tabler.ArrowsMoveVertical
+    val Forward30 = Tabler.RewindForward30
+    val History = Tabler.History
+    val Home = Tabler.Blob
+    val HomeFilled = Tabler.BlobFilled
+    val Label = Tabler.Label
+    val LetterI = Tabler.LetterISmall
+    val LetterX = Tabler.LetterXSmall
+    val Library = Tabler.Fountain
+    val LibraryFilled = Tabler.FountainFilled
+    val Like = Tabler.HeartPlus
+    val LikeFilled = Tabler.HeartFilled
+    val List = Tabler.List
+    val ListNumbered = Tabler.ListNumbers
+    val MoreVert = Tabler.DotsVertical
+    val Owner = Tabler.CreativeCommonsBy
+    val Pause = Tabler.PlayerPause
+    val PersonAdd = Tabler.UsersPlus
+    val PersonRemove = Tabler.UsersMinus
+    val Play = Tabler.PlayerPlay
+    val PlaylistX = Tabler.PlaylistX
+    val PublicationDate = Tabler.CalendarTime
+    val Replay15 = Tabler.RewindBackward15
+    val Search = Tabler.Zoom
+    val SearchFilled = Tabler.ZoomFilled
+    val SkipNext = Tabler.PlayerSkipForward
+    val SkipPrevious = Tabler.PlayerSkipBack
+    val TransitionTop = Tabler.TransitionTop
 }
