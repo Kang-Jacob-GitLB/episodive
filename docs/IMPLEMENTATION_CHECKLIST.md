@@ -107,7 +107,7 @@ local db
 - [x] description
 - [x] progress bar
 - [x] controls
-- [ ] chapter
+- [x] chapter
 - [ ] transcript
 - [x] playlist
 - [x] playback speed
