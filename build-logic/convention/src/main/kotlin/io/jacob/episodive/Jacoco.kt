@@ -44,6 +44,10 @@ private val coverageExclusions = listOf(
     "**/model/**/*.class",
     // DI classes
     "**/di/**/*.class",
+    // Repository interfaces
+    "**/repository/*Repository.class",
+    // DataSource interfaces
+    "**/datasource/*DataSource.class",
 )
 
 private fun String.capitalize() = replaceFirstChar {
