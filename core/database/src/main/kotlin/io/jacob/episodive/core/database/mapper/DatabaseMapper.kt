@@ -172,7 +172,6 @@ fun EpisodeDto.toEpisode(): Episode =
         categories = episode.categories,
         chaptersUrl = episode.chaptersUrl,
         transcriptUrl = episode.transcriptUrl,
-        transcripts = episode.transcripts,
         likedAt = likedAt,
         playedAt = playedAt,
         position = position ?: Duration.ZERO,
@@ -245,7 +244,6 @@ fun Episode.toEpisodeEntity(
         categories = categories,
         chaptersUrl = chaptersUrl,
         transcriptUrl = transcriptUrl,
-        transcripts = transcripts,
         cacheKey = cacheKey,
         cachedAt = cachedAt,
     )

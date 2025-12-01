@@ -33,5 +33,4 @@ data class EpisodeResponse(
     @SerializedName("categories") val categories: Map<Int, String>? = null,
     @SerializedName("chaptersUrl") val chaptersUrl: String? = null,
     @SerializedName("transcriptUrl") val transcriptUrl: String? = null,
-    @SerializedName("transcripts") val transcripts: List<TranscriptResponse>? = null,
 )

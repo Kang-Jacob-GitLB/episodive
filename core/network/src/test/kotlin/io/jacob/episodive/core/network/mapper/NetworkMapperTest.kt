@@ -4,7 +4,6 @@ import android.os.Build
 import io.jacob.episodive.core.model.Transcript
 import io.jacob.episodive.core.network.model.EpisodeResponse
 import io.jacob.episodive.core.network.model.PodcastResponse
-import io.jacob.episodive.core.network.model.TranscriptResponse
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData

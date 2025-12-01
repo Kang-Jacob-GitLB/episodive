@@ -8,7 +8,6 @@ import io.jacob.episodive.core.model.RecentFeed
 import io.jacob.episodive.core.model.RecentNewFeed
 import io.jacob.episodive.core.model.RecentNewValueFeed
 import io.jacob.episodive.core.model.Soundbite
-import io.jacob.episodive.core.model.Transcript
 import io.jacob.episodive.core.model.TrendingFeed
 import io.jacob.episodive.core.model.mapper.toCategories
 import io.jacob.episodive.core.model.mapper.toDurationSeconds
@@ -26,7 +25,6 @@ import io.jacob.episodive.core.network.model.RecentFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewValueFeedResponse
 import io.jacob.episodive.core.network.model.SoundbiteResponse
-import io.jacob.episodive.core.network.model.TranscriptResponse
 import io.jacob.episodive.core.network.model.TrendingFeedResponse
 import kotlin.time.Duration.Companion.seconds
 
@@ -144,7 +142,6 @@ fun EpisodeResponse.toEpisode(): Episode =
         categories = categories?.toCategories() ?: emptyList(),
         chaptersUrl = chaptersUrl,
         transcriptUrl = transcriptUrl,
-        transcripts = transcripts?.toTranscripts(),
     )
 
 fun List<EpisodeResponse>.toEpisodes(): List<Episode> =
@@ -183,7 +180,6 @@ fun Episode.toEpisodeResponse(): EpisodeResponse =
         categories = categories.toMap(),
         chaptersUrl = chaptersUrl,
         transcriptUrl = transcriptUrl,
-        transcripts = transcripts?.toTranscriptResponses(),
     )
 
 @RestrictTo(RestrictTo.Scope.TESTS)
@@ -363,26 +359,6 @@ fun Soundbite.toSoundbiteResponse(): SoundbiteResponse =
         feedUrl = feedUrl,
         feedId = feedId,
     )
-
-fun TranscriptResponse.toTranscript(): Transcript =
-    Transcript(
-        url = url,
-        type = type,
-    )
-
-fun List<TranscriptResponse>.toTranscripts(): List<Transcript> =
-    map { it.toTranscript() }
-
-@RestrictTo(RestrictTo.Scope.TESTS)
-fun Transcript.toTranscriptResponse(): TranscriptResponse =
-    TranscriptResponse(
-        url = url,
-        type = type,
-    )
-
-@RestrictTo(RestrictTo.Scope.TESTS)
-fun List<Transcript>.toTranscriptResponses(): List<TranscriptResponse> =
-    map { it.toTranscriptResponse() }
 
 fun ChapterResponse.toChapter(): Chapter =
     Chapter(
