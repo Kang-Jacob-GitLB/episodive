@@ -41,4 +41,5 @@ interface PlayerDataSource {
     val isShuffle: Flow<Boolean>
     val repeat: Flow<Int>
     val speed: Flow<Float>
+    val cue: Flow<String>
 }

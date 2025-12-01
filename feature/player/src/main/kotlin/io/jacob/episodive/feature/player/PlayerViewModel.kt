@@ -92,7 +92,8 @@ class PlayerViewModel @Inject constructor(
         isLiked,
         dominantColor,
         chapters,
-    ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, isLiked, dominantColor, chapters ->
+        playerRepository.cue,
+    ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, isLiked, dominantColor, chapters, cue ->
         if (podcast != null && nowPlaying != null) {
             PlayerState.Success(
                 podcast = podcast,
@@ -105,6 +106,7 @@ class PlayerViewModel @Inject constructor(
                 isLiked = isLiked,
                 dominantColor = dominantColor,
                 chapters = chapters,
+                cue = cue,
             ) as PlayerState
         } else {
             PlayerState.Error("podcast or nowPlaying is null")
@@ -261,6 +263,7 @@ sealed interface PlayerState {
         val isLiked: Boolean,
         val dominantColor: ULong,
         val chapters: List<Chapter>,
+        val cue: String,
     ) : PlayerState
 
     data class Error(val message: String) : PlayerState

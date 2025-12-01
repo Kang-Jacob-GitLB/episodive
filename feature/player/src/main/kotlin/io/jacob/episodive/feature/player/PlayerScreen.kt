@@ -1,6 +1,15 @@
 package io.jacob.episodive.feature.player
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -156,7 +166,8 @@ fun PlayerBottomSheet(
             speed = s.speed,
             onSpeedChange = { viewModel.sendAction(PlayerAction.Speed(it)) },
             chapters = s.chapters,
-            onTogglePodcastFollowed = { viewModel.sendAction(PlayerAction.TogglePodcastFollowed(it)) }
+            onTogglePodcastFollowed = { viewModel.sendAction(PlayerAction.TogglePodcastFollowed(it)) },
+            cue = s.cue,
         )
     }
 }
@@ -189,6 +200,7 @@ private fun PlayerScreen(
     onSpeedChange: (Float) -> Unit,
     chapters: List<Chapter>,
     onTogglePodcastFollowed: (Podcast) -> Unit,
+    cue: String,
 ) {
     val listState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
@@ -235,15 +247,26 @@ private fun PlayerScreen(
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    StateImage(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp)
-                            .aspectRatio(1f)
-                            .clip(MaterialTheme.shapes.extraExtraLarge),
-                        imageUrl = nowPlaying.image.ifEmpty { nowPlaying.feedImage },
-                        contentDescription = nowPlaying.title
-                    )
+                            .aspectRatio(1f),
+                    ) {
+                        StateImage(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(MaterialTheme.shapes.extraExtraLarge),
+                            imageUrl = nowPlaying.image.ifEmpty { nowPlaying.feedImage },
+                            contentDescription = nowPlaying.title
+                        )
+
+                        PushUpCue(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter),
+                            title = cue,
+                        )
+                    }
 
                     Spacer(modifier = Modifier.weight(1f))
 
@@ -352,6 +375,67 @@ private fun PlayerScreen(
             onToggleEpisodeLiked = onToggleEpisodeLiked,
             onDismiss = { showPlaylistSheet = false }
         )
+    }
+}
+
+@Composable
+fun PushUpCue(
+    modifier: Modifier = Modifier,
+    title: String,
+) {
+    val isVisible = title.isNotEmpty()
+
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = fadeIn(animationSpec = tween(300)),
+        exit = fadeOut(animationSpec = tween(300))
+    ) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Transparent,
+                            MaterialTheme.colorScheme.surface,
+                        ),
+                        startY = 0f,
+                        endY = Float.POSITIVE_INFINITY,
+                    ),
+                    shape = MaterialTheme.shapes.extraExtraLarge,
+                ),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            AnimatedContent(
+                targetState = title,
+                transitionSpec = {
+                    (slideInVertically(
+                        initialOffsetY = { it }
+                    ) + fadeIn()) togetherWith
+                            (slideOutVertically(
+                                targetOffsetY = { -it }
+                            ) + fadeOut())
+                },
+                label = "push_up"
+            ) { text ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = text,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }
 
@@ -852,6 +936,17 @@ private fun PlayerScreenPreview() {
                 Chapter("Chapter 3", 1500.seconds, 2500.seconds),
             ),
             onTogglePodcastFollowed = {},
+            cue = "we start again after a rejection or a perceived",
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun PushUpCuePreview() {
+    EpisodiveTheme {
+        PushUpCue(
+            title = "we start again after a rejection or a perceived"
         )
     }
 }
