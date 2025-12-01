@@ -44,6 +44,7 @@ class PlayerRepositoryTest {
         coVerify { playerDataSource.isShuffle }
         coVerify { playerDataSource.repeat }
         coVerify { playerDataSource.speed }
+        coVerify { playerDataSource.cue }
         coVerify { episodeLocalDataSource.getEpisodes() }
         confirmVerified(playerDataSource, episodeLocalDataSource)
     }

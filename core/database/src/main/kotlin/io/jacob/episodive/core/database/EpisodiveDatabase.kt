@@ -8,6 +8,7 @@ import io.jacob.episodive.core.database.dao.EpisodeDao
 import io.jacob.episodive.core.database.dao.FeedDao
 import io.jacob.episodive.core.database.dao.PodcastDao
 import io.jacob.episodive.core.database.dao.RecentSearchDao
+import io.jacob.episodive.core.database.migration.AutoMigration2to3
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.FollowedPodcastEntity
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
@@ -24,7 +25,6 @@ import io.jacob.episodive.core.database.util.EpisodeTypeConverter
 import io.jacob.episodive.core.database.util.InstantConverter
 import io.jacob.episodive.core.database.util.MediumConverter
 import io.jacob.episodive.core.database.util.SoundbiteConverter
-import io.jacob.episodive.core.database.util.TranscriptConverter
 
 @Database(
     entities = [
@@ -39,9 +39,10 @@ import io.jacob.episodive.core.database.util.TranscriptConverter
         SoundbiteEntity::class,
         RecentSearchEntity::class,
     ],
-    version = 2,
+    version = 3,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3, spec = AutoMigration2to3::class),
     ],
     exportSchema = true
 )
@@ -52,7 +53,6 @@ import io.jacob.episodive.core.database.util.TranscriptConverter
     InstantConverter::class,
     MediumConverter::class,
     SoundbiteConverter::class,
-    TranscriptConverter::class,
 )
 abstract class EpisodiveDatabase : RoomDatabase() {
     abstract fun podcastDao(): PodcastDao

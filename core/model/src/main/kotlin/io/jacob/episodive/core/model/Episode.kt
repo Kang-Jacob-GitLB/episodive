@@ -35,7 +35,6 @@ data class Episode(
     val categories: List<Category> = emptyList(),
     val chaptersUrl: String? = null,
     val transcriptUrl: String? = null,
-    val transcripts: List<Transcript>? = null,
     val likedAt: Instant? = null,
     val playedAt: Instant? = null,
     val position: Duration = Duration.ZERO,

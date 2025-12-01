@@ -1,6 +1,6 @@
 # Code Coverage Report
 
-Generated: 2025-11-26 13:59:47
+Generated: 2025-12-01 14:11:34
 
 ---
 
@@ -8,13 +8,13 @@ Generated: 2025-11-26 13:59:47
 
 | Module         | Line Coverage  | Branch Coverage  | Total Lines   | Covered    | Missed     |
 |----------------|----------------|------------------|---------------|------------|------------|
-| core:data      | 86.8%          | 53.3%            | 551           | 478        | 73         |
-| core:database  | 79.4%          | 47.2%            | 3973          | 3155       | 818        |
+| core:data      | 86.8%          | 53.3%            | 552           | 479        | 73         |
+| core:database  | 79.3%          | 47.1%            | 3918          | 3108       | 810        |
 | core:datastore | 91.5%          | 65.0%            | 71            | 65         | 6          |
-| core:domain    | 90.5%          | 75.0%            | 380           | 344        | 36         |
-| core:network   | 88.8%          | 58.3%            | 480           | 426        | 54         |
+| core:domain    | 87.5%          | 75.0%            | 393           | 344        | 49         |
+| core:network   | 88.5%          | 58.9%            | 468           | 414        | 54         |
 | --------       | -------------- | ---------------- | ------------- | ---------  | --------   |
-| **TOTAL**      | ** 81.9%**     | ** 49.9%**       | **  5455**    | **  4468** | **   987** |
+| **TOTAL**      | ** 81.6%**     | ** 49.9%**       | **  5402**    | **  4410** | **   992** |
 
 ---
 
@@ -23,9 +23,10 @@ Generated: 2025-11-26 13:59:47
 | Module         | Package                        | Class                          | Coverage | Covered/Total | Missed |
 |----------------|--------------------------------|--------------------------------|----------|---------------|--------|
 | core:data      | io.jacob.episodive.core.data.r | ImageRepositoryImpl.kt         | 13.3%    | 2/15          | 13     |
-| core:database  | io.jacob.episodive.core.databa | TranscriptConverter.kt         | 25.0%    | 1/4           | 3      |
+| core:database  | io.jacob.episodive.core.databa | EpisodiveDatabase_AutoMigratio | 16.7%    | 2/12          | 10     |
 | core:database  | io.jacob.episodive.core.databa | EpisodiveDatabase_AutoMigratio | 33.3%    | 1/3           | 2      |
 | core:data      | io.jacob.episodive.core.data.u | ConnectivityManagerNetworkMoni | 45.5%    | 5/11          | 6      |
+| core:domain    | io.jacob.episodive.core.domain | FlowExtKt.kt                   | 62.9%    | 22/35         | 13     |
 | core:datastore | io.jacob.episodive.core.datast | UserPreferencesStore.kt        | 79.2%    | 19/24         | 5      |
 
 ---
@@ -51,7 +52,7 @@ Generated: 2025-11-26 13:59:47
 | ✅ UserRepositoryImpl.kt         | 90.9%    | 20/22               | 2/2                    |
 | ✅ RecentSearchRepositoryImpl.kt | 92.3%    | 12/13               | N/A                    |
 | ✅ EpisodeRepositoryImpl.kt      | 95.0%    | 76/80               | 0/20                   |
-| ✅ PlayerRepositoryImpl.kt       | 100.0%   | 61/61               | N/A                    |
+| ✅ PlayerRepositoryImpl.kt       | 100.0%   | 62/62               | N/A                    |
 | ✅ FeedRepositoryImpl.kt         | 100.0%   | 39/39               | N/A                    |
 
 #### 📦 io.jacob.episodive.core.data.util.updater - 100.0%
@@ -66,34 +67,23 @@ Generated: 2025-11-26 13:59:47
 | ✅ TrendingFeedRemoteUpdater.kt  | 100.0%   | 20/20               | 6/6                    |
 | ✅ RemoteUpdater.kt              | 100.0%   | 11/11               | 2/2                    |
 
-### core:database - 79.4% Coverage
+### core:database - 79.3% Coverage
 
-#### 📦 io.jacob.episodive.core.database.util - 87.0%
-
-| Class                     | Coverage | Lines Covered/Total | Branches Covered/Total |
-|---------------------------|----------|---------------------|------------------------|
-| ❌ TranscriptConverter.kt  | 25.0%    | 1/4                 | N/A                    |
-| ✅ DurationConverter.kt    | 100.0%   | 3/3                 | 3/4                    |
-| ✅ InstantConverter.kt     | 100.0%   | 3/3                 | 4/4                    |
-| ✅ MediumConverter.kt      | 100.0%   | 3/3                 | 2/4                    |
-| ✅ EpisodeTypeConverter.kt | 100.0%   | 3/3                 | 2/4                    |
-| ✅ SoundbiteConverter.kt   | 100.0%   | 4/4                 | N/A                    |
-| ✅ CategoryConverter.kt    | 100.0%   | 3/3                 | N/A                    |
-
-#### 📦 io.jacob.episodive.core.database - 89.2%
+#### 📦 io.jacob.episodive.core.database - 72.0%
 
 | Class                                      | Coverage | Lines Covered/Total | Branches Covered/Total |
 |--------------------------------------------|----------|---------------------|------------------------|
+| ❌ EpisodiveDatabase_AutoMigration_2_3_Impl | 16.7%    | 2/12                | N/A                    |
 | ❌ EpisodiveDatabase_AutoMigration_1_2_Impl | 33.3%    | 1/3                 | N/A                    |
-| ✅ EpisodiveDatabase_Impl.kt                | 93.8%    | 30/32               | N/A                    |
+| ✅ EpisodiveDatabase_Impl.kt                | 93.9%    | 31/33               | N/A                    |
 | ✅ EpisodiveDatabase.kt                     | 100.0%   | 2/2                 | N/A                    |
 
-#### 📦 io.jacob.episodive.core.database.dao - 89.3%
+#### 📦 io.jacob.episodive.core.database.dao - 89.5%
 
 | Class                      | Coverage | Lines Covered/Total | Branches Covered/Total |
 |----------------------------|----------|---------------------|------------------------|
 | ⚠️ RecentSearchDao_Impl.kt | 83.0%    | 44/53               | 4/6                    |
-| ⚠️ EpisodeDao_Impl.kt      | 87.2%    | 1012/1160           | 160/316                |
+| ⚠️ EpisodeDao_Impl.kt      | 87.6%    | 976/1114            | 150/296                |
 | ✅ PodcastDao_Impl.kt       | 90.4%    | 766/847             | 107/204                |
 | ✅ FeedDao_Impl.kt          | 93.3%    | 387/415             | 34/58                  |
 
@@ -101,7 +91,18 @@ Generated: 2025-11-26 13:59:47
 
 | Class                 | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-----------------------|----------|---------------------|------------------------|
-| ✅ DatabaseMapperKt.kt | 95.4%    | 334/350             | 3/6                    |
+| ✅ DatabaseMapperKt.kt | 95.4%    | 332/348             | 3/6                    |
+
+#### 📦 io.jacob.episodive.core.database.util - 100.0%
+
+| Class                     | Coverage | Lines Covered/Total | Branches Covered/Total |
+|---------------------------|----------|---------------------|------------------------|
+| ✅ DurationConverter.kt    | 100.0%   | 3/3                 | 3/4                    |
+| ✅ InstantConverter.kt     | 100.0%   | 3/3                 | 4/4                    |
+| ✅ MediumConverter.kt      | 100.0%   | 3/3                 | 2/4                    |
+| ✅ EpisodeTypeConverter.kt | 100.0%   | 3/3                 | 2/4                    |
+| ✅ SoundbiteConverter.kt   | 100.0%   | 4/4                 | N/A                    |
+| ✅ CategoryConverter.kt    | 100.0%   | 3/3                 | N/A                    |
 
 #### 📦 io.jacob.episodive.core.database.datasource - 100.0%
 
@@ -111,6 +112,12 @@ Generated: 2025-11-26 13:59:47
 | ✅ EpisodeLocalDataSourceImpl.kt      | 100.0%   | 31/31               | N/A                    |
 | ✅ RecentSearchLocalDataSourceImpl.kt | 100.0%   | 9/9                 | N/A                    |
 | ✅ FeedLocalDataSourceImpl.kt         | 100.0%   | 46/46               | N/A                    |
+
+#### 📦 io.jacob.episodive.core.database.migration - 100.0%
+
+| Class                  | Coverage | Lines Covered/Total | Branches Covered/Total |
+|------------------------|----------|---------------------|------------------------|
+| ✅ AutoMigration2to3.kt | 100.0%   | 1/1                 | N/A                    |
 
 ### core:datastore - 91.5% Coverage
 
@@ -132,7 +139,13 @@ Generated: 2025-11-26 13:59:47
 |------------------------|----------|---------------------|------------------------|
 | ✅ DataStoreMapperKt.kt | 100.0%   | 12/12               | N/A                    |
 
-### core:domain - 90.5% Coverage
+### core:domain - 87.5% Coverage
+
+#### 📦 io.jacob.episodive.core.domain.util - 62.9%
+
+| Class          | Coverage | Lines Covered/Total | Branches Covered/Total |
+|----------------|----------|---------------------|------------------------|
+| ❌ FlowExtKt.kt | 62.9%    | 22/35               | N/A                    |
 
 #### 📦 io.jacob.episodive.core.domain.usecase.player - 97.4%
 
@@ -206,13 +219,7 @@ Generated: 2025-11-26 13:59:47
 | ✅ GetSelectableCategoriesUseCase.kt | 100.0%   | 4/4                 | N/A                    |
 | ✅ GetPreferredCategoriesUseCase.kt  | 100.0%   | 3/3                 | N/A                    |
 
-#### 📦 io.jacob.episodive.core.domain.util - 100.0%
-
-| Class          | Coverage | Lines Covered/Total | Branches Covered/Total |
-|----------------|----------|---------------------|------------------------|
-| ✅ FlowExtKt.kt | 100.0%   | 22/22               | N/A                    |
-
-### core:network - 88.8% Coverage
+### core:network - 88.5% Coverage
 
 #### 📦 io.jacob.episodive.core.network.util - 94.1%
 
@@ -225,7 +232,7 @@ Generated: 2025-11-26 13:59:47
 
 | Class                | Coverage | Lines Covered/Total | Branches Covered/Total |
 |----------------------|----------|---------------------|------------------------|
-| ✅ NetworkMapperKt.kt | 98.2%    | 278/283             | 34/56                  |
+| ✅ NetworkMapperKt.kt | 98.2%    | 266/271             | 32/52                  |
 
 #### 📦 io.jacob.episodive.core.network.datasource - 100.0%
 
@@ -243,7 +250,7 @@ Generated: 2025-11-26 13:59:47
 ### 🟡 Medium Priority: Low Coverage Classes (< 50%)
 
 - **core:data/ImageRepositoryImpl.kt** - 13.3% (13 lines missed)
-- **core:database/TranscriptConverter.kt** - 25.0% (3 lines missed)
+- **core:database/EpisodiveDatabase_AutoMigration_2_3_Impl.kt** - 16.7% (10 lines missed)
 - **core:database/EpisodiveDatabase_AutoMigration_1_2_Impl.kt** - 33.3% (2 lines missed)
 - **core:data/ConnectivityManagerNetworkMonitor.kt** - 45.5% (6 lines missed)
 

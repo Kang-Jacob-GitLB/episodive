@@ -1,10 +1,8 @@
 package io.jacob.episodive.core.network.mapper
 
 import android.os.Build
-import io.jacob.episodive.core.model.Transcript
 import io.jacob.episodive.core.network.model.EpisodeResponse
 import io.jacob.episodive.core.network.model.PodcastResponse
-import io.jacob.episodive.core.network.model.TranscriptResponse
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
@@ -406,76 +404,6 @@ class NetworkMapperTest {
         assertEquals(soundbiteTestDataList.size, soundbites.size)
         assertEquals(soundbiteTestDataList.first().enclosureUrl, soundbites.first().enclosureUrl)
         assertEquals(soundbiteTestDataList.last().enclosureUrl, soundbites.last().enclosureUrl)
-    }
-
-    @Test
-    fun `toTranscript converts TranscriptResponse to Transcript correctly`() {
-        // Given
-        val transcriptResponse = TranscriptResponse(
-            url = "https://example.com/transcript.vtt",
-            type = "text/vtt"
-        )
-
-        // When
-        val transcript = transcriptResponse.toTranscript()
-
-        // Then
-        assertEquals(transcriptResponse.url, transcript.url)
-        assertEquals(transcriptResponse.type, transcript.type)
-    }
-
-    @Test
-    fun `toTranscripts converts list of TranscriptResponse to list of Transcript correctly`() {
-        // Given
-        val transcriptResponses = listOf(
-            TranscriptResponse(url = "https://example.com/transcript1.vtt", type = "text/vtt"),
-            TranscriptResponse(url = "https://example.com/transcript2.srt", type = "text/srt")
-        )
-
-        // When
-        val transcripts = transcriptResponses.toTranscripts()
-
-        // Then
-        assertEquals(2, transcripts.size)
-        assertEquals("https://example.com/transcript1.vtt", transcripts[0].url)
-        assertEquals("text/vtt", transcripts[0].type)
-        assertEquals("https://example.com/transcript2.srt", transcripts[1].url)
-        assertEquals("text/srt", transcripts[1].type)
-    }
-
-    @Test
-    fun `toTranscriptResponse converts Transcript to TranscriptResponse correctly`() {
-        // Given
-        val transcript = Transcript(
-            url = "https://example.com/transcript.vtt",
-            type = "text/vtt"
-        )
-
-        // When
-        val transcriptResponse = transcript.toTranscriptResponse()
-
-        // Then
-        assertEquals(transcript.url, transcriptResponse.url)
-        assertEquals(transcript.type, transcriptResponse.type)
-    }
-
-    @Test
-    fun `toTranscriptResponses converts list of Transcript to list of TranscriptResponse correctly`() {
-        // Given
-        val transcripts = listOf(
-            Transcript(url = "https://example.com/transcript1.vtt", type = "text/vtt"),
-            Transcript(url = "https://example.com/transcript2.srt", type = "text/srt")
-        )
-
-        // When
-        val transcriptResponses = transcripts.toTranscriptResponses()
-
-        // Then
-        assertEquals(2, transcriptResponses.size)
-        assertEquals("https://example.com/transcript1.vtt", transcriptResponses[0].url)
-        assertEquals("text/vtt", transcriptResponses[0].type)
-        assertEquals("https://example.com/transcript2.srt", transcriptResponses[1].url)
-        assertEquals("text/srt", transcriptResponses[1].type)
     }
 
     @Test

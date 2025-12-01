@@ -1,10 +1,15 @@
 package io.jacob.episodive.core.player.datasource
 
+import androidx.core.net.toUri
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
+import androidx.media3.common.Tracks
+import androidx.media3.common.text.CueGroup
 import androidx.media3.exoplayer.ExoPlayer
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Progress
@@ -133,14 +138,53 @@ class PlayerDataSourceImpl @Inject constructor(
         override fun onPlayerError(error: PlaybackException) {
             Timber.e("errorCode: ${error.errorCode}, errorCodeName: ${error.errorCodeName}, message: ${error.message}, cause: ${error.cause}")
         }
+
+        override fun onTracksChanged(tracks: Tracks) {
+            val hasTextTrack = tracks.groups.any {
+                it.type == C.TRACK_TYPE_TEXT
+            }
+            Timber.d("hasTextTrack: $hasTextTrack")
+        }
+
+        override fun onCues(cueGroup: CueGroup) {
+            val currentText = cueGroup.cues.firstOrNull()?.text?.toString()
+            _cue.value = currentText ?: ""
+        }
+    }
+
+    private fun Episode.toMediaItem(): MediaItem {
+        val builder = MediaItem.Builder()
+            .setUri(enclosureUrl)
+            .setTag(this)
+
+        if (isClip) {
+            builder.setClippingConfiguration(
+                MediaItem.ClippingConfiguration.Builder()
+                    .setStartPositionMs(clipStartPositionMs)
+                    .setEndPositionMs(clipEndPositionMs)
+                    .build()
+            )
+        }
+
+        transcriptUrl?.let { url ->
+            Timber.i("transcriptUrl:$url")
+            builder.setSubtitleConfigurations(
+                listOf(
+                    MediaItem.SubtitleConfiguration.Builder(url.toUri())
+                        .setMimeType(MimeTypes.TEXT_VTT)
+                        .setLanguage(feedLanguage)
+                        .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
+                        .build()
+                )
+            )
+        }
+
+        return builder.build()
     }
 
     override fun play(episode: Episode) {
         Timber.i("url: ${episode.enclosureUrl}")
-        val mediaItem = MediaItem.Builder()
-            .setUri(episode.enclosureUrl)
-            .setTag(episode)
-            .build()
+        val mediaItem = episode.toMediaItem()
 
         player.setMediaItem(mediaItem)
         player.prepare()
@@ -151,12 +195,7 @@ class PlayerDataSourceImpl @Inject constructor(
         episodes.forEachIndexed { index, episode ->
             Timber.i("[$index] url: ${episode.enclosureUrl}")
         }
-        val mediaItems = episodes.map {
-            MediaItem.Builder()
-                .setUri(it.enclosureUrl)
-                .setTag(it)
-                .build()
-        }
+        val mediaItems = episodes.map { it.toMediaItem() }
 
         player.setMediaItems(mediaItems)
         indexToPlay?.let { player.seekToDefaultPosition(it) }
@@ -166,20 +205,7 @@ class PlayerDataSourceImpl @Inject constructor(
 
     override fun playClip(episode: Episode) {
         Timber.i("url: ${episode.enclosureUrl}, clipStartTime: ${episode.clipStartTime}, clipDuration: ${episode.clipDuration}")
-        val mediaItem = MediaItem.Builder()
-            .setUri(episode.enclosureUrl)
-            .setTag(episode)
-            .apply {
-                if (episode.isClip) {
-                    setClippingConfiguration(
-                        MediaItem.ClippingConfiguration.Builder()
-                            .setStartPositionMs(episode.clipStartPositionMs)
-                            .setEndPositionMs(episode.clipEndPositionMs)
-                            .build()
-                    )
-                }
-            }
-            .build()
+        val mediaItem = episode.toMediaItem()
 
         player.setMediaItem(mediaItem)
         player.prepare()
@@ -190,22 +216,7 @@ class PlayerDataSourceImpl @Inject constructor(
         episodes.forEachIndexed { index, episode ->
             Timber.i("[$index] url: ${episode.enclosureUrl}, clipStartTime: ${episode.clipStartTime}, clipDuration: ${episode.clipDuration}")
         }
-        val mediaItems = episodes.map {
-            MediaItem.Builder()
-                .setUri(it.enclosureUrl)
-                .setTag(it)
-                .apply {
-                    if (it.isClip) {
-                        setClippingConfiguration(
-                            MediaItem.ClippingConfiguration.Builder()
-                                .setStartPositionMs(it.clipStartPositionMs)
-                                .setEndPositionMs(it.clipEndPositionMs)
-                                .build()
-                        )
-                    }
-                }
-                .build()
-        }
+        val mediaItems = episodes.map { it.toMediaItem() }
 
         player.setMediaItems(mediaItems)
         indexToPlay?.let { player.seekToDefaultPosition(it) }
@@ -418,6 +429,9 @@ class PlayerDataSourceImpl @Inject constructor(
 
     private val _speed = MutableStateFlow(1.0f)
     override val speed: Flow<Float> = _speed
+
+    private val _cue = MutableStateFlow("")
+    override val cue: Flow<String> = _cue
 
     private val _progress = MutableStateFlow(
         Progress(

@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.Index
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.EpisodeType
-import io.jacob.episodive.core.model.Transcript
 import kotlin.time.Duration
 import kotlin.time.Instant
 
@@ -49,7 +48,6 @@ data class EpisodeEntity(
     val categories: List<Category> = emptyList(),
     val chaptersUrl: String? = null,
     val transcriptUrl: String? = null,
-    val transcripts: List<Transcript>? = null,
     val cacheKey: String,
     val cachedAt: Instant,
 )

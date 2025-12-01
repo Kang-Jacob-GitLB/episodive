@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -228,6 +229,14 @@ fun PlayingEpisodesSection(
             snapPosition = SnapPosition.Start,
         )
 
+        val firstEpisodeId = playingEpisodes.firstOrNull()?.id
+
+        LaunchedEffect(firstEpisodeId) {
+            if (firstEpisodeId != null) {
+                lazyListState.animateScrollToItem(0)
+            }
+        }
+
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth(),
@@ -242,6 +251,7 @@ fun PlayingEpisodesSection(
             ) { index ->
                 val playedEpisode = playingEpisodes[index]
                 PlayingEpisodeItem(
+                    modifier = Modifier.animateItem(),
                     playedEpisode = playedEpisode,
                     onClick = { onEpisodeClick(playedEpisode) }
                 )
