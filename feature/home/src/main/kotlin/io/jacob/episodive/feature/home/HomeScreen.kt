@@ -34,10 +34,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.jacob.episodive.core.designsystem.component.EpisodesSection
 import io.jacob.episodive.core.designsystem.component.EpisodiveDragHandle
 import io.jacob.episodive.core.designsystem.component.EpisodiveTopAppBar
-import io.jacob.episodive.core.designsystem.component.PlayingEpisodesSection
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
@@ -48,6 +46,8 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.liveEpisodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
+import io.jacob.episodive.core.ui.EpisodesSection
+import io.jacob.episodive.core.ui.PlayingEpisodesSection
 import io.jacob.episodive.core.ui.PodcastsSection
 import io.jacob.episodive.core.ui.PodcastsWithAuthorSection
 import kotlinx.coroutines.flow.collectLatest

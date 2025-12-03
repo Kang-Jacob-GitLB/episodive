@@ -16,7 +16,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.jacob.episodive.core.designsystem.component.EpisodeClipItem
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
@@ -24,6 +23,7 @@ import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.testing.model.episodeTestDataList
+import io.jacob.episodive.core.ui.EpisodeClipItem
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant

@@ -46,13 +46,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.jacob.episodive.core.designsystem.component.CategoryButton
-import io.jacob.episodive.core.designsystem.component.CategoryItem
-import io.jacob.episodive.core.designsystem.component.EpisodeDetailItem
-import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodiveFilterChip
 import io.jacob.episodive.core.designsystem.component.EpisodiveScaffold
-import io.jacob.episodive.core.designsystem.component.PlayedEpisodeItem
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
@@ -67,6 +62,11 @@ import io.jacob.episodive.core.model.SelectableCategory
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
+import io.jacob.episodive.core.ui.CategoryButton
+import io.jacob.episodive.core.ui.CategoryItem
+import io.jacob.episodive.core.ui.EpisodeDetailItem
+import io.jacob.episodive.core.ui.EpisodeItem
+import io.jacob.episodive.core.ui.PlayedEpisodeItem
 import io.jacob.episodive.core.ui.PodcastDetailItem
 import io.jacob.episodive.core.ui.PodcastsSection
 import kotlinx.coroutines.flow.collectLatest
