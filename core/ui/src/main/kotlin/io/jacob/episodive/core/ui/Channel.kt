@@ -1,6 +1,5 @@
 package io.jacob.episodive.core.ui
 
-import android.graphics.drawable.BitmapDrawable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
@@ -28,15 +27,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.palette.graphics.Palette
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import io.jacob.episodive.core.designsystem.component.DominantRegion
 import io.jacob.episodive.core.designsystem.component.SectionHeader
+import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Channel
@@ -87,7 +83,6 @@ fun ChannelItem(
     onClick: () -> Unit,
 ) {
     var backgroundColor by remember { mutableStateOf(Color.Cyan) }
-    val context = LocalContext.current
 
     Column(
         modifier = modifier
@@ -95,40 +90,16 @@ fun ChannelItem(
             .clip(MaterialTheme.shapes.extraLarge)
             .clickable { onClick() },
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(channel.image)
-                .allowHardware(false)
-                .listener(
-                    onSuccess = { _, result ->
-                        val drawable = result.drawable
-                        val bitmap = (drawable as? BitmapDrawable)?.bitmap
-                        if (bitmap != null) {
-                            val regionHeight = (bitmap.height * 0.1f).toInt()
-                            val palette = Palette.from(bitmap)
-                                .clearFilters()
-                                .setRegion(
-                                    0,
-                                    bitmap.height - regionHeight,
-                                    bitmap.width,
-                                    bitmap.height
-                                )
-                                .generate()
-
-                            val swatch = palette.dominantSwatch
-                            if (swatch != null) {
-                                backgroundColor = Color(swatch.rgb)
-                            }
-                        }
-                    }
-                )
-                .build(),
-            contentDescription = channel.title,
+        StateImage(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f),
-            contentScale = ContentScale.Crop,
-            alignment = Alignment.Center
+            imageUrl = channel.image,
+            contentDescription = channel.title,
+            onDominantColorExtracted = {
+                backgroundColor = it
+            },
+            dominantRegion = DominantRegion.Bottom
         )
 
         Box(
