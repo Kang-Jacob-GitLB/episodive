@@ -10,11 +10,13 @@ import io.jacob.episodive.core.domain.usecase.episode.GetPlayingEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetChannelsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetMyRecentPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetMyTrendingPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetTrendingPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
+import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -38,6 +40,7 @@ class HomeViewModel @Inject constructor(
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
     private val getTrendingPodcastsUseCase: GetTrendingPodcastsUseCase,
     getLiveEpisodesUseCase: GetLiveEpisodesUseCase,
+    getChannelsUseCase: GetChannelsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val resumeEpisodeUseCase: ResumeEpisodeUseCase,
     private val toggleLikedUseCase: ToggleLikedUseCase,
@@ -61,14 +64,18 @@ class HomeViewModel @Inject constructor(
         localTrendingPodcasts,
         foreignTrendingPodcasts,
         getLiveEpisodesUseCase(),
-    ) { playingEpisodes,
-        myRecentPodcasts,
-        randomEpisodes,
-        myTrendingPodcasts,
-        followedPodcasts,
-        localTrendingPodcasts,
-        foreignTrendingPodcasts,
-        liveEpisodes ->
+        getChannelsUseCase(),
+    ) {
+            playingEpisodes,
+            myRecentPodcasts,
+            randomEpisodes,
+            myTrendingPodcasts,
+            followedPodcasts,
+            localTrendingPodcasts,
+            foreignTrendingPodcasts,
+            liveEpisodes,
+            channels,
+        ->
 
         HomeState.Success(
             playingEpisodes = playingEpisodes.take(10),
@@ -79,6 +86,7 @@ class HomeViewModel @Inject constructor(
             localTrendingPodcasts = localTrendingPodcasts.take(10),
             foreignTrendingPodcasts = foreignTrendingPodcasts.take(10),
             liveEpisodes = liveEpisodes.take(6),
+            channels = channels
         ) as HomeState
     }.catch { e ->
         emit(HomeState.Error(e.message ?: "An unknown error occurred"))
@@ -105,6 +113,7 @@ class HomeViewModel @Inject constructor(
                 is HomeAction.ResumeEpisode -> resumeEpisode(action.playedEpisode)
                 is HomeAction.ToggleEpisodeLiked -> toggleEpisodeLiked(action.episode)
                 is HomeAction.ClickPodcast -> clickPodcast(action.podcastId)
+                is HomeAction.ClickChannel -> clickChannel(action.channel)
             }
         }
     }
@@ -130,6 +139,10 @@ class HomeViewModel @Inject constructor(
         _effect.emit(HomeEffect.NavigateToPodcast(podcastId))
     }
 
+    private fun clickChannel(channel: Channel) = viewModelScope.launch {
+        _effect.emit(HomeEffect.NavigateToChannel(channel))
+    }
+
     companion object {
         private val languages = listOf("en", "es", "fr", "de", "it", "ja", "ko", "pt", "ru", "zh")
     }
@@ -146,6 +159,7 @@ sealed interface HomeState {
         val localTrendingPodcasts: List<Podcast>,
         val foreignTrendingPodcasts: List<Podcast>,
         val liveEpisodes: List<Episode>,
+        val channels: List<Channel>,
     ) : HomeState
 
     data class Error(val message: String) : HomeState
@@ -156,8 +170,10 @@ sealed interface HomeAction {
     data class ResumeEpisode(val playedEpisode: Episode) : HomeAction
     data class ToggleEpisodeLiked(val episode: Episode) : HomeAction
     data class ClickPodcast(val podcastId: Long) : HomeAction
+    data class ClickChannel(val channel: Channel) : HomeAction
 }
 
 sealed interface HomeEffect {
     data class NavigateToPodcast(val podcastId: Long) : HomeEffect
+    data class NavigateToChannel(val channel: Channel) : HomeEffect
 }

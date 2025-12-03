@@ -29,8 +29,8 @@ fun EpisodiveNavHost(
                 appState.registerNestedNavController(BottomBarDestination.HOME, navController)
             },
             navigateToPodcast = { navigateToPodcast(it) },
-//            navigateToStoryDetail = { navigateToStoryDetail(it) },
-            onShowSnackbar = onShowSnackbar
+            navigateToChannel = { /* TODO: navigateToChannel(it) */ },
+            onShowSnackbar = onShowSnackbar,
         ) { nestedNavController ->
             addDetailsGraph(
                 navController = nestedNavController,

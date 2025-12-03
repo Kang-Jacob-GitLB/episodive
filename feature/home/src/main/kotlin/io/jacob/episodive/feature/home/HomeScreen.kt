@@ -41,11 +41,14 @@ import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
+import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
+import io.jacob.episodive.core.testing.model.channelTestDataList
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.liveEpisodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
+import io.jacob.episodive.core.ui.ChannelSection
 import io.jacob.episodive.core.ui.EpisodesSection
 import io.jacob.episodive.core.ui.PlayingEpisodesSection
 import io.jacob.episodive.core.ui.PodcastsSection
@@ -57,6 +60,7 @@ internal fun HomeRoute(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
     onPodcastClick: (Long) -> Unit,
+    onChannelClick: (Channel) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -65,6 +69,7 @@ internal fun HomeRoute(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is HomeEffect.NavigateToPodcast -> onPodcastClick(effect.podcastId)
+                is HomeEffect.NavigateToChannel -> onChannelClick(effect.channel)
             }
         }
     }
@@ -83,10 +88,12 @@ internal fun HomeRoute(
             localTrendingPodcasts = s.localTrendingPodcasts,
             foreignTrendingPodcasts = s.foreignTrendingPodcasts,
             liveEpisodes = s.liveEpisodes,
+            channels = s.channels,
             onPlayEpisode = { viewModel.sendAction(HomeAction.PlayEpisode(it)) },
             onResumeEpisode = { viewModel.sendAction(HomeAction.ResumeEpisode(it)) },
             onToggleEpisodeLiked = { viewModel.sendAction(HomeAction.ToggleEpisodeLiked(it)) },
             onPodcastClick = { viewModel.sendAction(HomeAction.ClickPodcast(it)) },
+            onChannelClick = { viewModel.sendAction(HomeAction.ClickChannel(it)) },
         )
 
         is HomeState.Error -> ErrorScreen(message = s.message)
@@ -104,10 +111,12 @@ private fun HomeScreen(
     localTrendingPodcasts: List<Podcast>,
     foreignTrendingPodcasts: List<Podcast>,
     liveEpisodes: List<Episode>,
-    onPlayEpisode: (Episode) -> Unit = {},
-    onResumeEpisode: (Episode) -> Unit = {},
-    onToggleEpisodeLiked: (Episode) -> Unit = {},
-    onPodcastClick: (Long) -> Unit = {},
+    channels: List<Channel>,
+    onPlayEpisode: (Episode) -> Unit,
+    onResumeEpisode: (Episode) -> Unit,
+    onToggleEpisodeLiked: (Episode) -> Unit,
+    onPodcastClick: (Long) -> Unit,
+    onChannelClick: (Channel) -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val screenHeight = this.maxHeight
@@ -243,6 +252,16 @@ private fun HomeScreen(
                         }
 
                         item {
+                            ChannelSection(
+                                title = stringResource(R.string.feature_home_section_channels),
+                                channels = channels,
+                                onChannelClick = { channel ->
+
+                                }
+                            )
+                        }
+
+                        item {
                             Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
                         }
                     }
@@ -276,7 +295,12 @@ private fun HomeScreenPreview() {
             localTrendingPodcasts = podcastTestDataList,
             foreignTrendingPodcasts = podcastTestDataList,
             liveEpisodes = liveEpisodeTestDataList,
+            channels = channelTestDataList,
+            onPlayEpisode = {},
+            onResumeEpisode = {},
+            onToggleEpisodeLiked = {},
             onPodcastClick = {},
+            onChannelClick = {},
         )
     }
 }

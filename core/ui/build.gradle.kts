@@ -13,4 +13,10 @@ dependencies {
     implementation(projects.core.designsystem)
     implementation(projects.core.testing)
     implementation(projects.core.model)
+
+    //----- Coil
+    implementation(libs.coil.compose)
+
+    //----- Palette
+    implementation(libs.androidx.palette.ktx)
 }
