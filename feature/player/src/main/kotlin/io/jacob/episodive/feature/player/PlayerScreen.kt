@@ -63,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.jacob.episodive.core.designsystem.component.DominantRegion
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveCenterTopAppBar
 import io.jacob.episodive.core.designsystem.component.EpisodiveDial
@@ -145,7 +146,6 @@ fun PlayerBottomSheet(
             progress = s.progress,
             isPlaying = s.isPlaying,
             isLike = s.isLiked,
-            dominantColor = Color(s.dominantColor),
             onCollapse = { collapse() },
             onToggleLike = { viewModel.sendAction(PlayerAction.ToggleLike) },
             onSeekTo = { viewModel.sendAction(PlayerAction.SeekTo(it)) },
@@ -181,7 +181,6 @@ private fun PlayerScreen(
     progress: Progress,
     isPlaying: Boolean,
     isLike: Boolean,
-    dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
     onCollapse: () -> Unit,
     onToggleLike: () -> Unit,
     onSeekTo: (Long) -> Unit,
@@ -207,6 +206,8 @@ private fun PlayerScreen(
     var showSpeedSheet by remember { mutableStateOf(false) }
     var showPlaylistSheet by remember { mutableStateOf(false) }
     var chapterIndex by remember { mutableStateOf(0) }
+    var dominantColor by remember { mutableStateOf(Color.DarkGray) }
+
 
     LazyColumn(
         modifier = modifier
@@ -257,8 +258,12 @@ private fun PlayerScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(MaterialTheme.shapes.extraExtraLarge),
+                            size = 600,
                             imageUrl = nowPlaying.image.ifEmpty { nowPlaying.feedImage },
-                            contentDescription = nowPlaying.title
+                            contentDescription = nowPlaying.title,
+                            onDominantColorExtracted = { dominantColor = it },
+                            dominantRegion = DominantRegion.Top,
+                            brightnessAdjustment = -0.2f
                         )
 
                         PushUpCue(

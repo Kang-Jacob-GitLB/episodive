@@ -47,8 +47,14 @@ enum class DominantRegion {
 private fun extractDominantColor(
     bitmap: Bitmap,
     region: DominantRegion,
+    clearFilters: Boolean,
+    brightnessAdjustment: Float,
 ): Color? {
-    val paletteBuilder = Palette.from(bitmap).clearFilters()
+    val paletteBuilder = Palette.from(bitmap).apply {
+        if (clearFilters) {
+            clearFilters()
+        }
+    }
 
     val palette = when (region) {
         DominantRegion.Top -> {
@@ -109,7 +115,37 @@ private fun extractDominantColor(
         }
     }
 
-    return palette.dominantSwatch?.let { Color(it.rgb) }
+    return palette.dominantSwatch?.let { swatch ->
+        val baseColor = Color(swatch.rgb)
+        adjustBrightness(baseColor, brightnessAdjustment)
+    }
+}
+
+private fun adjustBrightness(color: Color, adjustment: Float): Color {
+    if (adjustment == 0f) return color
+
+    val red = color.red
+    val green = color.green
+    val blue = color.blue
+
+    return if (adjustment > 0) {
+        // 밝게: 흰색으로 interpolation
+        Color(
+            red = red + (1f - red) * adjustment,
+            green = green + (1f - green) * adjustment,
+            blue = blue + (1f - blue) * adjustment,
+            alpha = color.alpha
+        )
+    } else {
+        // 어둡게: 검은색으로 interpolation
+        val factor = 1f + adjustment
+        Color(
+            red = red * factor,
+            green = green * factor,
+            blue = blue * factor,
+            alpha = color.alpha
+        )
+    }
 }
 
 @Composable
@@ -123,6 +159,8 @@ fun StateImage(
     fallbackIcon: ImageVector = EpisodiveIcons.Error,
     onDominantColorExtracted: ((Color) -> Unit)? = null,
     dominantRegion: DominantRegion = DominantRegion.Bottom,
+    clearFilters: Boolean = true,
+    brightnessAdjustment: Float = 0f,
 ) {
     if (LocalInspectionMode.current) {
         Box(modifier = modifier.background(placeholderBrush))
@@ -146,7 +184,12 @@ fun StateImage(
                             val drawable = result.drawable
                             val bitmap = (drawable as? BitmapDrawable)?.bitmap
                             if (bitmap != null) {
-                                val color = extractDominantColor(bitmap, dominantRegion)
+                                val color = extractDominantColor(
+                                    bitmap,
+                                    dominantRegion,
+                                    clearFilters,
+                                    brightnessAdjustment
+                                )
                                 color?.let(onDominantColorExtracted)
                             }
                         }

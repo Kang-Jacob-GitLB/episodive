@@ -11,7 +11,6 @@ import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
-import io.jacob.episodive.core.domain.usecase.image.GetDominantColorFromUrlUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
@@ -43,7 +42,6 @@ class PlayerViewModel @Inject constructor(
     private val toggleLikedUseCase: ToggleLikedUseCase,
     private val updatePlayedEpisodeUseCase: UpdatePlayedEpisodeUseCase,
     private val getPodcastUseCase: GetPodcastUseCase,
-    private val getDominantColorFromUrlUseCase: GetDominantColorFromUrlUseCase,
     @param:Player(EpisodivePlayers.Main) private val playerRepository: PlayerRepository,
     private val setSpeedUseCase: SetSpeedUseCase,
     private val getUserDataUseCase: GetUserDataUseCase,
@@ -67,14 +65,6 @@ class PlayerViewModel @Inject constructor(
             }
         }
 
-    private val dominantColor = playerRepository.nowPlaying.mapNotNull { it }
-        .flatMapLatest { episode ->
-            val color = getDominantColorFromUrlUseCase(
-                episode.image.ifEmpty { episode.feedImage }
-            )
-            flowOf(color)
-        }
-
     private val chapters = playerRepository.nowPlaying.map { it?.chaptersUrl }
         .flatMapLatest { chaptersUrl ->
             val chapters = chaptersUrl?.let { getChaptersUseCase(it) } ?: emptyList()
@@ -91,10 +81,9 @@ class PlayerViewModel @Inject constructor(
         playerRepository.isPlaying,
         playerRepository.speed,
         isLiked,
-        dominantColor,
         chapters,
         playerRepository.cue,
-    ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, isLiked, dominantColor, chapters, cue ->
+    ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, isLiked, chapters, cue ->
         if (podcast != null && nowPlaying != null) {
             PlayerState.Success(
                 podcast = podcast,
@@ -105,7 +94,6 @@ class PlayerViewModel @Inject constructor(
                 isPlaying = isPlaying,
                 speed = speed,
                 isLiked = isLiked,
-                dominantColor = dominantColor,
                 chapters = chapters,
                 cue = cue,
             ) as PlayerState
@@ -262,7 +250,6 @@ sealed interface PlayerState {
         val isPlaying: Boolean,
         val speed: Float,
         val isLiked: Boolean,
-        val dominantColor: ULong,
         val chapters: List<Chapter>,
         val cue: String,
     ) : PlayerState

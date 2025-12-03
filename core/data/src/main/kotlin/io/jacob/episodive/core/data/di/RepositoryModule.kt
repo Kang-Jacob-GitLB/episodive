@@ -1,16 +1,13 @@
 package io.jacob.episodive.core.data.di
 
-import android.content.Context
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.data.repository.EpisodeRepositoryImpl
 import io.jacob.episodive.core.data.repository.FeedRepositoryImpl
-import io.jacob.episodive.core.data.repository.ImageRepositoryImpl
 import io.jacob.episodive.core.data.repository.PlayerRepositoryImpl
 import io.jacob.episodive.core.data.repository.PodcastRepositoryImpl
 import io.jacob.episodive.core.data.repository.RecentSearchRepositoryImpl
@@ -24,7 +21,6 @@ import io.jacob.episodive.core.database.datasource.RecentSearchLocalDataSource
 import io.jacob.episodive.core.datastore.datasource.UserPreferencesDataSource
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.FeedRepository
-import io.jacob.episodive.core.domain.repository.ImageRepository
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.domain.repository.RecentSearchRepository
@@ -117,16 +113,6 @@ object RepositoryModule {
         return PlayerRepositoryImpl(
             playerDataSource = clipPlayerDataSource,
             episodeLocalDataSource = episodeLocalDataSource,
-        )
-    }
-
-    @Provides
-    @Singleton
-    fun provideImageRepository(
-        @ApplicationContext context: Context,
-    ): ImageRepository {
-        return ImageRepositoryImpl(
-            context = context,
         )
     }
 
