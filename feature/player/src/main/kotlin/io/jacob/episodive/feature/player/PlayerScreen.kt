@@ -75,7 +75,6 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveSeeker
 import io.jacob.episodive.core.designsystem.component.EpisodiveTextButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveViewToggleButton
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
-import io.jacob.episodive.core.designsystem.component.PodcastSimpleItem
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.component.episodeItems
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
@@ -92,6 +91,7 @@ import io.jacob.episodive.core.model.mapper.toMediaTime
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
+import io.jacob.episodive.core.ui.PodcastSimpleItem
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat

@@ -1,4 +1,4 @@
-package io.jacob.episodive.core.designsystem.component
+package io.jacob.episodive.core.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
@@ -27,7 +27,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.jacob.episodive.core.designsystem.R
+import io.jacob.episodive.core.designsystem.component.EpisodiveIconText
+import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
+import io.jacob.episodive.core.designsystem.component.EpisodiveOutlinedButton
+import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
+import io.jacob.episodive.core.designsystem.component.SectionHeader
+import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
@@ -147,7 +152,7 @@ fun PodcastItem(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = "${podcast.episodeCount} ${stringResource(R.string.core_designsystem_episodes)}",
+            text = "${podcast.episodeCount} ${stringResource(R.string.core_ui_episodes)}",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -322,7 +327,7 @@ fun PodcastDetailItem(
                     },
                     text = {
                         Text(
-                            text = "${podcast.episodeCount} ${stringResource(R.string.core_designsystem_episodes)}",
+                            text = "${podcast.episodeCount} ${stringResource(R.string.core_ui_episodes)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -405,8 +410,8 @@ fun PodcastSimpleItem(
         ) {
             Text(
                 text = stringResource(
-                    if (podcast.isFollowed) R.string.core_designsystem_unfollow
-                    else R.string.core_designsystem_follow
+                    if (podcast.isFollowed) R.string.core_ui_unfollow
+                    else R.string.core_ui_follow
                 ),
                 style = MaterialTheme.typography.titleSmall,
             )

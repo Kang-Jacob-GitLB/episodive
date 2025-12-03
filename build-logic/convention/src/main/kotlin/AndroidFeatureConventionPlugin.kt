@@ -25,6 +25,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 "implementation"(project(":core:designsystem"))
                 "implementation"(project(":core:testing"))
                 "implementation"(project(":core:model"))
+                "implementation"(project(":core:ui"))
 
                 "implementation"(libs.findLibrary("seeker").get())
 

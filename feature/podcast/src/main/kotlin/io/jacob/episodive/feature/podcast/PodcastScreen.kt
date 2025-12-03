@@ -28,7 +28,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.FadeTopBarLayout
@@ -47,8 +46,9 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
+import io.jacob.episodive.core.ui.EpisodeItem
 import kotlinx.coroutines.launch
-import io.jacob.episodive.core.designsystem.R as designR
+import io.jacob.episodive.core.ui.R as uiR
 
 @Composable
 internal fun PodcastRoute(
@@ -217,7 +217,7 @@ private fun PodcastHeader(
                 buttonColors = ButtonDefaults.buttonColors(
                     containerColor = if (isFollowed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
                 ),
-                text = { Text(stringResource(if (isFollowed) designR.string.core_designsystem_unfollow else designR.string.core_designsystem_follow)) },
+                text = { Text(stringResource(if (isFollowed) uiR.string.core_ui_unfollow else uiR.string.core_ui_follow)) },
                 leadingIcon = {
                     Icon(
                         imageVector = if (isFollowed) EpisodiveIcons.PersonRemove else EpisodiveIcons.PersonAdd,

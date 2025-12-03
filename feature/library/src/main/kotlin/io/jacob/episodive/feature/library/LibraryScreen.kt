@@ -53,8 +53,6 @@ import io.jacob.episodive.core.designsystem.component.EpisodeItem
 import io.jacob.episodive.core.designsystem.component.EpisodiveFilterChip
 import io.jacob.episodive.core.designsystem.component.EpisodiveScaffold
 import io.jacob.episodive.core.designsystem.component.PlayedEpisodeItem
-import io.jacob.episodive.core.designsystem.component.PodcastDetailItem
-import io.jacob.episodive.core.designsystem.component.PodcastsSection
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
@@ -69,6 +67,8 @@ import io.jacob.episodive.core.model.SelectableCategory
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
+import io.jacob.episodive.core.ui.PodcastDetailItem
+import io.jacob.episodive.core.ui.PodcastsSection
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable

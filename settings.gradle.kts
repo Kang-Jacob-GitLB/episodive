@@ -34,6 +34,7 @@ include(":core:model")
 include(":core:network")
 include(":core:player")
 include(":core:testing")
+include(":core:ui")
 
 include(":feature:onboarding")
 include(":feature:home")

@@ -1,4 +1,4 @@
-package io.jacob.episodive.core.designsystem.component
+package io.jacob.episodive.core.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,7 +41,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.jacob.episodive.core.designsystem.R
+import io.jacob.episodive.core.designsystem.component.ClipAnimationIconText
+import io.jacob.episodive.core.designsystem.component.EpisodiveIconProgressButton
+import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
+import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
+import io.jacob.episodive.core.designsystem.component.SectionHeader
+import io.jacob.episodive.core.designsystem.component.StateImage
+import io.jacob.episodive.core.designsystem.component.SubSectionHeader
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
@@ -221,7 +227,7 @@ fun PlayingEpisodesSection(
 ) {
     SubSectionHeader(
         modifier = modifier,
-        title = stringResource(R.string.core_designsystem_continue),
+        title = stringResource(R.string.core_ui_continue),
     ) {
         val lazyListState = rememberLazyListState()
         val flingBehavior = rememberSnapFlingBehavior(
@@ -400,10 +406,10 @@ fun PlayedEpisodeItem(
 
                 Text(
                     text =
-                        if (playedEpisode.isCompleted) stringResource(R.string.core_designsystem_completed)
+                        if (playedEpisode.isCompleted) stringResource(R.string.core_ui_completed)
                         else if (playedEpisode.remain != null) "${playedEpisode.remain?.toHumanReadable()} ${
                             stringResource(
-                                R.string.core_designsystem_left
+                                R.string.core_ui_left
                             )
                         }"
                         else "",

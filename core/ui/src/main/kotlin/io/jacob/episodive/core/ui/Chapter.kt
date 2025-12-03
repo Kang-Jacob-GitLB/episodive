@@ -1,4 +1,4 @@
-package io.jacob.episodive.core.designsystem.component
+package io.jacob.episodive.core.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
