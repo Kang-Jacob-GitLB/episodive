@@ -153,7 +153,8 @@ private fun PlayerBar(
                     imageUrl = nowPlaying.image.ifEmpty { nowPlaying.feedImage },
                     contentDescription = nowPlaying.title,
                     onDominantColorExtracted = { dominantColor = it },
-                    dominantRegion = DominantRegion.Top,
+                    dominantRegion = DominantRegion.Full,
+                    clearFilters = false,
                     brightnessAdjustment = -0.5f
                 )
 
