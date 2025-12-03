@@ -3,6 +3,7 @@ package io.jacob.episodive.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.jacob.episodive.core.common.combine
 import io.jacob.episodive.core.domain.usecase.episode.GetLiveEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetMyRandomEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetPlayingEpisodesUseCase
@@ -14,7 +15,6 @@ import io.jacob.episodive.core.domain.usecase.podcast.GetMyRecentPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetMyTrendingPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetTrendingPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
-import io.jacob.episodive.core.domain.util.combine
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import kotlinx.coroutines.flow.MutableSharedFlow

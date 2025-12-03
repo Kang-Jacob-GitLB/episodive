@@ -31,7 +31,7 @@ import javax.inject.Inject
 import kotlin.time.Duration
 
 class PlayerDataSourceImpl @Inject constructor(
-    val player: ExoPlayer,
+    private val player: ExoPlayer,
 ) : PlayerDataSource {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 

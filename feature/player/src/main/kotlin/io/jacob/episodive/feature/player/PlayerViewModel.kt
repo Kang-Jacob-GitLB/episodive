@@ -3,7 +3,9 @@ package io.jacob.episodive.feature.player
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.jacob.episodive.core.domain.di.MainPlayerRepository
+import io.jacob.episodive.core.common.EpisodivePlayers
+import io.jacob.episodive.core.common.Player
+import io.jacob.episodive.core.common.combine
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesUseCase
@@ -14,7 +16,6 @@ import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
 import io.jacob.episodive.core.domain.usecase.user.SetSpeedUseCase
-import io.jacob.episodive.core.domain.util.combine
 import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
@@ -43,7 +44,7 @@ class PlayerViewModel @Inject constructor(
     private val updatePlayedEpisodeUseCase: UpdatePlayedEpisodeUseCase,
     private val getPodcastUseCase: GetPodcastUseCase,
     private val getDominantColorFromUrlUseCase: GetDominantColorFromUrlUseCase,
-    @param:MainPlayerRepository private val playerRepository: PlayerRepository,
+    @param:Player(EpisodivePlayers.Main) private val playerRepository: PlayerRepository,
     private val setSpeedUseCase: SetSpeedUseCase,
     private val getUserDataUseCase: GetUserDataUseCase,
     private val getChaptersUseCase: GetChaptersUseCase,

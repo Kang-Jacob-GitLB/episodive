@@ -1,13 +1,19 @@
 package io.jacob.episodive.core.network.di
 
+import android.content.Context
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.jacob.episodive.core.common.Dispatcher
+import io.jacob.episodive.core.common.EpisodiveDispatchers
 import io.jacob.episodive.core.network.api.ChapterApi
 import io.jacob.episodive.core.network.api.EpisodeApi
 import io.jacob.episodive.core.network.api.FeedApi
 import io.jacob.episodive.core.network.api.PodcastApi
+import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
+import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSourceImpl
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSourceImpl
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
@@ -16,6 +22,7 @@ import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSourceImpl
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSourceImpl
+import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Singleton
 
 @Module
@@ -58,6 +65,18 @@ object DataSourceModule {
     ): ChapterRemoteDataSource {
         return ChapterRemoteDataSourceImpl(
             chapterApi = chapterApi,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideChannelRemoteDataSource(
+        @ApplicationContext context: Context,
+        @Dispatcher(EpisodiveDispatchers.IO) ioDispatcher: CoroutineDispatcher,
+    ): ChannelRemoteDataSource {
+        return ChannelRemoteDataSourceImpl(
+            context = context,
+            ioDispatcher = ioDispatcher,
         )
     }
 }

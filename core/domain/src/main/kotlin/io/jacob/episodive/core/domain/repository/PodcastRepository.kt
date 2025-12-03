@@ -1,9 +1,12 @@
 package io.jacob.episodive.core.domain.repository
 
+import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Podcast
 import kotlinx.coroutines.flow.Flow
 
 interface PodcastRepository {
+    fun getChannels(): Flow<List<Channel>>
+
     fun searchPodcasts(
         query: String,
         max: Int? = null,

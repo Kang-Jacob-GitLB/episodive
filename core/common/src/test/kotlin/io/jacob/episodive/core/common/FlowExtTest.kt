@@ -1,17 +1,12 @@
-package io.jacob.episodive.core.domain.util
+package io.jacob.episodive.core.common
 
 import app.cash.turbine.test
-import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Rule
+import org.junit.Assert
 import org.junit.Test
 
 class FlowExtTest {
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
-
     @Test
     fun combine5Test() = runTest {
         val combined = combine(
@@ -24,7 +19,7 @@ class FlowExtTest {
             a + b + c + d + e
         }
         combined.test {
-            assertEquals("abcde", awaitItem())
+            Assert.assertEquals("abcde", awaitItem())
             awaitComplete()
         }
     }
@@ -42,7 +37,7 @@ class FlowExtTest {
             a + b + c + d + e + f
         }
         combined.test {
-            assertEquals("abcdef", awaitItem())
+            Assert.assertEquals("abcdef", awaitItem())
             awaitComplete()
         }
     }
@@ -61,7 +56,7 @@ class FlowExtTest {
             a + b + c + d + e + f + g
         }
         combined.test {
-            assertEquals("abcdefg", awaitItem())
+            Assert.assertEquals("abcdefg", awaitItem())
             awaitComplete()
         }
     }
@@ -81,7 +76,7 @@ class FlowExtTest {
             a + b + c + d + e + f + g + h
         }
         combined.test {
-            assertEquals("abcdefgh", awaitItem())
+            Assert.assertEquals("abcdefgh", awaitItem())
             awaitComplete()
         }
     }
@@ -102,7 +97,7 @@ class FlowExtTest {
             a + b + c + d + e + f + g + h + i
         }
         combined.test {
-            assertEquals("abcdefghi", awaitItem())
+            Assert.assertEquals("abcdefghi", awaitItem())
             awaitComplete()
         }
     }
@@ -124,7 +119,7 @@ class FlowExtTest {
             a + b + c + d + e + f + g + h + i + j
         }
         combined.test {
-            assertEquals("abcdefghij", awaitItem())
+            Assert.assertEquals("abcdefghij", awaitItem())
             awaitComplete()
         }
     }

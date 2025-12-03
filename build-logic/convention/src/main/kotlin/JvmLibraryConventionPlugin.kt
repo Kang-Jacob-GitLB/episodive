@@ -22,7 +22,10 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
             }
 
             dependencies {
+                "implementation"(libs.findLibrary("kotlinx.coroutines.core").get())
+                "testImplementation"(libs.findLibrary("kotlinx.coroutines.test").get())
                 "testImplementation"(libs.findLibrary("kotlin.test").get())
+                "testImplementation"(libs.findLibrary("turbine").get())
             }
         }
     }

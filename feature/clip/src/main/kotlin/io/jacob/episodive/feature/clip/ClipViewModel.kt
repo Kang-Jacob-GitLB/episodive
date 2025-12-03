@@ -3,7 +3,8 @@ package io.jacob.episodive.feature.clip
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.jacob.episodive.core.domain.di.ClipPlayerRepository
+import io.jacob.episodive.core.common.EpisodivePlayers
+import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetClipEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
@@ -24,7 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ClipViewModel @Inject constructor(
     getClipEpisodesUseCase: GetClipEpisodesUseCase,
-    @param:ClipPlayerRepository private val playerRepository: PlayerRepository,
+    @param:Player(EpisodivePlayers.Clip) private val playerRepository: PlayerRepository,
     private val playAndAddClipsUseCase: PlayAndAddClipsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val toggleLikedUseCase: ToggleLikedUseCase,

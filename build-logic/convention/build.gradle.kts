@@ -69,9 +69,9 @@ gradlePlugin {
             id = libs.plugins.episodive.android.room.get().pluginId
             implementationClass = "AndroidRoomConventionPlugin"
         }
-        register("androidHilt") {
-            id = libs.plugins.episodive.android.hilt.get().pluginId
-            implementationClass = "AndroidHiltConventionPlugin"
+        register("hilt") {
+            id = libs.plugins.episodive.hilt.get().pluginId
+            implementationClass = "HiltConventionPlugin"
         }
         register("jvmLibrary") {
             id = libs.plugins.episodive.jvm.library.get().pluginId

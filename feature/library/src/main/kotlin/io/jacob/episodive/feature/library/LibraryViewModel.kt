@@ -3,6 +3,7 @@ package io.jacob.episodive.feature.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.jacob.episodive.core.common.combine
 import io.jacob.episodive.core.domain.usecase.FindInLibraryUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetAllPlayedEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesUseCase
@@ -14,7 +15,6 @@ import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetPreferredCategoriesUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetSelectableCategoriesUseCase
 import io.jacob.episodive.core.domain.usecase.user.ToggleCategoryUseCase
-import io.jacob.episodive.core.domain.util.combine
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.LibraryFindResult

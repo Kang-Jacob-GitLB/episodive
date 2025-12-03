@@ -6,6 +6,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.jacob.episodive.core.common.EpisodivePlayers
+import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.data.repository.EpisodeRepositoryImpl
 import io.jacob.episodive.core.data.repository.FeedRepositoryImpl
 import io.jacob.episodive.core.data.repository.ImageRepositoryImpl
@@ -20,8 +22,6 @@ import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.datasource.RecentSearchLocalDataSource
 import io.jacob.episodive.core.datastore.datasource.UserPreferencesDataSource
-import io.jacob.episodive.core.domain.di.ClipPlayerRepository
-import io.jacob.episodive.core.domain.di.MainPlayerRepository
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.FeedRepository
 import io.jacob.episodive.core.domain.repository.ImageRepository
@@ -29,13 +29,12 @@ import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.domain.repository.RecentSearchRepository
 import io.jacob.episodive.core.domain.repository.UserRepository
+import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
-import io.jacob.episodive.core.player.di.ClipPlayerDataSource
-import io.jacob.episodive.core.player.di.MainPlayerDataSource
 import javax.inject.Singleton
 
 @Module
@@ -46,11 +45,13 @@ object RepositoryModule {
     fun providePodcastRepository(
         podcastLocalDataSource: PodcastLocalDataSource,
         podcastRemoteDataSource: PodcastRemoteDataSource,
+        channelRemoteDataSource: ChannelRemoteDataSource,
         podcastRemoteUpdater: PodcastRemoteUpdater.Factory,
     ): PodcastRepository {
         return PodcastRepositoryImpl(
             localDataSource = podcastLocalDataSource,
             remoteDataSource = podcastRemoteDataSource,
+            channelRemoteDataSource = channelRemoteDataSource,
             remoteUpdater = podcastRemoteUpdater,
         )
     }
@@ -95,9 +96,9 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    @MainPlayerRepository
+    @Player(EpisodivePlayers.Main)
     fun provideMainPlayerRepository(
-        @MainPlayerDataSource mainPlayerDataSource: PlayerDataSource,
+        @Player(EpisodivePlayers.Main) mainPlayerDataSource: PlayerDataSource,
         episodeLocalDataSource: EpisodeLocalDataSource,
     ): PlayerRepository {
         return PlayerRepositoryImpl(
@@ -108,9 +109,9 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    @ClipPlayerRepository
+    @Player(EpisodivePlayers.Clip)
     fun provideClipPlayerRepository(
-        @ClipPlayerDataSource clipPlayerDataSource: PlayerDataSource,
+        @Player(EpisodivePlayers.Clip) clipPlayerDataSource: PlayerDataSource,
         episodeLocalDataSource: EpisodeLocalDataSource,
     ): PlayerRepository {
         return PlayerRepositoryImpl(

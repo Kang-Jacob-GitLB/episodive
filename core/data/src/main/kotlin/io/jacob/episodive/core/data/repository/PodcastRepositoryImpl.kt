@@ -8,8 +8,11 @@ import io.jacob.episodive.core.database.mapper.toPodcast
 import io.jacob.episodive.core.database.mapper.toPodcasts
 import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.domain.repository.PodcastRepository
+import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Podcast
+import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
+import io.jacob.episodive.core.network.mapper.toChannels
 import io.jacob.episodive.core.network.mapper.toPodcast
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -19,8 +22,16 @@ import javax.inject.Inject
 class PodcastRepositoryImpl @Inject constructor(
     private val localDataSource: PodcastLocalDataSource,
     private val remoteDataSource: PodcastRemoteDataSource,
+    private val channelRemoteDataSource: ChannelRemoteDataSource,
     private val remoteUpdater: PodcastRemoteUpdater.Factory,
 ) : PodcastRepository {
+    override fun getChannels(): Flow<List<Channel>> {
+        return flow {
+            val channels = channelRemoteDataSource.getChannels().toChannels()
+            emit(channels)
+        }
+    }
+
     override fun searchPodcasts(
         query: String,
         max: Int?,

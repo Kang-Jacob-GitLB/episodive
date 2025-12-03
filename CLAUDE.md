@@ -84,8 +84,8 @@ Uses Gradle convention plugins in `build-logic/convention/` for consistent modul
 - `episodive.android.feature` - Feature module template (combines library, compose, hilt, jacoco,
   test)
 - `episodive.android.room` - Room database configuration
-- `episodive.android.hilt` - Hilt dependency injection
 - `episodive.android.test` - Test dependencies and configuration
+- `episodive.hilt` - Hilt dependency injection
 
 ### Important Implementation Details
 

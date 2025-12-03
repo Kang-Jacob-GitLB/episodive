@@ -14,23 +14,16 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Qualifier
+import io.jacob.episodive.core.common.EpisodivePlayers
+import io.jacob.episodive.core.common.Player
 import javax.inject.Singleton
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class MainPlayer
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class ClipPlayer
 
 @Module
 @InstallIn(SingletonComponent::class)
 object PlayerModule {
     @Provides
     @Singleton
-    @MainPlayer
+    @Player(EpisodivePlayers.Main)
     fun provideMainExoPlayer(
         @ApplicationContext context: Context
     ): ExoPlayer {
@@ -39,7 +32,7 @@ object PlayerModule {
 
     @Provides
     @Singleton
-    @ClipPlayer
+    @Player(EpisodivePlayers.Clip)
     fun provideClipExoPlayer(
         @ApplicationContext context: Context
     ): ExoPlayer {

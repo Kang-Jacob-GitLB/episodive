@@ -5,27 +5,20 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import io.jacob.episodive.core.common.EpisodivePlayers
+import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import io.jacob.episodive.core.player.datasource.PlayerDataSourceImpl
-import javax.inject.Qualifier
 import javax.inject.Singleton
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class MainPlayerDataSource
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class ClipPlayerDataSource
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DataSourceModule {
     @Provides
     @Singleton
-    @MainPlayerDataSource
+    @Player(EpisodivePlayers.Main)
     fun provideMainPlayerDataSource(
-        @MainPlayer exoPlayer: ExoPlayer,
+        @Player(EpisodivePlayers.Main) exoPlayer: ExoPlayer,
     ): PlayerDataSource {
         return PlayerDataSourceImpl(
             player = exoPlayer,
@@ -34,9 +27,9 @@ object DataSourceModule {
 
     @Provides
     @Singleton
-    @ClipPlayerDataSource
+    @Player(EpisodivePlayers.Clip)
     fun provideClipPlayerDataSource(
-        @ClipPlayer exoPlayer: ExoPlayer,
+        @Player(EpisodivePlayers.Clip) exoPlayer: ExoPlayer,
     ): PlayerDataSource {
         return PlayerDataSourceImpl(
             player = exoPlayer,

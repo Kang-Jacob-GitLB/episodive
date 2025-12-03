@@ -2,8 +2,8 @@ plugins {
     alias(libs.plugins.episodive.android.application)
     alias(libs.plugins.episodive.android.application.compose)
     alias(libs.plugins.episodive.android.application.jacoco)
-    alias(libs.plugins.episodive.android.hilt)
     alias(libs.plugins.episodive.android.test)
+    alias(libs.plugins.episodive.hilt)
 }
 
 android {
@@ -29,6 +29,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.common)
     implementation(projects.core.data)
     implementation(projects.core.domain)
     implementation(projects.core.designsystem)

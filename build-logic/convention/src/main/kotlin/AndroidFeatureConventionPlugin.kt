@@ -12,14 +12,15 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
             apply(plugin = "episodive.android.library")
             apply(plugin = "episodive.android.library.compose")
             apply(plugin = "episodive.android.library.jacoco")
-            apply(plugin = "episodive.android.hilt")
             apply(plugin = "episodive.android.test")
+            apply(plugin = "episodive.hilt")
 
             extensions.configure<LibraryExtension> {
                 testOptions.animationsDisabled = true
             }
 
             dependencies {
+                "implementation"(project(":core:common"))
                 "implementation"(project(":core:domain"))
                 "implementation"(project(":core:designsystem"))
                 "implementation"(project(":core:testing"))

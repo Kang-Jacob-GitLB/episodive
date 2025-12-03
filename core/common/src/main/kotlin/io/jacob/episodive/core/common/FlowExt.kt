@@ -1,6 +1,6 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package io.jacob.episodive.core.domain.util
+package io.jacob.episodive.core.common
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
