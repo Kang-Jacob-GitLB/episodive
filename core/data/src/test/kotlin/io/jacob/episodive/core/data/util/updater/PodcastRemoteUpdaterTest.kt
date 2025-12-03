@@ -4,6 +4,7 @@ import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.mapper.toPodcastDtos
 import io.jacob.episodive.core.database.mapper.toPodcastEntities
+import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.model.PodcastResponse
 import io.jacob.episodive.core.testing.model.podcastTestDataList
@@ -281,5 +282,37 @@ class PodcastRemoteUpdaterTest {
             // Then - should not throw exception
             coVerify { remoteDataSource.searchPodcasts(searchQuery) }
             coVerify(exactly = 0) { localDataSource.replacePodcasts(any()) }
+        }
+
+    @Test
+    fun `Given ByChannel query, When fetchFromRemote, Then calls getPodcastsByGuids`() =
+        runTest {
+            // Given
+            val channel = Channel(
+                id = 1,
+                title = "Test Channel",
+                description = "Test Description",
+                image = "https://example.com/image.jpg",
+                link = "https://example.com",
+                count = 3,
+                podcastGuids = listOf("guid1", "guid2", "guid3")
+            )
+            val query = PodcastQuery.ByChannel(channel)
+            val updater = PodcastRemoteUpdater(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteDataSource,
+                query = query,
+            )
+            val mockResponses = listOf(mockk<PodcastResponse>(relaxed = true))
+            coEvery {
+                remoteDataSource.getPodcastsByGuids(channel.podcastGuids)
+            } returns mockResponses
+
+            // When
+            val result = updater.fetchFromRemote()
+
+            // Then
+            assertTrue(result.isNotEmpty())
+            coVerify { remoteDataSource.getPodcastsByGuids(channel.podcastGuids) }
         }
 }

@@ -31,6 +31,8 @@ class PodcastRemoteUpdater @AssistedInject constructor(
             is PodcastQuery.FeedId -> remoteDataSource.getPodcastByFeedId(query.feedId)
                 ?.let { listOf(it) }
                 ?: emptyList()
+
+            is PodcastQuery.ByChannel -> remoteDataSource.getPodcastsByGuids(query.channel.podcastGuids)
         }
     }
 

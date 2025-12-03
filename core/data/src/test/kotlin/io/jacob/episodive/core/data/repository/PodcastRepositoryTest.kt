@@ -6,6 +6,7 @@ import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.mapper.toPodcastDtos
 import io.jacob.episodive.core.domain.repository.PodcastRepository
+import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.testing.model.podcastTestData
@@ -227,6 +228,41 @@ class PodcastRepositoryTest {
             // Then
             coVerifySequence {
                 localDataSource.toggleFollowed(podcastId)
+            }
+        }
+
+    @Test
+    fun `Given channel, When getPodcastsByChannel is called, Then calls methods of dataSources`() =
+        runTest {
+            // Given
+            val channel = Channel(
+                id = 1,
+                title = "Test Channel",
+                description = "Test Description",
+                image = "https://example.com/image.jpg",
+                link = "https://example.com",
+                count = 3,
+                podcastGuids = listOf("guid1", "guid2", "guid3")
+            )
+            val query = PodcastQuery.ByChannel(channel)
+            coEvery {
+                remoteUpdater.create(query)
+            } returns mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsByCacheKey(query.key)
+            } returns flowOf(podcastDtos)
+
+            // When
+            repository.getPodcastsByChannel(channel).test {
+                val result = awaitItem()
+                // Then
+                assertEquals(10, result.size)
+                assertEquals(podcastTestDataList, result)
+                awaitComplete()
+            }
+            coVerifySequence {
+                remoteUpdater.create(query)
+                localDataSource.getPodcastsByCacheKey(query.key)
             }
         }
 }

@@ -5,7 +5,7 @@ import io.jacob.episodive.core.network.model.PodcastResponse
 import javax.inject.Inject
 
 class PodcastRemoteDataSourceImpl @Inject constructor(
-    private val podcastApi: PodcastApi
+    private val podcastApi: PodcastApi,
 ) : PodcastRemoteDataSource {
     override suspend fun searchPodcasts(
         query: String,
@@ -37,5 +37,9 @@ class PodcastRemoteDataSourceImpl @Inject constructor(
             medium = medium,
             max = max,
         ).dataList
+    }
+
+    override suspend fun getPodcastsByGuids(guids: List<String>): List<PodcastResponse> {
+        return podcastApi.getPodcastsByGuids(guids = guids).dataList
     }
 }

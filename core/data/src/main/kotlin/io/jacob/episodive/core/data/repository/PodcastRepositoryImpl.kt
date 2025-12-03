@@ -89,6 +89,17 @@ class PodcastRepositoryImpl @Inject constructor(
         ).flow.map { it.toPodcasts() }
     }
 
+    override fun getPodcastsByChannel(channel: Channel): Flow<List<Podcast>> {
+        val query = PodcastQuery.ByChannel(channel)
+
+        return Cacher(
+            remoteUpdater = remoteUpdater.create(query),
+            sourceFactory = {
+                localDataSource.getPodcastsByCacheKey(query.key)
+            }
+        ).flow.map { it.toPodcasts() }
+    }
+
     override fun getFollowedPodcasts(query: String?): Flow<List<Podcast>> {
         return localDataSource.getFollowedPodcasts().map { podcasts ->
             podcasts

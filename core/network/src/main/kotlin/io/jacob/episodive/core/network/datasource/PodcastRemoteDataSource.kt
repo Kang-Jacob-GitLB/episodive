@@ -18,4 +18,6 @@ interface PodcastRemoteDataSource {
         medium: String,
         max: Int? = null,
     ): List<PodcastResponse>
+
+    suspend fun getPodcastsByGuids(guids: List<String>): List<PodcastResponse>
 }

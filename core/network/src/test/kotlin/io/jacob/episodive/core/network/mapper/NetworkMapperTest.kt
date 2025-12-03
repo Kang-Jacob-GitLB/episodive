@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.network.mapper
 
 import android.os.Build
+import io.jacob.episodive.core.network.model.ChannelResponse
 import io.jacob.episodive.core.network.model.EpisodeResponse
 import io.jacob.episodive.core.network.model.PodcastResponse
 import io.jacob.episodive.core.testing.model.episodeTestData
@@ -33,6 +34,32 @@ import org.robolectric.annotation.Config
 class NetworkMapperTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
+
+    @Test
+    fun `toChannel converts ChannelResponse to Channel correctly`() {
+        // Given
+        val channelResponse = ChannelResponse(
+            id = 1,
+            title = "Test Channel",
+            description = "Test description",
+            image = "https://example.com/image.jpg",
+            link = "https://example.com",
+            count = 2,
+            podcastGuids = listOf("guid1", "guid2")
+        )
+
+        // When
+        val channel = channelResponse.toChannel()
+
+        // Then
+        assertEquals(channelResponse.id, channel.id)
+        assertEquals(channelResponse.title, channel.title)
+        assertEquals(channelResponse.description, channel.description)
+        assertEquals(channelResponse.image, channel.image)
+        assertEquals(channelResponse.link, channel.link)
+        assertEquals(channelResponse.count, channel.count)
+        assertEquals(channelResponse.podcastGuids, channel.podcastGuids)
+    }
 
     @Test
     fun `toPodcast converts PodcastResponse to Podcast correctly`() {
