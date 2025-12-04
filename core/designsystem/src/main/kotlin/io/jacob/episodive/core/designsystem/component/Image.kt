@@ -208,6 +208,9 @@ fun StateImage(
         when (imagePainterState) {
             is AsyncImagePainter.State.Empty,
             is AsyncImagePainter.State.Loading,
+                -> {
+            }
+
             is AsyncImagePainter.State.Error,
                 -> {
                 Timber.w("Image($imageUrl) load error: ${(imagePainterState as? AsyncImagePainter.State.Error)?.result?.throwable.toString()}")
