@@ -35,7 +35,7 @@ Navigation 4개 탭:
     - /podcasts/trending (lang)
 - ✅ 라이브 에피소드 리스트 (vertical)
     - /episodes/live
-- ⬜ 채널 리스트 (horizontal)
+- ✅ 채널 리스트 (horizontal)
     - db, /search/byterm
     - CNN, 뇌부자들, JTBC, BBC, ...
 
@@ -112,3 +112,4 @@ local db
 - ✅ playlist
 - ✅ playback speed
 - ⬜ sleep timer
+- ⬜ foreground service player
