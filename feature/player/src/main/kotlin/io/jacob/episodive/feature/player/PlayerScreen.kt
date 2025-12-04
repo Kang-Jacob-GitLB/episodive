@@ -10,7 +10,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -74,6 +73,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveSeeker
 import io.jacob.episodive.core.designsystem.component.EpisodiveTextButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveViewToggleButton
+import io.jacob.episodive.core.designsystem.component.FadingEdgeText
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
@@ -282,10 +282,8 @@ private fun PlayerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        Text(
+                        FadingEdgeText(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .basicMarquee()
                                 .clickable { onPodcastClick(podcast) },
                             text = podcast.title,
                             style = MaterialTheme.typography.bodyLarge,
@@ -294,10 +292,9 @@ private fun PlayerScreen(
                             maxLines = 1,
                         )
 
-                        Text(
+                        FadingEdgeText(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .basicMarquee(),
+                                .fillMaxWidth(),
                             text = nowPlaying.title,
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onSurface,

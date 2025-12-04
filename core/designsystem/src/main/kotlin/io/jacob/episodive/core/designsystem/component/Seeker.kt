@@ -50,6 +50,16 @@ fun EpisodiveSeeker(
         onChapterIndex(chapters.indexOfFirst { it.title == state.currentSegment.name })
     }
 
+    val segments = chapters.mapIndexed { index, chapter ->
+        val start = (chapter.startTime / progress.duration).toFloat().let {
+            if (index == 0) 0f else it
+        }
+        Segment(
+            name = chapter.title,
+            start = start,
+        )
+    }
+
     Seeker(
         modifier = modifier
             .then(if (!isControllable) Modifier.height(progressHeight) else Modifier),
@@ -62,12 +72,7 @@ fun EpisodiveSeeker(
         onValueChangeFinished = {
             onSeekTo((thumbPosition * progress.duration.toLongMillis()).toLong())
         },
-        segments = chapters.map { chapter ->
-            Segment(
-                name = chapter.title,
-                start = (chapter.startTime / progress.duration).toFloat(),
-            )
-        },
+        segments = segments,
         enabled = isControllable,
         colors = SeekerDefaults.seekerColors(
             progressColor = MaterialTheme.colorScheme.primary,

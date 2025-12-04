@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +18,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,13 +28,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.DominantRegion
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveSeeker
+import io.jacob.episodive.core.designsystem.component.FadingEdgeText
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
@@ -160,30 +158,25 @@ private fun PlayerBar(
 
                 Column(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 8.dp),
+                        .weight(1f),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
+                    FadingEdgeText(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .basicMarquee(),
+                            .fillMaxWidth(),
                         text = nowPlaying.title,
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
 
-                    Text(
+                    FadingEdgeText(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .basicMarquee(),
+                            .fillMaxWidth(),
                         text = podcast.title,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
                 }
 
