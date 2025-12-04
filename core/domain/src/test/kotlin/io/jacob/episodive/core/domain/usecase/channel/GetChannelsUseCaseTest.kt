@@ -1,7 +1,7 @@
-package io.jacob.episodive.core.domain.usecase.podcast
+package io.jacob.episodive.core.domain.usecase.channel
 
 import app.cash.turbine.test
-import io.jacob.episodive.core.domain.repository.PodcastRepository
+import io.jacob.episodive.core.domain.repository.ChannelRepository
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerifySequence
@@ -16,15 +16,15 @@ class GetChannelsUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val podcastRepository = mockk<PodcastRepository>(relaxed = true)
+    private val channelRepository = mockk<ChannelRepository>(relaxed = true)
 
     private val useCase = GetChannelsUseCase(
-        podcastRepository = podcastRepository,
+        channelRepository = channelRepository,
     )
 
     @After
     fun teardown() {
-        confirmVerified(podcastRepository)
+        confirmVerified(channelRepository)
     }
 
     @Test
@@ -32,7 +32,7 @@ class GetChannelsUseCaseTest {
         runTest {
             // Given
             coEvery {
-                podcastRepository.getChannels()
+                channelRepository.getChannels()
             } returns mockk(relaxed = true)
 
             // When
@@ -42,7 +42,7 @@ class GetChannelsUseCaseTest {
 
             // Then
             coVerifySequence {
-                podcastRepository.getChannels()
+                channelRepository.getChannels()
             }
         }
 }

@@ -43,7 +43,7 @@ fun ChannelSection(
     modifier: Modifier = Modifier,
     title: String,
     channels: List<Channel>,
-    onChannelClick: (Channel) -> Unit,
+    onChannelClick: (Long) -> Unit,
 ) {
     SectionHeader(
         modifier = modifier,
@@ -69,7 +69,7 @@ fun ChannelSection(
             ) { channel ->
                 ChannelItem(
                     channel = channel,
-                    onClick = { onChannelClick(channel) }
+                    onClick = { onChannelClick(channel.id) }
                 )
             }
         }
@@ -82,7 +82,7 @@ fun ChannelItem(
     channel: Channel,
     onClick: () -> Unit,
 ) {
-    var backgroundColor by remember { mutableStateOf(Color.Cyan) }
+    var backgroundColor by remember { mutableStateOf(Color.DarkGray) }
 
     Column(
         modifier = modifier

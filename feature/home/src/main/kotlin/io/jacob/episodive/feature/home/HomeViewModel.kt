@@ -4,13 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.common.combine
+import io.jacob.episodive.core.domain.usecase.channel.GetChannelsUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLiveEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetMyRandomEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetPlayingEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
-import io.jacob.episodive.core.domain.usecase.podcast.GetChannelsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetMyRecentPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetMyTrendingPodcastsUseCase
@@ -113,7 +113,7 @@ class HomeViewModel @Inject constructor(
                 is HomeAction.ResumeEpisode -> resumeEpisode(action.playedEpisode)
                 is HomeAction.ToggleEpisodeLiked -> toggleEpisodeLiked(action.episode)
                 is HomeAction.ClickPodcast -> clickPodcast(action.podcastId)
-                is HomeAction.ClickChannel -> clickChannel(action.channel)
+                is HomeAction.ClickChannel -> clickChannel(action.channelId)
             }
         }
     }
@@ -134,13 +134,12 @@ class HomeViewModel @Inject constructor(
         toggleLikedUseCase(episode.id)
     }
 
-
     private fun clickPodcast(podcastId: Long) = viewModelScope.launch {
         _effect.emit(HomeEffect.NavigateToPodcast(podcastId))
     }
 
-    private fun clickChannel(channel: Channel) = viewModelScope.launch {
-        _effect.emit(HomeEffect.NavigateToChannel(channel))
+    private fun clickChannel(channelId: Long) = viewModelScope.launch {
+        _effect.emit(HomeEffect.NavigateToChannel(channelId))
     }
 
     companion object {
@@ -170,10 +169,10 @@ sealed interface HomeAction {
     data class ResumeEpisode(val playedEpisode: Episode) : HomeAction
     data class ToggleEpisodeLiked(val episode: Episode) : HomeAction
     data class ClickPodcast(val podcastId: Long) : HomeAction
-    data class ClickChannel(val channel: Channel) : HomeAction
+    data class ClickChannel(val channelId: Long) : HomeAction
 }
 
 sealed interface HomeEffect {
     data class NavigateToPodcast(val podcastId: Long) : HomeEffect
-    data class NavigateToChannel(val channel: Channel) : HomeEffect
+    data class NavigateToChannel(val channelId: Long) : HomeEffect
 }

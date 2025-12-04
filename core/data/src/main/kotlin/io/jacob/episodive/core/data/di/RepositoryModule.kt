@@ -6,6 +6,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
+import io.jacob.episodive.core.data.repository.ChannelRepositoryImpl
 import io.jacob.episodive.core.data.repository.EpisodeRepositoryImpl
 import io.jacob.episodive.core.data.repository.FeedRepositoryImpl
 import io.jacob.episodive.core.data.repository.PlayerRepositoryImpl
@@ -19,6 +20,7 @@ import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.datasource.RecentSearchLocalDataSource
 import io.jacob.episodive.core.datastore.datasource.UserPreferencesDataSource
+import io.jacob.episodive.core.domain.repository.ChannelRepository
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.FeedRepository
 import io.jacob.episodive.core.domain.repository.PlayerRepository
@@ -38,16 +40,24 @@ import javax.inject.Singleton
 object RepositoryModule {
     @Provides
     @Singleton
+    fun provideChannelRepository(
+        channelRemoteDataSource: ChannelRemoteDataSource,
+    ): ChannelRepository {
+        return ChannelRepositoryImpl(
+            remoteDataSource = channelRemoteDataSource,
+        )
+    }
+
+    @Provides
+    @Singleton
     fun providePodcastRepository(
         podcastLocalDataSource: PodcastLocalDataSource,
         podcastRemoteDataSource: PodcastRemoteDataSource,
-        channelRemoteDataSource: ChannelRemoteDataSource,
         podcastRemoteUpdater: PodcastRemoteUpdater.Factory,
     ): PodcastRepository {
         return PodcastRepositoryImpl(
             localDataSource = podcastLocalDataSource,
             remoteDataSource = podcastRemoteDataSource,
-            channelRemoteDataSource = channelRemoteDataSource,
             remoteUpdater = podcastRemoteUpdater,
         )
     }

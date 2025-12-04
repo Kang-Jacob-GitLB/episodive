@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -128,12 +129,12 @@ fun PodcastItem(
     Column(
         modifier = modifier
             .width(140.dp)
-            .height(210.dp)
             .clickable { onClick() },
     ) {
         StateImage(
             modifier = Modifier
-                .size(140.dp)
+                .fillMaxWidth()
+                .aspectRatio(1f)
                 .clip(MaterialTheme.shapes.extraLarge),
             imageUrl = podcast.image,
             contentDescription = podcast.title,
@@ -170,12 +171,12 @@ fun PodcastWithAuthorItem(
     Column(
         modifier = modifier
             .width(140.dp)
-            .height(210.dp)
             .clickable { onClick() },
     ) {
         StateImage(
             modifier = Modifier
-                .size(140.dp)
+                .fillMaxWidth()
+                .aspectRatio(1f)
                 .clip(MaterialTheme.shapes.extraLarge),
             imageUrl = podcast.image,
             contentDescription = podcast.title,

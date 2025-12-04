@@ -13,6 +13,10 @@ class ChannelRemoteDataSourceImpl @Inject constructor(
     private val context: Context,
     @param:Dispatcher(EpisodiveDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
 ) : ChannelRemoteDataSource {
+    override suspend fun getChannelById(id: Long): ChannelResponse? {
+        return getChannels().find { it.id == id }
+    }
+
     override suspend fun getChannels(): List<ChannelResponse> {
         return loadJsonAsset<List<ChannelResponse>>(CHANNELS_ASSET)
     }

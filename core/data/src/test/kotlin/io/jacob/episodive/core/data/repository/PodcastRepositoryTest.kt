@@ -7,7 +7,6 @@ import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.mapper.toPodcastDtos
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.model.Channel
-import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.testing.model.podcastTestDataList
@@ -31,13 +30,11 @@ class PodcastRepositoryTest {
 
     private val localDataSource = mockk<PodcastLocalDataSource>(relaxed = true)
     private val remoteDataSource = mockk<PodcastRemoteDataSource>(relaxed = true)
-    private val channelRemoteDataSource = mockk<ChannelRemoteDataSource>(relaxed = true)
     private val remoteUpdater = mockk<PodcastRemoteUpdater.Factory>(relaxed = true)
 
     private val repository: PodcastRepository = PodcastRepositoryImpl(
         localDataSource = localDataSource,
         remoteDataSource = remoteDataSource,
-        channelRemoteDataSource = channelRemoteDataSource,
         remoteUpdater = remoteUpdater,
     )
 
@@ -48,28 +45,9 @@ class PodcastRepositoryTest {
         confirmVerified(
             localDataSource,
             remoteDataSource,
-            channelRemoteDataSource,
             remoteUpdater,
         )
     }
-
-    @Test
-    fun `Given suspend dataSource, When getChannels is called, Then calls methods of dataSources`() =
-        runTest {
-            // Given
-            coEvery { channelRemoteDataSource.getChannels() } returns mockk(relaxed = true)
-
-            // When
-            repository.getChannels().test {
-                awaitItem()
-                awaitComplete()
-            }
-
-            // Then
-            coVerifySequence {
-                channelRemoteDataSource.getChannels()
-            }
-        }
 
     @Test
     fun `Given search, When searchPodcasts is called, Then calls methods of dataSources`() =

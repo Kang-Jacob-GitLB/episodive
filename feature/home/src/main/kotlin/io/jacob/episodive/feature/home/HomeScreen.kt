@@ -60,7 +60,7 @@ internal fun HomeRoute(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
     onPodcastClick: (Long) -> Unit,
-    onChannelClick: (Channel) -> Unit,
+    onChannelClick: (Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -69,7 +69,7 @@ internal fun HomeRoute(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is HomeEffect.NavigateToPodcast -> onPodcastClick(effect.podcastId)
-                is HomeEffect.NavigateToChannel -> onChannelClick(effect.channel)
+                is HomeEffect.NavigateToChannel -> onChannelClick(effect.channelId)
             }
         }
     }
@@ -116,7 +116,7 @@ private fun HomeScreen(
     onResumeEpisode: (Episode) -> Unit,
     onToggleEpisodeLiked: (Episode) -> Unit,
     onPodcastClick: (Long) -> Unit,
-    onChannelClick: (Channel) -> Unit,
+    onChannelClick: (Long) -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val screenHeight = this.maxHeight
@@ -255,9 +255,7 @@ private fun HomeScreen(
                             ChannelSection(
                                 title = stringResource(R.string.feature_home_section_channels),
                                 channels = channels,
-                                onChannelClick = { channel ->
-
-                                }
+                                onChannelClick = onChannelClick
                             )
                         }
 

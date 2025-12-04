@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -72,6 +74,7 @@ fun EpisodiveCenterTopAppBar(
     actionIcon: ImageVector? = null,
     actionIconContentDescription: String? = null,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
+    iconButtonColors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
     onNavigationClick: () -> Unit = {},
@@ -83,7 +86,10 @@ fun EpisodiveCenterTopAppBar(
             if (navigationIcon == null) return@CenterAlignedTopAppBar
             if (navigationIconContentDescription == null) return@CenterAlignedTopAppBar
 
-            IconButton(onClick = onNavigationClick) {
+            IconButton(
+                onClick = onNavigationClick,
+                colors = iconButtonColors,
+            ) {
                 Icon(
                     imageVector = navigationIcon,
                     contentDescription = navigationIconContentDescription,
@@ -95,7 +101,10 @@ fun EpisodiveCenterTopAppBar(
             if (actionIcon == null) return@CenterAlignedTopAppBar
             if (actionIconContentDescription == null) return@CenterAlignedTopAppBar
 
-            IconButton(onClick = onActionClick) {
+            IconButton(
+                onClick = onActionClick,
+                colors = iconButtonColors,
+            ) {
                 Icon(
                     imageVector = actionIcon,
                     contentDescription = actionIconContentDescription,

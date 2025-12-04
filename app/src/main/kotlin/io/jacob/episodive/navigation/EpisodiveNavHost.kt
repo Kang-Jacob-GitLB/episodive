@@ -5,6 +5,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
+import io.jacob.episodive.feature.channel.navigation.channelScreen
+import io.jacob.episodive.feature.channel.navigation.navigateToChannel
 import io.jacob.episodive.feature.clip.navigation.clipSection
 import io.jacob.episodive.feature.home.navigation.homeSection
 import io.jacob.episodive.feature.library.navigation.librarySection
@@ -29,7 +31,7 @@ fun EpisodiveNavHost(
                 appState.registerNestedNavController(BottomBarDestination.HOME, navController)
             },
             navigateToPodcast = { navigateToPodcast(it) },
-            navigateToChannel = { /* TODO: navigateToChannel(it) */ },
+            navigateToChannel = { navigateToChannel(it) },
             onShowSnackbar = onShowSnackbar,
         ) { nestedNavController ->
             addDetailsGraph(
@@ -84,6 +86,11 @@ fun NavGraphBuilder.addDetailsGraph(
     navController: NavController,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
+    channelScreen(
+        onBackClick = navController::popBackStack,
+        onPodcastClick = navController::navigateToPodcast,
+        onShowSnackbar = onShowSnackbar
+    )
     podcastScreen(
         onBackClick = navController::popBackStack,
         onShowSnackbar = onShowSnackbar

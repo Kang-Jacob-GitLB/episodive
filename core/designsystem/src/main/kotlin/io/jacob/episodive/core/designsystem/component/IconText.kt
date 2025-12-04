@@ -23,14 +23,20 @@ fun EpisodiveIconText(
     modifier: Modifier = Modifier,
     icon: @Composable () -> Unit,
     text: @Composable () -> Unit,
+    iconLead: Boolean = true,
 ) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        icon()
-        text()
+        if (iconLead) {
+            icon()
+            text()
+        } else {
+            text()
+            icon()
+        }
     }
 }
 

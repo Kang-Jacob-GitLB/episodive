@@ -41,6 +41,7 @@ include(":feature:home")
 include(":feature:search")
 include(":feature:library")
 include(":feature:clip")
+include(":feature:channel")
 include(":feature:podcast")
 include(":feature:player")
 

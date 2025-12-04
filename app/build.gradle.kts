@@ -41,6 +41,7 @@ dependencies {
     implementation(projects.feature.search)
     implementation(projects.feature.library)
     implementation(projects.feature.clip)
+    implementation(projects.feature.channel)
     implementation(projects.feature.podcast)
     implementation(projects.feature.player)
 

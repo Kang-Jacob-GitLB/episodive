@@ -1,7 +1,7 @@
 package io.jacob.episodive.core.model
 
 data class Channel(
-    val id: Int,
+    val id: Long,
     val title: String,
     val description: String,
     val image: String,

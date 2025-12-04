@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @OptIn(InternalSerializationApi::class)
 @Serializable
 data class ChannelResponse(
-    val id: Int,
+    val id: Long,
     val title: String,
     val description: String,
     val image: String,

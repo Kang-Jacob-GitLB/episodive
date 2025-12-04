@@ -30,6 +30,16 @@ class ChannelRemoteDataSourceTest {
     }
 
     @Test
+    fun getChannelById_returnsChannelById() = runTest {
+        // When
+        val channel = dataSource.getChannelById(1)
+
+        // Then
+        assertEquals(1L, channel?.id)
+        assertEquals("CNN Podcasts", channel?.title)
+    }
+
+    @Test
     fun getChannels_returnsChannelListFromAsset() = runTest {
         // When
         val channels = dataSource.getChannels()

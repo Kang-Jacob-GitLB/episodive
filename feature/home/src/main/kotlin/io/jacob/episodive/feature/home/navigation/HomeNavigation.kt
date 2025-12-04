@@ -9,7 +9,6 @@ import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.feature.home.HomeRoute
 import kotlinx.serialization.Serializable
 
@@ -24,7 +23,7 @@ fun NavController.navigateToHome(navOptions: NavOptions) =
 
 private fun NavGraphBuilder.homeScreen(
     onPodcatClick: (Long) -> Unit,
-    onChannelClick: (Channel) -> Unit,
+    onChannelClick: (Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     composable<HomeRoute> {
@@ -40,7 +39,7 @@ private fun NavGraphBuilder.homeScreen(
 private fun HomeNavHost(
     navController: NavHostController,
     navigateToPodcast: NavController.(Long) -> Unit,
-    navigateToChannel: NavController.(Channel) -> Unit,
+    navigateToChannel: NavController.(Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
 ) {
@@ -61,7 +60,7 @@ private fun HomeNavHost(
 fun NavGraphBuilder.homeSection(
     onRegisterNestedNavController: (NavHostController) -> Unit,
     navigateToPodcast: NavController.(Long) -> Unit,
-    navigateToChannel: NavController.(Channel) -> Unit,
+    navigateToChannel: NavController.(Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
 ) {

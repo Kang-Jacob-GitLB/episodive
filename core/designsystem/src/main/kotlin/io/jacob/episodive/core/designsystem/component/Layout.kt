@@ -18,9 +18,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -187,6 +189,50 @@ fun FadeTopBarLayout(
         }
     }
 
+    FadeTopBarLayoutContent(
+        modifier = modifier,
+        showTopBar = showTopBar,
+        title = title,
+        onBack = onBack,
+        content = content
+    )
+}
+
+@Composable
+fun FadeTopBarLayout(
+    modifier: Modifier = Modifier,
+    state: LazyGridState,
+    offset: Int = 700,
+    title: String,
+    onBack: () -> Unit,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val showTopBar by remember {
+        derivedStateOf {
+            val firstVisibleItem = state.firstVisibleItemIndex > 0
+            val offsetPastFirst = state.firstVisibleItemIndex == 0 &&
+                    state.firstVisibleItemScrollOffset > offset
+            firstVisibleItem || offsetPastFirst
+        }
+    }
+
+    FadeTopBarLayoutContent(
+        modifier = modifier,
+        showTopBar = showTopBar,
+        title = title,
+        onBack = onBack,
+        content = content
+    )
+}
+
+@Composable
+private fun FadeTopBarLayoutContent(
+    modifier: Modifier = Modifier,
+    showTopBar: Boolean,
+    title: String,
+    onBack: () -> Unit,
+    content: @Composable BoxScope.() -> Unit,
+) {
     Box(modifier = modifier) {
         content()
 
@@ -194,6 +240,9 @@ fun FadeTopBarLayout(
             modifier = Modifier,
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = if (showTopBar) 1f else 0f)
+            ),
+            iconButtonColors = IconButtonDefaults.iconButtonColors(
+                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (showTopBar) 0f else .3f)
             ),
             title = {
                 AnimatedVisibility(

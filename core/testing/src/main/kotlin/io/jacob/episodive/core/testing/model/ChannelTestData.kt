@@ -3,7 +3,7 @@ package io.jacob.episodive.core.testing.model
 import io.jacob.episodive.core.model.Channel
 
 val channelTestData = Channel(
-    id = 1,
+    id = 1L,
     title = "CNN Podcasts",
     description = "Exclusive stories and the latest headlines. Exclusive stories and the latest headlines.",
     image = "https://edition.cnn.com/audio/static/images/live/CNN-m.4945681d.png",
