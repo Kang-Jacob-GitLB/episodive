@@ -81,8 +81,14 @@ class PlayerDataSourceImpl @Inject constructor(
                 }
             }
 
-            _nowPlaying.value = mediaItem?.localConfiguration?.tag as? Episode
+            val episode = mediaItem?.localConfiguration?.tag as? Episode
+            _nowPlaying.value = episode
             _indexOfList.value = player.currentMediaItemIndex
+            _progress.value = Progress(
+                position = Duration.ZERO,
+                buffered = Duration.ZERO,
+                duration = episode?.duration ?: Duration.ZERO,
+            )
         }
 
         override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
