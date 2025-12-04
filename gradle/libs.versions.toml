@@ -40,6 +40,7 @@ splashscreen = "1.2.0"
 appcompat = "1.7.1"
 material = "1.13.0"
 seeker = "1.2.2"
+leakcanary = "2.12"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -91,6 +92,7 @@ google-hilt-core = { group = "com.google.dagger", name = "hilt-core", version.re
 google-gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 seeker = { group = "io.github.2307vivek", name = "seeker", version.ref = "seeker" }
+squareup-leakcanary = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
 squareup-retrofit2-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 squareup-retrofit2-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 squareup-okhttp3-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }

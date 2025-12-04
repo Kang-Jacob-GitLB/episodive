@@ -63,4 +63,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    //----- Leak Canary
+    debugImplementation(libs.squareup.leakcanary)
 }
