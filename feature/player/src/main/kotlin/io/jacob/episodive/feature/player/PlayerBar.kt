@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.jacob.episodive.core.designsystem.component.DominantRegion
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveSeeker
 import io.jacob.episodive.core.designsystem.component.StateImage
@@ -98,7 +99,6 @@ fun PlayerBar(
                 isPlaying = s.isPlaying,
                 isLike = s.isLiked,
                 chapters = s.chapters,
-                dominantColor = Color(s.dominantColor),
                 onExpand = { viewModel.sendAction(PlayerAction.ExpandPlayer) },
                 onToggleLike = { viewModel.sendAction(PlayerAction.ToggleLike) },
                 onPlayOrPause = { viewModel.sendAction(PlayerAction.PlayOrPause) },
@@ -120,11 +120,12 @@ private fun PlayerBar(
     isPlaying: Boolean,
     isLike: Boolean,
     chapters: List<Chapter>,
-    dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
     onExpand: () -> Unit,
     onToggleLike: () -> Unit,
     onPlayOrPause: () -> Unit,
 ) {
+    var dominantColor by remember { mutableStateOf(Color.DarkGray) }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -150,7 +151,11 @@ private fun PlayerBar(
                         .size(50.dp)
                         .clip(MaterialTheme.shapes.medium),
                     imageUrl = nowPlaying.image.ifEmpty { nowPlaying.feedImage },
-                    contentDescription = nowPlaying.title
+                    contentDescription = nowPlaying.title,
+                    onDominantColorExtracted = { dominantColor = it },
+                    dominantRegion = DominantRegion.Top,
+                    clearFilters = false,
+                    brightnessAdjustment = -0.5f
                 )
 
                 Column(

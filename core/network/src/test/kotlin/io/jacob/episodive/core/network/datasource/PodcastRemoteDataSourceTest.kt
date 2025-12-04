@@ -123,4 +123,24 @@ class PodcastRemoteDataSourceTest {
             }
             confirmVerified(podcastApi)
         }
+
+    @Test
+    fun `Given dependencies, When getPodcastsByGuids called, Then dao called`() =
+        runTest {
+            // Given
+            val dataList = mockk<ResponseListWrapper<PodcastResponse>>(relaxed = true) {
+                every { dataList } returns emptyList()
+            }
+            coEvery { podcastApi.getPodcastsByGuids(any()) } returns dataList
+
+            // When
+            dataSource.getPodcastsByGuids(listOf("guid1", "guid2"))
+
+            // Then
+            coVerifySequence {
+                podcastApi.getPodcastsByGuids(any())
+                dataList.dataList
+            }
+            confirmVerified(podcastApi)
+        }
 }

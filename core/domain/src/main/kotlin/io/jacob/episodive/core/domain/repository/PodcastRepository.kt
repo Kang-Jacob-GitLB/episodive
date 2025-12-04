@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.domain.repository
 
+import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Podcast
 import kotlinx.coroutines.flow.Flow
 
@@ -19,6 +20,8 @@ interface PodcastRepository {
         medium: String,
         max: Int? = null,
     ): Flow<List<Podcast>>
+
+    fun getPodcastsByChannel(channel: Channel): Flow<List<Podcast>>
 
     fun getFollowedPodcasts(query: String? = null): Flow<List<Podcast>>
 

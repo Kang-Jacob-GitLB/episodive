@@ -3,7 +3,9 @@ package io.jacob.episodive.core.network.api
 import io.jacob.episodive.core.network.model.PodcastResponse
 import io.jacob.episodive.core.network.model.ResponseListWrapper
 import io.jacob.episodive.core.network.model.ResponseWrapper
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface PodcastApi {
@@ -32,5 +34,10 @@ interface PodcastApi {
     suspend fun getPodcastsByMedium(
         @Query("medium") medium: String,
         @Query("max") max: Int? = null,
+    ): ResponseListWrapper<PodcastResponse>
+
+    @POST("podcasts/batch/byguid")
+    suspend fun getPodcastsByGuids(
+        @Body guids: List<String>,
     ): ResponseListWrapper<PodcastResponse>
 }

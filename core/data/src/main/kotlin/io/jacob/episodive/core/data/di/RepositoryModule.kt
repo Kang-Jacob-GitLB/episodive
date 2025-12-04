@@ -1,14 +1,14 @@
 package io.jacob.episodive.core.data.di
 
-import android.content.Context
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.jacob.episodive.core.common.EpisodivePlayers
+import io.jacob.episodive.core.common.Player
+import io.jacob.episodive.core.data.repository.ChannelRepositoryImpl
 import io.jacob.episodive.core.data.repository.EpisodeRepositoryImpl
 import io.jacob.episodive.core.data.repository.FeedRepositoryImpl
-import io.jacob.episodive.core.data.repository.ImageRepositoryImpl
 import io.jacob.episodive.core.data.repository.PlayerRepositoryImpl
 import io.jacob.episodive.core.data.repository.PodcastRepositoryImpl
 import io.jacob.episodive.core.data.repository.RecentSearchRepositoryImpl
@@ -20,27 +20,34 @@ import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.datasource.RecentSearchLocalDataSource
 import io.jacob.episodive.core.datastore.datasource.UserPreferencesDataSource
-import io.jacob.episodive.core.domain.di.ClipPlayerRepository
-import io.jacob.episodive.core.domain.di.MainPlayerRepository
+import io.jacob.episodive.core.domain.repository.ChannelRepository
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.FeedRepository
-import io.jacob.episodive.core.domain.repository.ImageRepository
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.domain.repository.RecentSearchRepository
 import io.jacob.episodive.core.domain.repository.UserRepository
+import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
-import io.jacob.episodive.core.player.di.ClipPlayerDataSource
-import io.jacob.episodive.core.player.di.MainPlayerDataSource
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
+    @Provides
+    @Singleton
+    fun provideChannelRepository(
+        channelRemoteDataSource: ChannelRemoteDataSource,
+    ): ChannelRepository {
+        return ChannelRepositoryImpl(
+            remoteDataSource = channelRemoteDataSource,
+        )
+    }
+
     @Provides
     @Singleton
     fun providePodcastRepository(
@@ -95,9 +102,9 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    @MainPlayerRepository
+    @Player(EpisodivePlayers.Main)
     fun provideMainPlayerRepository(
-        @MainPlayerDataSource mainPlayerDataSource: PlayerDataSource,
+        @Player(EpisodivePlayers.Main) mainPlayerDataSource: PlayerDataSource,
         episodeLocalDataSource: EpisodeLocalDataSource,
     ): PlayerRepository {
         return PlayerRepositoryImpl(
@@ -108,24 +115,14 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    @ClipPlayerRepository
+    @Player(EpisodivePlayers.Clip)
     fun provideClipPlayerRepository(
-        @ClipPlayerDataSource clipPlayerDataSource: PlayerDataSource,
+        @Player(EpisodivePlayers.Clip) clipPlayerDataSource: PlayerDataSource,
         episodeLocalDataSource: EpisodeLocalDataSource,
     ): PlayerRepository {
         return PlayerRepositoryImpl(
             playerDataSource = clipPlayerDataSource,
             episodeLocalDataSource = episodeLocalDataSource,
-        )
-    }
-
-    @Provides
-    @Singleton
-    fun provideImageRepository(
-        @ApplicationContext context: Context,
-    ): ImageRepository {
-        return ImageRepositoryImpl(
-            context = context,
         )
     }
 

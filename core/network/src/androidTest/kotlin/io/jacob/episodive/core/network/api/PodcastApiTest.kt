@@ -89,4 +89,18 @@ class PodcastApiTest {
         assertNotNull(response)
         assertEquals(10000, response.dataList.size) // server error
     }
+
+    @Test
+    fun getPodcastsByGuidsTest() = runTest {
+        val responses = api.getPodcastsByGuids(
+            listOf(
+                "e4290b6f-ac6b-5563-a2ba-fd7ecb8243ad",
+                "fde39257-aa54-5f14-a294-1c5fdbeb2f10",
+                "32da807f-8264-523d-b18c-25b1f6b4662c",
+            )
+        )
+
+        assertNotNull(responses)
+        assertEquals(3, responses.dataList.size)
+    }
 }

@@ -1,5 +1,7 @@
 package io.jacob.episodive.core.designsystem.component
 
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import androidx.annotation.Px
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +26,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
+import androidx.palette.graphics.Palette
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
@@ -31,6 +34,119 @@ import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.ThemePreviews
 import timber.log.Timber
+
+enum class DominantRegion {
+    Top,
+    Bottom,
+    Left,
+    Right,
+    Center,
+    Full
+}
+
+private fun extractDominantColor(
+    bitmap: Bitmap,
+    region: DominantRegion,
+    clearFilters: Boolean,
+    brightnessAdjustment: Float,
+): Color? {
+    val paletteBuilder = Palette.from(bitmap).apply {
+        if (clearFilters) {
+            clearFilters()
+        }
+    }
+
+    val palette = when (region) {
+        DominantRegion.Top -> {
+            val regionHeight = (bitmap.height * 0.1f).toInt()
+            paletteBuilder.setRegion(
+                0,
+                0,
+                bitmap.width,
+                regionHeight
+            ).generate()
+        }
+
+        DominantRegion.Bottom -> {
+            val regionHeight = (bitmap.height * 0.1f).toInt()
+            paletteBuilder.setRegion(
+                0,
+                bitmap.height - regionHeight,
+                bitmap.width,
+                bitmap.height
+            ).generate()
+        }
+
+        DominantRegion.Left -> {
+            val regionWidth = (bitmap.width * 0.1f).toInt()
+            paletteBuilder.setRegion(
+                0,
+                0,
+                regionWidth,
+                bitmap.height
+            ).generate()
+        }
+
+        DominantRegion.Right -> {
+            val regionWidth = (bitmap.width * 0.1f).toInt()
+            paletteBuilder.setRegion(
+                bitmap.width - regionWidth,
+                0,
+                bitmap.width,
+                bitmap.height
+            ).generate()
+        }
+
+        DominantRegion.Center -> {
+            val regionWidth = (bitmap.width * 0.5f).toInt()
+            val regionHeight = (bitmap.height * 0.5f).toInt()
+            val left = (bitmap.width - regionWidth) / 2
+            val top = (bitmap.height - regionHeight) / 2
+            paletteBuilder.setRegion(
+                left,
+                top,
+                left + regionWidth,
+                top + regionHeight
+            ).generate()
+        }
+
+        DominantRegion.Full -> {
+            paletteBuilder.generate()
+        }
+    }
+
+    return palette.dominantSwatch?.let { swatch ->
+        val baseColor = Color(swatch.rgb)
+        adjustBrightness(baseColor, brightnessAdjustment)
+    }
+}
+
+private fun adjustBrightness(color: Color, adjustment: Float): Color {
+    if (adjustment == 0f) return color
+
+    val red = color.red
+    val green = color.green
+    val blue = color.blue
+
+    return if (adjustment > 0) {
+        // 밝게: 흰색으로 interpolation
+        Color(
+            red = red + (1f - red) * adjustment,
+            green = green + (1f - green) * adjustment,
+            blue = blue + (1f - blue) * adjustment,
+            alpha = color.alpha
+        )
+    } else {
+        // 어둡게: 검은색으로 interpolation
+        val factor = 1f + adjustment
+        Color(
+            red = red * factor,
+            green = green * factor,
+            blue = blue * factor,
+            alpha = color.alpha
+        )
+    }
+}
 
 @Composable
 fun StateImage(
@@ -41,6 +157,10 @@ fun StateImage(
     contentScale: ContentScale = ContentScale.Crop,
     placeholderBrush: Brush = thumbnailPlaceholderDefaultBrush(),
     fallbackIcon: ImageVector = EpisodiveIcons.Error,
+    onDominantColorExtracted: ((Color) -> Unit)? = null,
+    dominantRegion: DominantRegion = DominantRegion.Bottom,
+    clearFilters: Boolean = true,
+    brightnessAdjustment: Float = 0f,
 ) {
     if (LocalInspectionMode.current) {
         Box(modifier = modifier.background(placeholderBrush))
@@ -51,10 +171,31 @@ fun StateImage(
         mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty)
     }
 
+    val context = LocalContext.current
     val imageLoader = rememberAsyncImagePainter(
-        model = ImageRequest.Builder(LocalContext.current)
+        model = ImageRequest.Builder(context)
             .data(imageUrl)
             .size(size)
+            .apply {
+                if (onDominantColorExtracted != null) {
+                    allowHardware(false)
+                    listener(
+                        onSuccess = { _, result ->
+                            val drawable = result.drawable
+                            val bitmap = (drawable as? BitmapDrawable)?.bitmap
+                            if (bitmap != null) {
+                                val color = extractDominantColor(
+                                    bitmap,
+                                    dominantRegion,
+                                    clearFilters,
+                                    brightnessAdjustment
+                                )
+                                color?.let(onDominantColorExtracted)
+                            }
+                        }
+                    )
+                }
+            }
             .build(),
         contentScale = contentScale,
         onState = { state -> imagePainterState = state }

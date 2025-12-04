@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.network.mapper
 
 import androidx.annotation.RestrictTo
+import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
@@ -17,6 +18,7 @@ import io.jacob.episodive.core.model.mapper.toIntSeconds
 import io.jacob.episodive.core.model.mapper.toMap
 import io.jacob.episodive.core.model.mapper.toMedium
 import io.jacob.episodive.core.model.mapper.toSeconds
+import io.jacob.episodive.core.network.model.ChannelResponse
 import io.jacob.episodive.core.network.model.ChapterResponse
 import io.jacob.episodive.core.network.model.ChaptersResponse
 import io.jacob.episodive.core.network.model.EpisodeResponse
@@ -27,6 +29,20 @@ import io.jacob.episodive.core.network.model.RecentNewValueFeedResponse
 import io.jacob.episodive.core.network.model.SoundbiteResponse
 import io.jacob.episodive.core.network.model.TrendingFeedResponse
 import kotlin.time.Duration.Companion.seconds
+
+fun ChannelResponse.toChannel(): Channel =
+    Channel(
+        id = id,
+        title = title,
+        description = description,
+        image = image,
+        link = link,
+        count = count,
+        podcastGuids = podcastGuids,
+    )
+
+fun List<ChannelResponse>.toChannels(): List<Channel> =
+    map { it.toChannel() }
 
 fun PodcastResponse.toPodcast(): Podcast =
     Podcast(

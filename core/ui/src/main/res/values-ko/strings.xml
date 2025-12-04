@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_ui_episodes">에피소드</string>
+    <string name="core_ui_continue">이어듣기</string>
+    <string name="core_ui_completed">완료됨</string>
+    <string name="core_ui_left">남음</string>
+    <string name="core_ui_follow">팔로우하기</string>
+    <string name="core_ui_unfollow">팔로잉</string>
+</resources>

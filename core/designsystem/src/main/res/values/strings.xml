@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="core_designsystem_episodes">episodes</string>
-    <string name="core_designsystem_continue">Continue</string>
-    <string name="core_designsystem_completed">Completed</string>
-    <string name="core_designsystem_left">Left</string>
-    <string name="core_designsystem_follow">Follow</string>
-    <string name="core_designsystem_unfollow">Unfollow</string>
-</resources>

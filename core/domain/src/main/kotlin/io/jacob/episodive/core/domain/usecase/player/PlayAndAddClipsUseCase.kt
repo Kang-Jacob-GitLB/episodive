@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.domain.usecase.player
 
-import io.jacob.episodive.core.domain.di.ClipPlayerRepository
+import io.jacob.episodive.core.common.EpisodivePlayers
+import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.model.Episode
 import kotlinx.coroutines.flow.first
@@ -8,7 +9,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 class PlayAndAddClipsUseCase @Inject constructor(
-    @param:ClipPlayerRepository private val playerRepository: PlayerRepository,
+    @param:Player(EpisodivePlayers.Clip) private val playerRepository: PlayerRepository,
 ) {
     private var isPlayedOnce = false
 

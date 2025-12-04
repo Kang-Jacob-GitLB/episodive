@@ -24,6 +24,7 @@ rootProject.name = "Episodive"
 
 include(":app")
 
+include(":core:common")
 include(":core:data")
 include(":core:database")
 include(":core:datastore")
@@ -33,12 +34,14 @@ include(":core:model")
 include(":core:network")
 include(":core:player")
 include(":core:testing")
+include(":core:ui")
 
 include(":feature:onboarding")
 include(":feature:home")
 include(":feature:search")
 include(":feature:library")
 include(":feature:clip")
+include(":feature:channel")
 include(":feature:podcast")
 include(":feature:player")
 

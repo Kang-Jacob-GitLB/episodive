@@ -8,6 +8,7 @@ import io.jacob.episodive.core.database.mapper.toPodcast
 import io.jacob.episodive.core.database.mapper.toPodcasts
 import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.domain.repository.PodcastRepository
+import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toPodcast
@@ -69,6 +70,17 @@ class PodcastRepositoryImpl @Inject constructor(
         max: Int?,
     ): Flow<List<Podcast>> {
         val query = PodcastQuery.Medium(medium)
+
+        return Cacher(
+            remoteUpdater = remoteUpdater.create(query),
+            sourceFactory = {
+                localDataSource.getPodcastsByCacheKey(query.key)
+            }
+        ).flow.map { it.toPodcasts() }
+    }
+
+    override fun getPodcastsByChannel(channel: Channel): Flow<List<Podcast>> {
+        val query = PodcastQuery.ByChannel(channel)
 
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),

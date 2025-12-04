@@ -52,10 +52,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.jacob.episodive.core.designsystem.component.CategoryButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
-import io.jacob.episodive.core.designsystem.component.PodcastDetailItem
 import io.jacob.episodive.core.designsystem.component.scrollbar.DraggableScrollbar
 import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
@@ -65,6 +63,8 @@ import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
 import io.jacob.episodive.core.testing.model.podcastTestDataList
+import io.jacob.episodive.core.ui.CategoryButton
+import io.jacob.episodive.core.ui.PodcastDetailItem
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 

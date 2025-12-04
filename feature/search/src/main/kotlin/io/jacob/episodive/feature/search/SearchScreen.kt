@@ -30,12 +30,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.jacob.episodive.core.designsystem.component.EpisodeItem
-import io.jacob.episodive.core.designsystem.component.EpisodesSection
 import io.jacob.episodive.core.designsystem.component.EpisodiveScaffold
 import io.jacob.episodive.core.designsystem.component.EpisodiveSearchBar
-import io.jacob.episodive.core.designsystem.component.PodcastsSection
-import io.jacob.episodive.core.designsystem.component.PodcastsWithAuthorSection
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.scrollbar.DraggableScrollbar
 import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
@@ -50,6 +46,10 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SearchResult
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
+import io.jacob.episodive.core.ui.EpisodeItem
+import io.jacob.episodive.core.ui.EpisodesSection
+import io.jacob.episodive.core.ui.PodcastsSection
+import io.jacob.episodive.core.ui.PodcastsWithAuthorSection
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 

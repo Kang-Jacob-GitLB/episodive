@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_channel_subtitle_format">채널 • %d개의 프로그램</string>
+    <string name="feature_channel_introduction">소개</string>
+    <string name="feature_channel_website">웹사이트</string>
+</resources>

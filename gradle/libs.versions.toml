@@ -85,8 +85,9 @@ androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", 
 androidx-paging-common = { group = "androidx.paging", name = "paging-common", version.ref = "paging" }
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltCompose" }
 google-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
-google-hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
-google-hilt-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
+google-hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
+google-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+google-hilt-core = { group = "com.google.dagger", name = "hilt-core", version.ref = "hilt" }
 google-gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 seeker = { group = "io.github.2307vivek", name = "seeker", version.ref = "seeker" }
@@ -138,5 +139,5 @@ episodive-android-library-jacoco = { id = "episodive.android.library.jacoco" }
 episodive-android-feature = { id = "episodive.android.feature" }
 episodive-android-test = { id = "episodive.android.test" }
 episodive-android-room = { id = "episodive.android.room" }
-episodive-android-hilt = { id = "episodive.android.hilt" }
+episodive-hilt = { id = "episodive.hilt" }
 episodive-jvm-library = { id = "episodive.jvm.library" }

@@ -110,7 +110,7 @@ Data Sources: Network (:core:network) | Database (:core:database) | DataStore (:
   - `episodive.android.feature` - Feature 모듈 (Compose + Hilt + Test + Jacoco)
   - `episodive.android.library` - 표준 라이브러리 모듈
   - `episodive.android.room` - Room 데이터베이스 설정
-  - `episodive.android.hilt` - Hilt DI 설정
+  - `episodive.hilt` - Hilt DI 설정
 
 # API 설정
 

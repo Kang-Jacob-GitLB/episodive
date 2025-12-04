@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_ui_episodes">episodes</string>
+    <string name="core_ui_continue">Continue</string>
+    <string name="core_ui_completed">Completed</string>
+    <string name="core_ui_left">Left</string>
+    <string name="core_ui_follow">Follow</string>
+    <string name="core_ui_unfollow">Unfollow</string>
+</resources>

@@ -8,5 +8,6 @@
     <string name="feature_home_section_trending_in_local">국내 인기</string>
     <string name="feature_home_section_trending_in_foreign">해외 인기</string>
     <string name="feature_home_section_live_episodes">라이브 에피소드</string>
+    <string name="feature_home_section_channels">들어볼 만한 채널</string>
     <string name="feature_home_episodes">에피소드</string>
 </resources>

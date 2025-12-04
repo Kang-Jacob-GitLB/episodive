@@ -19,7 +19,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,7 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.jacob.episodive.core.designsystem.component.EpisodeItem
+import io.jacob.episodive.core.designsystem.component.DominantRegion
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.FadeTopBarLayout
@@ -47,8 +50,9 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
+import io.jacob.episodive.core.ui.EpisodeItem
 import kotlinx.coroutines.launch
-import io.jacob.episodive.core.designsystem.R as designR
+import io.jacob.episodive.core.ui.R as uiR
 
 @Composable
 internal fun PodcastRoute(
@@ -67,7 +71,6 @@ internal fun PodcastRoute(
                 modifier = modifier,
                 podcast = s.podcast,
                 episodes = s.episodes,
-                dominantColor = Color(s.dominantColor),
                 onFollowClick = { viewModel.sendAction(PodcastAction.ToggleFollowed) },
                 onEpisodeClick = { viewModel.sendAction(PodcastAction.PlayEpisode(it)) },
                 onToggleLikedEpisode = { viewModel.sendAction(PodcastAction.ToggleLikedEpisode(it)) },
@@ -85,7 +88,6 @@ private fun PodcastScreen(
     modifier: Modifier = Modifier,
     podcast: Podcast,
     episodes: List<Episode>,
-    dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
     onFollowClick: () -> Unit,
     onEpisodeClick: (Episode) -> Unit,
     onToggleLikedEpisode: (Episode) -> Unit,
@@ -112,7 +114,6 @@ private fun PodcastScreen(
                 PodcastHeader(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     podcast = podcast,
-                    dominantColor = dominantColor,
                     onFollowClick = onFollowClick,
                 )
             }
@@ -174,10 +175,10 @@ private fun PodcastScreen(
 private fun PodcastHeader(
     modifier: Modifier = Modifier,
     podcast: Podcast,
-    dominantColor: Color = MaterialTheme.colorScheme.primaryContainer,
     onFollowClick: () -> Unit,
 ) {
     val isFollowed = podcast.isFollowed
+    var dominantColor by remember { mutableStateOf(Color.DarkGray) }
 
     EpisodiveGradientBackground(
         gradientColors = GradientColors(
@@ -197,6 +198,9 @@ private fun PodcastHeader(
                     .clip(shape = MaterialTheme.shapes.extraExtraLarge),
                 imageUrl = podcast.image,
                 contentDescription = podcast.title,
+                onDominantColorExtracted = { dominantColor = it },
+                dominantRegion = DominantRegion.Top,
+                brightnessAdjustment = -0.2f
             )
 
             Text(
@@ -217,7 +221,7 @@ private fun PodcastHeader(
                 buttonColors = ButtonDefaults.buttonColors(
                     containerColor = if (isFollowed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
                 ),
-                text = { Text(stringResource(if (isFollowed) designR.string.core_designsystem_unfollow else designR.string.core_designsystem_follow)) },
+                text = { Text(stringResource(if (isFollowed) uiR.string.core_ui_unfollow else uiR.string.core_ui_follow)) },
                 leadingIcon = {
                     Icon(
                         imageVector = if (isFollowed) EpisodiveIcons.PersonRemove else EpisodiveIcons.PersonAdd,

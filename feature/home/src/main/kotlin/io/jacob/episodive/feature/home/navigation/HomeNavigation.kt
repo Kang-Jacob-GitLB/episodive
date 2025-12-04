@@ -23,14 +23,14 @@ fun NavController.navigateToHome(navOptions: NavOptions) =
 
 private fun NavGraphBuilder.homeScreen(
     onPodcatClick: (Long) -> Unit,
-//    onStoryClick: (Story) -> Unit,
+    onChannelClick: (Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     composable<HomeRoute> {
         HomeRoute(
             onPodcastClick = onPodcatClick,
-//            onStoryClick = onStoryClick,
-            onShowSnackbar = onShowSnackbar
+            onChannelClick = onChannelClick,
+            onShowSnackbar = onShowSnackbar,
         )
     }
 }
@@ -39,7 +39,7 @@ private fun NavGraphBuilder.homeScreen(
 private fun HomeNavHost(
     navController: NavHostController,
     navigateToPodcast: NavController.(Long) -> Unit,
-//    navigateToStoryDetail: NavController.(Story) -> Unit,
+    navigateToChannel: NavController.(Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
 ) {
@@ -49,7 +49,7 @@ private fun HomeNavHost(
     ) {
         homeScreen(
             onPodcatClick = { navController.navigateToPodcast(it) },
-//            onStoryClick = { navController.navigateToStoryDetail(it) },
+            onChannelClick = { navController.navigateToChannel(it) },
             onShowSnackbar = onShowSnackbar,
         )
 
@@ -60,7 +60,7 @@ private fun HomeNavHost(
 fun NavGraphBuilder.homeSection(
     onRegisterNestedNavController: (NavHostController) -> Unit,
     navigateToPodcast: NavController.(Long) -> Unit,
-//    navigateToStoryDetail: NavController.(Story) -> Unit,
+    navigateToChannel: NavController.(Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
 ) {
@@ -74,9 +74,9 @@ fun NavGraphBuilder.homeSection(
         HomeNavHost(
             navController = navController,
             navigateToPodcast = navigateToPodcast,
-//            navigateToStoryDetail = navigateToStoryDetail,
+            navigateToChannel = navigateToChannel,
             onShowSnackbar = onShowSnackbar,
-            destination = destination
+            destination = destination,
         )
     }
 }
