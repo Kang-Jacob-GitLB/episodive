@@ -113,3 +113,8 @@ local db
 - ✅ playback speed
 - ⬜ sleep timer
 - ⬜ foreground service player
+
+## 백그라운드
+
+- ⬜ 주기적 팔로우한 팟캐스트들 신규 에피소드 업데이트
+- ⬜ 신규 에피소드 notification
