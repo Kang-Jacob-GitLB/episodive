@@ -20,6 +20,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.domain.repository.PlayerRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @UnstableApi
@@ -31,10 +38,20 @@ class MediaNotificationService : MediaSessionService() {
     lateinit var playerRepository: PlayerRepository
 
     private var mediaSession: MediaSession? = null
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    // TODO: Replace with actual like state from repository
+    private val _isLiked = MutableStateFlow(false)
+    private val isLiked: StateFlow<Boolean> = _isLiked.asStateFlow()
 
     companion object {
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "episodive_playback_channel"
+    }
+
+    // TODO: Replace with actual repository call
+    private fun toggleLike() {
+        _isLiked.value = !_isLiked.value
     }
 
     override fun onCreate() {
@@ -56,10 +73,45 @@ class MediaNotificationService : MediaSessionService() {
             .build()
 
         setMediaNotificationProvider(notificationProvider)
+
+        // Observe isLiked state and update notification buttons
+        serviceScope.launch {
+            isLiked.collect { liked ->
+                updateCustomLayout(liked)
+            }
+        }
+    }
+
+    private fun updateCustomLayout(isLiked: Boolean) {
+        val customLayout = getCustomLayout(isLiked)
+        mediaSession?.setCustomLayout(customLayout)
     }
 
     private fun getCustomLayout(): ImmutableList<CommandButton> {
-        return ImmutableList.copyOf(CustomCommand.ALL.map { it.button })
+        return getCustomLayout(_isLiked.value)
+    }
+
+    private fun getCustomLayout(isLiked: Boolean): ImmutableList<CommandButton> {
+        val likeIcon = if (isLiked) {
+            CommandButton.ICON_HEART_FILLED
+        } else {
+            CommandButton.ICON_HEART_UNFILLED
+        }
+
+        return ImmutableList.of(
+            CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
+                .setDisplayName("Seek Backward")
+                .setSessionCommand(CustomCommand.SEEK_BACKWARD.sessionCommand)
+                .build(),
+            CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_30)
+                .setDisplayName("Seek Forward")
+                .setSessionCommand(CustomCommand.SEEK_FORWARD.sessionCommand)
+                .build(),
+            CommandButton.Builder(likeIcon)
+                .setDisplayName("Toggle Like")
+                .setSessionCommand(CustomCommand.TOGGLE_LIKE.sessionCommand)
+                .build()
+        )
     }
 
     private fun createPendingIntent(): PendingIntent {
@@ -102,13 +154,21 @@ class MediaNotificationService : MediaSessionService() {
         ): MediaSession.ConnectionResult {
             val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS
                 .buildUpon()
-                .apply {
-                    CustomCommand.ALL.forEach { add(it.sessionCommand) }
-                }
+                .addSessionCommands(CustomCommand.sessionCommands)
+                .build()
+
+            // Remove previous/next track commands to hide those buttons
+            val playerCommands = MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
+                .buildUpon()
+                .remove(androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS)
+                .remove(androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT)
+                .remove(androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                .remove(androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
                 .build()
 
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(sessionCommands)
+                .setAvailablePlayerCommands(playerCommands)
                 .build()
         }
 
@@ -119,8 +179,9 @@ class MediaNotificationService : MediaSessionService() {
             args: Bundle,
         ): ListenableFuture<SessionResult> {
             when (CustomCommand.fromAction(customCommand.customAction)) {
-                CustomCommand.SeekBackward -> playerRepository.seekBackward()
-                CustomCommand.SeekForward -> playerRepository.seekForward()
+                CustomCommand.SEEK_BACKWARD -> playerRepository.seekBackward()
+                CustomCommand.SEEK_FORWARD -> playerRepository.seekForward()
+                CustomCommand.TOGGLE_LIKE -> toggleLike()
                 null -> {} // Unknown command
             }
             return Futures.immediateFuture(
@@ -150,34 +211,50 @@ class MediaNotificationService : MediaSessionService() {
     }
 }
 
-private sealed interface CustomCommand {
-    val action: String
-    val sessionCommand: SessionCommand
-    val button: CommandButton
+private enum class CustomCommand(
+    val action: String,
+    val icon: Int,
+    val displayName: String,
+) {
+    SEEK_BACKWARD(
+        action = "SEEK_BACKWARD_15",
+        icon = CommandButton.ICON_SKIP_BACK_15,
+        displayName = "Seek Backward"
+    ),
+    SEEK_FORWARD(
+        action = "SEEK_FORWARD_30",
+        icon = CommandButton.ICON_SKIP_FORWARD_30,
+        displayName = "Seek Forward"
+    ),
+    TOGGLE_LIKE(
+        action = "TOGGLE_LIKE",
+        icon = CommandButton.ICON_HEART_UNFILLED,  // TODO: Dynamic icon based on isLiked state
+        displayName = "Toggle Like"
+    )
+    ;
 
-    data object SeekBackward : CustomCommand {
-        override val action = "SEEK_BACKWARD_15"
-        override val sessionCommand = SessionCommand(action, Bundle.EMPTY)
-        override val button = CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
-            .setDisplayName("Seek Backward")
-            .setSessionCommand(sessionCommand)
-            .build()
+    val sessionCommand: SessionCommand by lazy {
+        SessionCommand(action, Bundle.EMPTY)
     }
 
-    data object SeekForward : CustomCommand {
-        override val action = "SEEK_FORWARD_30"
-        override val sessionCommand = SessionCommand(action, Bundle.EMPTY)
-        override val button = CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_30)
-            .setDisplayName("Seek Forward")
+    val commandButton: CommandButton by lazy {
+        CommandButton.Builder(icon)
+            .setDisplayName(displayName)
             .setSessionCommand(sessionCommand)
             .build()
     }
 
     companion object {
-        val ALL = listOf(SeekBackward, SeekForward)
+        val sessionCommands: List<SessionCommand> by lazy {
+            entries.map { it.sessionCommand }
+        }
+
+        val commandButtons: List<CommandButton> by lazy {
+            entries.map { it.commandButton }
+        }
 
         fun fromAction(action: String): CustomCommand? {
-            return ALL.find { it.action == action }
+            return entries.find { it.action == action }
         }
     }
 }
