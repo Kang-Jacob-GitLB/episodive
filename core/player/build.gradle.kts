@@ -13,6 +13,6 @@ dependencies {
     implementation(projects.core.common)
     implementation(projects.core.model)
 
-    //----- Exoplayer
+    //----- Media3 Exoplayer
     implementation(libs.androidx.media3.exoplayer)
 }

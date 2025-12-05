@@ -1,10 +1,12 @@
 package io.jacob.episodive.core.player.datasource
 
+import androidx.media3.common.Player
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Progress
 import kotlinx.coroutines.flow.Flow
 
 interface PlayerDataSource {
+    fun getPlayer(): Player
     fun play(episode: Episode)
     fun play(episodes: List<Episode>, indexToPlay: Int? = null)
     fun playClip(episode: Episode)

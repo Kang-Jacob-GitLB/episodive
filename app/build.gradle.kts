@@ -49,6 +49,9 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.kotlinx.serialization.json)
 
+    //----- Media3 Session
+    implementation(libs.androidx.media3.session)
+
     //----- Coil
     implementation(libs.coil.compose)
 

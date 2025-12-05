@@ -13,7 +13,11 @@ dependencies {
 
     implementation(libs.inject)
 
+    //----- Paging
     implementation(libs.androidx.paging.common)
+
+    //----- Media3
+    implementation(libs.androidx.media3.common)
 
     // ----- Test
     testImplementation(libs.junit)

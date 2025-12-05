@@ -26,6 +26,9 @@ dependencies {
     implementation(projects.core.network)
     implementation(projects.core.player)
 
+    //----- Media3
+    implementation(libs.androidx.media3.common)
+
     //----- Coil
     implementation(libs.coil.compose)
 
