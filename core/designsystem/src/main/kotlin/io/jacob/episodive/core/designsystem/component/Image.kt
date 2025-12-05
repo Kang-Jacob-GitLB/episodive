@@ -30,6 +30,7 @@ import androidx.palette.graphics.Palette
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.skydoves.compose.stability.runtime.TraceRecomposition
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.ThemePreviews
@@ -148,6 +149,7 @@ private fun adjustBrightness(color: Color, adjustment: Float): Color {
     }
 }
 
+@TraceRecomposition
 @Composable
 fun StateImage(
     modifier: Modifier = Modifier,
@@ -172,8 +174,8 @@ fun StateImage(
     }
 
     val context = LocalContext.current
-    val imageLoader = rememberAsyncImagePainter(
-        model = ImageRequest.Builder(context)
+    val imageRequest = remember(imageUrl, size, onDominantColorExtracted != null) {
+        ImageRequest.Builder(context)
             .data(imageUrl)
             .size(size)
             .apply {
@@ -196,7 +198,11 @@ fun StateImage(
                     )
                 }
             }
-            .build(),
+            .build()
+    }
+
+    val imageLoader = rememberAsyncImagePainter(
+        model = imageRequest,
         contentScale = contentScale,
         onState = { state -> imagePainterState = state }
     )

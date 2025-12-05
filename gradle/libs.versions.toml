@@ -41,6 +41,7 @@ appcompat = "1.7.1"
 material = "1.13.0"
 seeker = "1.2.2"
 leakcanary = "2.14"
+stabilityAnalyzer = "0.6.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -132,6 +133,7 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
+stability-analyzer = { id = "com.github.skydoves.compose.stability.analyzer", version.ref = "stabilityAnalyzer" }
 
 # Plugins defined by this project
 episodive-android-application = { id = "episodive.android.application" }
