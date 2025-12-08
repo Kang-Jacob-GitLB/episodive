@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.domain.repository
 
+import androidx.media3.common.Player
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Playback
 import io.jacob.episodive.core.model.Progress
@@ -7,6 +8,7 @@ import io.jacob.episodive.core.model.Repeat
 import kotlinx.coroutines.flow.Flow
 
 interface PlayerRepository {
+    fun getPlayer(): Player
     fun play(episode: Episode)
     fun play(episodes: List<Episode>, indexToPlay: Int? = null)
     fun playClip(episode: Episode)

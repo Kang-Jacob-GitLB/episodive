@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.data.repository
 
+import androidx.media3.common.Player
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.model.Episode
@@ -17,6 +18,10 @@ class PlayerRepositoryImpl @Inject constructor(
     private val playerDataSource: PlayerDataSource,
     episodeLocalDataSource: EpisodeLocalDataSource,
 ) : PlayerRepository {
+    override fun getPlayer(): Player {
+        return playerDataSource.getPlayer()
+    }
+
     override fun play(episode: Episode) {
         playerDataSource.play(episode)
     }

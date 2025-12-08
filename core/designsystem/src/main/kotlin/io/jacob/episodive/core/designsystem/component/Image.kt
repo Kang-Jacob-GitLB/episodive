@@ -172,8 +172,8 @@ fun StateImage(
     }
 
     val context = LocalContext.current
-    val imageLoader = rememberAsyncImagePainter(
-        model = ImageRequest.Builder(context)
+    val imageRequest = remember(imageUrl, size, onDominantColorExtracted != null) {
+        ImageRequest.Builder(context)
             .data(imageUrl)
             .size(size)
             .apply {
@@ -196,7 +196,11 @@ fun StateImage(
                     )
                 }
             }
-            .build(),
+            .build()
+    }
+
+    val imageLoader = rememberAsyncImagePainter(
+        model = imageRequest,
         contentScale = contentScale,
         onState = { state -> imagePainterState = state }
     )

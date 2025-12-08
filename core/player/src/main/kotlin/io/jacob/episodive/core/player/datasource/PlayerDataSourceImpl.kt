@@ -159,9 +159,22 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     private fun Episode.toMediaItem(): MediaItem {
+        val mediaMetadata = MediaMetadata.Builder()
+            .setTitle(title)
+            .setArtist(feedAuthor)
+            .setAlbumTitle(feedTitle)
+            .setAlbumArtist(feedAuthor)
+            .setDisplayTitle(title)
+            .setSubtitle(feedTitle)
+            .setDescription(description)
+            .setArtworkUri(image.ifEmpty { feedImage }.toUri())
+            .build()
+
         val builder = MediaItem.Builder()
+            .setMediaId(id.toString())
             .setUri(enclosureUrl)
             .setTag(this)
+            .setMediaMetadata(mediaMetadata)
 
         if (isClip) {
             builder.setClippingConfiguration(
@@ -186,6 +199,10 @@ class PlayerDataSourceImpl @Inject constructor(
         }
 
         return builder.build()
+    }
+
+    override fun getPlayer(): Player {
+        return player
     }
 
     override fun play(episode: Episode) {
