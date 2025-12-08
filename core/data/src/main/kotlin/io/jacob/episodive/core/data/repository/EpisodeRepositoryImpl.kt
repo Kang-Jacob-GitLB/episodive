@@ -175,6 +175,10 @@ class EpisodeRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun isLiked(id: Long): Flow<Boolean> {
+        return localDataSource.isLiked(id)
+    }
+
     override suspend fun toggleLiked(id: Long): Boolean {
         return localDataSource.toggleLiked(id)
     }

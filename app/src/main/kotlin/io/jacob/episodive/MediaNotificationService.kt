@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
@@ -20,12 +21,19 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.domain.repository.PlayerRepository
+import io.jacob.episodive.core.domain.usecase.episode.IsLikedUseCase
+import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
+import io.jacob.episodive.core.model.Episode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -37,21 +45,31 @@ class MediaNotificationService : MediaSessionService() {
     @Player(EpisodivePlayers.Main)
     lateinit var playerRepository: PlayerRepository
 
+    @Inject
+    lateinit var isLikedUseCase: IsLikedUseCase
+
+    @Inject
+    lateinit var toggleLikedUseCase: ToggleLikedUseCase
+
     private var mediaSession: MediaSession? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    // TODO: Replace with actual like state from repository
-    private val _isLiked = MutableStateFlow(false)
-    private val isLiked: StateFlow<Boolean> = _isLiked.asStateFlow()
+    private val nowPlaying = MutableStateFlow<Episode?>(null)
+    private val isLiked: StateFlow<Boolean> = nowPlaying.flatMapLatest { episode ->
+        if (episode == null) {
+            MutableStateFlow(false)
+        } else {
+            isLikedUseCase(episode.id)
+        }
+    }.stateIn(
+        scope = serviceScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
 
     companion object {
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "episodive_playback_channel"
-    }
-
-    // TODO: Replace with actual repository call
-    private fun toggleLike() {
-        _isLiked.value = !_isLiked.value
     }
 
     override fun onCreate() {
@@ -74,9 +92,14 @@ class MediaNotificationService : MediaSessionService() {
 
         setMediaNotificationProvider(notificationProvider)
 
-        // Observe isLiked state and update notification buttons
         serviceScope.launch {
-            isLiked.collect { liked ->
+            playerRepository.nowPlaying.collectLatest { episode ->
+                nowPlaying.value = episode
+            }
+        }
+
+        serviceScope.launch {
+            isLiked.collectLatest { liked ->
                 updateCustomLayout(liked)
             }
         }
@@ -88,7 +111,7 @@ class MediaNotificationService : MediaSessionService() {
     }
 
     private fun getCustomLayout(): ImmutableList<CommandButton> {
-        return getCustomLayout(_isLiked.value)
+        return getCustomLayout(isLiked.value)
     }
 
     private fun getCustomLayout(isLiked: Boolean): ImmutableList<CommandButton> {
@@ -127,7 +150,7 @@ class MediaNotificationService : MediaSessionService() {
     }
 
     private fun createNotificationChannel() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Playback",
@@ -202,11 +225,17 @@ class MediaNotificationService : MediaSessionService() {
     }
 
     override fun onDestroy() {
-        mediaSession?.run {
-            release()
-            mediaSession = null
-        }
+        serviceScope.cancel()
+        mediaSession?.release()
+        mediaSession = null
+
         super.onDestroy()
+    }
+
+    private fun toggleLike() = serviceScope.launch {
+        nowPlaying.value?.let {
+            toggleLikedUseCase(it.id)
+        }
     }
 }
 
