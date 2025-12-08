@@ -15,6 +15,7 @@ import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
 import io.mockk.just
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -237,7 +238,7 @@ class EpisodeLocalDataSourceTest {
     fun `Given dependencies, When isLiked is called, Then isLiked of dao is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.isLiked(any()) } returns false
+            coEvery { episodeDao.isLiked(any()) } returns flowOf(false)
 
             // When
             dataSource.isLiked(episodeEntity.id)

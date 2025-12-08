@@ -60,7 +60,7 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         episodeDao.removeLiked(id)
     }
 
-    override fun isLiked(id: Long): Boolean {
+    override fun isLiked(id: Long): Flow<Boolean> {
         return episodeDao.isLiked(id)
     }
 

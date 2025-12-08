@@ -21,7 +21,7 @@ interface EpisodeLocalDataSource {
 
     suspend fun addLiked(likedEpisode: LikedEpisodeEntity)
     suspend fun removeLiked(id: Long)
-    fun isLiked(id: Long): Boolean
+    fun isLiked(id: Long): Flow<Boolean>
     suspend fun toggleLiked(id: Long): Boolean
     fun getLikedEpisodes(): Flow<List<EpisodeDto>>
 

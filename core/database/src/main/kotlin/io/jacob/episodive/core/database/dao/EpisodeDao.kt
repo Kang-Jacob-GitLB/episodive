@@ -11,6 +11,7 @@ import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlin.time.Clock
 import kotlin.time.Duration
 
@@ -105,11 +106,11 @@ interface EpisodeDao {
     suspend fun removeLiked(id: Long)
 
     @Query("SELECT EXISTS(SELECT 1 FROM liked_episodes WHERE id = :id)")
-    fun isLiked(id: Long): Boolean
+    fun isLiked(id: Long): Flow<Boolean>
 
     @Transaction
     suspend fun toggleLiked(id: Long): Boolean {
-        return if (isLiked(id)) {
+        return if (isLiked(id).first()) {
             removeLiked(id)
             false
         } else {

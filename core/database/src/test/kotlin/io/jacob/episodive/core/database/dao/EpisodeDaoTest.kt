@@ -352,10 +352,12 @@ class EpisodeDaoTest {
             dao.upsertEpisode(episodeEntity)
 
             // When
-            val isLiked = dao.isLiked(episodeEntity.id)
+            dao.isLiked(episodeEntity.id).test {
+                val isLiked = awaitItem()
 
-            // Then
-            assertTrue(isLiked)
+                // Then
+                assertTrue(isLiked)
+            }
         }
 
     @Test
