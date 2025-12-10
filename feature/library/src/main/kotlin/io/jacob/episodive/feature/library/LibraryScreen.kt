@@ -46,6 +46,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import io.jacob.episodive.core.designsystem.component.EpisodiveFilterChip
 import io.jacob.episodive.core.designsystem.component.EpisodiveScaffold
 import io.jacob.episodive.core.designsystem.component.SectionHeader
@@ -59,7 +62,6 @@ import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
-import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.ui.CategoryButton
@@ -69,7 +71,9 @@ import io.jacob.episodive.core.ui.EpisodeItem
 import io.jacob.episodive.core.ui.PlayedEpisodeItem
 import io.jacob.episodive.core.ui.PodcastDetailItem
 import io.jacob.episodive.core.ui.PodcastsSection
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun LibraryRoute(
@@ -103,6 +107,9 @@ fun LibraryRoute(
             followedPodcasts = s.followedPodcasts,
             preferredCategories = s.preferredCategories,
             selectableCategories = s.selectableCategories,
+            playedEpisodesPaging = viewModel.playedEpisodesPaging,
+            likedEpisodesPaging = viewModel.likedEpisodesPaging,
+            followedPodcastsPaging = viewModel.followedPodcastsPaging,
             onPlayedEpisodeClick = { viewModel.sendAction(LibraryAction.ClickPlayingEpisode(it)) },
             onEpisodeClick = { viewModel.sendAction(LibraryAction.ClickEpisode(it)) },
             onPodcastClick = { viewModel.sendAction(LibraryAction.ClickPodcast(it)) },
@@ -134,6 +141,9 @@ private fun LibraryScreen(
     followedPodcasts: List<Podcast>,
     preferredCategories: List<Category>,
     selectableCategories: List<SelectableCategory>,
+    playedEpisodesPaging: Flow<PagingData<PlayedUiModel>>,
+    likedEpisodesPaging: Flow<PagingData<LikedUiModel>>,
+    followedPodcastsPaging: Flow<PagingData<FollowedUiModel>>,
     onPlayedEpisodeClick: (Episode) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
     onPodcastClick: (Podcast) -> Unit = {},
@@ -187,7 +197,7 @@ private fun LibraryScreen(
                 modifier = modifier,
                 paddingValues = paddingValues,
                 nestedScrollConnection = nestedScrollConnection,
-                playedEpisodes = playedEpisodes,
+                playedEpisodesPaging = playedEpisodesPaging,
                 onPlayedEpisodeClick = onPlayedEpisodeClick
             )
 
@@ -195,7 +205,7 @@ private fun LibraryScreen(
                 modifier = modifier,
                 paddingValues = paddingValues,
                 nestedScrollConnection = nestedScrollConnection,
-                likedEpisodes = likedEpisodes,
+                likedEpisodesPaging = likedEpisodesPaging,
                 onLikedEpisodeClick = { onEpisodeClick(it) },
                 onToggleLiked = onToggleLikedEpisode
             )
@@ -204,7 +214,7 @@ private fun LibraryScreen(
                 modifier = modifier,
                 paddingValues = paddingValues,
                 nestedScrollConnection = nestedScrollConnection,
-                followedPodcasts = followedPodcasts,
+                followedPodcastsPaging = followedPodcastsPaging,
                 onFollowedPodcastClick = { onPodcastClick(it) },
                 onToggleFollowed = onToggleFollowedPodcast
             )
@@ -307,14 +317,10 @@ private fun RecentlyListenedContent(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
-    playedEpisodes: List<Episode>,
+    playedEpisodesPaging: Flow<PagingData<PlayedUiModel>>,
     onPlayedEpisodeClick: (Episode) -> Unit,
 ) {
-    val groupedEpisodes = remember(playedEpisodes) {
-        playedEpisodes
-            .filter { it.playedAt != null }
-            .groupBy { it.playedAt!!.toHumanReadable() }
-    }
+    val items = playedEpisodesPaging.collectAsLazyPagingItems()
 
     LazyColumn(
         modifier = modifier
@@ -322,36 +328,48 @@ private fun RecentlyListenedContent(
             .nestedScroll(nestedScrollConnection),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        groupedEpisodes.forEach { (dateLabel, episodes) ->
-            stickyHeader(
-                key = "header_$dateLabel",
-                contentType = "date_header"
-            ) {
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(horizontal = 16.dp)
-                        .padding(vertical = 8.dp),
-                    text = dateLabel,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        items(
+            count = items.itemCount,
+            key = items.itemKey {
+                when (it) {
+                    is PlayedUiModel.EpisodeModel -> it.episode.id
+                    is PlayedUiModel.SeparatorModel -> it.date
+                }
+            },
+            contentType = {
+                when (items[it]) {
+                    is PlayedUiModel.EpisodeModel -> "episode"
+                    is PlayedUiModel.SeparatorModel -> "separator"
+                    null -> "loading"
+                }
             }
+        ) { index ->
+            when (val item = items[index] ?: return@items) {
+                is PlayedUiModel.EpisodeModel -> {
+                    val episode = item.episode
+                    PlayedEpisodeItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .animateItem(),
+                        playedEpisode = episode,
+                        onClick = { onPlayedEpisodeClick(episode) },
+                    )
+                }
 
-            items(
-                items = episodes,
-                key = { it.id },
-                contentType = { "episode" }
-            ) { playedEpisode ->
-                PlayedEpisodeItem(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .animateItem(),
-                    playedEpisode = playedEpisode,
-                    onClick = { onPlayedEpisodeClick(playedEpisode) },
-                )
+                is PlayedUiModel.SeparatorModel -> {
+                    val date = item.date
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(horizontal = 16.dp)
+                            .padding(vertical = 8.dp),
+                        text = date,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 
@@ -366,15 +384,11 @@ private fun LikedContent(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
-    likedEpisodes: List<Episode>,
+    likedEpisodesPaging: Flow<PagingData<LikedUiModel>>,
     onLikedEpisodeClick: (Episode) -> Unit,
     onToggleLiked: (Episode) -> Unit,
 ) {
-    val groupedEpisodes = remember(likedEpisodes) {
-        likedEpisodes
-            .filter { it.likedAt != null }
-            .groupBy { it.likedAt!!.toHumanReadable() }
-    }
+    val items = likedEpisodesPaging.collectAsLazyPagingItems()
 
     LazyColumn(
         modifier = modifier
@@ -382,37 +396,49 @@ private fun LikedContent(
             .nestedScroll(nestedScrollConnection),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        groupedEpisodes.forEach { (dateLabel, episodes) ->
-            stickyHeader(
-                key = "header_$dateLabel",
-                contentType = "date_header"
-            ) {
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(horizontal = 16.dp)
-                        .padding(vertical = 8.dp),
-                    text = dateLabel,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        items(
+            count = items.itemCount,
+            key = items.itemKey {
+                when (it) {
+                    is LikedUiModel.EpisodeModel -> it.episode.id
+                    is LikedUiModel.SeparatorModel -> it.date
+                }
+            },
+            contentType = {
+                when (items[it]) {
+                    is LikedUiModel.EpisodeModel -> "episode"
+                    is LikedUiModel.SeparatorModel -> "separator"
+                    null -> "loading"
+                }
             }
+        ) { index ->
+            when (val item = items[index] ?: return@items) {
+                is LikedUiModel.EpisodeModel -> {
+                    val episode = item.episode
+                    EpisodeItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .animateItem(),
+                        episode = episode,
+                        onClick = { onLikedEpisodeClick(episode) },
+                        onToggleLiked = { onToggleLiked(episode) }
+                    )
+                }
 
-            items(
-                items = episodes,
-                key = { it.id },
-                contentType = { "episode" }
-            ) { likedEpisode ->
-                EpisodeItem(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .animateItem(),
-                    episode = likedEpisode,
-                    onClick = { onLikedEpisodeClick(likedEpisode) },
-                    onToggleLiked = { onToggleLiked(likedEpisode) }
-                )
+                is LikedUiModel.SeparatorModel -> {
+                    val date = item.date
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(horizontal = 16.dp)
+                            .padding(vertical = 8.dp),
+                        text = date,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 
@@ -427,15 +453,11 @@ private fun FollowedContent(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
-    followedPodcasts: List<Podcast>,
+    followedPodcastsPaging: Flow<PagingData<FollowedUiModel>>,
     onFollowedPodcastClick: (Podcast) -> Unit,
     onToggleFollowed: (Podcast) -> Unit,
 ) {
-    val groupedPodcasts = remember(followedPodcasts) {
-        followedPodcasts
-            .filter { it.followedAt != null }
-            .groupBy { it.followedAt!!.toHumanReadable() }
-    }
+    val items = followedPodcastsPaging.collectAsLazyPagingItems()
 
     LazyColumn(
         modifier = modifier
@@ -443,38 +465,51 @@ private fun FollowedContent(
             .nestedScroll(nestedScrollConnection),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        groupedPodcasts.forEach { (dateLabel, podcasts) ->
-            stickyHeader(
-                key = "header_$dateLabel",
-                contentType = "date_header"
-            ) {
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(horizontal = 16.dp)
-                        .padding(vertical = 8.dp),
-                    text = dateLabel,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        items(
+            count = items.itemCount,
+            key = items.itemKey {
+                when (it) {
+                    is FollowedUiModel.PodcastModel -> it.podcast.id
+                    is FollowedUiModel.SeparatorModel -> it.date
+                }
+            },
+            contentType = {
+                when (items[it]) {
+                    is FollowedUiModel.PodcastModel -> "podcast"
+                    is FollowedUiModel.SeparatorModel -> "separator"
+                    null -> "loading"
+                }
+            }
+        ) { index ->
+            when (val item = items[index] ?: return@items) {
+                is FollowedUiModel.PodcastModel -> {
+                    val podcast = item.podcast
+                    PodcastDetailItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .animateItem(),
+                        podcast = podcast,
+                        onClick = { onFollowedPodcastClick(podcast) },
+                        onToggleFollowed = { onToggleFollowed(podcast) }
+                    )
+                }
+
+                is FollowedUiModel.SeparatorModel -> {
+                    val date = item.date
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(horizontal = 16.dp)
+                            .padding(vertical = 8.dp),
+                        text = date,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
-            items(
-                items = podcasts,
-                key = { it.id },
-                contentType = { "podcast" }
-            ) { followedPodcast ->
-                PodcastDetailItem(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .animateItem(),
-                    podcast = followedPodcast,
-                    onClick = { onFollowedPodcastClick(followedPodcast) },
-                    onToggleFollowed = { onToggleFollowed(followedPodcast) }
-                )
-            }
         }
 
         item {
@@ -766,6 +801,15 @@ private fun LibraryScreenPreview() {
             likedEpisodes = episodeTestDataList,
             followedPodcasts = podcastTestDataList,
             preferredCategories = Category.entries,
+            playedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map {
+                PlayedUiModel.EpisodeModel(it)
+            })),
+            likedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map {
+                LikedUiModel.EpisodeModel(it)
+            })),
+            followedPodcastsPaging = flowOf(PagingData.from(podcastTestDataList.map {
+                FollowedUiModel.PodcastModel(it)
+            })),
             selectableCategories = Category.entries.map { category ->
                 SelectableCategory(
                     category = category,

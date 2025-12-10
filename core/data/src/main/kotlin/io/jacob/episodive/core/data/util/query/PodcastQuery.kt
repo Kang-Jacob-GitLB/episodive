@@ -7,12 +7,18 @@ import kotlin.time.Duration.Companion.minutes
 
 sealed interface PodcastQuery : CacheableQuery {
 
-    data class Search(val query: String) : PodcastQuery {
+    data class Search(
+        val query: String,
+        val max: Int = 10000,
+    ) : PodcastQuery {
         override val key = "search:$query"
         override val timeToLive = 30.minutes
     }
 
-    data class Medium(val medium: String) : PodcastQuery {
+    data class Medium(
+        val medium: String,
+        val max: Int = 10000,
+    ) : PodcastQuery {
         override val key = "medium:$medium"
         override val timeToLive = 1.hours
     }

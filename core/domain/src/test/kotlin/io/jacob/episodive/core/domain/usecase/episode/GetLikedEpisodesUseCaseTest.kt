@@ -18,7 +18,7 @@ class GetLikedEpisodesUseCaseTest {
 
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = GetLikedEpisodesUseCase(
+    private val useCase = GetLikedEpisodesPagingUseCase(
         episodeRepository = episodeRepository,
     )
 

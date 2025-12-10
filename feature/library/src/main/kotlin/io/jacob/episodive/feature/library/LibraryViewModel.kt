@@ -2,14 +2,21 @@ package io.jacob.episodive.feature.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.insertSeparators
+import androidx.paging.map
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.common.combine
 import io.jacob.episodive.core.domain.usecase.FindInLibraryUseCase
+import io.jacob.episodive.core.domain.usecase.episode.GetAllPlayedEpisodesPagingUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetAllPlayedEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesPagingUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsPagingUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetPreferredCategoriesUseCase
@@ -20,6 +27,7 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.LibraryFindResult
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
+import io.jacob.episodive.core.model.mapper.toHumanReadable
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -33,6 +41,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -45,6 +54,9 @@ class LibraryViewModel @Inject constructor(
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
     getPreferredCategoriesUseCase: GetPreferredCategoriesUseCase,
     getSelectableCategoriesUseCase: GetSelectableCategoriesUseCase,
+    getAllPlayedEpisodesPagingUseCase: GetAllPlayedEpisodesPagingUseCase,
+    getLikedEpisodesPagingUseCase: GetLikedEpisodesPagingUseCase,
+    getFollowedPodcastsPagingUseCase: GetFollowedPodcastsPagingUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val resumeEpisodeUseCase: ResumeEpisodeUseCase,
     private val toggleLikedUseCase: ToggleLikedUseCase,
@@ -67,12 +79,72 @@ class LibraryViewModel @Inject constructor(
 
     private val _section = MutableStateFlow(LibrarySection.All)
 
+    val playedEpisodesPaging: Flow<PagingData<PlayedUiModel>> =
+        getAllPlayedEpisodesPagingUseCase().map { pagingData ->
+            pagingData
+                .map { episode -> PlayedUiModel.EpisodeModel(episode) }
+                .insertSeparators { before, after ->
+                    if (after == null) {
+                        return@insertSeparators null
+                    }
+
+                    val beforeDate = before?.episode?.playedAt?.toHumanReadable()
+                    val afterDate = after.episode.playedAt?.toHumanReadable()
+
+                    if (before == null || beforeDate != afterDate) {
+                        afterDate?.let { PlayedUiModel.SeparatorModel(it) }
+                    } else {
+                        null
+                    }
+                }
+        }.cachedIn(viewModelScope)
+
+    val likedEpisodesPaging: Flow<PagingData<LikedUiModel>> =
+        getLikedEpisodesPagingUseCase().map { pagingData ->
+            pagingData
+                .map { episode -> LikedUiModel.EpisodeModel(episode) }
+                .insertSeparators { before, after ->
+                    if (after == null) {
+                        return@insertSeparators null
+                    }
+
+                    val beforeDate = before?.episode?.likedAt?.toHumanReadable()
+                    val afterDate = after.episode.likedAt?.toHumanReadable()
+
+                    if (before == null || beforeDate != afterDate) {
+                        afterDate?.let { LikedUiModel.SeparatorModel(it) }
+                    } else {
+                        null
+                    }
+                }
+        }.cachedIn(viewModelScope)
+
+    val followedPodcastsPaging: Flow<PagingData<FollowedUiModel>> =
+        getFollowedPodcastsPagingUseCase().map { pagingData ->
+            pagingData
+                .map { podcast -> FollowedUiModel.PodcastModel(podcast) }
+                .insertSeparators { before, after ->
+                    if (after == null) {
+                        return@insertSeparators null
+                    }
+
+                    val beforeDate = before?.podcast?.followedAt?.toHumanReadable()
+                    val afterDate = after.podcast.followedAt?.toHumanReadable()
+
+                    if (before == null || beforeDate != afterDate) {
+                        afterDate?.let { FollowedUiModel.SeparatorModel(it) }
+                    } else {
+                        null
+                    }
+                }
+        }.cachedIn(viewModelScope)
+
     val state: StateFlow<LibraryState> = combine(
         _findQuery,
         _findResult,
-        getAllPlayedEpisodesUseCase(),
-        getLikedEpisodesUseCase(),
-        getFollowedPodcastsUseCase(),
+        getAllPlayedEpisodesUseCase(max = 10),
+        getLikedEpisodesUseCase(max = 10),
+        getFollowedPodcastsUseCase(max = 10),
         getPreferredCategoriesUseCase(),
         getSelectableCategoriesUseCase(),
         _section
@@ -211,3 +283,18 @@ sealed interface LibraryEffect {
 }
 
 enum class LibrarySection { All, RecentlyListened, Liked, Followed, Preferred; }
+
+sealed interface PlayedUiModel {
+    data class SeparatorModel(val date: String) : PlayedUiModel
+    data class EpisodeModel(val episode: Episode) : PlayedUiModel
+}
+
+sealed interface LikedUiModel {
+    data class SeparatorModel(val date: String) : LikedUiModel
+    data class EpisodeModel(val episode: Episode) : LikedUiModel
+}
+
+sealed interface FollowedUiModel {
+    data class SeparatorModel(val date: String) : FollowedUiModel
+    data class PodcastModel(val podcast: Podcast) : FollowedUiModel
+}

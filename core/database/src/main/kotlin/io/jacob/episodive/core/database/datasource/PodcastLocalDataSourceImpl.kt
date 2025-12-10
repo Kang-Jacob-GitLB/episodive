@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.database.datasource
 
+import androidx.paging.PagingSource
 import io.jacob.episodive.core.database.dao.PodcastDao
 import io.jacob.episodive.core.database.model.FollowedPodcastEntity
 import io.jacob.episodive.core.database.model.PodcastDto
@@ -37,12 +38,20 @@ class PodcastLocalDataSourceImpl(
         return podcastDao.getPodcast(id)
     }
 
-    override fun getPodcasts(): Flow<List<PodcastDto>> {
-        return podcastDao.getPodcasts()
+    override fun getPodcasts(limit: Int): Flow<List<PodcastDto>> {
+        return podcastDao.getPodcasts(limit)
     }
 
-    override fun getPodcastsByCacheKey(cacheKey: String): Flow<List<PodcastDto>> {
-        return podcastDao.getPodcastsByCacheKey(cacheKey)
+    override fun getPodcastsPaging(): PagingSource<Int, PodcastDto> {
+        return podcastDao.getPodcastsPaging()
+    }
+
+    override fun getPodcastsByCacheKey(cacheKey: String, limit: Int): Flow<List<PodcastDto>> {
+        return podcastDao.getPodcastsByCacheKey(cacheKey, limit)
+    }
+
+    override fun getPodcastsByCacheKeyPaging(cacheKey: String): PagingSource<Int, PodcastDto> {
+        return podcastDao.getPodcastsByCacheKeyPaging(cacheKey)
     }
 
     override suspend fun addFollowed(followedPodcastEntity: FollowedPodcastEntity) {
@@ -61,7 +70,11 @@ class PodcastLocalDataSourceImpl(
         return podcastDao.toggleFollowed(id)
     }
 
-    override fun getFollowedPodcasts(): Flow<List<PodcastDto>> {
-        return podcastDao.getFollowedPodcasts()
+    override fun getFollowedPodcasts(limit: Int): Flow<List<PodcastDto>> {
+        return podcastDao.getFollowedPodcasts(limit)
+    }
+
+    override fun getFollowedPodcastsPaging(): PagingSource<Int, PodcastDto> {
+        return podcastDao.getFollowedPodcastsPaging()
     }
 }

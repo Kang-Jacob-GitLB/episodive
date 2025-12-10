@@ -22,6 +22,7 @@ class RecentFeedRemoteUpdater(
         return when (query) {
             is FeedQuery.Recent ->
                 remoteDataSource.getRecentFeeds(
+                    max = query.max,
                     language = query.language,
                     includeCategories = query.categories.toCommaString(),
                 )

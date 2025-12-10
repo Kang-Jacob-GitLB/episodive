@@ -8,6 +8,7 @@ import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
 import io.jacob.episodive.core.database.model.EpisodeDto
 import io.jacob.episodive.core.database.model.EpisodeEntity
+import io.jacob.episodive.core.model.mapper.toCommaString
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toEpisodes
 import io.jacob.episodive.core.network.model.EpisodeResponse
@@ -28,30 +29,34 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
         return when (query) {
             is EpisodeQuery.Person -> remoteDataSource.searchEpisodesByPerson(
                 person = query.person,
-                max = 10000,
+                max = query.max,
             )
 
             is EpisodeQuery.FeedId -> remoteDataSource.getEpisodesByFeedId(
                 feedId = query.feedId,
-                max = 10000,
+                max = query.max,
             )
 
             is EpisodeQuery.FeedUrl -> remoteDataSource.getEpisodesByFeedUrl(
                 feedUrl = query.feedUrl,
-                max = 10000,
+                max = query.max,
             )
 
             is EpisodeQuery.PodcastGuid -> remoteDataSource.getEpisodesByPodcastGuid(
                 guid = query.podcastGuid,
-                max = 10000,
+                max = query.max,
             )
 
-            is EpisodeQuery.Live -> remoteDataSource.getLiveEpisodes(max = 6)
-            is EpisodeQuery.Random -> remoteDataSource.getRandomEpisodes(max = 6)
-            is EpisodeQuery.Recent -> remoteDataSource.getRecentEpisodes(max = 6)
+            is EpisodeQuery.Live -> remoteDataSource.getLiveEpisodes(max = query.max)
+            is EpisodeQuery.Random -> remoteDataSource.getRandomEpisodes(
+                max = query.max,
+                language = query.language,
+                includeCategories = query.categories.toCommaString(),
+            )
+
+            is EpisodeQuery.Recent -> remoteDataSource.getRecentEpisodes(max = query.max)
             is EpisodeQuery.EpisodeId -> remoteDataSource.getEpisodeById(query.episodeId)
-                ?.let { listOf(it) }
-                ?: emptyList()
+                ?.let { listOf(it) } ?: emptyList()
         }
     }
 

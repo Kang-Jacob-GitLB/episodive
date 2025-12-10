@@ -9,6 +9,6 @@ class GetRecentEpisodesUseCase @Inject constructor(
     private val episodeRepository: EpisodeRepository,
 ) {
     operator fun invoke(): Flow<List<Episode>> {
-        return episodeRepository.getRecentEpisodes()
+        return episodeRepository.getRecentEpisodes(max = 6)
     }
 }

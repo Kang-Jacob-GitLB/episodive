@@ -19,7 +19,7 @@ class RecentNewFeedRemoteUpdater(
 
     override suspend fun fetchFromRemote(): List<RecentNewFeedResponse> {
         return when (query) {
-            is FeedQuery.RecentNew -> remoteDataSource.getRecentNewFeeds()
+            is FeedQuery.RecentNew -> remoteDataSource.getRecentNewFeeds(max = query.max)
             else -> emptyList()
         }
     }

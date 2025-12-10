@@ -19,7 +19,7 @@ class SoundbiteRemoteUpdater(
 
     override suspend fun fetchFromRemote(): List<SoundbiteResponse> {
         return when (query) {
-            is FeedQuery.Soundbite -> remoteDataSource.getRecentSoundbites()
+            is FeedQuery.Soundbite -> remoteDataSource.getRecentSoundbites(max = query.max)
             else -> emptyList()
         }
     }

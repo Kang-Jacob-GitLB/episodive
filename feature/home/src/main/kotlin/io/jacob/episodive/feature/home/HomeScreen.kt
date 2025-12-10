@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -83,7 +84,7 @@ internal fun HomeRoute(
             playingEpisodes = s.playingEpisodes,
             myRecentPodcasts = s.myRecentPodcasts,
             randomEpisodes = s.randomEpisodes,
-            myTrendingPodcasts = s.myTrendingFPodcasts,
+            myTrendingPodcasts = s.myTrendingPodcasts,
             followedPodcasts = s.followedPodcasts,
             localTrendingPodcasts = s.localTrendingPodcasts,
             foreignTrendingPodcasts = s.foreignTrendingPodcasts,
@@ -156,7 +157,9 @@ private fun HomeScreen(
                     modifier = Modifier
                         .animateContentSize()
                         .onSizeChanged { size ->
-                            contentHeight = with(density) { size.height.toDp() }
+                            contentHeight = with(density) {
+                                size.height.toDp().coerceIn(10.dp, 136.dp)
+                            }
                         }
                 ) {
                     if (playingEpisodes.isNotEmpty()) {

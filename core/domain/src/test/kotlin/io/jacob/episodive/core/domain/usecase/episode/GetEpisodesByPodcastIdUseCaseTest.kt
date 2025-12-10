@@ -18,7 +18,7 @@ class GetEpisodesByPodcastIdUseCaseTest {
 
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = GetEpisodesByPodcastIdUseCase(
+    private val useCase = GetEpisodesByPodcastIdPagingUseCase(
         episodeRepository = episodeRepository,
     )
 

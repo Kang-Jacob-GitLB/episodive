@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -32,6 +33,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -41,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.paging.compose.LazyPagingItems
 import io.jacob.episodive.core.designsystem.component.ClipAnimationIconText
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconProgressButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
@@ -219,6 +222,7 @@ fun EpisodeItem(
     }
 }
 
+@Stable
 @Composable
 fun PlayingEpisodesSection(
     modifier: Modifier = Modifier,
@@ -251,20 +255,47 @@ fun PlayingEpisodesSection(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
-            items(
-                count = playingEpisodes.size,
-                key = { playingEpisodes[it].id }
-            ) { index ->
-                val playedEpisode = playingEpisodes[index]
-                PlayingEpisodeItem(
-                    modifier = Modifier.animateItem(),
-                    playedEpisode = playedEpisode,
-                    onClick = { onEpisodeClick(playedEpisode) }
-                )
-            }
+            playingEpisodes(
+                playingEpisodes = playingEpisodes,
+                onEpisodeClick = onEpisodeClick
+            )
         }
     }
 }
+
+fun LazyListScope.playingEpisodes(
+    itemModifier: Modifier = Modifier,
+    playingEpisodes: LazyPagingItems<Episode>,
+    onEpisodeClick: (Episode) -> Unit,
+) = items(
+    count = playingEpisodes.itemCount,
+    key = { playingEpisodes[it]?.id ?: it },
+    itemContent = { index ->
+        playingEpisodes[index]?.let { playedEpisode ->
+            PlayingEpisodeItem(
+                modifier = itemModifier.animateItem(),
+                playedEpisode = playedEpisode,
+                onClick = { onEpisodeClick(playedEpisode) }
+            )
+        }
+    }
+)
+
+fun LazyListScope.playingEpisodes(
+    itemModifier: Modifier = Modifier,
+    playingEpisodes: List<Episode>,
+    onEpisodeClick: (Episode) -> Unit,
+) = items(
+    items = playingEpisodes,
+    key = { it.id },
+    itemContent = { playedEpisode ->
+        PlayingEpisodeItem(
+            modifier = itemModifier.animateItem(),
+            playedEpisode = playedEpisode,
+            onClick = { onEpisodeClick(playedEpisode) }
+        )
+    }
+)
 
 @Composable
 fun PlayingEpisodeItem(

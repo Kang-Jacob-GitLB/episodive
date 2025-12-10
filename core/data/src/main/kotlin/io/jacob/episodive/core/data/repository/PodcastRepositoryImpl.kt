@@ -1,5 +1,9 @@
 package io.jacob.episodive.core.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
 import io.jacob.episodive.core.data.util.Cacher
 import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
@@ -12,9 +16,13 @@ import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toPodcast
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class PodcastRepositoryImpl @Inject constructor(
@@ -22,11 +30,17 @@ class PodcastRepositoryImpl @Inject constructor(
     private val remoteDataSource: PodcastRemoteDataSource,
     private val remoteUpdater: PodcastRemoteUpdater.Factory,
 ) : PodcastRepository {
+    private val config = PagingConfig(
+        pageSize = 20,
+        enablePlaceholders = false,
+        prefetchDistance = 5
+    )
+
     override fun searchPodcasts(
         query: String,
-        max: Int?,
+        max: Int,
     ): Flow<List<Podcast>> {
-        val query = PodcastQuery.Search(query)
+        val query = PodcastQuery.Search(query, max)
 
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),
@@ -34,6 +48,26 @@ class PodcastRepositoryImpl @Inject constructor(
                 localDataSource.getPodcastsByCacheKey(query.key)
             }
         ).flow.map { it.toPodcasts() }
+    }
+
+    override fun searchPodcastsPaging(query: String): Flow<PagingData<Podcast>> {
+        val query = PodcastQuery.Search(query)
+        val updater = remoteUpdater.create(query)
+
+        return Pager(
+            config = config,
+            pagingSourceFactory = { localDataSource.getPodcastsByCacheKeyPaging(query.key) }
+        ).flow
+            .onStart {
+                coroutineScope {
+                    launch {
+                        updater.load(localDataSource.getPodcastsByCacheKey(query.key).first())
+                    }
+                }
+            }
+            .map { pagingData ->
+                pagingData.map { it.toPodcast() }
+            }
     }
 
     override fun getPodcastByFeedId(feedId: Long): Flow<Podcast?> {
@@ -67,9 +101,9 @@ class PodcastRepositoryImpl @Inject constructor(
 
     override fun getPodcastsByMedium(
         medium: String,
-        max: Int?,
+        max: Int,
     ): Flow<List<Podcast>> {
-        val query = PodcastQuery.Medium(medium)
+        val query = PodcastQuery.Medium(medium, max)
 
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),
@@ -77,6 +111,26 @@ class PodcastRepositoryImpl @Inject constructor(
                 localDataSource.getPodcastsByCacheKey(query.key)
             }
         ).flow.map { it.toPodcasts() }
+    }
+
+    override fun getPodcastsByMediumPaging(medium: String): Flow<PagingData<Podcast>> {
+        val query = PodcastQuery.Medium(medium)
+        val updater = remoteUpdater.create(query)
+
+        return Pager(
+            config = config,
+            pagingSourceFactory = { localDataSource.getPodcastsByCacheKeyPaging(query.key) }
+        ).flow
+            .onStart {
+                coroutineScope {
+                    launch {
+                        updater.load(localDataSource.getPodcastsByCacheKey(query.key).first())
+                    }
+                }
+            }
+            .map { pagingData ->
+                pagingData.map { it.toPodcast() }
+            }
     }
 
     override fun getPodcastsByChannel(channel: Channel): Flow<List<Podcast>> {
@@ -90,12 +144,42 @@ class PodcastRepositoryImpl @Inject constructor(
         ).flow.map { it.toPodcasts() }
     }
 
-    override fun getFollowedPodcasts(query: String?): Flow<List<Podcast>> {
-        return localDataSource.getFollowedPodcasts().map { podcasts ->
+    override fun getPodcastsByChannelPaging(channel: Channel): Flow<PagingData<Podcast>> {
+        val query = PodcastQuery.ByChannel(channel)
+        val updater = remoteUpdater.create(query)
+
+        return Pager(
+            config = config,
+            pagingSourceFactory = { localDataSource.getPodcastsByCacheKeyPaging(query.key) }
+        ).flow
+            .onStart {
+                coroutineScope {
+                    launch {
+                        updater.load(localDataSource.getPodcastsByCacheKey(query.key).first())
+                    }
+                }
+            }
+            .map { pagingData ->
+                pagingData.map { it.toPodcast() }
+            }
+    }
+
+    override fun getFollowedPodcasts(query: String?, max: Int): Flow<List<Podcast>> {
+        return localDataSource.getFollowedPodcasts(max).map { podcasts ->
             podcasts
                 .filter { query == null || it.podcast.matchesQuery(query) }
                 .toPodcasts()
         }
+    }
+
+    override fun getFollowedPodcastsPaging(query: String?): Flow<PagingData<Podcast>> {
+        return Pager(
+            config = config,
+            pagingSourceFactory = { localDataSource.getFollowedPodcastsPaging() }
+        ).flow
+            .map { pagingData ->
+                pagingData.map { it.toPodcast() }
+            }
     }
 
     override suspend fun toggleFollowed(id: Long): Boolean {

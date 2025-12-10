@@ -26,8 +26,8 @@ class PodcastRemoteUpdater @AssistedInject constructor(
 
     override suspend fun fetchFromRemote(): List<PodcastResponse> {
         return when (query) {
-            is PodcastQuery.Search -> remoteDataSource.searchPodcasts(query.query)
-            is PodcastQuery.Medium -> remoteDataSource.getPodcastsByMedium(query.medium)
+            is PodcastQuery.Search -> remoteDataSource.searchPodcasts(query.query, query.max)
+            is PodcastQuery.Medium -> remoteDataSource.getPodcastsByMedium(query.medium, query.max)
             is PodcastQuery.FeedId -> remoteDataSource.getPodcastByFeedId(query.feedId)
                 ?.let { listOf(it) }
                 ?: emptyList()

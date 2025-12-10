@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.database.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -77,9 +78,48 @@ interface EpisodeDao {
             FROM episodes e2
             WHERE e2.id = episodes.id
         )
+        LIMIT :limit
     """
     )
-    fun getEpisodes(): Flow<List<EpisodeDto>>
+    fun getEpisodes(limit: Int = -1): Flow<List<EpisodeDto>>
+
+    @Query(
+        """
+        SELECT
+            episodes.*,
+            liked_episodes.likedAt,
+            played_episodes.playedAt,
+            played_episodes.position,
+            played_episodes.isCompleted
+        FROM episodes
+        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
+        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+        WHERE episodes.cachedAt = (
+            SELECT MAX(cachedAt)
+            FROM episodes e2
+            WHERE e2.id = episodes.id
+        )
+    """
+    )
+    fun getEpisodesPaging(): PagingSource<Int, EpisodeDto>
+
+    @Query(
+        """
+        SELECT
+            episodes.*,
+            liked_episodes.likedAt,
+            played_episodes.playedAt,
+            played_episodes.position,
+            played_episodes.isCompleted
+        FROM episodes
+        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
+        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+        WHERE episodes.cacheKey = :cacheKey
+        ORDER BY episodes.datePublished DESC
+        LIMIT :limit
+    """
+    )
+    fun getEpisodesByCacheKey(cacheKey: String, limit: Int = -1): Flow<List<EpisodeDto>>
 
     @Query(
         """
@@ -96,8 +136,7 @@ interface EpisodeDao {
         ORDER BY episodes.datePublished DESC
     """
     )
-    fun getEpisodesByCacheKey(cacheKey: String): Flow<List<EpisodeDto>>
-
+    fun getEpisodesByCacheKeyPaging(cacheKey: String): PagingSource<Int, EpisodeDto>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addLiked(likedEpisode: LikedEpisodeEntity)
@@ -141,10 +180,31 @@ interface EpisodeDao {
             WHERE e2.id = episodes.id
         )
         ORDER BY liked_episodes.likedAt DESC
+        LIMIT :limit
     """
     )
-    fun getLikedEpisodes(): Flow<List<EpisodeDto>>
+    fun getLikedEpisodes(limit: Int = -1): Flow<List<EpisodeDto>>
 
+    @Query(
+        """
+        SELECT
+            episodes.*,
+            liked_episodes.likedAt,
+            played_episodes.playedAt,
+            played_episodes.position,
+            played_episodes.isCompleted
+        FROM episodes
+        INNER JOIN liked_episodes ON episodes.id = liked_episodes.id
+        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+        WHERE episodes.cachedAt = (
+            SELECT MAX(cachedAt)
+            FROM episodes e2
+            WHERE e2.id = episodes.id
+        )
+        ORDER BY liked_episodes.likedAt DESC
+    """
+    )
+    fun getLikedEpisodesPaging(): PagingSource<Int, EpisodeDto>
 
     @Upsert
     suspend fun upsertPlayed(playedEpisode: PlayedEpisodeEntity)
@@ -169,7 +229,30 @@ interface EpisodeDao {
             WHERE e2.id = episodes.id
         )
         ORDER BY played_episodes.playedAt DESC
+        LIMIT :limit
     """
     )
-    fun getPlayedEpisodes(): Flow<List<EpisodeDto>>
+    fun getPlayedEpisodes(limit: Int = -1): Flow<List<EpisodeDto>>
+
+    @Query(
+        """
+        SELECT
+            episodes.*,
+            liked_episodes.likedAt,
+            played_episodes.playedAt,
+            played_episodes.position,
+            played_episodes.isCompleted
+        FROM episodes
+        INNER JOIN played_episodes ON episodes.id = played_episodes.id
+        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
+        WHERE episodes.cachedAt = (
+            SELECT MAX(cachedAt)
+            FROM episodes e2
+            WHERE e2.id = episodes.id
+        )
+        ORDER BY played_episodes.playedAt DESC
+        LIMIT :limit
+    """
+    )
+    fun getPlayedEpisodesPaging(limit: Int = -1): PagingSource<Int, EpisodeDto>
 }

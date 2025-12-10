@@ -7,19 +7,18 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import javax.inject.Inject
 
-class GetMyRecentPodcastsUseCase @Inject constructor(
+class GetLocalTrendingPodcastsUseCase @Inject constructor(
     private val userRepository: UserRepository,
-    private val getRecentPodcastsUseCase: GetRecentPodcastsUseCase,
+    private val getTrendingPodcastsUseCase: GetTrendingPodcastsUseCase,
 ) {
     operator fun invoke(max: Int = 10): Flow<List<Podcast>> {
         return userRepository.getUserData().flatMapLatest { userData ->
             if (userData.categories.isEmpty()) {
                 flowOf(emptyList())
             } else {
-                getRecentPodcastsUseCase(
+                getTrendingPodcastsUseCase(
                     max = max,
                     language = userData.language,
-                    categories = userData.categories
                 )
             }
         }

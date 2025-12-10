@@ -28,7 +28,7 @@ class GetClipEpisodesUseCaseTest {
     private val feedRepository = mockk<FeedRepository>(relaxed = true)
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = GetClipEpisodesUseCase(
+    private val useCase = GetClipEpisodesPagingUseCase(
         feedRepository = feedRepository,
         episodeRepository = episodeRepository,
     )

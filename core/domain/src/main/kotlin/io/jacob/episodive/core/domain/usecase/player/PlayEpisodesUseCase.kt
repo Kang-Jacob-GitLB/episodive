@@ -9,7 +9,7 @@ import javax.inject.Inject
 class PlayEpisodesUseCase @Inject constructor(
     @param:Player(EpisodivePlayers.Main) private val playerRepository: PlayerRepository,
 ) {
-    operator fun invoke(episodes: List<Episode>, playEpisode: Episode? = null) {
+    operator fun invoke(playEpisode: Episode? = null, episodes: List<Episode>) {
         val index = playEpisode?.let {
             episodes.indexOfFirst { it.id == playEpisode.id }.takeIf { it >= 0 }
         } ?: 0

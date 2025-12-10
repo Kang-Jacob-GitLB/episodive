@@ -1,14 +1,15 @@
 package io.jacob.episodive.core.domain.usecase.episode
 
+import androidx.paging.PagingData
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.model.Episode
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class GetPlayingEpisodesUseCase @Inject constructor(
+class GetPlayingEpisodesPagingUseCase @Inject constructor(
     private val episodeRepository: EpisodeRepository,
 ) {
-    operator fun invoke(query: String? = null, max: Int = 10): Flow<List<Episode>> {
-        return episodeRepository.getPlayingEpisodes(query, max)
+    operator fun invoke(): Flow<PagingData<Episode>> {
+        return episodeRepository.getPlayingEpisodesPaging()
     }
 }

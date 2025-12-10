@@ -23,7 +23,7 @@ class PlayAndAddClipsUseCaseTest {
 
     private val playerRepository = mockk<PlayerRepository>(relaxed = true)
 
-    private val useCase = PlayAndAddClipsUseCase(
+    private val useCase = PlayClipUseCase(
         playerRepository = playerRepository,
     )
 

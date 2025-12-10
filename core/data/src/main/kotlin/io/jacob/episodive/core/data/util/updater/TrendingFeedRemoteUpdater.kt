@@ -22,6 +22,7 @@ class TrendingFeedRemoteUpdater(
         return when (query) {
             is FeedQuery.Trending ->
                 remoteDataSource.getTrendingFeeds(
+                    max = query.max,
                     language = query.language,
                     includeCategories = query.categories.toCommaString(),
                 )
