@@ -28,7 +28,10 @@ sealed interface PodcastQuery : CacheableQuery {
         override val timeToLive = 1.hours
     }
 
-    data class ByChannel(val channel: Channel) : PodcastQuery {
+    data class ByChannel(
+        val channel: Channel,
+        val max: Int = 10000,
+    ) : PodcastQuery {
         override val key = "channel:${channel.id}"
         override val timeToLive = 7.days
     }

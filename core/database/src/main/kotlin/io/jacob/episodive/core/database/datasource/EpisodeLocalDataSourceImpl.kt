@@ -61,6 +61,10 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         return episodeDao.getEpisodesByCacheKeyPaging(cacheKey)
     }
 
+    override fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>> {
+        return episodeDao.getEpisodesByIds(ids)
+    }
+
     override suspend fun addLiked(likedEpisode: LikedEpisodeEntity) {
         episodeDao.addLiked(likedEpisode)
     }

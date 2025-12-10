@@ -10,7 +10,7 @@ import kotlin.time.Duration
 interface EpisodeRepository {
     fun searchEpisodesByPerson(
         person: String,
-        max: Int = 5,
+        max: Int,
     ): Flow<List<Episode>>
 
     fun searchEpisodesByPersonPaging(
@@ -19,7 +19,7 @@ interface EpisodeRepository {
 
     fun getEpisodesByFeedId(
         feedId: Long,
-        max: Int = 5,
+        max: Int,
     ): Flow<List<Episode>>
 
     fun getEpisodesByFeedIdPaging(
@@ -28,7 +28,7 @@ interface EpisodeRepository {
 
     fun getEpisodesByFeedUrl(
         feedUrl: String,
-        max: Int = 5,
+        max: Int,
     ): Flow<List<Episode>>
 
     fun getEpisodesByFeedUrlPaging(
@@ -37,7 +37,7 @@ interface EpisodeRepository {
 
     fun getEpisodesByPodcastGuid(
         guid: String,
-        max: Int = 5,
+        max: Int,
     ): Flow<List<Episode>>
 
     fun getEpisodesByPodcastGuidPaging(
@@ -46,12 +46,12 @@ interface EpisodeRepository {
 
     fun getEpisodeById(id: Long): Flow<Episode?>
 
-    fun getLiveEpisodes(max: Int = 6): Flow<List<Episode>>
+    fun getLiveEpisodes(max: Int): Flow<List<Episode>>
 
     fun getLiveEpisodesPaging(): Flow<PagingData<Episode>>
 
     fun getRandomEpisodes(
-        max: Int = 6,
+        max: Int,
         language: String? = null,
         includeCategories: List<Category> = emptyList(),
         excludeCategories: List<Category> = emptyList(),
@@ -64,25 +64,25 @@ interface EpisodeRepository {
     ): Flow<PagingData<Episode>>
 
     fun getRecentEpisodes(
-        max: Int = 6,
+        max: Int,
         excludeString: String? = null,
     ): Flow<List<Episode>>
 
     fun getRecentEpisodesPaging(): Flow<PagingData<Episode>>
 
-    fun getLikedEpisodes(query: String? = null, max: Int = -1): Flow<List<Episode>>
+    fun getLikedEpisodes(query: String? = null, max: Int): Flow<List<Episode>>
 
     fun getLikedEpisodesPaging(): Flow<PagingData<Episode>>
 
-    fun getPlayingEpisodes(query: String? = null, max: Int = -1): Flow<List<Episode>>
+    fun getPlayingEpisodes(query: String? = null, max: Int): Flow<List<Episode>>
 
     fun getPlayingEpisodesPaging(): Flow<PagingData<Episode>>
 
-    fun getPlayedEpisodes(query: String? = null, max: Int = -1): Flow<List<Episode>>
+    fun getPlayedEpisodes(query: String? = null, max: Int): Flow<List<Episode>>
 
     fun getPlayedEpisodesPaging(): Flow<PagingData<Episode>>
 
-    fun getAllPlayedEpisodes(query: String? = null, max: Int = -1): Flow<List<Episode>>
+    fun getAllPlayedEpisodes(query: String? = null, max: Int): Flow<List<Episode>>
 
     fun getAllPlayedEpisodesPaging(): Flow<PagingData<Episode>>
 

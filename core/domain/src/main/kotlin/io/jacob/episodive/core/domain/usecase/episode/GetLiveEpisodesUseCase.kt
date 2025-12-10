@@ -8,7 +8,7 @@ import javax.inject.Inject
 class GetLiveEpisodesUseCase @Inject constructor(
     private val episodeRepository: EpisodeRepository,
 ) {
-    operator fun invoke(max: Int = 6): Flow<List<Episode>> {
+    operator fun invoke(max: Int): Flow<List<Episode>> {
         return episodeRepository.getLiveEpisodes(max)
     }
 }

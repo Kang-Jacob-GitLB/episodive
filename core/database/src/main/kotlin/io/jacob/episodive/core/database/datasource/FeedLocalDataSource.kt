@@ -28,20 +28,12 @@ interface FeedLocalDataSource {
     suspend fun replaceRecentFeeds(feeds: List<RecentFeedEntity>)
     suspend fun replaceRecentNewFeeds(feeds: List<RecentNewFeedEntity>)
     suspend fun replaceSoundbites(soundbites: List<SoundbiteEntity>)
-    fun getTrendingFeedsByCacheKey(
-        cacheKey: String,
-        limit: Int = -1,
-    ): Flow<List<TrendingFeedEntity>>
-
+    fun getTrendingFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<TrendingFeedEntity>>
     fun getTrendingFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, TrendingFeedEntity>
-    fun getRecentFeedsByCacheKey(cacheKey: String, limit: Int = -1): Flow<List<RecentFeedEntity>>
+    fun getRecentFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<RecentFeedEntity>>
     fun getRecentFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentFeedEntity>
-    fun getRecentNewFeedsByCacheKey(
-        cacheKey: String,
-        limit: Int = -1,
-    ): Flow<List<RecentNewFeedEntity>>
-
+    fun getRecentNewFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<RecentNewFeedEntity>>
     fun getRecentNewFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentNewFeedEntity>
-    fun getSoundbitesByCacheKey(cacheKey: String, limit: Int = -1): Flow<List<SoundbiteEntity>>
+    fun getSoundbitesByCacheKey(cacheKey: String, limit: Int): Flow<List<SoundbiteEntity>>
     fun getSoundbitesByCacheKeyPaging(cacheKey: String): PagingSource<Int, SoundbiteEntity>
 }

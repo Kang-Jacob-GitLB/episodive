@@ -24,10 +24,12 @@ class GetRecommendedPodcastsUseCase @Inject constructor(
             } else {
                 combine(
                     feedRepository.getTrendingFeeds(
+                        max = 10000,
                         language = userData.language,
                         includeCategories = userData.categories
                     ),
                     feedRepository.getRecentFeeds(
+                        max = 10000,
                         language = userData.language,
                         includeCategories = userData.categories
                     ),

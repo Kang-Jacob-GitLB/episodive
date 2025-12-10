@@ -11,7 +11,7 @@ class GetMyRandomEpisodesUseCase @Inject constructor(
     private val episodeRepository: EpisodeRepository,
     private val userRepository: UserRepository,
 ) {
-    operator fun invoke(max: Int = 6): Flow<List<Episode>> {
+    operator fun invoke(max: Int): Flow<List<Episode>> {
         return userRepository.getUserData().flatMapLatest { userData ->
             episodeRepository.getRandomEpisodes(
                 max = max,

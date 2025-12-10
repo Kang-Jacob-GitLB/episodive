@@ -56,6 +56,7 @@ import io.jacob.episodive.core.ui.EpisodeItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import io.jacob.episodive.core.ui.R as uiR
 
 @Composable
@@ -143,7 +144,9 @@ private fun PodcastScreen(
             items(
                 count = episodesPaging.itemCount,
                 key = { episodesPaging[it]?.id ?: it },
+                contentType = { "episode" }
             ) { index ->
+                Timber.w("index: $index")
                 episodesPaging[index]?.let { episode ->
                     EpisodeItem(
                         modifier = Modifier.padding(horizontal = 16.dp),

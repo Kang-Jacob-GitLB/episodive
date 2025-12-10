@@ -7,7 +7,7 @@ import javax.inject.Inject
 class GetRecentSearchesUseCase @Inject constructor(
     private val recentSearchRepository: RecentSearchRepository
 ) {
-    operator fun invoke(limit: Int = 5): Flow<List<String>> {
+    operator fun invoke(limit: Int): Flow<List<String>> {
         return recentSearchRepository.getRecentSearches(limit)
     }
 }

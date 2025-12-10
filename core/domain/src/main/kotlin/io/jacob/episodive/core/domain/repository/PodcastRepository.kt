@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 interface PodcastRepository {
     fun searchPodcasts(
         query: String,
-        max: Int = 100,
+        max: Int,
     ): Flow<List<Podcast>>
 
     fun searchPodcastsPaging(query: String): Flow<PagingData<Podcast>>
@@ -21,7 +21,7 @@ interface PodcastRepository {
 
     fun getPodcastsByMedium(
         medium: String,
-        max: Int = 100,
+        max: Int,
     ): Flow<List<Podcast>>
 
     fun getPodcastsByMediumPaging(medium: String): Flow<PagingData<Podcast>>
@@ -32,7 +32,7 @@ interface PodcastRepository {
 
     fun getFollowedPodcasts(
         query: String? = null,
-        max: Int = 100,
+        max: Int,
     ): Flow<List<Podcast>>
 
     fun getFollowedPodcastsPaging(query: String? = null): Flow<PagingData<Podcast>>

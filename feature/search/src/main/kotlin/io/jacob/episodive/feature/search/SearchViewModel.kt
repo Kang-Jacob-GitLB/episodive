@@ -54,7 +54,7 @@ class SearchViewModel @Inject constructor(
         .distinctUntilChanged()
         .flatMapLatest { query ->
             if (query.isNotEmpty()) {
-                searchUseCase(query)
+                searchUseCase(query, 10000)
             } else {
                 flowOf(SearchResult())
             }
@@ -63,9 +63,9 @@ class SearchViewModel @Inject constructor(
     val state: StateFlow<SearchState> = combine(
         _searchQuery,
         _searchResult,
-        getRecentSearchesUseCase(),
-        getRecentEpisodesUseCase(),
-        getTrendingPodcastsUseCase(),
+        getRecentSearchesUseCase(10000),
+        getRecentEpisodesUseCase(max = 6),
+        getTrendingPodcastsUseCase(max = 10),
     ) { query, result, recentSearches, recentEpisodes, trendingPodcasts ->
         SearchState.Success(
             searchQuery = query,
@@ -73,8 +73,8 @@ class SearchViewModel @Inject constructor(
             searchResult = result,
             recentSearches = recentSearches,
             categories = Category.entries.toList(),
-            recentEpisodes = recentEpisodes.take(6),
-            trendingPodcasts = trendingPodcasts.take(10),
+            recentEpisodes = recentEpisodes,
+            trendingPodcasts = trendingPodcasts,
         ) as SearchState
     }.catch { e ->
         emit(SearchState.Error(e.message ?: "An unknown error occurred"))

@@ -11,7 +11,7 @@ class GetForeignTrendingPodcastsUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val getTrendingPodcastsUseCase: GetTrendingPodcastsUseCase,
 ) {
-    operator fun invoke(max: Int = 10): Flow<List<Podcast>> {
+    operator fun invoke(max: Int): Flow<List<Podcast>> {
         return userRepository.getUserData().flatMapLatest { userData ->
             if (userData.categories.isEmpty()) {
                 flowOf(emptyList())

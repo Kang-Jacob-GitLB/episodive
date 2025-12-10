@@ -81,7 +81,7 @@ interface EpisodeDao {
         LIMIT :limit
     """
     )
-    fun getEpisodes(limit: Int = -1): Flow<List<EpisodeDto>>
+    fun getEpisodes(limit: Int): Flow<List<EpisodeDto>>
 
     @Query(
         """
@@ -119,7 +119,7 @@ interface EpisodeDao {
         LIMIT :limit
     """
     )
-    fun getEpisodesByCacheKey(cacheKey: String, limit: Int = -1): Flow<List<EpisodeDto>>
+    fun getEpisodesByCacheKey(cacheKey: String, limit: Int): Flow<List<EpisodeDto>>
 
     @Query(
         """
@@ -146,6 +146,27 @@ interface EpisodeDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM liked_episodes WHERE id = :id)")
     fun isLiked(id: Long): Flow<Boolean>
+
+    @Query(
+        """
+        SELECT
+            episodes.*,
+            liked_episodes.likedAt,
+            played_episodes.playedAt,
+            played_episodes.position,
+            played_episodes.isCompleted
+        FROM episodes
+        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
+        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+        WHERE episodes.id IN (:ids)
+        AND episodes.cachedAt = (
+            SELECT MAX(cachedAt)
+            FROM episodes e2
+            WHERE e2.id = episodes.id
+        )
+    """
+    )
+    fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>>
 
     @Transaction
     suspend fun toggleLiked(id: Long): Boolean {
@@ -183,7 +204,7 @@ interface EpisodeDao {
         LIMIT :limit
     """
     )
-    fun getLikedEpisodes(limit: Int = -1): Flow<List<EpisodeDto>>
+    fun getLikedEpisodes(limit: Int): Flow<List<EpisodeDto>>
 
     @Query(
         """
@@ -232,7 +253,7 @@ interface EpisodeDao {
         LIMIT :limit
     """
     )
-    fun getPlayedEpisodes(limit: Int = -1): Flow<List<EpisodeDto>>
+    fun getPlayedEpisodes(limit: Int): Flow<List<EpisodeDto>>
 
     @Query(
         """
@@ -251,8 +272,7 @@ interface EpisodeDao {
             WHERE e2.id = episodes.id
         )
         ORDER BY played_episodes.playedAt DESC
-        LIMIT :limit
     """
     )
-    fun getPlayedEpisodesPaging(limit: Int = -1): PagingSource<Int, EpisodeDto>
+    fun getPlayedEpisodesPaging(): PagingSource<Int, EpisodeDto>
 }

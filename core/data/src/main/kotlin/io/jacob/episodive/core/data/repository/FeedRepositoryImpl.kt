@@ -63,7 +63,7 @@ class FeedRepositoryImpl @Inject constructor(
                 query = query
             ),
             sourceFactory = {
-                localDataSource.getTrendingFeedsByCacheKey(query.key, max)
+                localDataSource.getTrendingFeedsByCacheKey(query.key, query.max)
             }
         ).flow.map { it.toTrendingFeeds() }
     }
@@ -90,7 +90,12 @@ class FeedRepositoryImpl @Inject constructor(
             .onStart {
                 coroutineScope {
                     launch {
-                        updater.load(localDataSource.getTrendingFeedsByCacheKey(query.key).first())
+                        updater.load(
+                            localDataSource.getTrendingFeedsByCacheKey(
+                                query.key,
+                                query.max
+                            ).first()
+                        )
                     }
                 }
             }
@@ -118,7 +123,7 @@ class FeedRepositoryImpl @Inject constructor(
                 query = query
             ),
             sourceFactory = {
-                localDataSource.getRecentFeedsByCacheKey(query.key, max)
+                localDataSource.getRecentFeedsByCacheKey(query.key, query.max)
             }
         ).flow.map { it.toRecentFeeds() }
     }
@@ -128,6 +133,7 @@ class FeedRepositoryImpl @Inject constructor(
         includeCategories: List<Category>,
     ): Flow<PagingData<RecentFeed>> {
         val query = FeedQuery.Recent(
+            max = 10000,
             language = language,
             categories = includeCategories
         )
@@ -144,7 +150,9 @@ class FeedRepositoryImpl @Inject constructor(
             .onStart {
                 coroutineScope {
                     launch {
-                        updater.load(localDataSource.getRecentFeedsByCacheKey(query.key).first())
+                        updater.load(
+                            localDataSource.getRecentFeedsByCacheKey(query.key, query.max).first()
+                        )
                     }
                 }
             }
@@ -165,7 +173,7 @@ class FeedRepositoryImpl @Inject constructor(
                 query = query
             ),
             sourceFactory = {
-                localDataSource.getRecentNewFeedsByCacheKey(query.key, max)
+                localDataSource.getRecentNewFeedsByCacheKey(query.key, query.max)
             }
         ).flow.map { it.toRecentNewFeeds() }
     }
@@ -185,7 +193,12 @@ class FeedRepositoryImpl @Inject constructor(
             .onStart {
                 coroutineScope {
                     launch {
-                        updater.load(localDataSource.getRecentNewFeedsByCacheKey(query.key).first())
+                        updater.load(
+                            localDataSource.getRecentNewFeedsByCacheKey(
+                                query.key,
+                                query.max
+                            ).first()
+                        )
                     }
                 }
             }
@@ -204,7 +217,7 @@ class FeedRepositoryImpl @Inject constructor(
                 query = query
             ),
             sourceFactory = {
-                localDataSource.getSoundbitesByCacheKey(query.key, max)
+                localDataSource.getSoundbitesByCacheKey(query.key, query.max)
             }
         ).flow.map { it.toSoundbites() }
     }
@@ -224,7 +237,9 @@ class FeedRepositoryImpl @Inject constructor(
             .onStart {
                 coroutineScope {
                     launch {
-                        updater.load(localDataSource.getSoundbitesByCacheKey(query.key).first())
+                        updater.load(
+                            localDataSource.getSoundbitesByCacheKey(query.key, query.max).first()
+                        )
                     }
                 }
             }

@@ -96,29 +96,26 @@ interface FeedDao {
     @Query("SELECT * FROM trending_feeds WHERE cacheKey = :cacheKey LIMIT :limit")
     fun getTrendingFeedsByCacheKey(
         cacheKey: String,
-        limit: Int = -1,
+        limit: Int,
     ): Flow<List<TrendingFeedEntity>>
 
     @Query("SELECT * FROM trending_feeds WHERE cacheKey = :cacheKey")
     fun getTrendingFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, TrendingFeedEntity>
 
     @Query("SELECT * FROM recent_feeds WHERE cacheKey = :cacheKey LIMIT :limit")
-    fun getRecentFeedsByCacheKey(cacheKey: String, limit: Int = -1): Flow<List<RecentFeedEntity>>
+    fun getRecentFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<RecentFeedEntity>>
 
     @Query("SELECT * FROM recent_feeds WHERE cacheKey = :cacheKey")
     fun getRecentFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentFeedEntity>
 
     @Query("SELECT * FROM recent_new_feeds WHERE cacheKey = :cacheKey LIMIT :limit")
-    fun getRecentNewFeedsByCacheKey(
-        cacheKey: String,
-        limit: Int = -1,
-    ): Flow<List<RecentNewFeedEntity>>
+    fun getRecentNewFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<RecentNewFeedEntity>>
 
     @Query("SELECT * FROM recent_new_feeds WHERE cacheKey = :cacheKey")
     fun getRecentNewFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentNewFeedEntity>
 
     @Query("SELECT * FROM soundbites WHERE cacheKey = :cacheKey LIMIT :limit")
-    fun getSoundbitesByCacheKey(cacheKey: String, limit: Int = -1): Flow<List<SoundbiteEntity>>
+    fun getSoundbitesByCacheKey(cacheKey: String, limit: Int): Flow<List<SoundbiteEntity>>
 
     @Query("SELECT * FROM soundbites WHERE cacheKey = :cacheKey")
     fun getSoundbitesByCacheKeyPaging(cacheKey: String): PagingSource<Int, SoundbiteEntity>

@@ -12,7 +12,7 @@ class GetTrendingPodcastsUseCase @Inject constructor(
     private val getPodcastsByFeedIdsUseCase: GetPodcastsByFeedIdsUseCase,
 ) {
     operator fun invoke(
-        max: Int = 10,
+        max: Int,
         language: String? = null,
         categories: List<Category> = emptyList(),
     ): Flow<List<Podcast>> {

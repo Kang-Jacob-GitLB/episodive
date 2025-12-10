@@ -13,9 +13,9 @@ class FindInLibraryUseCase @Inject constructor(
 ) {
     operator fun invoke(query: String): Flow<LibraryFindResult> {
         return combine(
-            episodeRepository.getPlayingEpisodes(query),
-            episodeRepository.getLikedEpisodes(query),
-            podcastRepository.getFollowedPodcasts(query),
+            episodeRepository.getPlayingEpisodes(query, 10000),
+            episodeRepository.getLikedEpisodes(query, 10000),
+            podcastRepository.getFollowedPodcasts(query, 10000),
         ) { playingEpisodes, likedEpisodes, followedPodcasts ->
             LibraryFindResult(
                 playingEpisodes = playingEpisodes,

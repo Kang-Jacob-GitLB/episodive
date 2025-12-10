@@ -64,7 +64,7 @@ interface PodcastDao {
         LIMIT :limit
     """
     )
-    fun getPodcasts(limit: Int = -1): Flow<List<PodcastDto>>
+    fun getPodcasts(limit: Int): Flow<List<PodcastDto>>
 
     @Query(
         """
@@ -90,7 +90,7 @@ interface PodcastDao {
         LIMIT :limit
     """
     )
-    fun getPodcastsByCacheKey(cacheKey: String, limit: Int = -1): Flow<List<PodcastDto>>
+    fun getPodcastsByCacheKey(cacheKey: String, limit: Int): Flow<List<PodcastDto>>
 
     @Query(
         """
@@ -149,7 +149,7 @@ interface PodcastDao {
         LIMIT :limit
     """
     )
-    fun getFollowedPodcasts(limit: Int = -1): Flow<List<PodcastDto>>
+    fun getFollowedPodcasts(limit: Int): Flow<List<PodcastDto>>
 
     @Query(
         """

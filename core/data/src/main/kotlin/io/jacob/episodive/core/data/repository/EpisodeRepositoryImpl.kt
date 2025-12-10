@@ -49,7 +49,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),
             sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, max)
+                localDataSource.getEpisodesByCacheKey(query.key, query.max)
             }
         ).flow.map { it.toEpisodes() }
     }
@@ -67,7 +67,9 @@ class EpisodeRepositoryImpl @Inject constructor(
             .onStart {
                 coroutineScope {
                     launch {
-                        updater.load(localDataSource.getEpisodesByCacheKey(query.key).first())
+                        updater.load(
+                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
+                        )
                     }
                 }
             }
@@ -85,13 +87,13 @@ class EpisodeRepositoryImpl @Inject constructor(
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),
             sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, max)
+                localDataSource.getEpisodesByCacheKey(query.key, query.max)
             }
         ).flow.map { it.toEpisodes() }
     }
 
     override fun getEpisodesByFeedIdPaging(feedId: Long): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.FeedId(feedId)
+        val query = EpisodeQuery.FeedId(feedId, 10000)
         val updater = remoteUpdater.create(query)
 
         return Pager(
@@ -101,7 +103,9 @@ class EpisodeRepositoryImpl @Inject constructor(
             .onStart {
                 coroutineScope {
                     launch {
-                        updater.load(localDataSource.getEpisodesByCacheKey(query.key).first())
+                        updater.load(
+                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
+                        )
                     }
                 }
             }
@@ -119,13 +123,13 @@ class EpisodeRepositoryImpl @Inject constructor(
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),
             sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, max)
+                localDataSource.getEpisodesByCacheKey(query.key, query.max)
             }
         ).flow.map { it.toEpisodes() }
     }
 
     override fun getEpisodesByFeedUrlPaging(feedUrl: String): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.FeedUrl(feedUrl)
+        val query = EpisodeQuery.FeedUrl(feedUrl, 10000)
         val updater = remoteUpdater.create(query)
 
         return Pager(
@@ -135,7 +139,9 @@ class EpisodeRepositoryImpl @Inject constructor(
             .onStart {
                 coroutineScope {
                     launch {
-                        updater.load(localDataSource.getEpisodesByCacheKey(query.key).first())
+                        updater.load(
+                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
+                        )
                     }
                 }
             }
@@ -153,13 +159,13 @@ class EpisodeRepositoryImpl @Inject constructor(
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),
             sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, max)
+                localDataSource.getEpisodesByCacheKey(query.key, query.max)
             }
         ).flow.map { it.toEpisodes() }
     }
 
     override fun getEpisodesByPodcastGuidPaging(guid: String): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.PodcastGuid(guid)
+        val query = EpisodeQuery.PodcastGuid(guid, 10000)
         val updater = remoteUpdater.create(query)
 
         return Pager(
@@ -169,7 +175,9 @@ class EpisodeRepositoryImpl @Inject constructor(
             .onStart {
                 coroutineScope {
                     launch {
-                        updater.load(localDataSource.getEpisodesByCacheKey(query.key).first())
+                        updater.load(
+                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
+                        )
                     }
                 }
             }
@@ -197,7 +205,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),
             sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, max)
+                localDataSource.getEpisodesByCacheKey(query.key, query.max)
             }
         ).flow.map { it.toEpisodes() }
     }
@@ -213,7 +221,9 @@ class EpisodeRepositoryImpl @Inject constructor(
             .onStart {
                 coroutineScope {
                     launch {
-                        updater.load(localDataSource.getEpisodesByCacheKey(query.key).first())
+                        updater.load(
+                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
+                        )
                     }
                 }
             }
@@ -233,7 +243,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),
             sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, max)
+                localDataSource.getEpisodesByCacheKey(query.key, query.max)
             }
         ).flow.map { it.toEpisodes() }
     }
@@ -253,7 +263,9 @@ class EpisodeRepositoryImpl @Inject constructor(
             .onStart {
                 coroutineScope {
                     launch {
-                        updater.load(localDataSource.getEpisodesByCacheKey(query.key).first())
+                        updater.load(
+                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
+                        )
                     }
                 }
             }
@@ -271,7 +283,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),
             sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, max)
+                localDataSource.getEpisodesByCacheKey(query.key, query.max)
             }
         ).flow.map { it.toEpisodes() }
     }
@@ -287,7 +299,9 @@ class EpisodeRepositoryImpl @Inject constructor(
             .onStart {
                 coroutineScope {
                     launch {
-                        updater.load(localDataSource.getEpisodesByCacheKey(query.key).first())
+                        updater.load(
+                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
+                        )
                     }
                 }
             }

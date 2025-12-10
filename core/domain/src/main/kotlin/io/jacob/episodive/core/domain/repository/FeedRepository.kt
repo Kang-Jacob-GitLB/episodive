@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface FeedRepository {
     fun getTrendingFeeds(
-        max: Int = 10,
+        max: Int,
         language: String? = null,
         includeCategories: List<Category> = emptyList(),
         excludeCategories: List<Category> = emptyList(),
@@ -22,7 +22,7 @@ interface FeedRepository {
     ): Flow<PagingData<TrendingFeed>>
 
     fun getRecentFeeds(
-        max: Int = 10,
+        max: Int,
         language: String? = null,
         includeCategories: List<Category> = emptyList(),
         excludeCategories: List<Category> = emptyList(),
@@ -34,12 +34,12 @@ interface FeedRepository {
     ): Flow<PagingData<RecentFeed>>
 
     fun getRecentNewFeeds(
-        max: Int = 10,
+        max: Int,
     ): Flow<List<RecentNewFeed>>
 
     fun getRecentNewFeedsPaging(): Flow<PagingData<RecentNewFeed>>
 
-    fun getRecentSoundbites(max: Int = 40): Flow<List<Soundbite>>
+    fun getRecentSoundbites(max: Int): Flow<List<Soundbite>>
 
     fun getRecentSoundbitesPaging(): Flow<PagingData<Soundbite>>
 }
