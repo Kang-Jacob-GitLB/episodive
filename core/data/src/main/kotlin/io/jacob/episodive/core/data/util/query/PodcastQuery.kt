@@ -9,7 +9,7 @@ sealed interface PodcastQuery : CacheableQuery {
 
     data class Search(
         val query: String,
-        val max: Int = 10000,
+        val max: Int,
     ) : PodcastQuery {
         override val key = "search:$query"
         override val timeToLive = 30.minutes
@@ -17,7 +17,7 @@ sealed interface PodcastQuery : CacheableQuery {
 
     data class Medium(
         val medium: String,
-        val max: Int = 10000,
+        val max: Int,
     ) : PodcastQuery {
         override val key = "medium:$medium"
         override val timeToLive = 1.hours
@@ -30,7 +30,7 @@ sealed interface PodcastQuery : CacheableQuery {
 
     data class ByChannel(
         val channel: Channel,
-        val max: Int = 10000,
+        val max: Int,
     ) : PodcastQuery {
         override val key = "channel:${channel.id}"
         override val timeToLive = 7.days

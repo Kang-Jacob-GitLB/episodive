@@ -73,7 +73,7 @@ class FeedRepositoryImpl @Inject constructor(
         includeCategories: List<Category>,
     ): Flow<PagingData<TrendingFeed>> {
         val query = FeedQuery.Trending(
-            max = 10000,
+            max = 10,
             language = language,
             categories = includeCategories
         )
@@ -133,7 +133,7 @@ class FeedRepositoryImpl @Inject constructor(
         includeCategories: List<Category>,
     ): Flow<PagingData<RecentFeed>> {
         val query = FeedQuery.Recent(
-            max = 10000,
+            max = 10,
             language = language,
             categories = includeCategories
         )
@@ -179,7 +179,7 @@ class FeedRepositoryImpl @Inject constructor(
     }
 
     override fun getRecentNewFeedsPaging(): Flow<PagingData<RecentNewFeed>> {
-        val query = FeedQuery.RecentNew(10000)
+        val query = FeedQuery.RecentNew(10)
         val updater = RecentNewFeedRemoteUpdater(
             localDataSource = localDataSource,
             remoteDataSource = remoteDataSource,
@@ -223,7 +223,7 @@ class FeedRepositoryImpl @Inject constructor(
     }
 
     override fun getRecentSoundbitesPaging(): Flow<PagingData<Soundbite>> {
-        val query = FeedQuery.Soundbite(10000)
+        val query = FeedQuery.Soundbite(10)
         val updater = SoundbiteRemoteUpdater(
             localDataSource = localDataSource,
             remoteDataSource = remoteDataSource,

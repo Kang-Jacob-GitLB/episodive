@@ -57,7 +57,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     override fun searchEpisodesByPersonPaging(
         person: String,
     ): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Person(person, 10000)
+        val query = EpisodeQuery.Person(person, 10)
         val updater = remoteUpdater.create(query)
 
         return Pager(
@@ -93,7 +93,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun getEpisodesByFeedIdPaging(feedId: Long): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.FeedId(feedId, 10000)
+        val query = EpisodeQuery.FeedId(feedId, 10)
         val updater = remoteUpdater.create(query)
 
         return Pager(
@@ -129,7 +129,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun getEpisodesByFeedUrlPaging(feedUrl: String): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.FeedUrl(feedUrl, 10000)
+        val query = EpisodeQuery.FeedUrl(feedUrl, 10)
         val updater = remoteUpdater.create(query)
 
         return Pager(
@@ -165,7 +165,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun getEpisodesByPodcastGuidPaging(guid: String): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.PodcastGuid(guid, 10000)
+        val query = EpisodeQuery.PodcastGuid(guid, 10)
         val updater = remoteUpdater.create(query)
 
         return Pager(
@@ -211,7 +211,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun getLiveEpisodesPaging(): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Live(10000)
+        val query = EpisodeQuery.Live(10)
         val updater = remoteUpdater.create(query)
 
         return Pager(
@@ -253,7 +253,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         includeCategories: List<Category>,
         excludeCategories: List<Category>,
     ): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Random(10000, language, includeCategories)
+        val query = EpisodeQuery.Random(10, language, includeCategories)
         val updater = remoteUpdater.create(query)
 
         return Pager(
@@ -289,7 +289,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun getRecentEpisodesPaging(): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Recent(10000)
+        val query = EpisodeQuery.Recent(10)
         val updater = remoteUpdater.create(query)
 
         return Pager(

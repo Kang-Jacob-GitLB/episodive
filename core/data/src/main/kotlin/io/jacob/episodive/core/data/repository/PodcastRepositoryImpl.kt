@@ -51,7 +51,7 @@ class PodcastRepositoryImpl @Inject constructor(
     }
 
     override fun searchPodcastsPaging(query: String): Flow<PagingData<Podcast>> {
-        val query = PodcastQuery.Search(query, 10000)
+        val query = PodcastQuery.Search(query, 10)
         val updater = remoteUpdater.create(query)
 
         return Pager(
@@ -116,7 +116,7 @@ class PodcastRepositoryImpl @Inject constructor(
     }
 
     override fun getPodcastsByMediumPaging(medium: String): Flow<PagingData<Podcast>> {
-        val query = PodcastQuery.Medium(medium, 10000)
+        val query = PodcastQuery.Medium(medium, 10)
         val updater = remoteUpdater.create(query)
 
         return Pager(
@@ -138,7 +138,7 @@ class PodcastRepositoryImpl @Inject constructor(
     }
 
     override fun getPodcastsByChannel(channel: Channel): Flow<List<Podcast>> {
-        val query = PodcastQuery.ByChannel(channel, 10000)
+        val query = PodcastQuery.ByChannel(channel, 10)
 
         return Cacher(
             remoteUpdater = remoteUpdater.create(query),
@@ -149,7 +149,7 @@ class PodcastRepositoryImpl @Inject constructor(
     }
 
     override fun getPodcastsByChannelPaging(channel: Channel): Flow<PagingData<Podcast>> {
-        val query = PodcastQuery.ByChannel(channel, 10000)
+        val query = PodcastQuery.ByChannel(channel, 10)
         val updater = remoteUpdater.create(query)
 
         return Pager(

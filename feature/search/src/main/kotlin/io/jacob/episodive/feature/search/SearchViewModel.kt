@@ -54,7 +54,7 @@ class SearchViewModel @Inject constructor(
         .distinctUntilChanged()
         .flatMapLatest { query ->
             if (query.isNotEmpty()) {
-                searchUseCase(query, 10000)
+                searchUseCase(query, 100)
             } else {
                 flowOf(SearchResult())
             }
@@ -63,7 +63,7 @@ class SearchViewModel @Inject constructor(
     val state: StateFlow<SearchState> = combine(
         _searchQuery,
         _searchResult,
-        getRecentSearchesUseCase(10000),
+        getRecentSearchesUseCase(100),
         getRecentEpisodesUseCase(max = 6),
         getTrendingPodcastsUseCase(max = 10),
     ) { query, result, recentSearches, recentEpisodes, trendingPodcasts ->

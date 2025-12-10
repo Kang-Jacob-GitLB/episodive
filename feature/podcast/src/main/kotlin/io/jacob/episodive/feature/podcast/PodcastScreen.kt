@@ -1,8 +1,10 @@
 package io.jacob.episodive.feature.podcast
 
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,13 +33,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.skydoves.compose.stability.runtime.TraceRecomposition
 import io.jacob.episodive.core.designsystem.component.DominantRegion
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.FadeTopBarLayout
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.StateImage
+import io.jacob.episodive.core.designsystem.component.scrollbar.DraggableScrollbar
+import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
@@ -52,6 +55,7 @@ import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.ui.EpisodeItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import io.jacob.episodive.core.ui.R as uiR
 
 @Composable
@@ -85,7 +89,6 @@ internal fun PodcastRoute(
     }
 }
 
-@TraceRecomposition
 @Composable
 private fun PodcastScreen(
     modifier: Modifier = Modifier,
@@ -160,22 +163,22 @@ private fun PodcastScreen(
             }
         }
 
-//        listState.DraggableScrollbar(
-//            modifier = Modifier
-//                .fillMaxHeight()
-//                .padding(vertical = 12.dp)
-//                .padding(top = 110.dp)
-//                .align(Alignment.TopEnd),
-//            state = listState.scrollbarState(itemsAvailable = episodesPaging.itemCount),
-//            orientation = Orientation.Vertical,
-//            onThumbMoved = { thumbPosition ->
-//                scope.launch {
-//                    val itemIndex = (thumbPosition * episodesPaging.itemCount).toInt()
-//                        .coerceIn(0, episodesPaging.itemCount - 1)
-//                    listState.scrollToItem(itemIndex)
-//                }
-//            }
-//        )
+        listState.DraggableScrollbar(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(vertical = 12.dp)
+                .padding(top = 110.dp)
+                .align(Alignment.TopEnd),
+            state = listState.scrollbarState(itemsAvailable = episodesPaging.itemCount),
+            orientation = Orientation.Vertical,
+            onThumbMoved = { thumbPosition ->
+                scope.launch {
+                    val itemIndex = (thumbPosition * episodesPaging.itemCount).toInt()
+                        .coerceIn(0, episodesPaging.itemCount - 1)
+                    listState.scrollToItem(itemIndex)
+                }
+            }
+        )
     }
 }
 
