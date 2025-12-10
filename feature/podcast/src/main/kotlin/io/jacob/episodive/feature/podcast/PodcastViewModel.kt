@@ -80,15 +80,12 @@ class PodcastViewModel @AssistedInject constructor(
     }
 
     private fun playEpisode(episode: Episode, visibleEpisodes: List<Episode>) {
-        if (
-            visibleEpisodes.isEmpty() ||
-            !visibleEpisodes.map { it.id }.contains(episode.id)
-        ) {
-            playEpisodesUseCase(playEpisode = episode, episodes = listOf(episode))
+        val index = visibleEpisodes.indexOfFirst { it.id == episode.id }
+        if (index == -1) {
+            playEpisodesUseCase(playEpisode = episode, episodes = visibleEpisodes)
             return
         }
-
-        val playlist = visibleEpisodes.reversed()
+        val playlist = visibleEpisodes.subList(0, index + 1).reversed()
         playEpisodesUseCase(playEpisode = episode, episodes = playlist)
     }
 
