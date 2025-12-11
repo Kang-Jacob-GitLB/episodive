@@ -1,10 +1,8 @@
 package io.jacob.episodive.core.data.repository
 
-import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
-import io.jacob.episodive.core.data.util.Cacher
 import io.jacob.episodive.core.data.util.query.FeedQuery
 import io.jacob.episodive.core.data.util.updater.RecentFeedRemoteUpdater
 import io.jacob.episodive.core.data.util.updater.RecentNewFeedRemoteUpdater
@@ -26,22 +24,22 @@ import io.jacob.episodive.core.model.RecentNewFeed
 import io.jacob.episodive.core.model.Soundbite
 import io.jacob.episodive.core.model.TrendingFeed
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class FeedRepositoryImpl @Inject constructor(
     private val localDataSource: FeedLocalDataSource,
     private val remoteDataSource: FeedRemoteDataSource,
+    private val trendingFeedRemoteUpdater: TrendingFeedRemoteUpdater.Factory,
+    private val recentFeedRemoteUpdater: RecentFeedRemoteUpdater.Factory,
+    private val recentNewFeedRemoteUpdater: RecentNewFeedRemoteUpdater.Factory,
+    private val soundbiteRemoteUpdater: SoundbiteRemoteUpdater.Factory,
 ) : FeedRepository {
     private val config = PagingConfig(
         pageSize = 20,
-        enablePlaceholders = false,
-        prefetchDistance = 5
+        prefetchDistance = 5,
+        enablePlaceholders = false
     )
 
     override fun getTrendingFeeds(
@@ -51,21 +49,13 @@ class FeedRepositoryImpl @Inject constructor(
         excludeCategories: List<Category>,
     ): Flow<List<TrendingFeed>> {
         val query = FeedQuery.Trending(
-            max = max,
             language = language,
             categories = includeCategories
         )
 
-        return Cacher(
-            remoteUpdater = TrendingFeedRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query
-            ),
-            sourceFactory = {
-                localDataSource.getTrendingFeedsByCacheKey(query.key, query.max)
-            }
-        ).flow.map { it.toTrendingFeeds() }
+        return trendingFeedRemoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toTrendingFeeds() }
     }
 
     override fun getTrendingFeedsPaging(
@@ -73,32 +63,12 @@ class FeedRepositoryImpl @Inject constructor(
         includeCategories: List<Category>,
     ): Flow<PagingData<TrendingFeed>> {
         val query = FeedQuery.Trending(
-            max = 10,
             language = language,
             categories = includeCategories
         )
-        val updater = TrendingFeedRemoteUpdater(
-            localDataSource = localDataSource,
-            remoteDataSource = remoteDataSource,
-            query = query
-        )
 
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getTrendingFeedsByCacheKeyPaging(query.key) }
-        ).flow
-            .onStart {
-                coroutineScope {
-                    launch {
-                        updater.load(
-                            localDataSource.getTrendingFeedsByCacheKey(
-                                query.key,
-                                query.max
-                            ).first()
-                        )
-                    }
-                }
-            }
+        return trendingFeedRemoteUpdater.create(query)
+            .getPagingData(config)
             .map { pagingData ->
                 pagingData.map { it.toTrendingFeed() }
             }
@@ -111,21 +81,13 @@ class FeedRepositoryImpl @Inject constructor(
         excludeCategories: List<Category>,
     ): Flow<List<RecentFeed>> {
         val query = FeedQuery.Recent(
-            max = max,
             language = language,
             categories = includeCategories
         )
 
-        return Cacher(
-            remoteUpdater = RecentFeedRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query
-            ),
-            sourceFactory = {
-                localDataSource.getRecentFeedsByCacheKey(query.key, query.max)
-            }
-        ).flow.map { it.toRecentFeeds() }
+        return recentFeedRemoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toRecentFeeds() }
     }
 
     override fun getRecentFeedsPaging(
@@ -133,29 +95,12 @@ class FeedRepositoryImpl @Inject constructor(
         includeCategories: List<Category>,
     ): Flow<PagingData<RecentFeed>> {
         val query = FeedQuery.Recent(
-            max = 10,
             language = language,
             categories = includeCategories
         )
-        val updater = RecentFeedRemoteUpdater(
-            localDataSource = localDataSource,
-            remoteDataSource = remoteDataSource,
-            query = query
-        )
 
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getRecentFeedsByCacheKeyPaging(query.key) }
-        ).flow
-            .onStart {
-                coroutineScope {
-                    launch {
-                        updater.load(
-                            localDataSource.getRecentFeedsByCacheKey(query.key, query.max).first()
-                        )
-                    }
-                }
-            }
+        return recentFeedRemoteUpdater.create(query)
+            .getPagingData(config)
             .map { pagingData ->
                 pagingData.map { it.toRecentFeed() }
             }
@@ -164,85 +109,36 @@ class FeedRepositoryImpl @Inject constructor(
     override fun getRecentNewFeeds(
         max: Int,
     ): Flow<List<RecentNewFeed>> {
-        val query = FeedQuery.RecentNew(max)
+        val query = FeedQuery.RecentNew
 
-        return Cacher(
-            remoteUpdater = RecentNewFeedRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query
-            ),
-            sourceFactory = {
-                localDataSource.getRecentNewFeedsByCacheKey(query.key, query.max)
-            }
-        ).flow.map { it.toRecentNewFeeds() }
+        return recentNewFeedRemoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toRecentNewFeeds() }
     }
 
     override fun getRecentNewFeedsPaging(): Flow<PagingData<RecentNewFeed>> {
-        val query = FeedQuery.RecentNew(10)
-        val updater = RecentNewFeedRemoteUpdater(
-            localDataSource = localDataSource,
-            remoteDataSource = remoteDataSource,
-            query = query
-        )
+        val query = FeedQuery.RecentNew
 
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getRecentNewFeedsByCacheKeyPaging(query.key) }
-        ).flow
-            .onStart {
-                coroutineScope {
-                    launch {
-                        updater.load(
-                            localDataSource.getRecentNewFeedsByCacheKey(
-                                query.key,
-                                query.max
-                            ).first()
-                        )
-                    }
-                }
-            }
+        return recentNewFeedRemoteUpdater.create(query)
+            .getPagingData(config)
             .map { pagingData ->
                 pagingData.map { it.toRecentNewFeed() }
             }
     }
 
     override fun getRecentSoundbites(max: Int): Flow<List<Soundbite>> {
-        val query = FeedQuery.Soundbite(max)
+        val query = FeedQuery.Soundbite
 
-        return Cacher(
-            remoteUpdater = SoundbiteRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query
-            ),
-            sourceFactory = {
-                localDataSource.getSoundbitesByCacheKey(query.key, query.max)
-            }
-        ).flow.map { it.toSoundbites() }
+        return soundbiteRemoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toSoundbites() }
     }
 
     override fun getRecentSoundbitesPaging(): Flow<PagingData<Soundbite>> {
-        val query = FeedQuery.Soundbite(10)
-        val updater = SoundbiteRemoteUpdater(
-            localDataSource = localDataSource,
-            remoteDataSource = remoteDataSource,
-            query = query
-        )
+        val query = FeedQuery.Soundbite
 
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getSoundbitesByCacheKeyPaging(query.key) }
-        ).flow
-            .onStart {
-                coroutineScope {
-                    launch {
-                        updater.load(
-                            localDataSource.getSoundbitesByCacheKey(query.key, query.max).first()
-                        )
-                    }
-                }
-            }
+        return soundbiteRemoteUpdater.create(query)
+            .getPagingData(config)
             .map { pagingData ->
                 pagingData.map { it.toSoundbite() }
             }

@@ -5,6 +5,7 @@ import io.jacob.episodive.core.database.model.FollowedPodcastEntity
 import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Instant
 
 interface PodcastLocalDataSource {
     suspend fun upsertPodcast(podcast: PodcastEntity)
@@ -18,6 +19,7 @@ interface PodcastLocalDataSource {
     fun getPodcastsPaging(): PagingSource<Int, PodcastDto>
     fun getPodcastsByCacheKey(cacheKey: String, limit: Int): Flow<List<PodcastDto>>
     fun getPodcastsByCacheKeyPaging(cacheKey: String): PagingSource<Int, PodcastDto>
+    suspend fun getPodcastsOldestCachedAtByCacheKey(cacheKey: String): Instant?
 
     suspend fun addFollowed(followedPodcastEntity: FollowedPodcastEntity)
     suspend fun removeFollowed(id: Long)

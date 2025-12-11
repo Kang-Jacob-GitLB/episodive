@@ -6,6 +6,7 @@ import io.jacob.episodive.core.database.model.RecentNewFeedEntity
 import io.jacob.episodive.core.database.model.SoundbiteEntity
 import io.jacob.episodive.core.database.model.TrendingFeedEntity
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Instant
 
 interface FeedLocalDataSource {
     suspend fun upsertTrendingFeeds(feeds: List<TrendingFeedEntity>)
@@ -30,10 +31,14 @@ interface FeedLocalDataSource {
     suspend fun replaceSoundbites(soundbites: List<SoundbiteEntity>)
     fun getTrendingFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<TrendingFeedEntity>>
     fun getTrendingFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, TrendingFeedEntity>
+    suspend fun getTrendingFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant?
     fun getRecentFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<RecentFeedEntity>>
     fun getRecentFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentFeedEntity>
+    suspend fun getRecentFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant?
     fun getRecentNewFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<RecentNewFeedEntity>>
     fun getRecentNewFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentNewFeedEntity>
+    suspend fun getRecentNewFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant?
     fun getSoundbitesByCacheKey(cacheKey: String, limit: Int): Flow<List<SoundbiteEntity>>
     fun getSoundbitesByCacheKeyPaging(cacheKey: String): PagingSource<Int, SoundbiteEntity>
+    suspend fun getSoundbitesOldestCachedAtByCacheKey(cacheKey: String): Instant?
 }

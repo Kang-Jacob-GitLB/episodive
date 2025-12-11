@@ -7,6 +7,7 @@ import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
+import kotlin.time.Instant
 
 interface EpisodeLocalDataSource {
     suspend fun upsertEpisode(episode: EpisodeEntity)
@@ -22,6 +23,7 @@ interface EpisodeLocalDataSource {
     fun getEpisodesByCacheKey(cacheKey: String, limit: Int): Flow<List<EpisodeDto>>
     fun getEpisodesByCacheKeyPaging(cacheKey: String): PagingSource<Int, EpisodeDto>
     fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>>
+    suspend fun getEpisodesOldestCachedAtByCacheKey(cacheKey: String): Instant?
 
     suspend fun addLiked(likedEpisode: LikedEpisodeEntity)
     suspend fun removeLiked(id: Long)

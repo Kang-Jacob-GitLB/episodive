@@ -12,6 +12,7 @@ import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Clock
+import kotlin.time.Instant
 
 @Dao
 interface PodcastDao {
@@ -105,6 +106,8 @@ interface PodcastDao {
     )
     fun getPodcastsByCacheKeyPaging(cacheKey: String): PagingSource<Int, PodcastDto>
 
+    @Query("SELECT MIN(cachedAt) FROM podcasts WHERE cacheKey = :cacheKey")
+    suspend fun getPodcastsOldestCachedAtByCacheKey(cacheKey: String): Instant?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addFollowed(followedPodcastEntity: FollowedPodcastEntity)

@@ -6,6 +6,7 @@ import io.jacob.episodive.core.database.model.FollowedPodcastEntity
 import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Instant
 
 class PodcastLocalDataSourceImpl(
     private val podcastDao: PodcastDao,
@@ -52,6 +53,10 @@ class PodcastLocalDataSourceImpl(
 
     override fun getPodcastsByCacheKeyPaging(cacheKey: String): PagingSource<Int, PodcastDto> {
         return podcastDao.getPodcastsByCacheKeyPaging(cacheKey)
+    }
+
+    override suspend fun getPodcastsOldestCachedAtByCacheKey(cacheKey: String): Instant? {
+        return podcastDao.getPodcastsOldestCachedAtByCacheKey(cacheKey)
     }
 
     override suspend fun addFollowed(followedPodcastEntity: FollowedPodcastEntity) {

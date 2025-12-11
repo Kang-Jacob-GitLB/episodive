@@ -4,7 +4,6 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
-import io.jacob.episodive.core.data.util.Cacher
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
@@ -18,12 +17,8 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -36,43 +31,28 @@ class EpisodeRepositoryImpl @Inject constructor(
 ) : EpisodeRepository {
     private val config = PagingConfig(
         pageSize = 20,
-        enablePlaceholders = false,
-        prefetchDistance = 5
+        prefetchDistance = 5,
+        enablePlaceholders = false
     )
 
     override fun searchEpisodesByPerson(
         person: String,
         max: Int,
     ): Flow<List<Episode>> {
-        val query = EpisodeQuery.Person(person, max)
+        val query = EpisodeQuery.Person(person)
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, query.max)
-            }
-        ).flow.map { it.toEpisodes() }
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toEpisodes() }
     }
 
     override fun searchEpisodesByPersonPaging(
         person: String,
     ): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Person(person, 10)
-        val updater = remoteUpdater.create(query)
+        val query = EpisodeQuery.Person(person)
 
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getEpisodesByCacheKeyPaging(query.key) }
-        ).flow
-            .onStart {
-                coroutineScope {
-                    launch {
-                        updater.load(
-                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
-                        )
-                    }
-                }
-            }
+        return remoteUpdater.create(query)
+            .getPagingData(config)
             .map { pagingData ->
                 pagingData.map { it.toEpisode() }
             }
@@ -82,33 +62,18 @@ class EpisodeRepositoryImpl @Inject constructor(
         feedId: Long,
         max: Int,
     ): Flow<List<Episode>> {
-        val query = EpisodeQuery.FeedId(feedId, max)
+        val query = EpisodeQuery.FeedId(feedId)
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, query.max)
-            }
-        ).flow.map { it.toEpisodes() }
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toEpisodes() }
     }
 
     override fun getEpisodesByFeedIdPaging(feedId: Long): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.FeedId(feedId, 10)
-        val updater = remoteUpdater.create(query)
+        val query = EpisodeQuery.FeedId(feedId)
 
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getEpisodesByCacheKeyPaging(query.key) }
-        ).flow
-            .onStart {
-                coroutineScope {
-                    launch {
-                        updater.load(
-                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
-                        )
-                    }
-                }
-            }
+        return remoteUpdater.create(query)
+            .getPagingData(config)
             .map { pagingData ->
                 pagingData.map { it.toEpisode() }
             }
@@ -118,33 +83,18 @@ class EpisodeRepositoryImpl @Inject constructor(
         feedUrl: String,
         max: Int,
     ): Flow<List<Episode>> {
-        val query = EpisodeQuery.FeedUrl(feedUrl, max)
+        val query = EpisodeQuery.FeedUrl(feedUrl)
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, query.max)
-            }
-        ).flow.map { it.toEpisodes() }
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toEpisodes() }
     }
 
     override fun getEpisodesByFeedUrlPaging(feedUrl: String): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.FeedUrl(feedUrl, 10)
-        val updater = remoteUpdater.create(query)
+        val query = EpisodeQuery.FeedUrl(feedUrl)
 
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getEpisodesByCacheKeyPaging(query.key) }
-        ).flow
-            .onStart {
-                coroutineScope {
-                    launch {
-                        updater.load(
-                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
-                        )
-                    }
-                }
-            }
+        return remoteUpdater.create(query)
+            .getPagingData(config)
             .map { pagingData ->
                 pagingData.map { it.toEpisode() }
             }
@@ -154,33 +104,18 @@ class EpisodeRepositoryImpl @Inject constructor(
         guid: String,
         max: Int,
     ): Flow<List<Episode>> {
-        val query = EpisodeQuery.PodcastGuid(guid, max)
+        val query = EpisodeQuery.PodcastGuid(guid)
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, query.max)
-            }
-        ).flow.map { it.toEpisodes() }
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toEpisodes() }
     }
 
     override fun getEpisodesByPodcastGuidPaging(guid: String): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.PodcastGuid(guid, 10)
-        val updater = remoteUpdater.create(query)
+        val query = EpisodeQuery.PodcastGuid(guid)
 
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getEpisodesByCacheKeyPaging(query.key) }
-        ).flow
-            .onStart {
-                coroutineScope {
-                    launch {
-                        updater.load(
-                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
-                        )
-                    }
-                }
-            }
+        return remoteUpdater.create(query)
+            .getPagingData(config)
             .map { pagingData ->
                 pagingData.map { it.toEpisode() }
             }
@@ -189,44 +124,24 @@ class EpisodeRepositoryImpl @Inject constructor(
     override fun getEpisodeById(id: Long): Flow<Episode?> {
         val query = EpisodeQuery.EpisodeId(id)
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisode(id).map { dto ->
-                    dto?.let { listOf(it) } ?: emptyList()
-                }
-            }
-        ).flow.map { it.firstOrNull()?.toEpisode() }
+        return remoteUpdater.create(query)
+            .getFlowList(1)
+            .map { it.firstOrNull()?.toEpisode() }
     }
 
     override fun getLiveEpisodes(max: Int): Flow<List<Episode>> {
-        val query = EpisodeQuery.Live(max)
+        val query = EpisodeQuery.Live
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, query.max)
-            }
-        ).flow.map { it.toEpisodes() }
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toEpisodes() }
     }
 
     override fun getLiveEpisodesPaging(): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Live(10)
-        val updater = remoteUpdater.create(query)
+        val query = EpisodeQuery.Live
 
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getEpisodesByCacheKeyPaging(query.key) }
-        ).flow
-            .onStart {
-                coroutineScope {
-                    launch {
-                        updater.load(
-                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
-                        )
-                    }
-                }
-            }
+        return remoteUpdater.create(query)
+            .getPagingData(config)
             .map { pagingData ->
                 pagingData.map { it.toEpisode() }
             }
@@ -238,14 +153,11 @@ class EpisodeRepositoryImpl @Inject constructor(
         includeCategories: List<Category>,
         excludeCategories: List<Category>,
     ): Flow<List<Episode>> {
-        val query = EpisodeQuery.Random(max, language, includeCategories)
+        val query = EpisodeQuery.Random(language, includeCategories)
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, query.max)
-            }
-        ).flow.map { it.toEpisodes() }
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toEpisodes() }
     }
 
     override fun getRandomEpisodesPaging(
@@ -253,22 +165,10 @@ class EpisodeRepositoryImpl @Inject constructor(
         includeCategories: List<Category>,
         excludeCategories: List<Category>,
     ): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Random(10, language, includeCategories)
-        val updater = remoteUpdater.create(query)
+        val query = EpisodeQuery.Random(language, includeCategories)
 
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getEpisodesByCacheKeyPaging(query.key) }
-        ).flow
-            .onStart {
-                coroutineScope {
-                    launch {
-                        updater.load(
-                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
-                        )
-                    }
-                }
-            }
+        return remoteUpdater.create(query)
+            .getPagingData(config)
             .map { pagingData ->
                 pagingData.map { it.toEpisode() }
             }
@@ -278,33 +178,18 @@ class EpisodeRepositoryImpl @Inject constructor(
         max: Int,
         excludeString: String?,
     ): Flow<List<Episode>> {
-        val query = EpisodeQuery.Recent(max)
+        val query = EpisodeQuery.Recent
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getEpisodesByCacheKey(query.key, query.max)
-            }
-        ).flow.map { it.toEpisodes() }
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toEpisodes() }
     }
 
     override fun getRecentEpisodesPaging(): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Recent(10)
-        val updater = remoteUpdater.create(query)
+        val query = EpisodeQuery.Recent
 
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getEpisodesByCacheKeyPaging(query.key) }
-        ).flow
-            .onStart {
-                coroutineScope {
-                    launch {
-                        updater.load(
-                            localDataSource.getEpisodesByCacheKey(query.key, query.max).first()
-                        )
-                    }
-                }
-            }
+        return remoteUpdater.create(query)
+            .getPagingData(config)
             .map { pagingData ->
                 pagingData.map { it.toEpisode() }
             }
@@ -373,11 +258,7 @@ class EpisodeRepositoryImpl @Inject constructor(
 
     override fun getAllPlayedEpisodesPaging(): Flow<PagingData<Episode>> {
         return Pager(
-            config = PagingConfig(
-                pageSize = 20,
-                enablePlaceholders = false,
-                prefetchDistance = 5
-            ),
+            config = config,
             pagingSourceFactory = { localDataSource.getPlayedEpisodesPaging() }
         ).flow.map { pagingData ->
             pagingData.map { it.toEpisode() }

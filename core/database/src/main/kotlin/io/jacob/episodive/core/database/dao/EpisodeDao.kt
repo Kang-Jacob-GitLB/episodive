@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Instant
 
 @Dao
 interface EpisodeDao {
@@ -138,15 +139,6 @@ interface EpisodeDao {
     )
     fun getEpisodesByCacheKeyPaging(cacheKey: String): PagingSource<Int, EpisodeDto>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun addLiked(likedEpisode: LikedEpisodeEntity)
-
-    @Query("DELETE FROM liked_episodes WHERE id = :id")
-    suspend fun removeLiked(id: Long)
-
-    @Query("SELECT EXISTS(SELECT 1 FROM liked_episodes WHERE id = :id)")
-    fun isLiked(id: Long): Flow<Boolean>
-
     @Query(
         """
         SELECT
@@ -167,6 +159,18 @@ interface EpisodeDao {
     """
     )
     fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>>
+
+    @Query("SELECT MIN(cachedAt) FROM episodes WHERE cacheKey = :cacheKey")
+    suspend fun getEpisodesOldestCachedAtByCacheKey(cacheKey: String): Instant?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun addLiked(likedEpisode: LikedEpisodeEntity)
+
+    @Query("DELETE FROM liked_episodes WHERE id = :id")
+    suspend fun removeLiked(id: Long)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM liked_episodes WHERE id = :id)")
+    fun isLiked(id: Long): Flow<Boolean>
 
     @Transaction
     suspend fun toggleLiked(id: Long): Boolean {

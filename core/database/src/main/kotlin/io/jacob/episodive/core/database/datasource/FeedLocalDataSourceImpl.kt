@@ -8,6 +8,7 @@ import io.jacob.episodive.core.database.model.SoundbiteEntity
 import io.jacob.episodive.core.database.model.TrendingFeedEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
+import kotlin.time.Instant
 
 class FeedLocalDataSourceImpl @Inject constructor(
     private val feedDao: FeedDao,
@@ -103,6 +104,10 @@ class FeedLocalDataSourceImpl @Inject constructor(
         return feedDao.getTrendingFeedsByCacheKeyPaging(cacheKey)
     }
 
+    override suspend fun getTrendingFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant? {
+        return feedDao.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey)
+    }
+
     override fun getRecentFeedsByCacheKey(
         cacheKey: String,
         limit: Int,
@@ -112,6 +117,10 @@ class FeedLocalDataSourceImpl @Inject constructor(
 
     override fun getRecentFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentFeedEntity> {
         return feedDao.getRecentFeedsByCacheKeyPaging(cacheKey)
+    }
+
+    override suspend fun getRecentFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant? {
+        return feedDao.getRecentFeedsOldestCachedAtByCacheKey(cacheKey)
     }
 
     override fun getRecentNewFeedsByCacheKey(
@@ -125,6 +134,10 @@ class FeedLocalDataSourceImpl @Inject constructor(
         return feedDao.getRecentNewFeedsByCacheKeyPaging(cacheKey)
     }
 
+    override suspend fun getRecentNewFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant? {
+        return feedDao.getRecentNewFeedsOldestCachedAtByCacheKey(cacheKey)
+    }
+
     override fun getSoundbitesByCacheKey(
         cacheKey: String,
         limit: Int,
@@ -134,5 +147,9 @@ class FeedLocalDataSourceImpl @Inject constructor(
 
     override fun getSoundbitesByCacheKeyPaging(cacheKey: String): PagingSource<Int, SoundbiteEntity> {
         return feedDao.getSoundbitesByCacheKeyPaging(cacheKey)
+    }
+
+    override suspend fun getSoundbitesOldestCachedAtByCacheKey(cacheKey: String): Instant? {
+        return feedDao.getSoundbitesOldestCachedAtByCacheKey(cacheKey)
     }
 }

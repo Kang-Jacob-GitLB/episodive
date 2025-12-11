@@ -8,7 +8,6 @@ sealed interface EpisodeQuery : CacheableQuery {
 
     data class Person(
         val person: String,
-        val max: Int = 5,
     ) : EpisodeQuery {
         override val key = "person:$person"
         override val timeToLive = 30.minutes
@@ -16,7 +15,6 @@ sealed interface EpisodeQuery : CacheableQuery {
 
     data class FeedId(
         val feedId: Long,
-        val max: Int = 5,
     ) : EpisodeQuery {
         override val key = "feedId:$feedId"
         override val timeToLive = 1.days
@@ -24,7 +22,6 @@ sealed interface EpisodeQuery : CacheableQuery {
 
     data class FeedUrl(
         val feedUrl: String,
-        val max: Int = 5,
     ) : EpisodeQuery {
         override val key = "feedUrl:$feedUrl"
         override val timeToLive = 1.days
@@ -32,19 +29,17 @@ sealed interface EpisodeQuery : CacheableQuery {
 
     data class PodcastGuid(
         val podcastGuid: String,
-        val max: Int = 5,
     ) : EpisodeQuery {
         override val key = "podcastGuid:$podcastGuid"
         override val timeToLive = 1.days
     }
 
-    data class Live(val max: Int = 6) : EpisodeQuery {
+    data object Live : EpisodeQuery {
         override val key = "live"
         override val timeToLive = 10.minutes
     }
 
     data class Random(
-        val max: Int = 6,
         val language: String? = null,
         val categories: List<Category> = emptyList(),
     ) : EpisodeQuery {
@@ -52,7 +47,7 @@ sealed interface EpisodeQuery : CacheableQuery {
         override val timeToLive = 10.minutes
     }
 
-    data class Recent(val max: Int = 6) : EpisodeQuery {
+    data object Recent : EpisodeQuery {
         override val key = "recent"
         override val timeToLive = 10.minutes
     }

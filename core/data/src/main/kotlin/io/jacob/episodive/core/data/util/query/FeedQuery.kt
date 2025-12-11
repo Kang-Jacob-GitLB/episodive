@@ -9,7 +9,6 @@ import kotlin.time.Duration.Companion.minutes
 sealed interface FeedQuery : CacheableQuery {
 
     data class Trending(
-        val max: Int = 10,
         val language: String? = null,
         val categories: List<Category> = emptyList(),
     ) : FeedQuery {
@@ -18,7 +17,6 @@ sealed interface FeedQuery : CacheableQuery {
     }
 
     data class Recent(
-        val max: Int = 10,
         val language: String? = null,
         val categories: List<Category> = emptyList(),
     ) : FeedQuery {
@@ -26,12 +24,12 @@ sealed interface FeedQuery : CacheableQuery {
         override val timeToLive: Duration = 1.hours
     }
 
-    data class RecentNew(val max: Int = 10) : FeedQuery {
+    data object RecentNew : FeedQuery {
         override val key: String = "recent_new"
         override val timeToLive: Duration = 1.hours
     }
 
-    data class Soundbite(val max: Int = 10) : FeedQuery {
+    data object Soundbite : FeedQuery {
         override val key: String = "soundbite"
         override val timeToLive: Duration = 5.minutes
     }

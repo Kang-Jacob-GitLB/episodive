@@ -9,6 +9,7 @@ import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import kotlin.time.Duration
+import kotlin.time.Instant
 
 class EpisodeLocalDataSourceImpl @Inject constructor(
     private val episodeDao: EpisodeDao,
@@ -63,6 +64,10 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
 
     override fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>> {
         return episodeDao.getEpisodesByIds(ids)
+    }
+
+    override suspend fun getEpisodesOldestCachedAtByCacheKey(cacheKey: String): Instant? {
+        return episodeDao.getEpisodesOldestCachedAtByCacheKey(cacheKey)
     }
 
     override suspend fun addLiked(likedEpisode: LikedEpisodeEntity) {
