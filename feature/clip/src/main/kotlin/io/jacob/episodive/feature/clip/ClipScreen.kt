@@ -16,7 +16,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import io.jacob.episodive.core.designsystem.screen.LoadingScreen
@@ -128,7 +127,7 @@ fun EpisodeClipPager(
 ) {
     val episodesPaging = episodes.collectAsLazyPagingItems()
 
-    if (episodesPaging.loadState == LoadState.Loading) {
+    if (episodesPaging.itemCount == 0) {
         LoadingScreen()
         return
     }
@@ -143,7 +142,7 @@ fun EpisodeClipPager(
         snapshotFlow { episodesPaging.itemCount }
             .filter { it > 0 }
             .take(1)
-            .collect {
+            .collectLatest {
                 episodesPaging[0]?.let { firstEpisode ->
                     onEpisodeChanged(firstEpisode)
                 }
@@ -154,9 +153,11 @@ fun EpisodeClipPager(
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }
             .distinctUntilChanged()
-            .collect { page ->
-                episodesPaging[page]?.let { episode ->
-                    onEpisodeChanged(episode)
+            .collectLatest { page ->
+                if (page > 0) {
+                    episodesPaging[page]?.let { episode ->
+                        onEpisodeChanged(episode)
+                    }
                 }
             }
     }

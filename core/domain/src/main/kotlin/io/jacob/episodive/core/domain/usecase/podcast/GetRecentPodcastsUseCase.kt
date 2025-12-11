@@ -9,7 +9,7 @@ import javax.inject.Inject
 
 class GetRecentPodcastsUseCase @Inject constructor(
     private val feedRepository: FeedRepository,
-    private val getPodcastsByFeedIdsUseCase: GetPodcastsByFeedIdsUseCase,
+    private val getPodcastsByFeedIdsParallellyUseCase: GetPodcastsByFeedIdsParallellyUseCase,
 ) {
     operator fun invoke(
         max: Int,
@@ -21,7 +21,7 @@ class GetRecentPodcastsUseCase @Inject constructor(
             language = language,
             includeCategories = categories
         ).map { feeds ->
-            getPodcastsByFeedIdsUseCase(feeds.map { it.id })
+            getPodcastsByFeedIdsParallellyUseCase(feeds.map { it.id })
         }
     }
 }

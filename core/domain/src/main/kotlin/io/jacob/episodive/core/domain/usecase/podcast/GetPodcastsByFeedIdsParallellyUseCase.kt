@@ -8,7 +8,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
-class GetPodcastsByFeedIdsUseCase @Inject constructor(
+class GetPodcastsByFeedIdsParallellyUseCase @Inject constructor(
     private val podcastRepository: PodcastRepository,
 ) {
     suspend operator fun invoke(feedIds: List<Long>): List<Podcast> {

@@ -15,7 +15,7 @@ import javax.inject.Inject
 class GetRecommendedPodcastsUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val feedRepository: FeedRepository,
-    private val getPodcastsByFeedIdsUseCase: GetPodcastsByFeedIdsUseCase,
+    private val getPodcastsByFeedIdsParallellyUseCase: GetPodcastsByFeedIdsParallellyUseCase,
 ) {
     operator fun invoke(): Flow<List<Podcast>> {
         return userRepository.getUserData().flatMapLatest { userData ->
@@ -43,7 +43,7 @@ class GetRecommendedPodcastsUseCase @Inject constructor(
                     }
 
                     flow {
-                        emit(getPodcastsByFeedIdsUseCase(feeds.map { it.id }))
+                        emit(getPodcastsByFeedIdsParallellyUseCase(feeds.map { it.id }))
                     }
                 }
             }
