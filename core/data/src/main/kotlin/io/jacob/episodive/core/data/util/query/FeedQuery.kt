@@ -31,6 +31,6 @@ sealed interface FeedQuery : CacheableQuery {
 
     data object Soundbite : FeedQuery {
         override val key: String = "soundbite"
-        override val timeToLive: Duration = 5.minutes
+        override val timeToLive: Duration = 1.minutes
     }
 }

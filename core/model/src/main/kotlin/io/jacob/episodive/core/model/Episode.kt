@@ -63,5 +63,5 @@ data class Episode(
 
     val clipStartPositionMs: Long = clipStartTime?.toEpochMilliseconds() ?: 0L
     val clipEndPositionMs: Long = clipStartPositionMs + (clipDuration?.inWholeMilliseconds ?: 0L)
-    val isClip: Boolean = clipStartTime != null && clipDuration != null
+    val hasClip: Boolean = clipStartTime != null && clipDuration != null
 }

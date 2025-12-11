@@ -18,6 +18,10 @@ class GetClipEpisodesPagingUseCase @Inject constructor(
         return feedRepository.getRecentSoundbitesPaging().map { pagingData ->
             pagingData.flatMap { soundbite ->
                 val episode = episodeRepository.getEpisodeById(soundbite.episodeId).first()
+                    ?.copy(
+                        clipStartTime = soundbite.startTime,
+                        clipDuration = soundbite.duration,
+                    )
                 episode?.let { listOf(it) } ?: emptyList()
             }
         }

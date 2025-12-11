@@ -28,6 +28,14 @@ class SoundbiteRemoteUpdater @AssistedInject constructor(
     override suspend fun fetchFromRemote(fetchSize: Int): List<SoundbiteResponse> {
         return when (query) {
             is FeedQuery.Soundbite -> remoteDataSource.getRecentSoundbites(max = fetchSize)
+                .filterNot {
+                    val regex = Regex("\\p{InCJK_UNIFIED_IDEOGRAPHS}")
+
+                    it.title.contains(regex) ||
+                            it.episodeTitle.contains(regex) ||
+                            it.feedTitle.contains(regex)
+                }
+
             else -> emptyList()
         }
     }

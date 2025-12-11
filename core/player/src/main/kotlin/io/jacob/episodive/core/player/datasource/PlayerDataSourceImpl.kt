@@ -158,7 +158,7 @@ class PlayerDataSourceImpl @Inject constructor(
         }
     }
 
-    private fun Episode.toMediaItem(): MediaItem {
+    private fun Episode.toMediaItem(isClip: Boolean): MediaItem {
         val mediaMetadata = MediaMetadata.Builder()
             .setTitle(title)
             .setArtist(feedAuthor)
@@ -176,7 +176,7 @@ class PlayerDataSourceImpl @Inject constructor(
             .setTag(this)
             .setMediaMetadata(mediaMetadata)
 
-        if (isClip) {
+        if (isClip && hasClip) {
             builder.setClippingConfiguration(
                 MediaItem.ClippingConfiguration.Builder()
                     .setStartPositionMs(clipStartPositionMs)
@@ -207,7 +207,7 @@ class PlayerDataSourceImpl @Inject constructor(
 
     override fun play(episode: Episode) {
         Timber.i("url: ${episode.enclosureUrl}")
-        val mediaItem = episode.toMediaItem()
+        val mediaItem = episode.toMediaItem(isClip = false)
 
         player.setMediaItem(mediaItem)
         player.prepare()
@@ -218,7 +218,7 @@ class PlayerDataSourceImpl @Inject constructor(
         episodes.forEachIndexed { index, episode ->
             Timber.i("[$index] url: ${episode.enclosureUrl}")
         }
-        val mediaItems = episodes.map { it.toMediaItem() }
+        val mediaItems = episodes.map { it.toMediaItem(isClip = false) }
 
         player.setMediaItems(mediaItems)
         indexToPlay?.let { player.seekToDefaultPosition(it) }
@@ -228,7 +228,7 @@ class PlayerDataSourceImpl @Inject constructor(
 
     override fun playClip(episode: Episode) {
         Timber.i("url: ${episode.enclosureUrl}, clipStartTime: ${episode.clipStartTime}, clipDuration: ${episode.clipDuration}")
-        val mediaItem = episode.toMediaItem()
+        val mediaItem = episode.toMediaItem(isClip = true)
 
         player.setMediaItem(mediaItem)
         player.prepare()
@@ -239,7 +239,7 @@ class PlayerDataSourceImpl @Inject constructor(
         episodes.forEachIndexed { index, episode ->
             Timber.i("[$index] url: ${episode.enclosureUrl}, clipStartTime: ${episode.clipStartTime}, clipDuration: ${episode.clipDuration}")
         }
-        val mediaItems = episodes.map { it.toMediaItem() }
+        val mediaItems = episodes.map { it.toMediaItem(isClip = true) }
 
         player.setMediaItems(mediaItems)
         indexToPlay?.let { player.seekToDefaultPosition(it) }
@@ -340,10 +340,7 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     override fun addTrack(episode: Episode, index: Int?) {
-        val mediaItem = MediaItem.Builder()
-            .setUri(episode.enclosureUrl)
-            .setTag(episode)
-            .build()
+        val mediaItem = episode.toMediaItem(isClip = false)
 
         index?.let {
             player.addMediaItem(it, mediaItem)
@@ -353,12 +350,7 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     override fun addTrack(episodes: List<Episode>, index: Int?) {
-        val mediaItems = episodes.map {
-            MediaItem.Builder()
-                .setUri(it.enclosureUrl)
-                .setTag(it)
-                .build()
-        }
+        val mediaItems = episodes.map { it.toMediaItem(isClip = false) }
 
         index?.let {
             player.addMediaItems(it, mediaItems)
@@ -368,20 +360,7 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     override fun addClipTrack(episode: Episode, index: Int?) {
-        val mediaItem = MediaItem.Builder()
-            .setUri(episode.enclosureUrl)
-            .setTag(episode)
-            .apply {
-                if (episode.isClip) {
-                    setClippingConfiguration(
-                        MediaItem.ClippingConfiguration.Builder()
-                            .setStartPositionMs(episode.clipStartPositionMs)
-                            .setEndPositionMs(episode.clipEndPositionMs)
-                            .build()
-                    )
-                }
-            }
-            .build()
+        val mediaItem = episode.toMediaItem(isClip = true)
 
         index?.let {
             player.addMediaItem(it, mediaItem)
@@ -391,22 +370,7 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     override fun addClipTracks(episodes: List<Episode>, index: Int?) {
-        val mediaItems = episodes.map {
-            MediaItem.Builder()
-                .setUri(it.enclosureUrl)
-                .setTag(it)
-                .apply {
-                    if (it.isClip) {
-                        setClippingConfiguration(
-                            MediaItem.ClippingConfiguration.Builder()
-                                .setStartPositionMs(it.clipStartPositionMs)
-                                .setEndPositionMs(it.clipEndPositionMs)
-                                .build()
-                        )
-                    }
-                }
-                .build()
-        }
+        val mediaItems = episodes.map { it.toMediaItem(isClip = true) }
 
         index?.let {
             player.addMediaItems(it, mediaItems)

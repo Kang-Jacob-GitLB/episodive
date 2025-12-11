@@ -77,7 +77,7 @@ internal fun ClipRoute(
                 playback = clipPlayerState.playback,
                 progress = clipPlayerState.progress,
                 isPlaying = clipPlayerState.isPlaying,
-                onEpisodeChanged = { viewModel.sendAction(ClipAction.Play(it)) },
+                onEpisodeChanged = { viewModel.sendAction(ClipAction.PlayClip(it)) },
                 onEpisodeClick = { viewModel.sendAction(ClipAction.ClickEpisode(it)) },
                 onToggleEpisodeLiked = { viewModel.sendAction(ClipAction.ToggleEpisodeLiked(it)) },
                 onPodcastClick = { viewModel.sendAction(ClipAction.ClickPodcast(it)) },
@@ -151,13 +151,11 @@ fun EpisodeClipPager(
 
     // 페이지가 변경되면 해당 에피소드 재생
     LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.currentPage }
+        snapshotFlow { pagerState.settledPage }
             .distinctUntilChanged()
             .collectLatest { page ->
-                if (page > 0) {
-                    episodesPaging[page]?.let { episode ->
-                        onEpisodeChanged(episode)
-                    }
+                episodesPaging[page]?.let { episode ->
+                    onEpisodeChanged(episode)
                 }
             }
     }
@@ -189,7 +187,7 @@ fun EpisodeClipPager(
                     onEpisodeClick(episode)
                 },
                 onPlayEpisode = {
-                    onEpisodeClick(episode)
+                    onEpisodeChanged(episode)
                 },
                 onToggleEpisodeLiked = {
                     onToggleEpisodeLiked(episode)

@@ -61,7 +61,7 @@ class ClipViewModel @Inject constructor(
     private fun handleActions() = viewModelScope.launch {
         _action.collectLatest { action ->
             when (action) {
-                is ClipAction.Play -> play(action.episode)
+                is ClipAction.PlayClip -> playClip(action.episode)
                 is ClipAction.ClickEpisode -> playEpisode(action.episode)
                 is ClipAction.ToggleEpisodeLiked -> toggleEpisodeLiked(action.episode)
                 is ClipAction.ClickPodcast -> clickPodcast(action.podcastId)
@@ -75,8 +75,8 @@ class ClipViewModel @Inject constructor(
         _action.emit(action)
     }
 
-    private fun play(episode: Episode) {
-        playerRepository.play(episode)
+    private fun playClip(episode: Episode) {
+        playerRepository.playClip(episode)
     }
 
     private fun resume() {
@@ -108,7 +108,7 @@ data class ClipPlayerState(
 )
 
 sealed interface ClipAction {
-    data class Play(val episode: Episode) : ClipAction
+    data class PlayClip(val episode: Episode) : ClipAction
     data class ClickEpisode(val episode: Episode) : ClipAction
     data class ToggleEpisodeLiked(val episode: Episode) : ClipAction
     data class ClickPodcast(val podcastId: Long) : ClipAction
