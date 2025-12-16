@@ -82,6 +82,28 @@ class EpisodeDaoTest {
         }
 
     @Test
+    fun `Given some episode entities, When getEpisodesPaging is called, Then episodes are returned`() =
+        runTest {
+            // Given
+            dao.upsertEpisodes(episodeEntities)
+
+            // When
+            val pagingSource = dao.getEpisodesPaging()
+            val loadResult = pagingSource.load(
+                androidx.paging.PagingSource.LoadParams.Refresh(
+                    key = null,
+                    loadSize = 10,
+                    placeholdersEnabled = false
+                )
+            )
+
+            // Then
+            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
+            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertEquals(episodeEntities.size, page.data.size)
+        }
+
+    @Test
     fun `Given episodes with duplicate IDs, When getEpisodes is called, Then only most recent cachedAt per ID is returned`() =
         runTest {
             // Given - Insert multiple episodes with same ID but different cachedAt times
@@ -153,6 +175,32 @@ class EpisodeDaoTest {
                 assertTrue(episodeIds.containsAll(entityIds))
                 cancel()
             }
+        }
+
+    @Test
+    fun `Given some episode entities, When getEpisodesByCacheKeyPaging is called, Then episodes with cache key are returned`() =
+        runTest {
+            // Given
+            val entities = episodeEntities.chunked(3)
+            dao.upsertEpisodes(entities[0].map { it.copy(cacheKey = "test_key1") })
+            dao.upsertEpisodes(entities[1].map { it.copy(cacheKey = "test_key2") })
+            dao.upsertEpisodes(entities[2].map { it.copy(cacheKey = "test_key3") })
+
+            // When
+            val pagingSource = dao.getEpisodesByCacheKeyPaging("test_key1")
+            val loadResult = pagingSource.load(
+                androidx.paging.PagingSource.LoadParams.Refresh(
+                    key = null,
+                    loadSize = 10,
+                    placeholdersEnabled = false
+                )
+            )
+
+            // Then
+            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
+            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertEquals(entities[0].size, page.data.size)
+            assertTrue(page.data.all { it.episode.cacheKey == "test_key1" })
         }
 
     @Test
@@ -344,6 +392,35 @@ class EpisodeDaoTest {
         }
 
     @Test
+    fun `Given some liked episode entities, When getLikedEpisodesPaging is called, Then liked episodes are returned`() =
+        runTest {
+            // Given
+            val likedAt = Clock.System.now()
+            dao.addLiked(LikedEpisodeEntity(episodeEntities[0].id, likedAt))
+            dao.addLiked(LikedEpisodeEntity(episodeEntities[1].id, likedAt.plus(1.minutes)))
+            dao.addLiked(LikedEpisodeEntity(episodeEntities[2].id, likedAt.plus(2.minutes)))
+            dao.upsertEpisodes(episodeEntities)
+
+            // When
+            val pagingSource = dao.getLikedEpisodesPaging()
+            val loadResult = pagingSource.load(
+                androidx.paging.PagingSource.LoadParams.Refresh(
+                    key = null,
+                    loadSize = 10,
+                    placeholdersEnabled = false
+                )
+            )
+
+            // Then
+            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
+            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertEquals(3, page.data.size)
+            assertEquals(episodeEntities[2].id, page.data[0].episode.id)
+            assertEquals(episodeEntities[1].id, page.data[1].episode.id)
+            assertEquals(episodeEntities[0].id, page.data[2].episode.id)
+        }
+
+    @Test
     fun `Given some episode entity liked, When isLiked is called, Then true is returned`() =
         runTest {
             // Given
@@ -433,5 +510,133 @@ class EpisodeDaoTest {
                 assertEquals(episodeEntities[1].id, playedEpisodes[1].episode.id)
                 assertEquals(episodeEntities[0].id, playedEpisodes[2].episode.id)
             }
+        }
+
+    @Test
+    fun `Given some played episode entities, When getPlayedEpisodesPaging is called, Then played episodes are returned`() =
+        runTest {
+            // Given
+            val now = Clock.System.now()
+            dao.upsertPlayed(
+                PlayedEpisodeEntity(
+                    id = episodeEntities[0].id,
+                    playedAt = now,
+                    position = 1000.seconds,
+                    isCompleted = false
+                )
+            )
+            dao.upsertPlayed(
+                PlayedEpisodeEntity(
+                    id = episodeEntities[1].id,
+                    playedAt = now.plus(1.minutes),
+                    position = 2000.seconds,
+                    isCompleted = false
+                )
+            )
+            dao.upsertPlayed(
+                PlayedEpisodeEntity(
+                    id = episodeEntities[2].id,
+                    playedAt = now.plus(2.minutes),
+                    position = 3000.seconds,
+                    isCompleted = true
+                )
+            )
+            dao.upsertEpisodes(episodeEntities)
+
+            // When
+            val pagingSource = dao.getPlayedEpisodesPaging()
+            val loadResult = pagingSource.load(
+                androidx.paging.PagingSource.LoadParams.Refresh(
+                    key = null,
+                    loadSize = 10,
+                    placeholdersEnabled = false
+                )
+            )
+
+            // Then
+            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
+            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertEquals(3, page.data.size)
+            assertEquals(episodeEntities[2].id, page.data[0].episode.id)
+            assertEquals(episodeEntities[1].id, page.data[1].episode.id)
+            assertEquals(episodeEntities[0].id, page.data[2].episode.id)
+        }
+
+    @Test
+    fun `Given no episodes with cache key, When getEpisodesOldestCachedAtByCacheKey is called, Then null is returned`() =
+        runTest {
+            // Given - No episodes inserted
+
+            // When
+            val oldestCachedAt = dao.getEpisodesOldestCachedAtByCacheKey("non_existent_key")
+
+            // Then
+            assertEquals(null, oldestCachedAt)
+        }
+
+    @Test
+    fun `Given one episode with cache key, When getEpisodesOldestCachedAtByCacheKey is called, Then that cachedAt is returned`() =
+        runTest {
+            // Given
+            val now = Instant.fromEpochSeconds(Clock.System.now().epochSeconds)
+            dao.upsertEpisode(episodeEntity.copy(cacheKey = "test_key", cachedAt = now))
+
+            // When
+            val oldestCachedAt = dao.getEpisodesOldestCachedAtByCacheKey("test_key")
+
+            // Then
+            assertEquals(now, oldestCachedAt)
+        }
+
+    @Test
+    fun `Given multiple episodes with same cache key, When getEpisodesOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
+        runTest {
+            // Given
+            val now = Instant.fromEpochSeconds(Clock.System.now().epochSeconds)
+            val oldestTime = now
+            val middleTime = now.plus(1.minutes)
+            val newestTime = now.plus(2.minutes)
+
+            dao.upsertEpisode(episodeEntities[0].copy(cacheKey = "test_key", cachedAt = middleTime))
+            dao.upsertEpisode(episodeEntities[1].copy(cacheKey = "test_key", cachedAt = oldestTime))
+            dao.upsertEpisode(episodeEntities[2].copy(cacheKey = "test_key", cachedAt = newestTime))
+
+            // When
+            val oldestCachedAt = dao.getEpisodesOldestCachedAtByCacheKey("test_key")
+
+            // Then
+            assertEquals(oldestTime, oldestCachedAt)
+        }
+
+    @Test
+    fun `Given episodes with different cache keys, When getEpisodesOldestCachedAtByCacheKey is called, Then only matching cache key episodes are considered`() =
+        runTest {
+            // Given
+            val now = Instant.fromEpochSeconds(Clock.System.now().epochSeconds)
+            val key1OldestTime = now.plus(5.minutes)
+            val key2OldestTime = now
+
+            dao.upsertEpisode(episodeEntities[0].copy(cacheKey = "key1", cachedAt = key1OldestTime))
+            dao.upsertEpisode(
+                episodeEntities[1].copy(
+                    cacheKey = "key1",
+                    cachedAt = now.plus(10.minutes)
+                )
+            )
+            dao.upsertEpisode(episodeEntities[2].copy(cacheKey = "key2", cachedAt = key2OldestTime))
+            dao.upsertEpisode(
+                episodeEntities[3].copy(
+                    cacheKey = "key2",
+                    cachedAt = now.plus(3.minutes)
+                )
+            )
+
+            // When
+            val key1OldestCachedAt = dao.getEpisodesOldestCachedAtByCacheKey("key1")
+            val key2OldestCachedAt = dao.getEpisodesOldestCachedAtByCacheKey("key2")
+
+            // Then
+            assertEquals(key1OldestTime, key1OldestCachedAt)
+            assertEquals(key2OldestTime, key2OldestCachedAt)
         }
 }

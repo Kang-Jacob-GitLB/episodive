@@ -320,6 +320,19 @@ class FeedLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When getTrendingFeedsByCacheKeyPaging, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getTrendingFeedsByCacheKeyPaging(any()) } returns mockk()
+
+            // When
+            dataSource.getTrendingFeedsByCacheKeyPaging(cacheKey)
+
+            // Then
+            coVerify { feedDao.getTrendingFeedsByCacheKeyPaging(cacheKey) }
+        }
+
+    @Test
     fun `Given dependencies, When getRecentFeedsByCacheKey, Then call dao's method`() =
         runTest {
             // Given
@@ -330,6 +343,19 @@ class FeedLocalDataSourceTest {
 
             // Then
             coVerify { feedDao.getRecentFeedsByCacheKey(cacheKey, 10) }
+        }
+
+    @Test
+    fun `Given dependencies, When getRecentFeedsByCacheKeyPaging, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getRecentFeedsByCacheKeyPaging(any()) } returns mockk()
+
+            // When
+            dataSource.getRecentFeedsByCacheKeyPaging(cacheKey)
+
+            // Then
+            coVerify { feedDao.getRecentFeedsByCacheKeyPaging(cacheKey) }
         }
 
     @Test
@@ -346,6 +372,19 @@ class FeedLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When getRecentNewFeedsByCacheKeyPaging, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getRecentNewFeedsByCacheKeyPaging(any()) } returns mockk()
+
+            // When
+            dataSource.getRecentNewFeedsByCacheKeyPaging(cacheKey)
+
+            // Then
+            coVerify { feedDao.getRecentNewFeedsByCacheKeyPaging(cacheKey) }
+        }
+
+    @Test
     fun `Given dependencies, When getSoundbitesByCacheKey, Then call dao's method`() =
         runTest {
             // Given
@@ -356,5 +395,70 @@ class FeedLocalDataSourceTest {
 
             // Then
             coVerify { feedDao.getSoundbitesByCacheKey(cacheKey, 10) }
+        }
+
+    @Test
+    fun `Given dependencies, When getSoundbitesByCacheKeyPaging, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getSoundbitesByCacheKeyPaging(any()) } returns mockk()
+
+            // When
+            dataSource.getSoundbitesByCacheKeyPaging(cacheKey)
+
+            // Then
+            coVerify { feedDao.getSoundbitesByCacheKeyPaging(cacheKey) }
+        }
+
+    @Test
+    fun `Given dependencies, When getTrendingFeedsOldestCachedAtByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getTrendingFeedsOldestCachedAtByCacheKey(any()) } returns mockk()
+
+            // When
+            dataSource.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            coVerify { feedDao.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey) }
+        }
+
+    @Test
+    fun `Given dependencies, When getRecentFeedsOldestCachedAtByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getRecentFeedsOldestCachedAtByCacheKey(any()) } returns mockk()
+
+            // When
+            dataSource.getRecentFeedsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            coVerify { feedDao.getRecentFeedsOldestCachedAtByCacheKey(cacheKey) }
+        }
+
+    @Test
+    fun `Given dependencies, When getRecentNewFeedsOldestCachedAtByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getRecentNewFeedsOldestCachedAtByCacheKey(any()) } returns mockk()
+
+            // When
+            dataSource.getRecentNewFeedsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            coVerify { feedDao.getRecentNewFeedsOldestCachedAtByCacheKey(cacheKey) }
+        }
+
+    @Test
+    fun `Given dependencies, When getSoundbitesOldestCachedAtByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getSoundbitesOldestCachedAtByCacheKey(any()) } returns mockk()
+
+            // When
+            dataSource.getSoundbitesOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            coVerify { feedDao.getSoundbitesOldestCachedAtByCacheKey(cacheKey) }
         }
 }

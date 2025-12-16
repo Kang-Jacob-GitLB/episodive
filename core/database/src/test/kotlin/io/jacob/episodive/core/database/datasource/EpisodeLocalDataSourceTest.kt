@@ -178,6 +178,22 @@ class EpisodeLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When getEpisodesPaging is called, Then getEpisodesPaging of dao is called`() =
+        runTest {
+            // Given
+            coEvery { episodeDao.getEpisodesPaging() } returns mockk()
+
+            // When
+            dataSource.getEpisodesPaging()
+
+            // Then
+            coVerify { episodeDao.getEpisodesPaging() }
+            confirmVerified(
+                episodeDao,
+            )
+        }
+
+    @Test
     fun `Given dependencies, When getEpisodesByCacheKey is called, Then getEpisodesByCacheKey of dao is called`() =
         runTest {
             // Given
@@ -188,6 +204,22 @@ class EpisodeLocalDataSourceTest {
 
             // Then
             coVerify { episodeDao.getEpisodesByCacheKey(cacheKey, 10) }
+            confirmVerified(
+                episodeDao,
+            )
+        }
+
+    @Test
+    fun `Given dependencies, When getEpisodesByCacheKeyPaging is called, Then getEpisodesByCacheKeyPaging of dao is called`() =
+        runTest {
+            // Given
+            coEvery { episodeDao.getEpisodesByCacheKeyPaging(any()) } returns mockk()
+
+            // When
+            dataSource.getEpisodesByCacheKeyPaging(cacheKey)
+
+            // Then
+            coVerify { episodeDao.getEpisodesByCacheKeyPaging(cacheKey) }
             confirmVerified(
                 episodeDao,
             )
@@ -280,6 +312,22 @@ class EpisodeLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When getLikedEpisodesPaging is called, Then getLikedEpisodesPaging of dao is called`() =
+        runTest {
+            // Given
+            coEvery { episodeDao.getLikedEpisodesPaging() } returns mockk()
+
+            // When
+            dataSource.getLikedEpisodesPaging()
+
+            // Then
+            coVerify { episodeDao.getLikedEpisodesPaging() }
+            confirmVerified(
+                episodeDao,
+            )
+        }
+
+    @Test
     fun `Given dependencies, When upsertPlayed is called, Then upsertPlayed of dao is called`() =
         runTest {
             // Given
@@ -333,4 +381,35 @@ class EpisodeLocalDataSourceTest {
             )
         }
 
+    @Test
+    fun `Given dependencies, When getPlayedEpisodesPaging is called, Then getPlayedEpisodesPaging of dao is called`() =
+        runTest {
+            // Given
+            coEvery { episodeDao.getPlayedEpisodesPaging() } returns mockk()
+
+            // When
+            dataSource.getPlayedEpisodesPaging()
+
+            // Then
+            coVerify { episodeDao.getPlayedEpisodesPaging() }
+            confirmVerified(
+                episodeDao,
+            )
+        }
+
+    @Test
+    fun `Given dependencies, When getEpisodesOldestCachedAtByCacheKey is called, Then getEpisodesOldestCachedAtByCacheKey of dao is called`() =
+        runTest {
+            // Given
+            coEvery { episodeDao.getEpisodesOldestCachedAtByCacheKey(any()) } returns mockk()
+
+            // When
+            dataSource.getEpisodesOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            coVerify { episodeDao.getEpisodesOldestCachedAtByCacheKey(cacheKey) }
+            confirmVerified(
+                episodeDao,
+            )
+        }
 }
