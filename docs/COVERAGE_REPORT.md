@@ -1,6 +1,6 @@
 # Code Coverage Report
 
-Generated: 2025-12-16 17:30:42
+Generated: 2025-12-16 18:46:47
 
 ---
 
@@ -11,10 +11,10 @@ Generated: 2025-12-16 17:30:42
 | core:data      | 75.5%          | 36.8%            | 649           | 490        | 159        |
 | core:database  | 79.0%          | 46.8%            | 6050          | 4778       | 1272       |
 | core:datastore | 91.5%          | 60.0%            | 71            | 65         | 6          |
-| core:domain    | 73.5%          | 50.0%            | 275           | 202        | 73         |
+| core:domain    | 87.1%          | 57.1%            | 272           | 237        | 35         |
 | core:network   | 81.1%          | 58.1%            | 486           | 394        | 92         |
 | --------       | -------------- | ---------------- | ------------- | ---------  | --------   |
-| **TOTAL**      | ** 78.7%**     | ** 46.3%**       | **  7531**    | **  5929** | **  1602** |
+| **TOTAL**      | ** 79.2%**     | ** 46.5%**       | **  7528**    | **  5964** | **  1564** |
 
 ---
 
@@ -25,15 +25,6 @@ Generated: 2025-12-16 17:30:42
 | core:network   | io.jacob.episodive.core.networ | FeedApi.kt                     | 0.0%     | 0/20          | 20     |
 | core:network   | io.jacob.episodive.core.networ | PodcastApi.kt                  | 0.0%     | 0/4           | 4      |
 | core:network   | io.jacob.episodive.core.networ | EpisodeApi.kt                  | 0.0%     | 0/21          | 21     |
-| core:domain    | io.jacob.episodive.core.domain | GetChannelByIdUseCase.kt       | 0.0%     | 0/3           | 3      |
-| core:domain    | io.jacob.episodive.core.domain | IsLikedUseCase.kt              | 0.0%     | 0/3           | 3      |
-| core:domain    | io.jacob.episodive.core.domain | GetLikedEpisodesUseCase.kt     | 0.0%     | 0/4           | 4      |
-| core:domain    | io.jacob.episodive.core.domain | GetAllPlayedEpisodesPagingUseC | 0.0%     | 0/3           | 3      |
-| core:domain    | io.jacob.episodive.core.domain | GetPlayingEpisodesPagingUseCas | 0.0%     | 0/3           | 3      |
-| core:domain    | io.jacob.episodive.core.domain | GetForeignTrendingPodcastsUseC | 0.0%     | 0/5           | 5      |
-| core:domain    | io.jacob.episodive.core.domain | GetFollowedPodcastsPagingUseCa | 0.0%     | 0/4           | 4      |
-| core:domain    | io.jacob.episodive.core.domain | GetPodcastsByFeedIdsParallelly | 0.0%     | 0/3           | 3      |
-| core:domain    | io.jacob.episodive.core.domain | GetLocalTrendingPodcastsUseCas | 0.0%     | 0/4           | 4      |
 | core:database  | io.jacob.episodive.core.databa | EpisodiveDatabase_AutoMigratio | 16.7%    | 2/12          | 10     |
 | core:database  | io.jacob.episodive.core.databa | EpisodiveDatabase_AutoMigratio | 33.3%    | 1/3           | 2      |
 | core:data      | io.jacob.episodive.core.data.u | ConnectivityManagerNetworkMoni | 45.5%    | 5/11          | 6      |
@@ -41,6 +32,7 @@ Generated: 2025-12-16 17:30:42
 | core:data      | io.jacob.episodive.core.data.r | FeedRepositoryImpl.kt          | 57.4%    | 31/54         | 23     |
 | core:data      | io.jacob.episodive.core.data.r | PodcastRepositoryImpl.kt       | 59.7%    | 37/62         | 25     |
 | core:database  | io.jacob.episodive.core.databa | EpisodeDao_Impl.kt             | 72.0%    | 1020/1416     | 396    |
+| core:domain    | io.jacob.episodive.core.domain | GetLikedEpisodesUseCase.kt     | 75.0%    | 3/4           | 1      |
 | core:datastore | io.jacob.episodive.core.datast | UserPreferencesStore.kt        | 79.2%    | 19/24         | 5      |
 
 ---
@@ -155,52 +147,33 @@ Generated: 2025-12-16 17:30:42
 |------------------------|----------|---------------------|------------------------|
 | ✅ DataStoreMapperKt.kt | 100.0%   | 12/12               | N/A                    |
 
-### core:domain - 73.5% Coverage
+### core:domain - 87.1% Coverage
 
-#### 📦 io.jacob.episodive.core.domain.usecase.channel - 50.0%
-
-| Class                      | Coverage | Lines Covered/Total | Branches Covered/Total |
-|----------------------------|----------|---------------------|------------------------|
-| ❌ GetChannelByIdUseCase.kt | 0.0%     | 0/3                 | N/A                    |
-| ✅ GetChannelsUseCase.kt    | 100.0%   | 3/3                 | N/A                    |
-
-#### 📦 io.jacob.episodive.core.domain.usecase.podcast - 75.0%
-
-| Class                                      | Coverage | Lines Covered/Total | Branches Covered/Total |
-|--------------------------------------------|----------|---------------------|------------------------|
-| ❌ GetForeignTrendingPodcastsUseCase.kt     | 0.0%     | 0/5                 | N/A                    |
-| ❌ GetFollowedPodcastsPagingUseCase.kt      | 0.0%     | 0/4                 | N/A                    |
-| ❌ GetPodcastsByFeedIdsParallellyUseCase.kt | 0.0%     | 0/3                 | N/A                    |
-| ❌ GetLocalTrendingPodcastsUseCase.kt       | 0.0%     | 0/4                 | N/A                    |
-| ✅ GetPodcastUseCase.kt                     | 100.0%   | 3/3                 | N/A                    |
-| ✅ GetMyTrendingPodcastsUseCase.kt          | 100.0%   | 4/4                 | N/A                    |
-| ✅ GetRecentPodcastsUseCase.kt              | 100.0%   | 11/11               | N/A                    |
-| ✅ GetRecommendedPodcastsUseCase.kt         | 100.0%   | 5/5                 | N/A                    |
-| ✅ GetPodcastsByChannelUseCase.kt           | 100.0%   | 3/3                 | N/A                    |
-| ✅ ToggleFollowedUseCase.kt                 | 100.0%   | 3/3                 | N/A                    |
-| ✅ GetMyRecentPodcastsUseCase.kt            | 100.0%   | 4/4                 | N/A                    |
-| ✅ GetFollowedPodcastsUseCase.kt            | 100.0%   | 4/4                 | N/A                    |
-| ✅ GetTrendingPodcastsUseCase.kt            | 100.0%   | 11/11               | N/A                    |
-
-#### 📦 io.jacob.episodive.core.domain.usecase.episode - 78.0%
+#### 📦 io.jacob.episodive.core.domain.usecase.episode - 98.2%
 
 | Class                                    | Coverage | Lines Covered/Total | Branches Covered/Total |
 |------------------------------------------|----------|---------------------|------------------------|
-| ❌ IsLikedUseCase.kt                      | 0.0%     | 0/3                 | N/A                    |
-| ❌ GetLikedEpisodesUseCase.kt             | 0.0%     | 0/4                 | N/A                    |
-| ❌ GetAllPlayedEpisodesPagingUseCase.kt   | 0.0%     | 0/3                 | N/A                    |
-| ❌ GetPlayingEpisodesPagingUseCase.kt     | 0.0%     | 0/3                 | N/A                    |
+| ❌ GetLikedEpisodesUseCase.kt             | 75.0%    | 3/4                 | N/A                    |
 | ✅ GetEpisodesByPodcastIdPagingUseCase.kt | 100.0%   | 4/4                 | N/A                    |
 | ✅ GetLikedEpisodesPagingUseCase.kt       | 100.0%   | 3/3                 | N/A                    |
+| ✅ IsLikedUseCase.kt                      | 100.0%   | 3/3                 | N/A                    |
 | ✅ ToggleLikedUseCase.kt                  | 100.0%   | 3/3                 | N/A                    |
 | ✅ GetAllPlayedEpisodesUseCase.kt         | 100.0%   | 4/4                 | N/A                    |
 | ✅ GetLiveEpisodesUseCase.kt              | 100.0%   | 3/3                 | N/A                    |
 | ✅ GetClipEpisodesPagingUseCase.kt        | 100.0%   | 4/4                 | N/A                    |
+| ✅ GetAllPlayedEpisodesPagingUseCase.kt   | 100.0%   | 3/3                 | N/A                    |
 | ✅ UpdatePlayedEpisodeUseCase.kt          | 100.0%   | 11/11               | 2/4                    |
 | ✅ GetMyRandomEpisodesUseCase.kt          | 100.0%   | 4/4                 | N/A                    |
 | ✅ GetPlayingEpisodesUseCase.kt           | 100.0%   | 4/4                 | N/A                    |
 | ✅ GetRecentEpisodesUseCase.kt            | 100.0%   | 3/3                 | N/A                    |
 | ✅ GetChaptersUseCase.kt                  | 100.0%   | 3/3                 | N/A                    |
+
+#### 📦 io.jacob.episodive.core.domain.usecase.channel - 100.0%
+
+| Class                      | Coverage | Lines Covered/Total | Branches Covered/Total |
+|----------------------------|----------|---------------------|------------------------|
+| ✅ GetChannelByIdUseCase.kt | 100.0%   | 3/3                 | N/A                    |
+| ✅ GetChannelsUseCase.kt    | 100.0%   | 3/3                 | N/A                    |
 
 #### 📦 io.jacob.episodive.core.domain.usecase.search - 100.0%
 
@@ -218,6 +191,24 @@ Generated: 2025-12-16 17:30:42
 |---------------------------|----------|---------------------|------------------------|
 | ✅ FindInLibraryUseCase.kt | 100.0%   | 7/7                 | N/A                    |
 | ✅ GetSoundbitesUseCase.kt | 100.0%   | 3/3                 | N/A                    |
+
+#### 📦 io.jacob.episodive.core.domain.usecase.podcast - 100.0%
+
+| Class                                      | Coverage | Lines Covered/Total | Branches Covered/Total |
+|--------------------------------------------|----------|---------------------|------------------------|
+| ✅ GetForeignTrendingPodcastsUseCase.kt     | 100.0%   | 5/5                 | N/A                    |
+| ✅ GetPodcastUseCase.kt                     | 100.0%   | 3/3                 | N/A                    |
+| ✅ GetMyTrendingPodcastsUseCase.kt          | 100.0%   | 4/4                 | N/A                    |
+| ✅ GetRecentPodcastsUseCase.kt              | 100.0%   | 11/11               | N/A                    |
+| ✅ GetRecommendedPodcastsUseCase.kt         | 100.0%   | 5/5                 | N/A                    |
+| ✅ GetFollowedPodcastsPagingUseCase.kt      | 100.0%   | 4/4                 | N/A                    |
+| ✅ GetPodcastsByChannelUseCase.kt           | 100.0%   | 3/3                 | N/A                    |
+| ✅ GetPodcastsByFeedIdsParallellyUseCase.kt | 100.0%   | 3/3                 | N/A                    |
+| ✅ GetLocalTrendingPodcastsUseCase.kt       | 100.0%   | 4/4                 | N/A                    |
+| ✅ ToggleFollowedUseCase.kt                 | 100.0%   | 3/3                 | N/A                    |
+| ✅ GetMyRecentPodcastsUseCase.kt            | 100.0%   | 4/4                 | N/A                    |
+| ✅ GetFollowedPodcastsUseCase.kt            | 100.0%   | 4/4                 | N/A                    |
+| ✅ GetTrendingPodcastsUseCase.kt            | 100.0%   | 11/11               | N/A                    |
 
 #### 📦 io.jacob.episodive.core.domain.usecase.player - 100.0%
 
@@ -282,13 +273,6 @@ These classes have no test coverage and should be prioritized:
 - **core:network/FeedApi.kt** (20 lines)
 - **core:network/PodcastApi.kt** (4 lines)
 - **core:network/EpisodeApi.kt** (21 lines)
-- **core:domain/GetChannelByIdUseCase.kt** (3 lines)
-- **core:domain/IsLikedUseCase.kt** (3 lines)
-- **core:domain/GetLikedEpisodesUseCase.kt** (4 lines)
-- **core:domain/GetAllPlayedEpisodesPagingUseCase.kt** (3 lines)
-- **core:domain/GetPlayingEpisodesPagingUseCase.kt** (3 lines)
-- **core:domain/GetForeignTrendingPodcastsUseCase.kt** (5 lines)
-- **core:domain/GetFollowedPodcastsPagingUseCase.kt** (4 lines)
 
 ### 🟡 Medium Priority: Low Coverage Classes (< 50%)
 
