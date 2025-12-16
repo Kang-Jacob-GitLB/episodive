@@ -45,7 +45,7 @@ class GetMyRandomEpisodesUseCaseTest {
             } returns mockk(relaxed = true)
 
             // When
-            useCase().test {
+            useCase(10).test {
                 awaitComplete()
             }
 

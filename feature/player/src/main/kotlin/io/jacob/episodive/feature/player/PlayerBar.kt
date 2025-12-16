@@ -181,6 +181,8 @@ private fun PlayerBar(
                 }
 
                 EpisodiveIconToggleButton(
+                    modifier = Modifier
+                        .size(32.dp),
                     checked = isLike,
                     onCheckedChange = { onToggleLike() },
                     colors = IconButtonDefaults.iconToggleButtonColors(

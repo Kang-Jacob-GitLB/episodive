@@ -13,15 +13,18 @@ class SearchUseCase @Inject constructor(
     private val podcastRepository: PodcastRepository,
     private val episodeRepository: EpisodeRepository,
 ) {
-    operator fun invoke(query: String): Flow<SearchResult> {
-        return podcastRepository.searchPodcasts(query)
+    operator fun invoke(query: String, max: Int): Flow<SearchResult> {
+        return podcastRepository.searchPodcasts(query, max)
             .flatMapLatest { podcasts ->
                 if (podcasts.isEmpty()) {
                     flowOf(SearchResult())
                 } else {
                     combine(
                         podcasts.map { podcast ->
-                            episodeRepository.getEpisodesByFeedId(feedId = podcast.id)
+                            episodeRepository.getEpisodesByFeedId(
+                                feedId = podcast.id,
+                                max = 5,
+                            )
                         }
                     ) { episodeArrays ->
                         val episodes = episodeArrays.flatMap { it.take(5) }

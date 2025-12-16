@@ -15,13 +15,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +44,7 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.testing.model.podcastTestData
 
+@Stable
 @Composable
 fun PodcastsSection(
     modifier: Modifier = Modifier,
@@ -67,20 +71,15 @@ fun PodcastsSection(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
-            items(
-                count = podcasts.size,
-                key = { podcasts[it].id }
-            ) { index ->
-                val podcast = podcasts[index]
-                PodcastItem(
-                    podcast = podcast,
-                    onClick = { onPodcastClick(podcast) }
-                )
-            }
+            podcasts(
+                podcasts = podcasts,
+                onPodcastClick = onPodcastClick
+            )
         }
     }
 }
 
+@Stable
 @Composable
 fun PodcastsWithAuthorSection(
     modifier: Modifier = Modifier,
@@ -106,18 +105,42 @@ fun PodcastsWithAuthorSection(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
-            items(
-                count = podcasts.size,
-                key = { podcasts[it].id }
-            ) { index ->
-                val podcast = podcasts[index]
-                PodcastWithAuthorItem(
-                    podcast = podcast,
-                    onClick = { onPodcastClick(podcast) }
-                )
-            }
+            podcastsWithAuthor(
+                podcasts = podcasts,
+                onPodcastClick = onPodcastClick
+            )
         }
     }
+}
+
+fun LazyListScope.podcasts(
+    itemModifier: Modifier = Modifier,
+    podcasts: List<Podcast>,
+    onPodcastClick: (Podcast) -> Unit,
+) = items(
+    items = podcasts,
+    key = { it.id }
+) { podcast ->
+    PodcastItem(
+        modifier = itemModifier,
+        podcast = podcast,
+        onClick = { onPodcastClick(podcast) }
+    )
+}
+
+fun LazyListScope.podcastsWithAuthor(
+    itemModifier: Modifier = Modifier,
+    podcasts: List<Podcast>,
+    onPodcastClick: (Podcast) -> Unit,
+) = items(
+    items = podcasts,
+    key = { it.id }
+) { podcast ->
+    PodcastWithAuthorItem(
+        modifier = itemModifier,
+        podcast = podcast,
+        onClick = { onPodcastClick(podcast) }
+    )
 }
 
 @Composable

@@ -12,10 +12,10 @@ import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetForeignTrendingPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetLocalTrendingPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetMyRecentPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetMyTrendingPodcastsUseCase
-import io.jacob.episodive.core.domain.usecase.podcast.GetTrendingPodcastsUseCase
-import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
@@ -25,20 +25,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    getUserDataUseCase: GetUserDataUseCase,
     getPlayingEpisodesUseCase: GetPlayingEpisodesUseCase,
     getMyRecentPodcastsUseCase: GetMyRecentPodcastsUseCase,
     getMyRandomEpisodesUseCase: GetMyRandomEpisodesUseCase,
     getMyTrendingPodcastsUseCase: GetMyTrendingPodcastsUseCase,
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
-    private val getTrendingPodcastsUseCase: GetTrendingPodcastsUseCase,
+    getLocalTrendingPodcastsUseCase: GetLocalTrendingPodcastsUseCase,
+    getForeignTrendingPodcastsUseCase: GetForeignTrendingPodcastsUseCase,
     getLiveEpisodesUseCase: GetLiveEpisodesUseCase,
     getChannelsUseCase: GetChannelsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
@@ -46,24 +45,15 @@ class HomeViewModel @Inject constructor(
     private val toggleLikedUseCase: ToggleLikedUseCase,
 ) : ViewModel() {
 
-    private val localTrendingPodcasts = getUserDataUseCase().flatMapLatest { userData ->
-        getTrendingPodcastsUseCase(language = userData.language)
-    }
-
-    private val foreignTrendingPodcasts = getUserDataUseCase().flatMapLatest { userData ->
-        val foreignLanguages = languages.filter { it != userData.language }.joinToString(",")
-        getTrendingPodcastsUseCase(language = foreignLanguages)
-    }
-
     val state: StateFlow<HomeState> = combine(
-        getPlayingEpisodesUseCase(),
-        getMyRecentPodcastsUseCase(),
-        getMyRandomEpisodesUseCase(),
-        getMyTrendingPodcastsUseCase(),
-        getFollowedPodcastsUseCase(),
-        localTrendingPodcasts,
-        foreignTrendingPodcasts,
-        getLiveEpisodesUseCase(),
+        getPlayingEpisodesUseCase(max = 10),
+        getMyRecentPodcastsUseCase(max = 10),
+        getMyRandomEpisodesUseCase(max = 6),
+        getMyTrendingPodcastsUseCase(max = 10),
+        getFollowedPodcastsUseCase(max = 10),
+        getLocalTrendingPodcastsUseCase(max = 10),
+        getForeignTrendingPodcastsUseCase(max = 10),
+        getLiveEpisodesUseCase(max = 6),
         getChannelsUseCase(),
     ) {
             playingEpisodes,
@@ -78,14 +68,14 @@ class HomeViewModel @Inject constructor(
         ->
 
         HomeState.Success(
-            playingEpisodes = playingEpisodes.take(10),
-            myRecentPodcasts = myRecentPodcasts.take(10),
-            randomEpisodes = randomEpisodes.take(6),
-            myTrendingFPodcasts = myTrendingPodcasts.take(10),
-            followedPodcasts = followedPodcasts.take(10),
-            localTrendingPodcasts = localTrendingPodcasts.take(10),
-            foreignTrendingPodcasts = foreignTrendingPodcasts.take(10),
-            liveEpisodes = liveEpisodes.take(6),
+            playingEpisodes = playingEpisodes,
+            myRecentPodcasts = myRecentPodcasts,
+            randomEpisodes = randomEpisodes,
+            myTrendingPodcasts = myTrendingPodcasts,
+            followedPodcasts = followedPodcasts,
+            localTrendingPodcasts = localTrendingPodcasts,
+            foreignTrendingPodcasts = foreignTrendingPodcasts,
+            liveEpisodes = liveEpisodes,
             channels = channels
         ) as HomeState
     }.catch { e ->
@@ -153,7 +143,7 @@ sealed interface HomeState {
         val playingEpisodes: List<Episode>,
         val myRecentPodcasts: List<Podcast>,
         val randomEpisodes: List<Episode>,
-        val myTrendingFPodcasts: List<Podcast>,
+        val myTrendingPodcasts: List<Podcast>,
         val followedPodcasts: List<Podcast>,
         val localTrendingPodcasts: List<Podcast>,
         val foreignTrendingPodcasts: List<Podcast>,

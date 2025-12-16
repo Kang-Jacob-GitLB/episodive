@@ -38,14 +38,14 @@ class GetRecentSearchesUseCaseTest {
             } returns flowOf(listOf("test1", "test2", "test3"))
 
             // When
-            useCase().test {
+            useCase(10).test {
                 // Then
                 val result = awaitItem()
                 assertEquals(listOf("test1", "test2", "test3"), result)
                 awaitComplete()
             }
             coVerifySequence {
-                recentSearchRepository.getRecentSearches(5)
+                recentSearchRepository.getRecentSearches(10)
             }
         }
 }

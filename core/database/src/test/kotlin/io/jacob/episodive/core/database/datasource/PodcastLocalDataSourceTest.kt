@@ -137,26 +137,52 @@ class PodcastLocalDataSourceTest {
     fun `Given dependencies, When getPodcasts is called, Then getPodcasts of dao is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.getPodcasts() } returns mockk()
+            coEvery { podcastDao.getPodcasts(10) } returns mockk()
 
             // When
-            dataSource.getPodcasts()
+            dataSource.getPodcasts(10)
 
             // Then
-            coVerify { podcastDao.getPodcasts() }
+            coVerify { podcastDao.getPodcasts(10) }
+        }
+
+    @Test
+    fun `Given dependencies, When getPodcastsPaging is called, Then getPodcastsPaging of dao is called`() =
+        runTest {
+            // Given
+            coEvery { podcastDao.getPodcastsPaging() } returns mockk()
+
+            // When
+            dataSource.getPodcastsPaging()
+
+            // Then
+            coVerify { podcastDao.getPodcastsPaging() }
         }
 
     @Test
     fun `Given dependencies, When getPodcastsByCacheKey is called, Then getPodcastsByCacheKey of dao is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.getPodcastsByCacheKey(any()) } returns mockk()
+            coEvery { podcastDao.getPodcastsByCacheKey(any(), 10) } returns mockk()
 
             // When
-            dataSource.getPodcastsByCacheKey(cacheKey)
+            dataSource.getPodcastsByCacheKey(cacheKey, 10)
 
             // Then
-            coVerify { podcastDao.getPodcastsByCacheKey(cacheKey) }
+            coVerify { podcastDao.getPodcastsByCacheKey(cacheKey, 10) }
+        }
+
+    @Test
+    fun `Given dependencies, When getPodcastsByCacheKeyPaging is called, Then getPodcastsByCacheKeyPaging of dao is called`() =
+        runTest {
+            // Given
+            coEvery { podcastDao.getPodcastsByCacheKeyPaging(any()) } returns mockk()
+
+            // When
+            dataSource.getPodcastsByCacheKeyPaging(cacheKey)
+
+            // Then
+            coVerify { podcastDao.getPodcastsByCacheKeyPaging(cacheKey) }
         }
 
     @Test
@@ -221,12 +247,38 @@ class PodcastLocalDataSourceTest {
     fun `Given dependencies, When getFollowedPodcasts is called, Then getFollowedPodcasts of dao is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.getFollowedPodcasts() } returns mockk()
+            coEvery { podcastDao.getFollowedPodcasts(10) } returns mockk()
 
             // When
-            dataSource.getFollowedPodcasts()
+            dataSource.getFollowedPodcasts(10)
 
             // Then
-            coVerify { podcastDao.getFollowedPodcasts() }
+            coVerify { podcastDao.getFollowedPodcasts(10) }
+        }
+
+    @Test
+    fun `Given dependencies, When getFollowedPodcastsPaging is called, Then getFollowedPodcastsPaging of dao is called`() =
+        runTest {
+            // Given
+            coEvery { podcastDao.getFollowedPodcastsPaging() } returns mockk()
+
+            // When
+            dataSource.getFollowedPodcastsPaging()
+
+            // Then
+            coVerify { podcastDao.getFollowedPodcastsPaging() }
+        }
+
+    @Test
+    fun `Given dependencies, When getPodcastsOldestCachedAtByCacheKey is called, Then getPodcastsOldestCachedAtByCacheKey of dao is called`() =
+        runTest {
+            // Given
+            coEvery { podcastDao.getPodcastsOldestCachedAtByCacheKey(any()) } returns mockk()
+
+            // When
+            dataSource.getPodcastsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            coVerify { podcastDao.getPodcastsOldestCachedAtByCacheKey(cacheKey) }
         }
 }

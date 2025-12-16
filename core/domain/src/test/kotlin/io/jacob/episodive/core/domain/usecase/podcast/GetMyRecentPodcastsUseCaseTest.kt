@@ -15,7 +15,7 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
-class GetMyRecentFeedsUseCaseTest {
+class GetMyRecentPodcastsUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
@@ -45,18 +45,18 @@ class GetMyRecentFeedsUseCaseTest {
                 )
             )
             coEvery {
-                getRecentPodcastsUseCase(any(), any())
+                getRecentPodcastsUseCase(any(), any(), any())
             } returns mockk(relaxed = true)
 
             // When
-            useCase().test {
+            useCase(10).test {
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
                 userRepository.getUserData()
-                getRecentPodcastsUseCase(any(), any())
+                getRecentPodcastsUseCase(10, any(), any())
             }
         }
 }

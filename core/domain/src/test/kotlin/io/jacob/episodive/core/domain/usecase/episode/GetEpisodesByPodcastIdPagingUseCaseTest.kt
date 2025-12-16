@@ -12,13 +12,13 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
-class GetEpisodesByPodcastIdUseCaseTest {
+class GetEpisodesByPodcastIdPagingUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = GetEpisodesByPodcastIdUseCase(
+    private val useCase = GetEpisodesByPodcastIdPagingUseCase(
         episodeRepository = episodeRepository,
     )
 
@@ -33,7 +33,7 @@ class GetEpisodesByPodcastIdUseCaseTest {
             // Given
             val podcastId = 1L
             coEvery {
-                episodeRepository.getEpisodesByFeedId(any(), any(), any())
+                episodeRepository.getEpisodesByFeedIdPaging(any())
             } returns mockk(relaxed = true)
 
             // When
@@ -43,7 +43,7 @@ class GetEpisodesByPodcastIdUseCaseTest {
 
             // Then
             coVerifySequence {
-                episodeRepository.getEpisodesByFeedId(podcastId, max = 10000)
+                episodeRepository.getEpisodesByFeedIdPaging(podcastId)
             }
         }
 }

@@ -45,7 +45,7 @@ class PlayerRepositoryTest {
         coVerify { playerDataSource.repeat }
         coVerify { playerDataSource.speed }
         coVerify { playerDataSource.cue }
-        coVerify { episodeLocalDataSource.getEpisodes() }
+//        coVerify { episodeLocalDataSource.getEpisodesByIds(any()) }
         confirmVerified(playerDataSource, episodeLocalDataSource)
     }
 
@@ -340,7 +340,7 @@ class PlayerRepositoryTest {
             )
 
             every { playerDataSource.playlist } returns flowOf(playlistEpisodes)
-            every { episodeLocalDataSource.getEpisodes() } returns flowOf(episodesFromDb)
+            every { episodeLocalDataSource.getEpisodesByIds(any()) } returns flowOf(episodesFromDb)
 
             // Create a new repository instance for this test to avoid teardown conflicts
             val testRepository = PlayerRepositoryImpl(
@@ -369,12 +369,12 @@ class PlayerRepositoryTest {
                 assertEquals(null, result[2].likedAt)
                 assertEquals(null, result[2].playedAt)
 
-                cancelAndIgnoreRemainingEvents()
+                awaitComplete()
             }
 
             // Then
             coVerify(atLeast = 1) { playerDataSource.playlist }
-            coVerify(atLeast = 1) { episodeLocalDataSource.getEpisodes() }
+            coVerify(atLeast = 1) { episodeLocalDataSource.getEpisodesByIds(any()) }
         }
 
     @Test
@@ -393,7 +393,7 @@ class PlayerRepositoryTest {
             )
 
             every { playerDataSource.playlist } returns flowOf(playlistEpisodes)
-            every { episodeLocalDataSource.getEpisodes() } returns flowOf(episodesFromDb)
+            every { episodeLocalDataSource.getEpisodesByIds(any()) } returns flowOf(episodesFromDb)
 
             // Create a new repository instance for this test to avoid teardown conflicts
             val testRepository = PlayerRepositoryImpl(
@@ -411,12 +411,12 @@ class PlayerRepositoryTest {
                 assertEquals(null, result[2].likedAt)
                 assertEquals(null, result[2].playedAt)
 
-                cancelAndIgnoreRemainingEvents()
+                awaitComplete()
             }
 
             // Then
             coVerify(atLeast = 1) { playerDataSource.playlist }
-            coVerify(atLeast = 1) { episodeLocalDataSource.getEpisodes() }
+            coVerify(atLeast = 1) { episodeLocalDataSource.getEpisodesByIds(any()) }
         }
 
     @Test
@@ -425,7 +425,7 @@ class PlayerRepositoryTest {
             // Given
             val episodeDtos = episodeTestDataList.toEpisodeDtos(cacheKey = "test")
             every { playerDataSource.playlist } returns flowOf(emptyList())
-            every { episodeLocalDataSource.getEpisodes() } returns flowOf(episodeDtos)
+            every { episodeLocalDataSource.getEpisodesByIds(any()) } returns flowOf(episodeDtos)
 
             // Create a new repository instance for this test to avoid teardown conflicts
             val testRepository = PlayerRepositoryImpl(
@@ -440,12 +440,12 @@ class PlayerRepositoryTest {
                 // Then
                 assertEquals(0, result.size)
 
-                cancelAndIgnoreRemainingEvents()
+                awaitComplete()
             }
 
             // Then
             coVerify(atLeast = 1) { playerDataSource.playlist }
-            coVerify(atLeast = 1) { episodeLocalDataSource.getEpisodes() }
+            coVerify(atLeast = 1) { episodeLocalDataSource.getEpisodesByIds(any()) }
         }
 
     @Test

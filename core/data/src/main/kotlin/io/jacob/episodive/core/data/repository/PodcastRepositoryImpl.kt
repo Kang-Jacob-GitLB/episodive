@@ -1,6 +1,9 @@
 package io.jacob.episodive.core.data.repository
 
-import io.jacob.episodive.core.data.util.Cacher
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
 import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
@@ -11,9 +14,7 @@ import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
-import io.jacob.episodive.core.network.mapper.toPodcast
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -22,80 +23,112 @@ class PodcastRepositoryImpl @Inject constructor(
     private val remoteDataSource: PodcastRemoteDataSource,
     private val remoteUpdater: PodcastRemoteUpdater.Factory,
 ) : PodcastRepository {
+    private val config = PagingConfig(
+        pageSize = 20,
+        prefetchDistance = 5,
+        enablePlaceholders = false
+    )
+
     override fun searchPodcasts(
         query: String,
-        max: Int?,
+        max: Int,
     ): Flow<List<Podcast>> {
         val query = PodcastQuery.Search(query)
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getPodcastsByCacheKey(query.key)
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toPodcasts() }
+    }
+
+    override fun searchPodcastsPaging(query: String): Flow<PagingData<Podcast>> {
+        val query = PodcastQuery.Search(query)
+
+        return remoteUpdater.create(query)
+            .getPagingData(config)
+            .map { pagingData ->
+                pagingData.map { it.toPodcast() }
             }
-        ).flow.map { it.toPodcasts() }
     }
 
     override fun getPodcastByFeedId(feedId: Long): Flow<Podcast?> {
         val query = PodcastQuery.FeedId(feedId)
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getPodcast(feedId).map { dto ->
-                    dto?.let { listOf(it) } ?: emptyList()
-                }
-            }
-        ).flow.map { it.ifEmpty { null }?.firstOrNull()?.toPodcast() }
+        return remoteUpdater.create(query)
+            .getFlowList(1)
+            .map { it.firstOrNull()?.toPodcast() }
     }
 
-    override fun getPodcastByFeedUrl(feedUrl: String): Flow<Podcast?> = flow {
-        val podcast = remoteDataSource.getPodcastByFeedUrl(
-            feedUrl = feedUrl
-        )?.toPodcast()
+    override fun getPodcastByFeedUrl(feedUrl: String): Flow<Podcast?> {
+        val query = PodcastQuery.FeedUrl(feedUrl)
 
-        emit(podcast)
+        return remoteUpdater.create(query)
+            .getFlowList(1)
+            .map { it.firstOrNull()?.toPodcast() }
     }
 
-    override fun getPodcastByGuid(guid: String): Flow<Podcast?> = flow {
-        val podcast = remoteDataSource.getPodcastByGuid(
-            guid = guid
-        )?.toPodcast()
+    override fun getPodcastByGuid(guid: String): Flow<Podcast?> {
+        val query = PodcastQuery.FeedGuid(guid)
 
-        emit(podcast)
+        return remoteUpdater.create(query)
+            .getFlowList(1)
+            .map { it.firstOrNull()?.toPodcast() }
     }
 
     override fun getPodcastsByMedium(
         medium: String,
-        max: Int?,
+        max: Int,
     ): Flow<List<Podcast>> {
         val query = PodcastQuery.Medium(medium)
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getPodcastsByCacheKey(query.key)
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toPodcasts() }
+    }
+
+    override fun getPodcastsByMediumPaging(medium: String): Flow<PagingData<Podcast>> {
+        val query = PodcastQuery.Medium(medium)
+
+        return remoteUpdater.create(query)
+            .getPagingData(config)
+            .map { pagingData ->
+                pagingData.map { it.toPodcast() }
             }
-        ).flow.map { it.toPodcasts() }
     }
 
     override fun getPodcastsByChannel(channel: Channel): Flow<List<Podcast>> {
         val query = PodcastQuery.ByChannel(channel)
 
-        return Cacher(
-            remoteUpdater = remoteUpdater.create(query),
-            sourceFactory = {
-                localDataSource.getPodcastsByCacheKey(query.key)
-            }
-        ).flow.map { it.toPodcasts() }
+        return remoteUpdater.create(query)
+            .getFlowList(100)
+            .map { it.toPodcasts() }
     }
 
-    override fun getFollowedPodcasts(query: String?): Flow<List<Podcast>> {
-        return localDataSource.getFollowedPodcasts().map { podcasts ->
+    override fun getPodcastsByChannelPaging(channel: Channel): Flow<PagingData<Podcast>> {
+        val query = PodcastQuery.ByChannel(channel)
+
+        return remoteUpdater.create(query)
+            .getPagingData(config)
+            .map { pagingData ->
+                pagingData.map { it.toPodcast() }
+            }
+    }
+
+    override fun getFollowedPodcasts(query: String?, max: Int): Flow<List<Podcast>> {
+        return localDataSource.getFollowedPodcasts(max).map { podcasts ->
             podcasts
                 .filter { query == null || it.podcast.matchesQuery(query) }
                 .toPodcasts()
         }
+    }
+
+    override fun getFollowedPodcastsPaging(query: String?): Flow<PagingData<Podcast>> {
+        return Pager(
+            config = config,
+            pagingSourceFactory = { localDataSource.getFollowedPodcastsPaging() }
+        ).flow
+            .map { pagingData ->
+                pagingData.map { it.toPodcast() }
+            }
     }
 
     override suspend fun toggleFollowed(id: Long): Boolean {

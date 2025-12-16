@@ -2,15 +2,16 @@ package io.jacob.episodive.feature.clip
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.cachedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.domain.repository.PlayerRepository
-import io.jacob.episodive.core.domain.usecase.episode.GetClipEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.episode.GetClipEpisodesPagingUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
-import io.jacob.episodive.core.domain.usecase.player.PlayAndAddClipsUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.Playback
 import io.jacob.episodive.core.model.Progress
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,37 +22,31 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class ClipViewModel @Inject constructor(
-    getClipEpisodesUseCase: GetClipEpisodesUseCase,
+    getClipEpisodesPagingUseCase: GetClipEpisodesPagingUseCase,
     @param:Player(EpisodivePlayers.Clip) private val playerRepository: PlayerRepository,
-    private val playAndAddClipsUseCase: PlayAndAddClipsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val toggleLikedUseCase: ToggleLikedUseCase,
 ) : ViewModel() {
-    private val episodes: StateFlow<List<Episode>> = getClipEpisodesUseCase(40)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList()
-        )
+    val episodes = getClipEpisodesPagingUseCase().cachedIn(viewModelScope)
 
-    val state: StateFlow<ClipState> = combine(
-        episodes,
-        playerRepository.indexOfList,
+    val clipPlayerState: StateFlow<ClipPlayerState> = combine(
+        playerRepository.playback,
         playerRepository.progress,
         playerRepository.isPlaying,
-    ) { episodes, indexOfPlaying, progress, isPlaying ->
-        if (episodes.isNotEmpty()) {
-            ClipState.Success(episodes, indexOfPlaying, progress, isPlaying)
-        } else {
-            ClipState.Error("No clips available.")
-        }
+    ) { playback, progress, isPlaying ->
+        ClipPlayerState(
+            playback = playback,
+            progress = progress,
+            isPlaying = isPlaying,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = ClipState.Loading
+        initialValue = ClipPlayerState()
     )
 
     private val _action = MutableSharedFlow<ClipAction>(extraBufferCapacity = 1)
@@ -60,14 +55,13 @@ class ClipViewModel @Inject constructor(
     val effect = _effect.asSharedFlow()
 
     init {
-        playWhenReady()
         handleActions()
     }
 
     private fun handleActions() = viewModelScope.launch {
         _action.collectLatest { action ->
             when (action) {
-                is ClipAction.PlayIndex -> playIndex(action.index)
+                is ClipAction.PlayClip -> playClip(action.episode)
                 is ClipAction.ClickEpisode -> playEpisode(action.episode)
                 is ClipAction.ToggleEpisodeLiked -> toggleEpisodeLiked(action.episode)
                 is ClipAction.ClickPodcast -> clickPodcast(action.podcastId)
@@ -81,14 +75,8 @@ class ClipViewModel @Inject constructor(
         _action.emit(action)
     }
 
-    private fun playWhenReady() = viewModelScope.launch {
-        episodes.collectLatest { episodes ->
-            playAndAddClipsUseCase(episodes)
-        }
-    }
-
-    private fun playIndex(index: Int) {
-        playerRepository.playIndex(index)
+    private fun playClip(episode: Episode) {
+        playerRepository.playClip(episode)
     }
 
     private fun resume() {
@@ -113,20 +101,14 @@ class ClipViewModel @Inject constructor(
     }
 }
 
-sealed interface ClipState {
-    object Loading : ClipState
-    data class Success(
-        val episodes: List<Episode>,
-        val indexOfPlaying: Int = 0,
-        val progress: Progress,
-        val isPlaying: Boolean,
-    ) : ClipState
-
-    data class Error(val message: String) : ClipState
-}
+data class ClipPlayerState(
+    val playback: Playback = Playback.IDLE,
+    val progress: Progress = Progress(0.seconds, 0.seconds, 0.seconds),
+    val isPlaying: Boolean = false,
+)
 
 sealed interface ClipAction {
-    data class PlayIndex(val index: Int) : ClipAction
+    data class PlayClip(val episode: Episode) : ClipAction
     data class ClickEpisode(val episode: Episode) : ClipAction
     data class ToggleEpisodeLiked(val episode: Episode) : ClipAction
     data class ClickPodcast(val podcastId: Long) : ClipAction

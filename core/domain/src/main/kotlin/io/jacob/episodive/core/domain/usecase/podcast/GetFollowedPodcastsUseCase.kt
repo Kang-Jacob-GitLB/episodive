@@ -8,7 +8,7 @@ import javax.inject.Inject
 class GetFollowedPodcastsUseCase @Inject constructor(
     private val podcastRepository: PodcastRepository,
 ) {
-    operator fun invoke(): Flow<List<Podcast>> {
-        return podcastRepository.getFollowedPodcasts()
+    operator fun invoke(query: String? = null, max: Int): Flow<List<Podcast>> {
+        return podcastRepository.getFollowedPodcasts(query, max)
     }
 }

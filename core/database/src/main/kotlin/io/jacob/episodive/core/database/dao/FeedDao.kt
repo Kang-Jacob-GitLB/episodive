@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.database.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
@@ -9,6 +10,7 @@ import io.jacob.episodive.core.database.model.RecentNewFeedEntity
 import io.jacob.episodive.core.database.model.SoundbiteEntity
 import io.jacob.episodive.core.database.model.TrendingFeedEntity
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Instant
 
 @Dao
 interface FeedDao {
@@ -92,15 +94,39 @@ interface FeedDao {
         }
     }
 
+    @Query("SELECT * FROM trending_feeds WHERE cacheKey = :cacheKey LIMIT :limit")
+    fun getTrendingFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<TrendingFeedEntity>>
+
     @Query("SELECT * FROM trending_feeds WHERE cacheKey = :cacheKey")
-    fun getTrendingFeedsByCacheKey(cacheKey: String): Flow<List<TrendingFeedEntity>>
+    fun getTrendingFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, TrendingFeedEntity>
+
+    @Query("SELECT MIN(cachedAt) FROM trending_feeds WHERE cacheKey = :cacheKey")
+    suspend fun getTrendingFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant?
+
+    @Query("SELECT * FROM recent_feeds WHERE cacheKey = :cacheKey LIMIT :limit")
+    fun getRecentFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<RecentFeedEntity>>
 
     @Query("SELECT * FROM recent_feeds WHERE cacheKey = :cacheKey")
-    fun getRecentFeedsByCacheKey(cacheKey: String): Flow<List<RecentFeedEntity>>
+    fun getRecentFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentFeedEntity>
+
+    @Query("SELECT MIN(cachedAt) FROM recent_feeds WHERE cacheKey = :cacheKey")
+    suspend fun getRecentFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant?
+
+    @Query("SELECT * FROM recent_new_feeds WHERE cacheKey = :cacheKey LIMIT :limit")
+    fun getRecentNewFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<RecentNewFeedEntity>>
 
     @Query("SELECT * FROM recent_new_feeds WHERE cacheKey = :cacheKey")
-    fun getRecentNewFeedsByCacheKey(cacheKey: String): Flow<List<RecentNewFeedEntity>>
+    fun getRecentNewFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentNewFeedEntity>
+
+    @Query("SELECT MIN(cachedAt) FROM recent_new_feeds WHERE cacheKey = :cacheKey")
+    suspend fun getRecentNewFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant?
+
+    @Query("SELECT * FROM soundbites WHERE cacheKey = :cacheKey LIMIT :limit")
+    fun getSoundbitesByCacheKey(cacheKey: String, limit: Int): Flow<List<SoundbiteEntity>>
 
     @Query("SELECT * FROM soundbites WHERE cacheKey = :cacheKey")
-    fun getSoundbitesByCacheKey(cacheKey: String): Flow<List<SoundbiteEntity>>
+    fun getSoundbitesByCacheKeyPaging(cacheKey: String): PagingSource<Int, SoundbiteEntity>
+
+    @Query("SELECT MIN(cachedAt) FROM soundbites WHERE cacheKey = :cacheKey")
+    suspend fun getSoundbitesOldestCachedAtByCacheKey(cacheKey: String): Instant?
 }

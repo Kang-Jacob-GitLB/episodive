@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.database.datasource
 
+import androidx.paging.PagingSource
 import io.jacob.episodive.core.database.dao.FeedDao
 import io.jacob.episodive.core.database.model.RecentFeedEntity
 import io.jacob.episodive.core.database.model.RecentNewFeedEntity
@@ -7,6 +8,7 @@ import io.jacob.episodive.core.database.model.SoundbiteEntity
 import io.jacob.episodive.core.database.model.TrendingFeedEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
+import kotlin.time.Instant
 
 class FeedLocalDataSourceImpl @Inject constructor(
     private val feedDao: FeedDao,
@@ -91,19 +93,63 @@ class FeedLocalDataSourceImpl @Inject constructor(
         feedDao.replaceSoundbites(soundbites)
     }
 
-    override fun getTrendingFeedsByCacheKey(cacheKey: String): Flow<List<TrendingFeedEntity>> {
-        return feedDao.getTrendingFeedsByCacheKey(cacheKey)
+    override fun getTrendingFeedsByCacheKey(
+        cacheKey: String,
+        limit: Int,
+    ): Flow<List<TrendingFeedEntity>> {
+        return feedDao.getTrendingFeedsByCacheKey(cacheKey, limit)
     }
 
-    override fun getRecentFeedsByCacheKey(cacheKey: String): Flow<List<RecentFeedEntity>> {
-        return feedDao.getRecentFeedsByCacheKey(cacheKey)
+    override fun getTrendingFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, TrendingFeedEntity> {
+        return feedDao.getTrendingFeedsByCacheKeyPaging(cacheKey)
     }
 
-    override fun getRecentNewFeedsByCacheKey(cacheKey: String): Flow<List<RecentNewFeedEntity>> {
-        return feedDao.getRecentNewFeedsByCacheKey(cacheKey)
+    override suspend fun getTrendingFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant? {
+        return feedDao.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey)
     }
 
-    override fun getSoundbitesByCacheKey(cacheKey: String): Flow<List<SoundbiteEntity>> {
-        return feedDao.getSoundbitesByCacheKey(cacheKey)
+    override fun getRecentFeedsByCacheKey(
+        cacheKey: String,
+        limit: Int,
+    ): Flow<List<RecentFeedEntity>> {
+        return feedDao.getRecentFeedsByCacheKey(cacheKey, limit)
+    }
+
+    override fun getRecentFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentFeedEntity> {
+        return feedDao.getRecentFeedsByCacheKeyPaging(cacheKey)
+    }
+
+    override suspend fun getRecentFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant? {
+        return feedDao.getRecentFeedsOldestCachedAtByCacheKey(cacheKey)
+    }
+
+    override fun getRecentNewFeedsByCacheKey(
+        cacheKey: String,
+        limit: Int,
+    ): Flow<List<RecentNewFeedEntity>> {
+        return feedDao.getRecentNewFeedsByCacheKey(cacheKey, limit)
+    }
+
+    override fun getRecentNewFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentNewFeedEntity> {
+        return feedDao.getRecentNewFeedsByCacheKeyPaging(cacheKey)
+    }
+
+    override suspend fun getRecentNewFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant? {
+        return feedDao.getRecentNewFeedsOldestCachedAtByCacheKey(cacheKey)
+    }
+
+    override fun getSoundbitesByCacheKey(
+        cacheKey: String,
+        limit: Int,
+    ): Flow<List<SoundbiteEntity>> {
+        return feedDao.getSoundbitesByCacheKey(cacheKey, limit)
+    }
+
+    override fun getSoundbitesByCacheKeyPaging(cacheKey: String): PagingSource<Int, SoundbiteEntity> {
+        return feedDao.getSoundbitesByCacheKeyPaging(cacheKey)
+    }
+
+    override suspend fun getSoundbitesOldestCachedAtByCacheKey(cacheKey: String): Instant? {
+        return feedDao.getSoundbitesOldestCachedAtByCacheKey(cacheKey)
     }
 }

@@ -60,7 +60,7 @@ class PodcastDaoTest {
             dao.upsertPodcasts(podcastEntities)
 
             // When
-            dao.getPodcasts().test {
+            dao.getPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(10, podcasts.size)
@@ -80,7 +80,7 @@ class PodcastDaoTest {
             // When
             dao.deletePodcast(podcastTestData.id)
 
-            dao.getPodcasts().test {
+            dao.getPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(9, podcasts.size)
@@ -98,7 +98,7 @@ class PodcastDaoTest {
             // When
             dao.deletePodcasts()
 
-            dao.getPodcasts().test {
+            dao.getPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertTrue(podcasts.isEmpty())
@@ -118,7 +118,7 @@ class PodcastDaoTest {
             // When
             dao.deletePodcastsByCacheKey("test_key1")
 
-            dao.getPodcasts().test {
+            dao.getPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 val remainingSize = entities[1].size + entities[2].size
@@ -142,7 +142,7 @@ class PodcastDaoTest {
             dao.upsertPodcasts(initialEntities[2].map { it.copy(cacheKey = "key3") })
 
             // Verify initial state
-            dao.getPodcastsByCacheKey("key1").test {
+            dao.getPodcastsByCacheKey("key1", 10).test {
                 assertEquals(2, awaitItem().size)
                 cancel()
             }
@@ -156,7 +156,7 @@ class PodcastDaoTest {
             dao.replacePodcasts(newEntities)
 
             // Then - Verify key1 was replaced
-            dao.getPodcastsByCacheKey("key1").test {
+            dao.getPodcastsByCacheKey("key1", 10).test {
                 val key1Podcasts = awaitItem()
                 assertEquals(2, key1Podcasts.size)
                 assertTrue(key1Podcasts.any { it.podcast.id == 999L })
@@ -166,7 +166,7 @@ class PodcastDaoTest {
             }
 
             // Then - Verify key2 was replaced
-            dao.getPodcastsByCacheKey("key2").test {
+            dao.getPodcastsByCacheKey("key2", 10).test {
                 val key2Podcasts = awaitItem()
                 assertEquals(1, key2Podcasts.size)
                 assertTrue(key2Podcasts.any { it.podcast.id == 997L })
@@ -175,7 +175,7 @@ class PodcastDaoTest {
             }
 
             // Then - Verify key3 was not affected
-            dao.getPodcastsByCacheKey("key3").test {
+            dao.getPodcastsByCacheKey("key3", 10).test {
                 val key3Podcasts = awaitItem()
                 assertEquals(2, key3Podcasts.size)
                 assertTrue(key3Podcasts.any { it.podcast.id == initialEntities[2][0].id })
@@ -199,7 +199,7 @@ class PodcastDaoTest {
             dao.replacePodcasts(newPodcasts)
 
             // Then - Verify old podcasts are gone and new podcasts exist
-            dao.getPodcastsByCacheKey("trending").test {
+            dao.getPodcastsByCacheKey("trending", 10).test {
                 val podcasts = awaitItem()
                 assertEquals(2, podcasts.size)
                 assertTrue(podcasts.any { it.podcast.id == 100L })
@@ -220,7 +220,7 @@ class PodcastDaoTest {
             dao.upsertPodcasts(entities[3])
 
             // When
-            dao.getPodcastsByCacheKey("test_key1").test {
+            dao.getPodcastsByCacheKey("test_key1", 10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(entities[0].size, podcasts.size)
@@ -253,7 +253,7 @@ class PodcastDaoTest {
             }
 
             // When
-            dao.getFollowedPodcasts().test {
+            dao.getFollowedPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(followed.size, podcasts.size)
@@ -279,7 +279,7 @@ class PodcastDaoTest {
             }
 
             // When
-            dao.getFollowedPodcasts().test {
+            dao.getFollowedPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(10, podcasts.size)
@@ -311,7 +311,7 @@ class PodcastDaoTest {
             // When
             dao.removeFollowed(podcastEntities[3].id)
 
-            dao.getFollowedPodcasts().test {
+            dao.getFollowedPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(followed.size - 1, podcasts.size)
@@ -431,5 +431,153 @@ class PodcastDaoTest {
 
                 cancel()
             }
+        }
+
+    @Test
+    fun `Given some podcast entities, When getPodcastsPaging is called, Then podcasts are returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcasts(podcastEntities)
+
+            // When
+            val pagingSource = dao.getPodcastsPaging()
+            val loadResult = pagingSource.load(
+                androidx.paging.PagingSource.LoadParams.Refresh(
+                    key = null,
+                    loadSize = 10,
+                    placeholdersEnabled = false
+                )
+            )
+
+            // Then
+            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
+            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertEquals(podcastEntities.size, page.data.size)
+        }
+
+    @Test
+    fun `Given some podcast entities, When getPodcastsByCacheKeyPaging is called, Then podcasts with cache key are returned`() =
+        runTest {
+            // Given
+            val entities = podcastEntities.chunked(3)
+            dao.upsertPodcasts(entities[0].map { it.copy(cacheKey = "test_key1") })
+            dao.upsertPodcasts(entities[1].map { it.copy(cacheKey = "test_key2") })
+            dao.upsertPodcasts(entities[2].map { it.copy(cacheKey = "test_key3") })
+
+            // When
+            val pagingSource = dao.getPodcastsByCacheKeyPaging("test_key1")
+            val loadResult = pagingSource.load(
+                androidx.paging.PagingSource.LoadParams.Refresh(
+                    key = null,
+                    loadSize = 10,
+                    placeholdersEnabled = false
+                )
+            )
+
+            // Then
+            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
+            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertEquals(entities[0].size, page.data.size)
+            assertTrue(page.data.all { it.podcast.cacheKey == "test_key1" })
+        }
+
+    @Test
+    fun `Given some followed podcast entities, When getFollowedPodcastsPaging is called, Then followed podcasts are returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcasts(podcastEntities)
+            val followedAt = Clock.System.now()
+            dao.addFollowed(
+                FollowedPodcastEntity(
+                    id = podcastEntities[0].id,
+                    followedAt = followedAt,
+                    isNotificationEnabled = true
+                )
+            )
+            dao.addFollowed(
+                FollowedPodcastEntity(
+                    id = podcastEntities[1].id,
+                    followedAt = followedAt,
+                    isNotificationEnabled = true
+                )
+            )
+            dao.addFollowed(
+                FollowedPodcastEntity(
+                    id = podcastEntities[2].id,
+                    followedAt = followedAt,
+                    isNotificationEnabled = true
+                )
+            )
+
+            // When
+            val pagingSource = dao.getFollowedPodcastsPaging()
+            val loadResult = pagingSource.load(
+                androidx.paging.PagingSource.LoadParams.Refresh(
+                    key = null,
+                    loadSize = 10,
+                    placeholdersEnabled = false
+                )
+            )
+
+            // Then
+            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
+            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertEquals(3, page.data.size)
+        }
+
+    @Test
+    fun `Given no podcasts with cache key, When getPodcastsOldestCachedAtByCacheKey is called, Then null is returned`() =
+        runTest {
+            // Given - No podcasts inserted
+
+            // When
+            val oldestCachedAt = dao.getPodcastsOldestCachedAtByCacheKey("non_existent_key")
+
+            // Then
+            assertEquals(null, oldestCachedAt)
+        }
+
+    @Test
+    fun `Given one podcast with cache key, When getPodcastsOldestCachedAtByCacheKey is called, Then that cachedAt is returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcast(podcastEntity.copy(cacheKey = "test_key"))
+
+            // When
+            val oldestCachedAt = dao.getPodcastsOldestCachedAtByCacheKey("test_key")
+
+            // Then
+            assertEquals(podcastEntity.cachedAt.epochSeconds, oldestCachedAt?.epochSeconds)
+        }
+
+    @Test
+    fun `Given multiple podcasts with same cache key, When getPodcastsOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcasts(podcastEntities)
+
+            // When
+            val oldestCachedAt = dao.getPodcastsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            val expectedOldest = podcastEntities.minByOrNull { it.cachedAt }?.cachedAt
+            assertEquals(expectedOldest?.epochSeconds, oldestCachedAt?.epochSeconds)
+        }
+
+    @Test
+    fun `Given podcasts with different cache keys, When getPodcastsOldestCachedAtByCacheKey is called, Then only matching cache key podcasts are considered`() =
+        runTest {
+            // Given
+            dao.upsertPodcasts(podcastEntities.map { it.copy(cacheKey = "key1") })
+            dao.upsertPodcasts(podcastEntities.map { it.copy(cacheKey = "key2") })
+
+            // When
+            val key1OldestCachedAt = dao.getPodcastsOldestCachedAtByCacheKey("key1")
+            val key2OldestCachedAt = dao.getPodcastsOldestCachedAtByCacheKey("key2")
+
+            // Then
+            val expectedOldest = podcastEntities.minByOrNull { it.cachedAt }?.cachedAt
+            assertEquals(expectedOldest?.epochSeconds, key1OldestCachedAt?.epochSeconds)
+            assertEquals(expectedOldest?.epochSeconds, key2OldestCachedAt?.epochSeconds)
         }
 }

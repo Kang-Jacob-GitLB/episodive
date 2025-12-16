@@ -14,6 +14,9 @@ android {
 dependencies {
     implementation(projects.core.model)
 
+    //----- Paging
+    implementation(libs.androidx.paging.common)
+
     // ----- Test
     implementation(libs.junit)
     implementation(libs.kotlinx.coroutines.test)

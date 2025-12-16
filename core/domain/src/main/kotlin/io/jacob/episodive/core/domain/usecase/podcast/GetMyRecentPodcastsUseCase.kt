@@ -11,12 +11,13 @@ class GetMyRecentPodcastsUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val getRecentPodcastsUseCase: GetRecentPodcastsUseCase,
 ) {
-    operator fun invoke(): Flow<List<Podcast>> {
+    operator fun invoke(max: Int): Flow<List<Podcast>> {
         return userRepository.getUserData().flatMapLatest { userData ->
             if (userData.categories.isEmpty()) {
                 flowOf(emptyList())
             } else {
                 getRecentPodcastsUseCase(
+                    max = max,
                     language = userData.language,
                     categories = userData.categories
                 )

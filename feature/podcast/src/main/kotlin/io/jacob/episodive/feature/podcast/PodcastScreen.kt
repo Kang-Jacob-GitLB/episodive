@@ -31,6 +31,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
 import io.jacob.episodive.core.designsystem.component.DominantRegion
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
@@ -51,6 +53,8 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.ui.EpisodeItem
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import io.jacob.episodive.core.ui.R as uiR
 
@@ -70,9 +74,11 @@ internal fun PodcastRoute(
             PodcastScreen(
                 modifier = modifier,
                 podcast = s.podcast,
-                episodes = s.episodes,
+                episodes = viewModel.episodesPaging,
                 onFollowClick = { viewModel.sendAction(PodcastAction.ToggleFollowed) },
-                onEpisodeClick = { viewModel.sendAction(PodcastAction.PlayEpisode(it)) },
+                onEpisodeClick = { episode, visibleEpisodes ->
+                    viewModel.sendAction(PodcastAction.PlayEpisode(episode, visibleEpisodes))
+                },
                 onToggleLikedEpisode = { viewModel.sendAction(PodcastAction.ToggleLikedEpisode(it)) },
                 onBackClick = onBackClick,
                 onShowSnackbar = onShowSnackbar
@@ -87,13 +93,14 @@ internal fun PodcastRoute(
 private fun PodcastScreen(
     modifier: Modifier = Modifier,
     podcast: Podcast,
-    episodes: List<Episode>,
+    episodes: Flow<PagingData<Episode>>,
     onFollowClick: () -> Unit,
-    onEpisodeClick: (Episode) -> Unit,
+    onEpisodeClick: (Episode, List<Episode>) -> Unit,
     onToggleLikedEpisode: (Episode) -> Unit,
     onBackClick: () -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
+    val episodesPaging = episodes.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
@@ -134,14 +141,18 @@ private fun PodcastScreen(
             }
 
             items(
-                count = episodes.size,
-                key = { episodes[it].id },
+                count = episodesPaging.itemCount,
+                key = { episodesPaging[it]?.id ?: it },
+                contentType = { "episode" }
             ) { index ->
-                episodes[index].let { episode ->
+                episodesPaging[index]?.let { episode ->
                     EpisodeItem(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         episode = episode,
-                        onClick = { onEpisodeClick(episode) },
+                        onClick = {
+                            val visibleEpisodes = episodesPaging.itemSnapshotList.items
+                            onEpisodeClick(episode, visibleEpisodes)
+                        },
                         onToggleLiked = { onToggleLikedEpisode(episode) },
                     )
                 }
@@ -158,12 +169,12 @@ private fun PodcastScreen(
                 .padding(vertical = 12.dp)
                 .padding(top = 110.dp)
                 .align(Alignment.TopEnd),
-            state = listState.scrollbarState(itemsAvailable = episodes.size),
+            state = listState.scrollbarState(itemsAvailable = episodesPaging.itemCount),
             orientation = Orientation.Vertical,
             onThumbMoved = { thumbPosition ->
                 scope.launch {
-                    val itemIndex = (thumbPosition * episodes.size).toInt()
-                        .coerceIn(0, episodes.size - 1)
+                    val itemIndex = (thumbPosition * episodesPaging.itemCount).toInt()
+                        .coerceIn(0, episodesPaging.itemCount - 1)
                     listState.scrollToItem(itemIndex)
                 }
             }
@@ -247,9 +258,9 @@ private fun PodcastScreenPreview() {
     EpisodiveTheme {
         PodcastScreen(
             podcast = podcastTestData,
-            episodes = episodeTestDataList,
+            episodes = flowOf(PagingData.from(episodeTestDataList)),
             onFollowClick = {},
-            onEpisodeClick = {},
+            onEpisodeClick = { _, _ -> },
             onToggleLikedEpisode = {},
             onBackClick = {},
             onShowSnackbar = { _, _ -> false }

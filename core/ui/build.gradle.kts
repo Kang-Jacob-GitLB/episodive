@@ -19,4 +19,7 @@ dependencies {
 
     //----- Palette
     implementation(libs.androidx.palette.ktx)
+
+    //----- Paging
+    implementation(libs.androidx.paging.compose)
 }

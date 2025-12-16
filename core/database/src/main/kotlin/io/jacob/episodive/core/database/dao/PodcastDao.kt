@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.database.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -11,6 +12,7 @@ import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Clock
+import kotlin.time.Instant
 
 @Dao
 interface PodcastDao {
@@ -60,9 +62,36 @@ interface PodcastDao {
             followed_podcasts.isNotificationEnabled
         FROM podcasts
         LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
+        LIMIT :limit
     """
     )
-    fun getPodcasts(): Flow<List<PodcastDto>>
+    fun getPodcasts(limit: Int): Flow<List<PodcastDto>>
+
+    @Query(
+        """
+        SELECT
+            podcasts.*,
+            followed_podcasts.followedAt,
+            followed_podcasts.isNotificationEnabled
+        FROM podcasts
+        LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
+    """
+    )
+    fun getPodcastsPaging(): PagingSource<Int, PodcastDto>
+
+    @Query(
+        """
+        SELECT
+            podcasts.*,
+            followed_podcasts.followedAt,
+            followed_podcasts.isNotificationEnabled
+        FROM podcasts
+        LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
+        WHERE podcasts.cacheKey = :cacheKey
+        LIMIT :limit
+    """
+    )
+    fun getPodcastsByCacheKey(cacheKey: String, limit: Int): Flow<List<PodcastDto>>
 
     @Query(
         """
@@ -75,8 +104,10 @@ interface PodcastDao {
         WHERE podcasts.cacheKey = :cacheKey
     """
     )
-    fun getPodcastsByCacheKey(cacheKey: String): Flow<List<PodcastDto>>
+    fun getPodcastsByCacheKeyPaging(cacheKey: String): PagingSource<Int, PodcastDto>
 
+    @Query("SELECT MIN(cachedAt) FROM podcasts WHERE cacheKey = :cacheKey")
+    suspend fun getPodcastsOldestCachedAtByCacheKey(cacheKey: String): Instant?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addFollowed(followedPodcastEntity: FollowedPodcastEntity)
@@ -118,7 +149,26 @@ interface PodcastDao {
             WHERE p2.id = podcasts.id
         )
         ORDER BY followed_podcasts.followedAt DESC
+        LIMIT :limit
     """
     )
-    fun getFollowedPodcasts(): Flow<List<PodcastDto>>
+    fun getFollowedPodcasts(limit: Int): Flow<List<PodcastDto>>
+
+    @Query(
+        """
+        SELECT
+            podcasts.*,
+            followed_podcasts.followedAt,
+            followed_podcasts.isNotificationEnabled
+        FROM podcasts
+        INNER JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
+        WHERE podcasts.cachedAt = (
+            SELECT MAX(cachedAt)
+            FROM podcasts p2
+            WHERE p2.id = podcasts.id
+        )
+        ORDER BY followed_podcasts.followedAt DESC
+    """
+    )
+    fun getFollowedPodcastsPaging(): PagingSource<Int, PodcastDto>
 }

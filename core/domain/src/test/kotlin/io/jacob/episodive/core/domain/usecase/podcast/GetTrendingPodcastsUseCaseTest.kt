@@ -2,7 +2,7 @@ package io.jacob.episodive.core.domain.usecase.podcast
 
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.repository.FeedRepository
-import io.jacob.episodive.core.domain.repository.PodcastRepository
+import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
@@ -21,16 +21,17 @@ class GetTrendingPodcastsUseCaseTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val feedRepository = mockk<FeedRepository>(relaxed = true)
-    private val podcastRepository = mockk<PodcastRepository>(relaxed = true)
+    private val getPodcastsByFeedIdsParallellyUseCase =
+        mockk<GetPodcastsByFeedIdsParallellyUseCase>(relaxed = true)
 
     private val useCase = GetTrendingPodcastsUseCase(
         feedRepository = feedRepository,
-        podcastRepository = podcastRepository,
+        getPodcastsByFeedIdsParallellyUseCase = getPodcastsByFeedIdsParallellyUseCase,
     )
 
     @After
     fun teardown() {
-        confirmVerified(feedRepository, podcastRepository)
+        confirmVerified(feedRepository, getPodcastsByFeedIdsParallellyUseCase)
     }
 
     @Test
@@ -38,27 +39,23 @@ class GetTrendingPodcastsUseCaseTest {
         runTest {
             // Given
             coEvery {
-                feedRepository.getTrendingFeeds(any(), any(), any(), any(), any())
+                feedRepository.getTrendingFeeds(any(), any(), any(), any())
             } returns flowOf(trendingFeedTestDataList)
             coEvery {
-                podcastRepository.getPodcastByFeedId(any())
-            } returns flowOf(mockk(relaxed = true))
+                getPodcastsByFeedIdsParallellyUseCase(any())
+            } returns podcastTestDataList
 
             // When
-            useCase().test {
-                val firstBatch = awaitItem()
-                assertEquals(5, firstBatch.size)
-
-                val secondBatch = awaitItem()
-                assertEquals(10, secondBatch.size)
-
-                cancelAndIgnoreRemainingEvents()
+            useCase(10).test {
+                val result = awaitItem()
+                assertEquals(10, result.size)
+                awaitComplete()
             }
 
             // Then
             coVerify {
-                feedRepository.getTrendingFeeds(any(), any(), any(), any(), any())
+                feedRepository.getTrendingFeeds(any(), any(), any(), any())
+                getPodcastsByFeedIdsParallellyUseCase(any())
             }
-            coVerify(exactly = 10) { podcastRepository.getPodcastByFeedId(any()) }
         }
 }

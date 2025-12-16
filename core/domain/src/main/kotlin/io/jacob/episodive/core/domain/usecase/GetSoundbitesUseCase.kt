@@ -8,7 +8,7 @@ import javax.inject.Inject
 class GetSoundbitesUseCase @Inject constructor(
     private val feedRepository: FeedRepository,
 ) {
-    operator fun invoke(): Flow<List<Soundbite>> {
-        return feedRepository.getRecentSoundbites()
+    operator fun invoke(max: Int): Flow<List<Soundbite>> {
+        return feedRepository.getRecentSoundbites(max)
     }
 }

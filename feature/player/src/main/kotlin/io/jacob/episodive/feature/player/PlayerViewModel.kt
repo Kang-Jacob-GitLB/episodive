@@ -8,7 +8,7 @@ import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.common.combine
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
-import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.episode.IsLikedUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
@@ -38,7 +38,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    private val getLikedEpisodesUseCase: GetLikedEpisodesUseCase,
+    private val isLikedUseCase: IsLikedUseCase,
     private val toggleLikedUseCase: ToggleLikedUseCase,
     private val updatePlayedEpisodeUseCase: UpdatePlayedEpisodeUseCase,
     private val getPodcastUseCase: GetPodcastUseCase,
@@ -59,11 +59,7 @@ class PlayerViewModel @Inject constructor(
         .flatMapLatest { feedId -> getPodcastUseCase(feedId) }
 
     private val isLiked = playerRepository.nowPlaying.mapNotNull { it?.id }
-        .flatMapLatest { episodeId ->
-            getLikedEpisodesUseCase().mapNotNull { likedEpisodes ->
-                likedEpisodes.any { it.id == episodeId }
-            }
-        }
+        .flatMapLatest { episodeId -> isLikedUseCase(episodeId) }
 
     private val chapters = playerRepository.nowPlaying.map { it?.chaptersUrl }
         .flatMapLatest { chaptersUrl ->

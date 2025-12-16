@@ -15,6 +15,10 @@ import io.jacob.episodive.core.data.repository.RecentSearchRepositoryImpl
 import io.jacob.episodive.core.data.repository.UserRepositoryImpl
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
+import io.jacob.episodive.core.data.util.updater.RecentFeedRemoteUpdater
+import io.jacob.episodive.core.data.util.updater.RecentNewFeedRemoteUpdater
+import io.jacob.episodive.core.data.util.updater.SoundbiteRemoteUpdater
+import io.jacob.episodive.core.data.util.updater.TrendingFeedRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
@@ -83,10 +87,18 @@ object RepositoryModule {
     fun provideFeedRepository(
         feedLocalDataSource: FeedLocalDataSource,
         feedRemoteDataSource: FeedRemoteDataSource,
+        trendingFeedRemoteUpdater: TrendingFeedRemoteUpdater.Factory,
+        recentFeedRemoteUpdater: RecentFeedRemoteUpdater.Factory,
+        recentNewFeedRemoteUpdater: RecentNewFeedRemoteUpdater.Factory,
+        soundbiteRemoteUpdater: SoundbiteRemoteUpdater.Factory,
     ): FeedRepository {
         return FeedRepositoryImpl(
             localDataSource = feedLocalDataSource,
             remoteDataSource = feedRemoteDataSource,
+            trendingFeedRemoteUpdater = trendingFeedRemoteUpdater,
+            recentFeedRemoteUpdater = recentFeedRemoteUpdater,
+            recentNewFeedRemoteUpdater = recentNewFeedRemoteUpdater,
+            soundbiteRemoteUpdater = soundbiteRemoteUpdater,
         )
     }
 

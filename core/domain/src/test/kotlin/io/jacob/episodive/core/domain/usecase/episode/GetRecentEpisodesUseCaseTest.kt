@@ -31,16 +31,16 @@ class GetRecentEpisodesUseCaseTest {
     fun `Given dependencies, when invoke called, then repository not called`() =
         runTest {
             // Given
-            coEvery { episodeRepository.getRecentEpisodes() } returns mockk(relaxed = true)
+            coEvery { episodeRepository.getRecentEpisodes(10) } returns mockk(relaxed = true)
 
             // When
-            useCase().test {
+            useCase(10).test {
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
-                episodeRepository.getRecentEpisodes()
+                episodeRepository.getRecentEpisodes(10)
             }
         }
 }

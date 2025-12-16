@@ -48,7 +48,7 @@ class FeedDaoTest {
             dao.upsertTrendingFeeds(trendingFeedEntities)
 
             // When
-            dao.getTrendingFeedsByCacheKey(cacheKey).test {
+            dao.getTrendingFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, trendingFeedEntities.size)
@@ -57,7 +57,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteTrendingFeed(trendingFeedEntities.first().id)
-            dao.getTrendingFeedsByCacheKey(cacheKey).test {
+            dao.getTrendingFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, trendingFeedEntities.size - 1)
@@ -66,7 +66,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteTrendingFeeds()
-            dao.getTrendingFeedsByCacheKey(cacheKey).test {
+            dao.getTrendingFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
@@ -83,13 +83,13 @@ class FeedDaoTest {
 
             // When
             dao.deleteTrendingFeedsByCacheKey(cacheKey)
-            dao.getTrendingFeedsByCacheKey(cacheKey).test {
+            dao.getTrendingFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
                 cancel()
             }
-            dao.getTrendingFeedsByCacheKey("test_cache1").test {
+            dao.getTrendingFeedsByCacheKey("test_cache1", 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, trendingFeedEntities.size)
@@ -112,7 +112,7 @@ class FeedDaoTest {
             dao.replaceTrendingFeeds(newFeeds)
 
             // Then
-            dao.getTrendingFeedsByCacheKey("key1").test {
+            dao.getTrendingFeedsByCacheKey("key1", 10).test {
                 val items = awaitItem()
                 assertEquals(2, items.size)
                 assertTrue(items.any { it.id == 100L })
@@ -122,13 +122,35 @@ class FeedDaoTest {
         }
 
     @Test
+    fun `Given trending feeds, When getTrendingFeedsByCacheKeyPaging is called, Then trending feeds are returned`() =
+        runTest {
+            // Given
+            dao.upsertTrendingFeeds(trendingFeedEntities)
+
+            // When
+            val pagingSource = dao.getTrendingFeedsByCacheKeyPaging(cacheKey)
+            val loadResult = pagingSource.load(
+                androidx.paging.PagingSource.LoadParams.Refresh(
+                    key = null,
+                    loadSize = 10,
+                    placeholdersEnabled = false
+                )
+            )
+
+            // Then
+            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
+            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertEquals(trendingFeedEntities.size, page.data.size)
+        }
+
+    @Test
     fun `Given recent feeds, When upsertRecentFeeds, Then upserted correctly`() =
         runTest {
             // Given
             dao.upsertRecentFeeds(recentFeedEntities)
 
             // When
-            dao.getRecentFeedsByCacheKey(cacheKey).test {
+            dao.getRecentFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentFeedEntities.size)
@@ -137,7 +159,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentFeed(recentFeedEntities.first().id)
-            dao.getRecentFeedsByCacheKey(cacheKey).test {
+            dao.getRecentFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentFeedEntities.size - 1)
@@ -146,7 +168,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentFeeds()
-            dao.getRecentFeedsByCacheKey(cacheKey).test {
+            dao.getRecentFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
@@ -163,13 +185,13 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentFeedsByCacheKey(cacheKey)
-            dao.getRecentFeedsByCacheKey(cacheKey).test {
+            dao.getRecentFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
                 cancel()
             }
-            dao.getRecentFeedsByCacheKey("test_cache1").test {
+            dao.getRecentFeedsByCacheKey("test_cache1", 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentFeedEntities.size)
@@ -192,7 +214,7 @@ class FeedDaoTest {
             dao.replaceRecentFeeds(newFeeds)
 
             // Then
-            dao.getRecentFeedsByCacheKey("key1").test {
+            dao.getRecentFeedsByCacheKey("key1", 10).test {
                 val items = awaitItem()
                 assertEquals(2, items.size)
                 assertTrue(items.any { it.id == 200L })
@@ -202,13 +224,35 @@ class FeedDaoTest {
         }
 
     @Test
+    fun `Given recent feeds, When getRecentFeedsByCacheKeyPaging is called, Then recent feeds are returned`() =
+        runTest {
+            // Given
+            dao.upsertRecentFeeds(recentFeedEntities)
+
+            // When
+            val pagingSource = dao.getRecentFeedsByCacheKeyPaging(cacheKey)
+            val loadResult = pagingSource.load(
+                androidx.paging.PagingSource.LoadParams.Refresh(
+                    key = null,
+                    loadSize = 10,
+                    placeholdersEnabled = false
+                )
+            )
+
+            // Then
+            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
+            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertEquals(recentFeedEntities.size, page.data.size)
+        }
+
+    @Test
     fun `Given recent new feeds, When upsertRecentNewFeeds, Then upserted correctly`() =
         runTest {
             // Given
             dao.upsertRecentNewFeeds(recentNewFeedEntities)
 
             // When
-            dao.getRecentNewFeedsByCacheKey(cacheKey).test {
+            dao.getRecentNewFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentNewFeedEntities.size)
@@ -217,7 +261,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentNewFeed(recentNewFeedEntities.first().id)
-            dao.getRecentNewFeedsByCacheKey(cacheKey).test {
+            dao.getRecentNewFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentNewFeedEntities.size - 1)
@@ -226,7 +270,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentNewFeeds()
-            dao.getRecentNewFeedsByCacheKey(cacheKey).test {
+            dao.getRecentNewFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
@@ -243,13 +287,13 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentNewFeedsByCacheKey(cacheKey)
-            dao.getRecentNewFeedsByCacheKey(cacheKey).test {
+            dao.getRecentNewFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
                 cancel()
             }
-            dao.getRecentNewFeedsByCacheKey("test_cache1").test {
+            dao.getRecentNewFeedsByCacheKey("test_cache1", 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentNewFeedEntities.size)
@@ -272,7 +316,7 @@ class FeedDaoTest {
             dao.replaceRecentNewFeeds(newFeeds)
 
             // Then
-            dao.getRecentNewFeedsByCacheKey("key1").test {
+            dao.getRecentNewFeedsByCacheKey("key1", 10).test {
                 val items = awaitItem()
                 assertEquals(2, items.size)
                 assertTrue(items.any { it.id == 300L })
@@ -282,13 +326,35 @@ class FeedDaoTest {
         }
 
     @Test
+    fun `Given recent new feeds, When getRecentNewFeedsByCacheKeyPaging is called, Then recent new feeds are returned`() =
+        runTest {
+            // Given
+            dao.upsertRecentNewFeeds(recentNewFeedEntities)
+
+            // When
+            val pagingSource = dao.getRecentNewFeedsByCacheKeyPaging(cacheKey)
+            val loadResult = pagingSource.load(
+                androidx.paging.PagingSource.LoadParams.Refresh(
+                    key = null,
+                    loadSize = 10,
+                    placeholdersEnabled = false
+                )
+            )
+
+            // Then
+            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
+            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertEquals(recentNewFeedEntities.size, page.data.size)
+        }
+
+    @Test
     fun `Given soundbites, When upsertSoundbites, Then upserted correctly`() =
         runTest {
             // Given
             dao.upsertSoundbites(soundbiteEntities)
 
             // When
-            dao.getSoundbitesByCacheKey(cacheKey).test {
+            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, soundbiteEntities.size)
@@ -297,7 +363,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteSoundbite(soundbiteEntities.first().episodeId)
-            dao.getSoundbitesByCacheKey(cacheKey).test {
+            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, soundbiteEntities.size - 1)
@@ -306,7 +372,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteSoundbites()
-            dao.getSoundbitesByCacheKey(cacheKey).test {
+            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
@@ -323,13 +389,13 @@ class FeedDaoTest {
 
             // When
             dao.deleteSoundbitesByCacheKey(cacheKey)
-            dao.getSoundbitesByCacheKey(cacheKey).test {
+            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
                 cancel()
             }
-            dao.getSoundbitesByCacheKey("test_cache1").test {
+            dao.getSoundbitesByCacheKey("test_cache1", 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, soundbiteEntities.size)
@@ -352,12 +418,90 @@ class FeedDaoTest {
             dao.replaceSoundbites(newSoundbites)
 
             // Then
-            dao.getSoundbitesByCacheKey("key1").test {
+            dao.getSoundbitesByCacheKey("key1", 10).test {
                 val items = awaitItem()
                 assertEquals(2, items.size)
                 assertTrue(items.any { it.episodeId == 400L })
                 assertTrue(items.any { it.episodeId == 401L })
                 cancel()
             }
+        }
+
+    @Test
+    fun `Given soundbites, When getSoundbitesByCacheKeyPaging is called, Then soundbites are returned`() =
+        runTest {
+            // Given
+            dao.upsertSoundbites(soundbiteEntities)
+
+            // When
+            val pagingSource = dao.getSoundbitesByCacheKeyPaging(cacheKey)
+            val loadResult = pagingSource.load(
+                androidx.paging.PagingSource.LoadParams.Refresh(
+                    key = null,
+                    loadSize = 10,
+                    placeholdersEnabled = false
+                )
+            )
+
+            // Then
+            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
+            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertEquals(soundbiteEntities.size, page.data.size)
+        }
+
+    @Test
+    fun `Given multiple trending feeds with same cache key, When getTrendingFeedsOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
+        runTest {
+            // Given
+            dao.upsertTrendingFeeds(trendingFeedEntities)
+
+            // When
+            val oldestCachedAt = dao.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            val expectedOldest = trendingFeedEntities.minByOrNull { it.cachedAt }?.cachedAt
+            assertEquals(expectedOldest?.epochSeconds, oldestCachedAt?.epochSeconds)
+        }
+
+    @Test
+    fun `Given multiple recent feeds with same cache key, When getRecentFeedsOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
+        runTest {
+            // Given
+            dao.upsertRecentFeeds(recentFeedEntities)
+
+            // When
+            val oldestCachedAt = dao.getRecentFeedsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            val expectedOldest = recentFeedEntities.minByOrNull { it.cachedAt }?.cachedAt
+            assertEquals(expectedOldest?.epochSeconds, oldestCachedAt?.epochSeconds)
+        }
+
+    @Test
+    fun `Given multiple recent new feeds with same cache key, When getRecentNewFeedsOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
+        runTest {
+            // Given
+            dao.upsertRecentNewFeeds(recentNewFeedEntities)
+
+            // When
+            val oldestCachedAt = dao.getRecentNewFeedsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            val expectedOldest = recentNewFeedEntities.minByOrNull { it.cachedAt }?.cachedAt
+            assertEquals(expectedOldest?.epochSeconds, oldestCachedAt?.epochSeconds)
+        }
+
+    @Test
+    fun `Given multiple soundbites with same cache key, When getSoundbitesOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
+        runTest {
+            // Given
+            dao.upsertSoundbites(soundbiteEntities)
+
+            // When
+            val oldestCachedAt = dao.getSoundbitesOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            val expectedOldest = soundbiteEntities.minByOrNull { it.cachedAt }?.cachedAt
+            assertEquals(expectedOldest?.epochSeconds, oldestCachedAt?.epochSeconds)
         }
 }
