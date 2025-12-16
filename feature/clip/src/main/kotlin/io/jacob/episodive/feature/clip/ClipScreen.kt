@@ -68,22 +68,18 @@ internal fun ClipRoute(
 
     val clipPlayerState by viewModel.clipPlayerState.collectAsStateWithLifecycle()
 
-//    when (clipPlayerState.playback) {
-//        Playback.IDLE -> LoadingScreen()
-//        else ->
-            ClipScreen(
-                modifier = modifier,
-                episodes = viewModel.episodes,
-                playback = clipPlayerState.playback,
-                progress = clipPlayerState.progress,
-                isPlaying = clipPlayerState.isPlaying,
-                onEpisodeChanged = { viewModel.sendAction(ClipAction.PlayClip(it)) },
-                onEpisodeClick = { viewModel.sendAction(ClipAction.ClickEpisode(it)) },
-                onToggleEpisodeLiked = { viewModel.sendAction(ClipAction.ToggleEpisodeLiked(it)) },
-                onPodcastClick = { viewModel.sendAction(ClipAction.ClickPodcast(it)) },
-                onShowSnackbar = onShowSnackbar,
-            )
-//    }
+    ClipScreen(
+        modifier = modifier,
+        episodes = viewModel.episodes,
+        playback = clipPlayerState.playback,
+        progress = clipPlayerState.progress,
+        isPlaying = clipPlayerState.isPlaying,
+        onEpisodeChanged = { viewModel.sendAction(ClipAction.PlayClip(it)) },
+        onEpisodeClick = { viewModel.sendAction(ClipAction.ClickEpisode(it)) },
+        onToggleEpisodeLiked = { viewModel.sendAction(ClipAction.ToggleEpisodeLiked(it)) },
+        onPodcastClick = { viewModel.sendAction(ClipAction.ClickPodcast(it)) },
+        onShowSnackbar = onShowSnackbar,
+    )
 }
 
 @Composable
