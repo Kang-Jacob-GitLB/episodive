@@ -7,25 +7,22 @@ import io.jacob.episodive.core.data.util.updater.RecentNewFeedRemoteUpdater
 import io.jacob.episodive.core.data.util.updater.SoundbiteRemoteUpdater
 import io.jacob.episodive.core.data.util.updater.TrendingFeedRemoteUpdater
 import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
-import io.jacob.episodive.core.database.model.RecentFeedEntity
-import io.jacob.episodive.core.database.model.RecentNewFeedEntity
-import io.jacob.episodive.core.database.model.SoundbiteEntity
-import io.jacob.episodive.core.database.model.TrendingFeedEntity
+import io.jacob.episodive.core.database.mapper.toTrendingFeedEntities
 import io.jacob.episodive.core.domain.repository.FeedRepository
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
+import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
-import io.mockk.coVerify
+import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
 import io.mockk.mockk
-import io.mockk.mockkConstructor
-import io.mockk.unmockkAll
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
+import kotlin.time.Clock
 
 class FeedRepositoryTest {
     @get:Rule
@@ -33,36 +30,57 @@ class FeedRepositoryTest {
 
     private val localDataSource = mockk<FeedLocalDataSource>(relaxed = true)
     private val remoteDataSource = mockk<FeedRemoteDataSource>(relaxed = true)
+    private val trendingFeedRemoteUpdater = mockk<TrendingFeedRemoteUpdater.Factory>(relaxed = true)
+    private val recentFeedRemoteUpdater = mockk<RecentFeedRemoteUpdater.Factory>(relaxed = true)
+    private val recentNewFeedRemoteUpdater =
+        mockk<RecentNewFeedRemoteUpdater.Factory>(relaxed = true)
+    private val soundbiteRemoteUpdater = mockk<SoundbiteRemoteUpdater.Factory>(relaxed = true)
 
     private val repository: FeedRepository = FeedRepositoryImpl(
         localDataSource = localDataSource,
         remoteDataSource = remoteDataSource,
+        trendingFeedRemoteUpdater = trendingFeedRemoteUpdater,
+        recentFeedRemoteUpdater = recentFeedRemoteUpdater,
+        recentNewFeedRemoteUpdater = recentNewFeedRemoteUpdater,
+        soundbiteRemoteUpdater = soundbiteRemoteUpdater,
     )
 
     @After
     fun teardown() {
-        unmockkAll()
-        confirmVerified(localDataSource, remoteDataSource)
+        confirmVerified(
+            localDataSource,
+            remoteDataSource,
+            trendingFeedRemoteUpdater,
+            recentFeedRemoteUpdater,
+            recentNewFeedRemoteUpdater,
+            soundbiteRemoteUpdater
+        )
     }
 
     @Test
     fun `Given params, When getTrendingFeeds is called, Then calls localDataSource and RemoteUpdater`() =
         runTest {
             // Given
+            val max = 10
             val query = FeedQuery.Trending(
                 language = "ko",
                 categories = listOf(Category.CAREERS, Category.SELF_IMPROVEMENT)
             )
-            mockkConstructor(TrendingFeedRemoteUpdater::class)
+
+            val updater = mockk<TrendingFeedRemoteUpdater>(relaxed = true)
+            val cachedAt = Clock.System.now()
+            val trendingFeedsEntities = trendingFeedTestDataList.toTrendingFeedEntities(
+                cacheKey = query.key,
+                cachedAt = cachedAt,
+            )
+            coEvery { updater.getFlowList(max) } returns flowOf(trendingFeedsEntities)
             coEvery {
-                anyConstructed<TrendingFeedRemoteUpdater>().load(any<List<TrendingFeedEntity>>())
-            } returns Unit
-            coEvery {
-                localDataSource.getTrendingFeedsByCacheKey(any())
-            } returns flowOf(emptyList())
+                trendingFeedRemoteUpdater.create(query)
+            } returns updater
 
             // When
             repository.getTrendingFeeds(
+                max = max,
                 language = query.language,
                 includeCategories = query.categories,
             ).test {
@@ -71,8 +89,9 @@ class FeedRepositoryTest {
             }
 
             // Then
-            coVerify {
-                localDataSource.getTrendingFeedsByCacheKey(any())
+            coVerifySequence {
+                trendingFeedRemoteUpdater.create(query)
+                updater.getFlowList(max)
             }
         }
 
@@ -80,20 +99,19 @@ class FeedRepositoryTest {
     fun `Given params, When getRecentFeeds is called, Then calls localDataSource and RemoteUpdater`() =
         runTest {
             // Given
+            val max = 10
             val query = FeedQuery.Recent(
                 language = "ko",
                 categories = listOf(Category.CAREERS, Category.SELF_IMPROVEMENT)
             )
-            mockkConstructor(RecentFeedRemoteUpdater::class)
-            coEvery {
-                anyConstructed<RecentFeedRemoteUpdater>().load(any<List<RecentFeedEntity>>())
-            } returns Unit
-            coEvery {
-                localDataSource.getRecentFeedsByCacheKey(any())
-            } returns flowOf(emptyList())
+
+            val updater = mockk<RecentFeedRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(max) } returns flowOf(emptyList())
+            coEvery { recentFeedRemoteUpdater.create(query) } returns updater
 
             // When
             repository.getRecentFeeds(
+                max = max,
                 language = query.language,
                 includeCategories = query.categories,
             ).test {
@@ -102,8 +120,9 @@ class FeedRepositoryTest {
             }
 
             // Then
-            coVerify {
-                localDataSource.getRecentFeedsByCacheKey(any())
+            coVerifySequence {
+                recentFeedRemoteUpdater.create(query)
+                updater.getFlowList(max)
             }
         }
 
@@ -111,24 +130,23 @@ class FeedRepositoryTest {
     fun `Given params, When getRecentNewFeeds is called, Then calls localDataSource and RemoteUpdater`() =
         runTest {
             // Given
+            val max = 10
             val query = FeedQuery.RecentNew
-            mockkConstructor(RecentNewFeedRemoteUpdater::class)
-            coEvery {
-                anyConstructed<RecentNewFeedRemoteUpdater>().load(any<List<RecentNewFeedEntity>>())
-            } returns Unit
-            coEvery {
-                localDataSource.getRecentNewFeedsByCacheKey(any())
-            } returns flowOf(emptyList())
+
+            val updater = mockk<RecentNewFeedRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(max) } returns flowOf(emptyList())
+            coEvery { recentNewFeedRemoteUpdater.create(query) } returns updater
 
             // When
-            repository.getRecentNewFeeds().test {
+            repository.getRecentNewFeeds(max = max).test {
                 awaitItem()
                 awaitComplete()
             }
 
             // Then
-            coVerify {
-                localDataSource.getRecentNewFeedsByCacheKey(any())
+            coVerifySequence {
+                recentNewFeedRemoteUpdater.create(query)
+                updater.getFlowList(max)
             }
         }
 
@@ -136,24 +154,23 @@ class FeedRepositoryTest {
     fun `Given params, When getRecentSoundbites is called, Then calls localDataSource and RemoteUpdater`() =
         runTest {
             // Given
+            val max = 10
             val query = FeedQuery.Soundbite
-            mockkConstructor(SoundbiteRemoteUpdater::class)
-            coEvery {
-                anyConstructed<SoundbiteRemoteUpdater>().load(any<List<SoundbiteEntity>>())
-            } returns Unit
-            coEvery {
-                localDataSource.getSoundbitesByCacheKey(any())
-            } returns flowOf(emptyList())
+
+            val updater = mockk<SoundbiteRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(max) } returns flowOf(emptyList())
+            coEvery { soundbiteRemoteUpdater.create(query) } returns updater
 
             // When
-            repository.getRecentSoundbites().test {
+            repository.getRecentSoundbites(max = max).test {
                 awaitItem()
                 awaitComplete()
             }
 
             // Then
-            coVerify {
-                localDataSource.getSoundbitesByCacheKey(any())
+            coVerifySequence {
+                soundbiteRemoteUpdater.create(query)
+                updater.getFlowList(max)
             }
         }
 }

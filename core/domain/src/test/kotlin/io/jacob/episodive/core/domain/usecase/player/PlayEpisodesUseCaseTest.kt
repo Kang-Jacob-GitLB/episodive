@@ -31,7 +31,7 @@ class PlayEpisodesUseCaseTest {
         val episodes = episodeTestDataList
 
         // When
-        useCase(episodes)
+        useCase(episodes = episodes)
 
         // Then
         verify {
@@ -49,7 +49,7 @@ class PlayEpisodesUseCaseTest {
         val playEpisode = episodes[3]
 
         // When
-        useCase(episodes, playEpisode)
+        useCase(playEpisode, episodes)
 
         // Then
         verify {
@@ -67,7 +67,7 @@ class PlayEpisodesUseCaseTest {
         val nonExistentEpisode = episodes.first().copy(id = 999999L)
 
         // When
-        useCase(episodes, nonExistentEpisode)
+        useCase(nonExistentEpisode, episodes)
 
         // Then
         verify {

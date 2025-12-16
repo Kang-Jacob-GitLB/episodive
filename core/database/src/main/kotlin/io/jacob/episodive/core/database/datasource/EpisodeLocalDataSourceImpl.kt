@@ -42,8 +42,12 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         episodeDao.updateDurationOfEpisodes(id, duration)
     }
 
-    override fun getEpisode(id: Long): Flow<EpisodeDto?> {
-        return episodeDao.getEpisode(id)
+    override fun getEpisodeById(id: Long): Flow<EpisodeDto?> {
+        return episodeDao.getEpisodeById(id)
+    }
+
+    override fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>> {
+        return episodeDao.getEpisodesByIds(ids)
     }
 
     override fun getEpisodes(limit: Int): Flow<List<EpisodeDto>> {
@@ -60,10 +64,6 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
 
     override fun getEpisodesByCacheKeyPaging(cacheKey: String): PagingSource<Int, EpisodeDto> {
         return episodeDao.getEpisodesByCacheKeyPaging(cacheKey)
-    }
-
-    override fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>> {
-        return episodeDao.getEpisodesByIds(ids)
     }
 
     override suspend fun getEpisodesOldestCachedAtByCacheKey(cacheKey: String): Instant? {

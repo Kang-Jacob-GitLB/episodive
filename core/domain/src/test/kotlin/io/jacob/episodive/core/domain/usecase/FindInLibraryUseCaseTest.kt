@@ -33,9 +33,15 @@ class FindInLibraryUseCaseTest {
     @Test
     fun `Given dependencies, when invoke called, then repositories called`() =
         runTest {
-            coEvery { episodeRepository.getPlayingEpisodes(any()) } returns mockk(relaxed = true)
-            coEvery { episodeRepository.getLikedEpisodes(any()) } returns mockk(relaxed = true)
-            coEvery { podcastRepository.getFollowedPodcasts(any()) } returns mockk(relaxed = true)
+            coEvery {
+                episodeRepository.getPlayingEpisodes(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                episodeRepository.getLikedEpisodes(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                podcastRepository.getFollowedPodcasts(any(), any())
+            } returns mockk(relaxed = true)
 
             // When
             useCase("query").test {
@@ -44,9 +50,9 @@ class FindInLibraryUseCaseTest {
 
             // Then
             coVerifySequence {
-                episodeRepository.getPlayingEpisodes("query")
-                episodeRepository.getLikedEpisodes("query")
-                podcastRepository.getFollowedPodcasts("query")
+                episodeRepository.getPlayingEpisodes("query", 1000)
+                episodeRepository.getLikedEpisodes("query", 1000)
+                podcastRepository.getFollowedPodcasts("query", 1000)
             }
         }
 }

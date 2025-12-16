@@ -32,17 +32,17 @@ class GetFollowedPodcastsUseCaseTest {
         runTest {
             // Given
             coEvery {
-                podcastRepository.getFollowedPodcasts(any())
+                podcastRepository.getFollowedPodcasts(any(), 10)
             } returns mockk(relaxed = true)
 
             // When
-            useCase().test {
+            useCase(max = 10).test {
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
-                podcastRepository.getFollowedPodcasts(any())
+                podcastRepository.getFollowedPodcasts(any(), 10)
             }
         }
 }

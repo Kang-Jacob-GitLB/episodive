@@ -33,6 +33,8 @@ class AndroidTestConventionPlugin : Plugin<Project> {
                 "testImplementation"(project(":core:testing"))
                 "androidTestImplementation"(project(":core:testing"))
 
+                "testImplementation"(libs.findLibrary("androidx.paging.testing").get())
+
                 val bom = libs.findLibrary("androidx.compose.bom").get()
                 "androidTestImplementation"(platform(bom))
                 "androidTestImplementation"(libs.findLibrary("androidx.compose.ui.test.junit4").get())

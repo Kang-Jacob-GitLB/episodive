@@ -39,7 +39,7 @@ class SearchUseCaseTest {
         runTest {
             // Given
             coEvery {
-                podcastRepository.searchPodcasts(any())
+                podcastRepository.searchPodcasts(any(), 10)
             } returns flowOf(podcastTestDataList.take(2))
             coEvery {
                 episodeRepository.getEpisodesByFeedId(podcastTestDataList[0].id, any())
@@ -49,7 +49,7 @@ class SearchUseCaseTest {
             } returns flowOf(episodeTestDataList.drop(5).take(5))
 
             // When
-            useCase("query").test {
+            useCase("query", 10).test {
                 val result = awaitItem()
 
                 // Then
@@ -65,7 +65,7 @@ class SearchUseCaseTest {
                 awaitComplete()
             }
             coVerifySequence {
-                podcastRepository.searchPodcasts(any())
+                podcastRepository.searchPodcasts(any(), 10)
                 episodeRepository.getEpisodesByFeedId(podcastTestDataList[0].id, any())
                 episodeRepository.getEpisodesByFeedId(podcastTestDataList[1].id, any())
             }

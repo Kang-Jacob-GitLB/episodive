@@ -33,7 +33,7 @@ class GetEpisodesByPodcastIdUseCaseTest {
             // Given
             val podcastId = 1L
             coEvery {
-                episodeRepository.getEpisodesByFeedId(any(), any(), any())
+                episodeRepository.getEpisodesByFeedIdPaging(any())
             } returns mockk(relaxed = true)
 
             // When
@@ -43,7 +43,7 @@ class GetEpisodesByPodcastIdUseCaseTest {
 
             // Then
             coVerifySequence {
-                episodeRepository.getEpisodesByFeedId(podcastId, max = 10000)
+                episodeRepository.getEpisodesByFeedIdPaging(podcastId)
             }
         }
 }

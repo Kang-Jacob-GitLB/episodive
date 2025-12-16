@@ -17,12 +17,12 @@ interface EpisodeLocalDataSource {
     suspend fun deleteEpisodesByCacheKey(cacheKey: String)
     suspend fun replaceEpisodes(episodes: List<EpisodeEntity>)
     suspend fun updateDurationOfEpisodes(id: Long, duration: Duration)
-    fun getEpisode(id: Long): Flow<EpisodeDto?>
+    fun getEpisodeById(id: Long): Flow<EpisodeDto?>
+    fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>>
     fun getEpisodes(limit: Int): Flow<List<EpisodeDto>>
     fun getEpisodesPaging(): PagingSource<Int, EpisodeDto>
     fun getEpisodesByCacheKey(cacheKey: String, limit: Int): Flow<List<EpisodeDto>>
     fun getEpisodesByCacheKeyPaging(cacheKey: String): PagingSource<Int, EpisodeDto>
-    fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>>
     suspend fun getEpisodesOldestCachedAtByCacheKey(cacheKey: String): Instant?
 
     suspend fun addLiked(likedEpisode: LikedEpisodeEntity)

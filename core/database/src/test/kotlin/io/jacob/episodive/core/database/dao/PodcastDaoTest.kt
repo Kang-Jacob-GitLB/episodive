@@ -60,7 +60,7 @@ class PodcastDaoTest {
             dao.upsertPodcasts(podcastEntities)
 
             // When
-            dao.getPodcasts().test {
+            dao.getPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(10, podcasts.size)
@@ -80,7 +80,7 @@ class PodcastDaoTest {
             // When
             dao.deletePodcast(podcastTestData.id)
 
-            dao.getPodcasts().test {
+            dao.getPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(9, podcasts.size)
@@ -98,7 +98,7 @@ class PodcastDaoTest {
             // When
             dao.deletePodcasts()
 
-            dao.getPodcasts().test {
+            dao.getPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertTrue(podcasts.isEmpty())
@@ -118,7 +118,7 @@ class PodcastDaoTest {
             // When
             dao.deletePodcastsByCacheKey("test_key1")
 
-            dao.getPodcasts().test {
+            dao.getPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 val remainingSize = entities[1].size + entities[2].size
@@ -142,7 +142,7 @@ class PodcastDaoTest {
             dao.upsertPodcasts(initialEntities[2].map { it.copy(cacheKey = "key3") })
 
             // Verify initial state
-            dao.getPodcastsByCacheKey("key1").test {
+            dao.getPodcastsByCacheKey("key1", 10).test {
                 assertEquals(2, awaitItem().size)
                 cancel()
             }
@@ -156,7 +156,7 @@ class PodcastDaoTest {
             dao.replacePodcasts(newEntities)
 
             // Then - Verify key1 was replaced
-            dao.getPodcastsByCacheKey("key1").test {
+            dao.getPodcastsByCacheKey("key1", 10).test {
                 val key1Podcasts = awaitItem()
                 assertEquals(2, key1Podcasts.size)
                 assertTrue(key1Podcasts.any { it.podcast.id == 999L })
@@ -166,7 +166,7 @@ class PodcastDaoTest {
             }
 
             // Then - Verify key2 was replaced
-            dao.getPodcastsByCacheKey("key2").test {
+            dao.getPodcastsByCacheKey("key2", 10).test {
                 val key2Podcasts = awaitItem()
                 assertEquals(1, key2Podcasts.size)
                 assertTrue(key2Podcasts.any { it.podcast.id == 997L })
@@ -175,7 +175,7 @@ class PodcastDaoTest {
             }
 
             // Then - Verify key3 was not affected
-            dao.getPodcastsByCacheKey("key3").test {
+            dao.getPodcastsByCacheKey("key3", 10).test {
                 val key3Podcasts = awaitItem()
                 assertEquals(2, key3Podcasts.size)
                 assertTrue(key3Podcasts.any { it.podcast.id == initialEntities[2][0].id })
@@ -199,7 +199,7 @@ class PodcastDaoTest {
             dao.replacePodcasts(newPodcasts)
 
             // Then - Verify old podcasts are gone and new podcasts exist
-            dao.getPodcastsByCacheKey("trending").test {
+            dao.getPodcastsByCacheKey("trending", 10).test {
                 val podcasts = awaitItem()
                 assertEquals(2, podcasts.size)
                 assertTrue(podcasts.any { it.podcast.id == 100L })
@@ -220,7 +220,7 @@ class PodcastDaoTest {
             dao.upsertPodcasts(entities[3])
 
             // When
-            dao.getPodcastsByCacheKey("test_key1").test {
+            dao.getPodcastsByCacheKey("test_key1", 10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(entities[0].size, podcasts.size)
@@ -253,7 +253,7 @@ class PodcastDaoTest {
             }
 
             // When
-            dao.getFollowedPodcasts().test {
+            dao.getFollowedPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(followed.size, podcasts.size)
@@ -279,7 +279,7 @@ class PodcastDaoTest {
             }
 
             // When
-            dao.getFollowedPodcasts().test {
+            dao.getFollowedPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(10, podcasts.size)
@@ -311,7 +311,7 @@ class PodcastDaoTest {
             // When
             dao.removeFollowed(podcastEntities[3].id)
 
-            dao.getFollowedPodcasts().test {
+            dao.getFollowedPodcasts(10).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(followed.size - 1, podcasts.size)

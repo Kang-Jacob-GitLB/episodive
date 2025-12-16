@@ -61,7 +61,28 @@ interface EpisodeDao {
         LIMIT 1
     """
     )
-    fun getEpisode(id: Long): Flow<EpisodeDto?>
+    fun getEpisodeById(id: Long): Flow<EpisodeDto?>
+
+    @Query(
+        """
+        SELECT
+            episodes.*,
+            liked_episodes.likedAt,
+            played_episodes.playedAt,
+            played_episodes.position,
+            played_episodes.isCompleted
+        FROM episodes
+        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
+        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+        WHERE episodes.id IN (:ids)
+        AND episodes.cachedAt = (
+            SELECT MAX(cachedAt)
+            FROM episodes e2
+            WHERE e2.id = episodes.id
+        )
+    """
+    )
+    fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>>
 
     @Query(
         """
@@ -138,27 +159,6 @@ interface EpisodeDao {
     """
     )
     fun getEpisodesByCacheKeyPaging(cacheKey: String): PagingSource<Int, EpisodeDto>
-
-    @Query(
-        """
-        SELECT
-            episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
-        FROM episodes
-        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
-        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
-        WHERE episodes.id IN (:ids)
-        AND episodes.cachedAt = (
-            SELECT MAX(cachedAt)
-            FROM episodes e2
-            WHERE e2.id = episodes.id
-        )
-    """
-    )
-    fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>>
 
     @Query("SELECT MIN(cachedAt) FROM episodes WHERE cacheKey = :cacheKey")
     suspend fun getEpisodesOldestCachedAtByCacheKey(cacheKey: String): Instant?

@@ -31,7 +31,7 @@ class GetLikedEpisodesUseCaseTest {
     fun `Given dependencies, when invoke called, then repository called`() =
         runTest {
             // Given
-            coEvery { episodeRepository.getLikedEpisodes(any()) } returns mockk(relaxed = true)
+            coEvery { episodeRepository.getLikedEpisodesPaging() } returns mockk(relaxed = true)
 
             // When
             useCase().test {
@@ -40,7 +40,7 @@ class GetLikedEpisodesUseCaseTest {
 
             // Then
             coVerifySequence {
-                episodeRepository.getLikedEpisodes(null)
+                episodeRepository.getLikedEpisodesPaging()
             }
         }
 }

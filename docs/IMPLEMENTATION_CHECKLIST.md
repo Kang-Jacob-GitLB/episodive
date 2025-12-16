@@ -112,7 +112,7 @@ local db
 - ✅ playlist
 - ✅ playback speed
 - ⬜ sleep timer
-- ⬜ foreground service player
+- ✅ foreground service player
 - ⬜ 마지막 재생 리스트, 재생 에피소드 유지
 
 ## 백그라운드

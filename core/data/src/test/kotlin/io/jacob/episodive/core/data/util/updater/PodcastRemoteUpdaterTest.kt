@@ -1,26 +1,24 @@
 package io.jacob.episodive.core.data.util.updater
 
+import androidx.paging.PagingConfig
+import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
-import io.jacob.episodive.core.database.mapper.toPodcastDtos
-import io.jacob.episodive.core.database.mapper.toPodcastEntities
 import io.jacob.episodive.core.model.Channel
+import io.jacob.episodive.core.model.Medium
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.model.PodcastResponse
-import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
+import io.mockk.Runs
 import io.mockk.coEvery
-import io.mockk.coVerify
+import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
+import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.minutes
 
 class PodcastRemoteUpdaterTest {
     @get:Rule
@@ -35,267 +33,427 @@ class PodcastRemoteUpdaterTest {
     }
 
     @Test
-    fun `Given Search query, When fetchFromRemote, Then calls searchPodcasts`() =
+    fun `Given dependencies, When search query, Then call dataSource's functions`() =
         runTest {
             // Given
-            val searchQuery = "test podcast"
-            val query = PodcastQuery.Search(searchQuery)
+            val search = "test podcast"
+            val query = PodcastQuery.Search(search)
             val updater = PodcastRemoteUpdater(
                 localDataSource = localDataSource,
                 remoteDataSource = remoteDataSource,
                 query = query,
             )
-            val mockResponses = listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                remoteDataSource.searchPodcasts(searchQuery)
-            } returns mockResponses
+                localDataSource.getPodcastsByCacheKey(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+            } returns null
+            coEvery {
+                remoteDataSource.searchPodcasts(any(), any())
+            } returns listOf(mockk<PodcastResponse>(relaxed = true))
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
 
             // When
-            val result = updater.fetchFromRemote()
+            updater.getFlowList(count = 10).test {
+                cancelAndIgnoreRemainingEvents()
+            }
 
             // Then
-            assertTrue(result.isNotEmpty())
-            coVerify { remoteDataSource.searchPodcasts(searchQuery) }
+            coVerifySequence {
+                localDataSource.getPodcastsByCacheKey(any(), 10)
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.searchPodcasts(search, 1000)
+                localDataSource.replacePodcasts(any())
+            }
         }
 
     @Test
-    fun `Given Medium query, When fetchFromRemote, Then calls getPodcastsByMedium`() =
+    fun `Given dependencies, When search query paging, Then call dataSource's functions`() =
         runTest {
             // Given
-            val medium = "podcast"
+            val search = "test podcast"
+            val query = PodcastQuery.Search(search)
+            val updater = PodcastRemoteUpdater(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteDataSource,
+                query = query,
+            )
+            coEvery {
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+            } returns null
+            coEvery {
+                remoteDataSource.searchPodcasts(any(), any())
+            } returns listOf(mockk<PodcastResponse>(relaxed = true))
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
+
+            // When
+            updater.getPagingData(
+                pagingConfig = PagingConfig(
+                    pageSize = 10,
+                    initialLoadSize = 10,
+                    prefetchDistance = 5,
+                )
+            ).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.searchPodcasts(search, 1000)
+                localDataSource.replacePodcasts(any())
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When feedId query, Then call dataSource's functions`() =
+        runTest {
+            // Given
+            val feedId = 123L
+            val query = PodcastQuery.FeedId(feedId)
+            val updater = PodcastRemoteUpdater(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteDataSource,
+                query = query,
+            )
+            coEvery {
+                localDataSource.getPodcastsByCacheKey(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+            } returns null
+            coEvery {
+                remoteDataSource.getPodcastByFeedId(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
+
+            // When
+            updater.getFlowList(count = 10).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getPodcastsByCacheKey(any(), 10)
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.getPodcastByFeedId(any())
+                localDataSource.replacePodcasts(any())
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When feedId query paging, Then call dataSource's functions`() =
+        runTest {
+            // Given
+            val feedId = 123L
+            val query = PodcastQuery.FeedId(feedId)
+            val updater = PodcastRemoteUpdater(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteDataSource,
+                query = query,
+            )
+            coEvery {
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+            } returns null
+            coEvery {
+                remoteDataSource.getPodcastByFeedId(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
+
+            // When
+            updater.getPagingData(
+                pagingConfig = PagingConfig(
+                    pageSize = 10,
+                    initialLoadSize = 10,
+                    prefetchDistance = 5,
+                )
+            ).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.getPodcastByFeedId(any())
+                localDataSource.replacePodcasts(any())
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When feedUrl query, Then call dataSource's functions`() =
+        runTest {
+            // Given
+            val feedUrl = "test-url"
+            val query = PodcastQuery.FeedUrl(feedUrl)
+            val updater = PodcastRemoteUpdater(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteDataSource,
+                query = query,
+            )
+            coEvery {
+                localDataSource.getPodcastsByCacheKey(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+            } returns null
+            coEvery {
+                remoteDataSource.getPodcastByFeedUrl(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
+
+            // When
+            updater.getFlowList(count = 10).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getPodcastsByCacheKey(any(), 10)
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.getPodcastByFeedUrl(any())
+                localDataSource.replacePodcasts(any())
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When feedUrl query paging, Then call dataSource's functions`() =
+        runTest {
+            // Given
+            val feedUrl = "test-url"
+            val query = PodcastQuery.FeedUrl(feedUrl)
+            val updater = PodcastRemoteUpdater(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteDataSource,
+                query = query,
+            )
+            coEvery {
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+            } returns null
+            coEvery {
+                remoteDataSource.getPodcastByFeedUrl(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
+
+            // When
+            updater.getPagingData(
+                pagingConfig = PagingConfig(
+                    pageSize = 10,
+                    initialLoadSize = 10,
+                    prefetchDistance = 5,
+                )
+            ).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.getPodcastByFeedUrl(any())
+                localDataSource.replacePodcasts(any())
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When feedGuid query, Then call dataSource's functions`() =
+        runTest {
+            // Given
+            val feedGuid = "test-guid"
+            val query = PodcastQuery.FeedGuid(feedGuid)
+            val updater = PodcastRemoteUpdater(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteDataSource,
+                query = query,
+            )
+            coEvery {
+                localDataSource.getPodcastsByCacheKey(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+            } returns null
+            coEvery {
+                remoteDataSource.getPodcastByGuid(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
+
+            // When
+            updater.getFlowList(count = 10).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getPodcastsByCacheKey(any(), 10)
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.getPodcastByGuid(any())
+                localDataSource.replacePodcasts(any())
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When feedGuid query paging, Then call dataSource's functions`() =
+        runTest {
+            // Given
+            val feedGuid = "test-guid"
+            val query = PodcastQuery.FeedGuid(feedGuid)
+            val updater = PodcastRemoteUpdater(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteDataSource,
+                query = query,
+            )
+            coEvery {
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+            } returns null
+            coEvery {
+                remoteDataSource.getPodcastByGuid(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
+
+            // When
+            updater.getPagingData(
+                pagingConfig = PagingConfig(
+                    pageSize = 10,
+                    initialLoadSize = 10,
+                    prefetchDistance = 5,
+                )
+            ).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.getPodcastByGuid(any())
+                localDataSource.replacePodcasts(any())
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When medium query, Then call dataSource's functions`() =
+        runTest {
+            // Given
+            val medium = Medium.PODCAST.value
             val query = PodcastQuery.Medium(medium)
             val updater = PodcastRemoteUpdater(
                 localDataSource = localDataSource,
                 remoteDataSource = remoteDataSource,
                 query = query,
             )
-            val mockResponses = listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                remoteDataSource.getPodcastsByMedium(medium)
-            } returns mockResponses
-
-            // When
-            val result = updater.fetchFromRemote()
-
-            // Then
-            assertTrue(result.isNotEmpty())
-            coVerify { remoteDataSource.getPodcastsByMedium(medium) }
-        }
-
-    @Test
-    fun `Given FeedId query with existing podcast, When fetchFromRemote, Then returns single podcast`() =
-        runTest {
-            // Given
-            val feedId = 123L
-            val query = PodcastQuery.FeedId(feedId)
-            val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query,
-            )
-            val mockResponse = mockk<PodcastResponse>(relaxed = true)
+                localDataSource.getPodcastsByCacheKey(any(), any())
+            } returns mockk(relaxed = true)
             coEvery {
-                remoteDataSource.getPodcastByFeedId(feedId)
-            } returns mockResponse
-
-            // When
-            val result = updater.fetchFromRemote()
-
-            // Then
-            assertTrue(result.size == 1)
-            coVerify { remoteDataSource.getPodcastByFeedId(feedId) }
-        }
-
-    @Test
-    fun `Given FeedId query with null response, When fetchFromRemote, Then returns empty list`() =
-        runTest {
-            // Given
-            val feedId = 123L
-            val query = PodcastQuery.FeedId(feedId)
-            val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query,
-            )
-            coEvery {
-                remoteDataSource.getPodcastByFeedId(feedId)
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
             } returns null
-
-            // When
-            val result = updater.fetchFromRemote()
-
-            // Then
-            assertTrue(result.isEmpty())
-            coVerify { remoteDataSource.getPodcastByFeedId(feedId) }
-        }
-
-    @Test
-    fun `Given entities, When saveToLocal, Then calls replacePodcasts`() =
-        runTest {
-            // Given
-            val query = PodcastQuery.Search("test")
-            val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query,
-            )
-            val entities = podcastTestDataList.toPodcastEntities("test_key")
-
-            // When
-            updater.saveToLocal(entities)
-
-            // Then
-            coVerify { localDataSource.replacePodcasts(entities) }
-        }
-
-    @Test
-    fun `Given empty output, When isExpired, Then returns true`() =
-        runTest {
-            // Given
-            val query = PodcastQuery.Search("test")
-            val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query,
-            )
-
-            // When
-            val result = updater.isExpired(emptyList())
-
-            // Then
-            assertTrue(result)
-        }
-
-    @Test
-    fun `Given expired output, When isExpired, Then returns true`() =
-        runTest {
-            // Given
-            val query = PodcastQuery.Search("test")
-            val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query,
-            )
-            val now = Clock.System.now()
-            val expiredTime = now - 40.minutes
-            val dtos = podcastTestDataList.toPodcastDtos("test_key")
-                .map { it.copy(podcast = it.podcast.copy(cachedAt = expiredTime)) }
-
-            // When
-            val result = updater.isExpired(dtos)
-
-            // Then
-            assertTrue(result)
-        }
-
-    @Test
-    fun `Given valid output, When isExpired, Then returns false`() =
-        runTest {
-            // Given
-            val query = PodcastQuery.Search("test")
-            val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query,
-            )
-            val now = Clock.System.now()
-            val recentTime = now - 20.minutes
-            val dtos = podcastTestDataList.toPodcastDtos("test_key")
-                .map { it.copy(podcast = it.podcast.copy(cachedAt = recentTime)) }
-
-            // When
-            val result = updater.isExpired(dtos)
-
-            // Then
-            assertFalse(result)
-        }
-
-    @Test
-    fun `Given expired data, When load, Then fetches from remote and saves to local`() =
-        runTest {
-            // Given
-            val searchQuery = "test podcast"
-            val query = PodcastQuery.Search(searchQuery)
-            val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query,
-            )
-            val mockResponses = listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                remoteDataSource.searchPodcasts(searchQuery)
-            } returns mockResponses
-            val now = Clock.System.now()
-            val expiredTime = now - 40.minutes
-            val dtos = podcastTestDataList.toPodcastDtos("test_key")
-                .map { it.copy(podcast = it.podcast.copy(cachedAt = expiredTime)) }
+                remoteDataSource.getPodcastsByMedium(any(), any())
+            } returns listOf(mockk<PodcastResponse>(relaxed = true))
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
 
             // When
-            updater.load(dtos)
+            updater.getFlowList(count = 10).test {
+                cancelAndIgnoreRemainingEvents()
+            }
 
             // Then
-            coVerify { remoteDataSource.searchPodcasts(searchQuery) }
-            coVerify { localDataSource.replacePodcasts(any()) }
+            coVerifySequence {
+                localDataSource.getPodcastsByCacheKey(any(), 10)
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.getPodcastsByMedium(any(), 1000)
+                localDataSource.replacePodcasts(any())
+            }
         }
 
     @Test
-    fun `Given valid data, When load, Then does not fetch from remote`() =
+    fun `Given dependencies, When medium query paging, Then call dataSource's functions`() =
         runTest {
             // Given
-            val query = PodcastQuery.Search("test")
-            val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
-                query = query,
-            )
-            val now = Clock.System.now()
-            val recentTime = now - 20.minutes
-            val dtos = podcastTestDataList.toPodcastDtos("test_key")
-                .map { it.copy(podcast = it.podcast.copy(cachedAt = recentTime)) }
-
-            // When
-            updater.load(dtos)
-
-            // Then
-            coVerify(exactly = 0) { remoteDataSource.searchPodcasts(any()) }
-            coVerify(exactly = 0) { localDataSource.replacePodcasts(any()) }
-        }
-
-    @Test
-    fun `Given exception during fetch, When load, Then handles exception gracefully`() =
-        runTest {
-            // Given
-            val searchQuery = "test podcast"
-            val query = PodcastQuery.Search(searchQuery)
+            val medium = Medium.PODCAST.value
+            val query = PodcastQuery.Medium(medium)
             val updater = PodcastRemoteUpdater(
                 localDataSource = localDataSource,
                 remoteDataSource = remoteDataSource,
                 query = query,
             )
             coEvery {
-                remoteDataSource.searchPodcasts(searchQuery)
-            } throws RuntimeException("Network error")
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+            } returns null
+            coEvery {
+                remoteDataSource.getPodcastsByMedium(any(), any())
+            } returns listOf(mockk<PodcastResponse>(relaxed = true))
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
 
             // When
-            updater.load(emptyList())
+            updater.getPagingData(
+                pagingConfig = PagingConfig(
+                    pageSize = 10,
+                    initialLoadSize = 10,
+                    prefetchDistance = 5,
+                )
+            ).test {
+                cancelAndIgnoreRemainingEvents()
+            }
 
-            // Then - should not throw exception
-            coVerify { remoteDataSource.searchPodcasts(searchQuery) }
-            coVerify(exactly = 0) { localDataSource.replacePodcasts(any()) }
+            // Then
+            coVerifySequence {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.getPodcastsByMedium(any(), 1000)
+                localDataSource.replacePodcasts(any())
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            }
         }
 
     @Test
-    fun `Given ByChannel query, When fetchFromRemote, Then calls getPodcastsByGuids`() =
+    fun `Given dependencies, When channel query, Then call dataSource's functions`() =
         runTest {
             // Given
             val channel = Channel(
                 id = 1,
-                title = "Test Channel",
-                description = "Test Description",
-                image = "https://example.com/image.jpg",
-                link = "https://example.com",
-                count = 3,
-                podcastGuids = listOf("guid1", "guid2", "guid3")
+                title = "test",
+                description = "test",
+                image = "test",
+                link = "test",
+                count = 1,
+                podcastGuids = listOf("test")
             )
             val query = PodcastQuery.ByChannel(channel)
             val updater = PodcastRemoteUpdater(
@@ -303,16 +461,82 @@ class PodcastRemoteUpdaterTest {
                 remoteDataSource = remoteDataSource,
                 query = query,
             )
-            val mockResponses = listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                remoteDataSource.getPodcastsByGuids(channel.podcastGuids)
-            } returns mockResponses
+                localDataSource.getPodcastsByCacheKey(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+            } returns null
+            coEvery {
+                remoteDataSource.getPodcastsByGuids(any())
+            } returns listOf(mockk<PodcastResponse>(relaxed = true))
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
 
             // When
-            val result = updater.fetchFromRemote()
+            updater.getFlowList(count = 10).test {
+                cancelAndIgnoreRemainingEvents()
+            }
 
             // Then
-            assertTrue(result.isNotEmpty())
-            coVerify { remoteDataSource.getPodcastsByGuids(channel.podcastGuids) }
+            coVerifySequence {
+                localDataSource.getPodcastsByCacheKey(any(), 10)
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.getPodcastsByGuids(any())
+                localDataSource.replacePodcasts(any())
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When channel query paging, Then call dataSource's functions`() =
+        runTest {
+            // Given
+            val channel = Channel(
+                id = 1,
+                title = "test",
+                description = "test",
+                image = "test",
+                link = "test",
+                count = 1,
+                podcastGuids = listOf("test")
+            )
+            val query = PodcastQuery.ByChannel(channel)
+            val updater = PodcastRemoteUpdater(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteDataSource,
+                query = query,
+            )
+            coEvery {
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+            } returns null
+            coEvery {
+                remoteDataSource.getPodcastsByGuids(any())
+            } returns listOf(mockk<PodcastResponse>(relaxed = true))
+            coEvery {
+                localDataSource.replacePodcasts(any())
+            } just Runs
+
+            // When
+            updater.getPagingData(
+                pagingConfig = PagingConfig(
+                    pageSize = 10,
+                    initialLoadSize = 10,
+                    prefetchDistance = 5,
+                )
+            ).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                remoteDataSource.getPodcastsByGuids(any())
+                localDataSource.replacePodcasts(any())
+                localDataSource.getPodcastsByCacheKeyPaging(any())
+            }
         }
 }

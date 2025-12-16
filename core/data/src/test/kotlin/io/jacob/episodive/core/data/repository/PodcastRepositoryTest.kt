@@ -12,7 +12,6 @@ import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
 import io.mockk.mockk
@@ -53,17 +52,16 @@ class PodcastRepositoryTest {
     fun `Given search, When searchPodcasts is called, Then calls methods of dataSources`() =
         runTest {
             // Given
+            val max = 10
             val search = "test"
             val query = PodcastQuery.Search(search)
-            coEvery {
-                remoteUpdater.create(query)
-            } returns mockk<PodcastRemoteUpdater>(relaxed = true)
-            coEvery {
-                localDataSource.getPodcastsByCacheKey(query.key)
-            } returns flowOf(podcastDtos)
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(max) } returns flowOf(podcastDtos)
+            coEvery { remoteUpdater.create(query) } returns updater
 
             // When
-            repository.searchPodcasts(search).test {
+            repository.searchPodcasts(search, max = max).test {
                 val result = awaitItem()
                 // Then
                 assertEquals(10, result.size)
@@ -72,7 +70,7 @@ class PodcastRepositoryTest {
             }
             coVerifySequence {
                 remoteUpdater.create(query)
-                localDataSource.getPodcastsByCacheKey(query.key)
+                updater.getFlowList(max)
             }
         }
 
@@ -82,12 +80,10 @@ class PodcastRepositoryTest {
             // Given
             val feedId = 12345L
             val query = PodcastQuery.FeedId(feedId)
-            coEvery {
-                remoteUpdater.create(query)
-            } returns mockk<PodcastRemoteUpdater>(relaxed = true)
-            coEvery {
-                localDataSource.getPodcast(feedId)
-            } returns flowOf(podcastDtos.first())
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(1) } returns flowOf(listOf(podcastDtos.first()))
+            coEvery { remoteUpdater.create(query) } returns updater
 
             // When
             repository.getPodcastByFeedId(feedId).test {
@@ -98,7 +94,7 @@ class PodcastRepositoryTest {
             }
             coVerifySequence {
                 remoteUpdater.create(query)
-                localDataSource.getPodcast(feedId)
+                updater.getFlowList(1)
             }
         }
 
@@ -106,53 +102,64 @@ class PodcastRepositoryTest {
     fun `Given feedUrl, When getPodcastByFeedUrl is called, Then calls methods of dataSources`() =
         runTest {
             // Given
-            coEvery {
-                remoteDataSource.getPodcastByFeedUrl(any())
-            } returns mockk(relaxed = true)
+            val feedUrl = "test"
+            val query = PodcastQuery.FeedUrl(feedUrl)
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(1) } returns flowOf(listOf(podcastDtos.first()))
+            coEvery { remoteUpdater.create(query) } returns updater
 
             // When
-            repository.getPodcastByFeedUrl("test").test {
+            repository.getPodcastByFeedUrl(feedUrl).test {
                 awaitItem()
                 awaitComplete()
             }
 
             // Then
-            coVerify { remoteDataSource.getPodcastByFeedUrl(any()) }
+            coVerifySequence {
+                remoteUpdater.create(query)
+                updater.getFlowList(1)
+            }
         }
 
     @Test
     fun `Given guid, When getPodcastByGuid is called, Then calls methods of dataSources`() =
         runTest {
             // Given
-            coEvery {
-                remoteDataSource.getPodcastByGuid(any())
-            } returns mockk(relaxed = true)
+            val guid = "test"
+            val query = PodcastQuery.FeedGuid(guid)
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(1) } returns flowOf(listOf(podcastDtos.first()))
+            coEvery { remoteUpdater.create(query) } returns updater
 
             // When
-            repository.getPodcastByGuid("test").test {
+            repository.getPodcastByGuid(guid).test {
                 awaitItem()
                 awaitComplete()
             }
 
             // Then
-            coVerify { remoteDataSource.getPodcastByGuid(any()) }
+            coVerifySequence {
+                remoteUpdater.create(query)
+                updater.getFlowList(1)
+            }
         }
 
     @Test
     fun `Given medium, When getPodcastsByMedium is called, Then calls methods of dataSources`() =
         runTest {
             // Given
+            val max = 10
             val medium = "test"
             val query = PodcastQuery.Medium(medium)
-            coEvery {
-                remoteUpdater.create(query)
-            } returns mockk<PodcastRemoteUpdater>(relaxed = true)
-            coEvery {
-                localDataSource.getPodcastsByCacheKey(query.key)
-            } returns flowOf(podcastDtos)
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(max) } returns flowOf(podcastDtos)
+            coEvery { remoteUpdater.create(query) } returns updater
 
             // When
-            repository.getPodcastsByMedium(medium).test {
+            repository.getPodcastsByMedium(medium, max = max).test {
                 val result = awaitItem()
                 // Then
                 assertEquals(10, result.size)
@@ -161,7 +168,7 @@ class PodcastRepositoryTest {
             }
             coVerifySequence {
                 remoteUpdater.create(query)
-                localDataSource.getPodcastsByCacheKey(query.key)
+                updater.getFlowList(max)
             }
         }
 
@@ -169,16 +176,17 @@ class PodcastRepositoryTest {
     fun `Given dependencies, When getFollowedPodcasts is called, Then calls methods of dataSources`() =
         runTest {
             // Given
+            val max = 10
             val dtos = podcastDtos.mapIndexed { index, dto ->
                 dto.copy(
                     followedAt = Instant.fromEpochSeconds(1757568578L + index),
                     isNotificationEnabled = true,
                 )
             }
-            coEvery { localDataSource.getFollowedPodcasts() } returns flowOf(dtos)
+            coEvery { localDataSource.getFollowedPodcasts(max) } returns flowOf(dtos)
 
             // When
-            repository.getFollowedPodcasts().test {
+            repository.getFollowedPodcasts(max = max).test {
                 val result = awaitItem()
                 // Then
                 assertEquals(10, result.size)
@@ -189,7 +197,7 @@ class PodcastRepositoryTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getFollowedPodcasts()
+                localDataSource.getFollowedPodcasts(max)
             }
         }
 
@@ -223,12 +231,10 @@ class PodcastRepositoryTest {
                 podcastGuids = listOf("guid1", "guid2", "guid3")
             )
             val query = PodcastQuery.ByChannel(channel)
-            coEvery {
-                remoteUpdater.create(query)
-            } returns mockk<PodcastRemoteUpdater>(relaxed = true)
-            coEvery {
-                localDataSource.getPodcastsByCacheKey(query.key)
-            } returns flowOf(podcastDtos)
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(100) } returns flowOf(podcastDtos)
+            coEvery { remoteUpdater.create(query) } returns updater
 
             // When
             repository.getPodcastsByChannel(channel).test {
@@ -240,7 +246,7 @@ class PodcastRepositoryTest {
             }
             coVerifySequence {
                 remoteUpdater.create(query)
-                localDataSource.getPodcastsByCacheKey(query.key)
+                updater.getFlowList(100)
             }
         }
 }

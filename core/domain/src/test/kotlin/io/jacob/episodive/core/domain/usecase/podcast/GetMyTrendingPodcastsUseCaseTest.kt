@@ -45,18 +45,18 @@ class GetMyTrendingPodcastsUseCaseTest {
                 )
             )
             coEvery {
-                getTrendingPodcastsUseCase(any(), any())
+                getTrendingPodcastsUseCase(any(), any(), any())
             } returns mockk(relaxed = true)
 
             // When
-            useCase().test {
+            useCase(10).test {
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
                 userRepository.getUserData()
-                getTrendingPodcastsUseCase(any(), any())
+                getTrendingPodcastsUseCase(10, any(), any())
             }
         }
 }

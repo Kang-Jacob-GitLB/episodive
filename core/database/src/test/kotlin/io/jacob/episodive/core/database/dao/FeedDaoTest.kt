@@ -48,7 +48,7 @@ class FeedDaoTest {
             dao.upsertTrendingFeeds(trendingFeedEntities)
 
             // When
-            dao.getTrendingFeedsByCacheKey(cacheKey).test {
+            dao.getTrendingFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, trendingFeedEntities.size)
@@ -57,7 +57,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteTrendingFeed(trendingFeedEntities.first().id)
-            dao.getTrendingFeedsByCacheKey(cacheKey).test {
+            dao.getTrendingFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, trendingFeedEntities.size - 1)
@@ -66,7 +66,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteTrendingFeeds()
-            dao.getTrendingFeedsByCacheKey(cacheKey).test {
+            dao.getTrendingFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
@@ -83,13 +83,13 @@ class FeedDaoTest {
 
             // When
             dao.deleteTrendingFeedsByCacheKey(cacheKey)
-            dao.getTrendingFeedsByCacheKey(cacheKey).test {
+            dao.getTrendingFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
                 cancel()
             }
-            dao.getTrendingFeedsByCacheKey("test_cache1").test {
+            dao.getTrendingFeedsByCacheKey("test_cache1", 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, trendingFeedEntities.size)
@@ -112,7 +112,7 @@ class FeedDaoTest {
             dao.replaceTrendingFeeds(newFeeds)
 
             // Then
-            dao.getTrendingFeedsByCacheKey("key1").test {
+            dao.getTrendingFeedsByCacheKey("key1", 10).test {
                 val items = awaitItem()
                 assertEquals(2, items.size)
                 assertTrue(items.any { it.id == 100L })
@@ -128,7 +128,7 @@ class FeedDaoTest {
             dao.upsertRecentFeeds(recentFeedEntities)
 
             // When
-            dao.getRecentFeedsByCacheKey(cacheKey).test {
+            dao.getRecentFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentFeedEntities.size)
@@ -137,7 +137,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentFeed(recentFeedEntities.first().id)
-            dao.getRecentFeedsByCacheKey(cacheKey).test {
+            dao.getRecentFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentFeedEntities.size - 1)
@@ -146,7 +146,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentFeeds()
-            dao.getRecentFeedsByCacheKey(cacheKey).test {
+            dao.getRecentFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
@@ -163,13 +163,13 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentFeedsByCacheKey(cacheKey)
-            dao.getRecentFeedsByCacheKey(cacheKey).test {
+            dao.getRecentFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
                 cancel()
             }
-            dao.getRecentFeedsByCacheKey("test_cache1").test {
+            dao.getRecentFeedsByCacheKey("test_cache1", 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentFeedEntities.size)
@@ -192,7 +192,7 @@ class FeedDaoTest {
             dao.replaceRecentFeeds(newFeeds)
 
             // Then
-            dao.getRecentFeedsByCacheKey("key1").test {
+            dao.getRecentFeedsByCacheKey("key1", 10).test {
                 val items = awaitItem()
                 assertEquals(2, items.size)
                 assertTrue(items.any { it.id == 200L })
@@ -208,7 +208,7 @@ class FeedDaoTest {
             dao.upsertRecentNewFeeds(recentNewFeedEntities)
 
             // When
-            dao.getRecentNewFeedsByCacheKey(cacheKey).test {
+            dao.getRecentNewFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentNewFeedEntities.size)
@@ -217,7 +217,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentNewFeed(recentNewFeedEntities.first().id)
-            dao.getRecentNewFeedsByCacheKey(cacheKey).test {
+            dao.getRecentNewFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentNewFeedEntities.size - 1)
@@ -226,7 +226,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentNewFeeds()
-            dao.getRecentNewFeedsByCacheKey(cacheKey).test {
+            dao.getRecentNewFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
@@ -243,13 +243,13 @@ class FeedDaoTest {
 
             // When
             dao.deleteRecentNewFeedsByCacheKey(cacheKey)
-            dao.getRecentNewFeedsByCacheKey(cacheKey).test {
+            dao.getRecentNewFeedsByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
                 cancel()
             }
-            dao.getRecentNewFeedsByCacheKey("test_cache1").test {
+            dao.getRecentNewFeedsByCacheKey("test_cache1", 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, recentNewFeedEntities.size)
@@ -272,7 +272,7 @@ class FeedDaoTest {
             dao.replaceRecentNewFeeds(newFeeds)
 
             // Then
-            dao.getRecentNewFeedsByCacheKey("key1").test {
+            dao.getRecentNewFeedsByCacheKey("key1", 10).test {
                 val items = awaitItem()
                 assertEquals(2, items.size)
                 assertTrue(items.any { it.id == 300L })
@@ -288,7 +288,7 @@ class FeedDaoTest {
             dao.upsertSoundbites(soundbiteEntities)
 
             // When
-            dao.getSoundbitesByCacheKey(cacheKey).test {
+            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, soundbiteEntities.size)
@@ -297,7 +297,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteSoundbite(soundbiteEntities.first().episodeId)
-            dao.getSoundbitesByCacheKey(cacheKey).test {
+            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, soundbiteEntities.size - 1)
@@ -306,7 +306,7 @@ class FeedDaoTest {
 
             // When
             dao.deleteSoundbites()
-            dao.getSoundbitesByCacheKey(cacheKey).test {
+            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
@@ -323,13 +323,13 @@ class FeedDaoTest {
 
             // When
             dao.deleteSoundbitesByCacheKey(cacheKey)
-            dao.getSoundbitesByCacheKey(cacheKey).test {
+            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, 0)
                 cancel()
             }
-            dao.getSoundbitesByCacheKey("test_cache1").test {
+            dao.getSoundbitesByCacheKey("test_cache1", 10).test {
                 val items = awaitItem()
                 // Then
                 assertEquals(items.size, soundbiteEntities.size)
@@ -352,7 +352,7 @@ class FeedDaoTest {
             dao.replaceSoundbites(newSoundbites)
 
             // Then
-            dao.getSoundbitesByCacheKey("key1").test {
+            dao.getSoundbitesByCacheKey("key1", 10).test {
                 val items = awaitItem()
                 assertEquals(2, items.size)
                 assertTrue(items.any { it.episodeId == 400L })
