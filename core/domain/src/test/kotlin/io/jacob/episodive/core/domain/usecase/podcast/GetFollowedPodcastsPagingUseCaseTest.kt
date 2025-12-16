@@ -1,7 +1,7 @@
-package io.jacob.episodive.core.domain.usecase.episode
+package io.jacob.episodive.core.domain.usecase.podcast
 
 import app.cash.turbine.test
-import io.jacob.episodive.core.domain.repository.EpisodeRepository
+import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerifySequence
@@ -12,19 +12,19 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
-class GetLikedEpisodesUseCaseTest {
+class GetFollowedPodcastsPagingUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
+    private val podcastRepository = mockk<PodcastRepository>(relaxed = true)
 
-    private val useCase = GetLikedEpisodesUseCase(
-        episodeRepository = episodeRepository,
+    private val useCase = GetFollowedPodcastsPagingUseCase(
+        podcastRepository = podcastRepository,
     )
 
     @After
     fun teardown() {
-        confirmVerified(episodeRepository)
+        confirmVerified(podcastRepository)
     }
 
     @Test
@@ -32,17 +32,17 @@ class GetLikedEpisodesUseCaseTest {
         runTest {
             // Given
             coEvery {
-                episodeRepository.getLikedEpisodes(any(), any())
+                podcastRepository.getFollowedPodcastsPaging(any())
             } returns mockk(relaxed = true)
 
             // When
-            useCase(null, 6).test {
+            useCase().test {
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
-                episodeRepository.getLikedEpisodes(any(), any())
+                podcastRepository.getFollowedPodcastsPaging(any())
             }
         }
 }

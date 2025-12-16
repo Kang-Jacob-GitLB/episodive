@@ -7,18 +7,20 @@ import io.mockk.coEvery
 import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-class GetLikedEpisodesUseCaseTest {
+class IsLikedUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = GetLikedEpisodesUseCase(
+    private val useCase = IsLikedUseCase(
         episodeRepository = episodeRepository,
     )
 
@@ -31,18 +33,19 @@ class GetLikedEpisodesUseCaseTest {
     fun `Given dependencies, when invoke called, then repository called`() =
         runTest {
             // Given
-            coEvery {
-                episodeRepository.getLikedEpisodes(any(), any())
-            } returns mockk(relaxed = true)
+            val id = 1L
+            coEvery { episodeRepository.isLiked(any()) } returns flowOf(true)
 
             // When
-            useCase(null, 6).test {
+            useCase(id).test {
+                val result = awaitItem()
+                // Then
+                assertTrue(result)
                 awaitComplete()
             }
 
-            // Then
             coVerifySequence {
-                episodeRepository.getLikedEpisodes(any(), any())
+                episodeRepository.isLiked(id)
             }
         }
 }

@@ -19,6 +19,7 @@ class GetLocalTrendingPodcastsUseCase @Inject constructor(
                 getTrendingPodcastsUseCase(
                     max = max,
                     language = userData.language,
+                    categories = userData.categories,
                 )
             }
         }

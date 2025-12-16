@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -43,6 +44,26 @@ class GetRecommendedPodcastsUseCaseTest {
             getPodcastsByFeedIdsParallellyUseCase
         )
     }
+
+    @Test
+    fun `Given empty categories, when invoke called, then return empty list`() =
+        runTest {
+            // Given
+            coEvery { userRepository.getUserData() } returns flowOf(UserData())
+
+            // When
+            useCase().test {
+                val result = awaitItem()
+
+                // Then
+                assertTrue(result.isEmpty())
+                awaitComplete()
+            }
+
+            coVerifySequence {
+                userRepository.getUserData()
+            }
+        }
 
     @Test
     fun `Given dependencies, when invoke called, then repository called`() =

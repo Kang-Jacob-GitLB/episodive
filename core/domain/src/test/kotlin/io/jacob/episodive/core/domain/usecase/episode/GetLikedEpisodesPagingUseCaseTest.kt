@@ -12,13 +12,13 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
-class GetLikedEpisodesUseCaseTest {
+class GetLikedEpisodesPagingUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = GetLikedEpisodesUseCase(
+    private val useCase = GetLikedEpisodesPagingUseCase(
         episodeRepository = episodeRepository,
     )
 
@@ -31,18 +31,16 @@ class GetLikedEpisodesUseCaseTest {
     fun `Given dependencies, when invoke called, then repository called`() =
         runTest {
             // Given
-            coEvery {
-                episodeRepository.getLikedEpisodes(any(), any())
-            } returns mockk(relaxed = true)
+            coEvery { episodeRepository.getLikedEpisodesPaging() } returns mockk(relaxed = true)
 
             // When
-            useCase(null, 6).test {
+            useCase().test {
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
-                episodeRepository.getLikedEpisodes(any(), any())
+                episodeRepository.getLikedEpisodesPaging()
             }
         }
 }

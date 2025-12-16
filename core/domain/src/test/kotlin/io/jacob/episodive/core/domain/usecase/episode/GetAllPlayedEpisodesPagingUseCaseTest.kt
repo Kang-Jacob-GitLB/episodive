@@ -12,13 +12,13 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
-class GetLikedEpisodesUseCaseTest {
+class GetAllPlayedEpisodesPagingUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = GetLikedEpisodesUseCase(
+    private val useCase = GetAllPlayedEpisodesPagingUseCase(
         episodeRepository = episodeRepository,
     )
 
@@ -32,17 +32,17 @@ class GetLikedEpisodesUseCaseTest {
         runTest {
             // Given
             coEvery {
-                episodeRepository.getLikedEpisodes(any(), any())
+                episodeRepository.getAllPlayedEpisodesPaging()
             } returns mockk(relaxed = true)
 
             // When
-            useCase(null, 6).test {
+            useCase().test {
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
-                episodeRepository.getLikedEpisodes(any(), any())
+                episodeRepository.getAllPlayedEpisodesPaging()
             }
         }
 }

@@ -12,7 +12,7 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
-class GetEpisodesByPodcastIdUseCaseTest {
+class GetEpisodesByPodcastIdPagingUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 

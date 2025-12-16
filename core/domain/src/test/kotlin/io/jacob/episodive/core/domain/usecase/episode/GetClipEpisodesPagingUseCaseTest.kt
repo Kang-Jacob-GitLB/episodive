@@ -21,7 +21,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 
-class GetClipEpisodesUseCaseTest {
+class GetClipEpisodesPagingUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 

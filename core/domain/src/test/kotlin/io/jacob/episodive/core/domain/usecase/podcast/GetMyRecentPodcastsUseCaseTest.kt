@@ -15,7 +15,7 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
-class GetMyRecentFeedsUseCaseTest {
+class GetMyRecentPodcastsUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 

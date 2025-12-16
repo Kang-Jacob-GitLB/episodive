@@ -21,6 +21,7 @@ class GetForeignTrendingPodcastsUseCase @Inject constructor(
                 getTrendingPodcastsUseCase(
                     max = max,
                     language = foreignLanguages,
+                    categories = userData.categories,
                 )
             }
         }
