@@ -49,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -689,7 +690,7 @@ private fun EpisodeInfoSection(
     modifier: Modifier = Modifier,
     episode: Episode,
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
+    var isExpanded by rememberSaveable { mutableStateOf(false) }
 
     CardSection(
         modifier = modifier,
@@ -726,7 +727,7 @@ private fun PodcastInfoSection(
     onPodcastClick: () -> Unit = {},
     onToggleFollowed: () -> Unit = {},
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
+    var isExpanded by rememberSaveable { mutableStateOf(false) }
 
     CardSection(
         modifier = modifier,
@@ -764,7 +765,7 @@ private fun ChapterSection(
     onChapterClick: (Chapter) -> Unit = {},
 ) {
     val countLimit = 5
-    var isExpanded by remember { mutableStateOf(false) }
+    var isExpanded by rememberSaveable { mutableStateOf(false) }
 
     CardSection(
         modifier = modifier,
