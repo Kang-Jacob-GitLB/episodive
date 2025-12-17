@@ -7,8 +7,8 @@ import dagger.assisted.AssistedInject
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
-import io.jacob.episodive.core.database.model.EpisodeDto
 import io.jacob.episodive.core.database.model.EpisodeEntity
+import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.model.mapper.toCommaString
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toEpisodes
@@ -20,7 +20,7 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
     private val localDataSource: EpisodeLocalDataSource,
     private val remoteDataSource: EpisodeRemoteDataSource,
     @Assisted("query") override val query: EpisodeQuery,
-) : RemoteUpdater<EpisodeQuery, EpisodeResponse, EpisodeEntity, EpisodeDto>(query) {
+) : RemoteUpdater<EpisodeQuery, EpisodeResponse, EpisodeEntity, EpisodeWithExtrasView>(query) {
 
     @AssistedFactory
     interface Factory {
@@ -63,26 +63,26 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
     }
 
     override suspend fun convertToEntity(responses: List<EpisodeResponse>): List<EpisodeEntity> {
-        return responses.toEpisodes().toEpisodeEntities(query.key)
+        return responses.toEpisodes().toEpisodeEntities()
     }
 
     override suspend fun replaceToLocal(entities: List<EpisodeEntity>) {
-        localDataSource.replaceEpisodes(entities)
+        localDataSource.replaceEpisodes(entities, query.key)
     }
 
     override suspend fun isExpired(): Boolean {
-        val oldestCachedAt = localDataSource.getEpisodesOldestCachedAtByCacheKey(query.key)
+        val oldestCreatedAt = localDataSource.getEpisodesOldestCreatedAtByGroupKey(query.key)
             ?: return true
 
         val now = Clock.System.now()
-        return now - oldestCachedAt > query.timeToLive
+        return now - oldestCreatedAt > query.timeToLive
     }
 
-    override fun getPagingSource(): PagingSource<Int, EpisodeDto> {
-        return localDataSource.getEpisodesByCacheKeyPaging(query.key)
+    override fun getPagingSource(): PagingSource<Int, EpisodeWithExtrasView> {
+        return localDataSource.getEpisodesByGroupKeyPaging(query.key)
     }
 
-    override fun getFlowSource(count: Int): Flow<List<EpisodeDto>> {
-        return localDataSource.getEpisodesByCacheKey(query.key, count)
+    override fun getFlowSource(count: Int): Flow<List<EpisodeWithExtrasView>> {
+        return localDataSource.getEpisodesByGroupKey(query.key, count)
     }
 }

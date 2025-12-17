@@ -246,7 +246,7 @@ class EpisodeDaoTest {
             dao.upsertEpisodes(entities[3])
 
             // When
-            dao.deleteEpisodesByCacheKey("test_key2")
+            dao.deleteEpisodesByGroupKey("test_key2")
             dao.getEpisodesByCacheKey("test_key2", 10).test {
                 val episodes = awaitItem()
                 // Then

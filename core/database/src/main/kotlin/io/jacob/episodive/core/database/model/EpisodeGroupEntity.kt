@@ -3,12 +3,11 @@ package io.jacob.episodive.core.database.model
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
-import androidx.room.PrimaryKey
-import kotlin.time.Duration
 import kotlin.time.Instant
 
 @Entity(
-    tableName = "played_episodes",
+    tableName = "episode_group",
+    primaryKeys = ["groupKey", "id"],
     foreignKeys = [
         ForeignKey(
             entity = EpisodeEntity::class,
@@ -18,12 +17,15 @@ import kotlin.time.Instant
         )
     ],
     indices = [
-        Index(value = ["playedAt"]),
+        Index(value = ["id"]),
+        Index(value = ["groupKey"]),
+        Index(value = ["groupKey", "createdAt"]),
+        Index(value = ["createdAt"]),
     ]
 )
-data class PlayedEpisodeEntity(
-    @PrimaryKey val id: Long,
-    val playedAt: Instant,
-    val position: Duration,
-    val isCompleted: Boolean = false,
+data class EpisodeGroupEntity(
+    val groupKey: String,
+    val id: Long,
+    val order: Int,
+    val createdAt: Instant,
 )

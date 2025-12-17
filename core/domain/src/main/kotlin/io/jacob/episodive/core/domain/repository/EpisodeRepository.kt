@@ -72,19 +72,18 @@ interface EpisodeRepository {
 
     fun getLikedEpisodes(query: String? = null, max: Int): Flow<List<Episode>>
 
-    fun getLikedEpisodesPaging(): Flow<PagingData<Episode>>
+    fun getLikedEpisodesPaging(query: String? = null): Flow<PagingData<Episode>>
 
-    fun getPlayingEpisodes(query: String? = null, max: Int): Flow<List<Episode>>
+    fun getPlayedEpisodes(
+        isCompleted: Boolean? = null,
+        query: String? = null,
+        max: Int,
+    ): Flow<List<Episode>>
 
-    fun getPlayingEpisodesPaging(): Flow<PagingData<Episode>>
-
-    fun getPlayedEpisodes(query: String? = null, max: Int): Flow<List<Episode>>
-
-    fun getPlayedEpisodesPaging(): Flow<PagingData<Episode>>
-
-    fun getAllPlayedEpisodes(query: String? = null, max: Int): Flow<List<Episode>>
-
-    fun getAllPlayedEpisodesPaging(): Flow<PagingData<Episode>>
+    fun getPlayedEpisodesPaging(
+        isCompleted: Boolean? = null,
+        query: String? = null,
+    ): Flow<PagingData<Episode>>
 
     fun isLiked(id: Long): Flow<Boolean>
 

@@ -4,7 +4,7 @@ import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
-import io.jacob.episodive.core.database.mapper.toEpisodeDtos
+import io.jacob.episodive.core.database.mapper.toEpisodeWithExtrasViews
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
@@ -43,7 +43,7 @@ class EpisodeRepositoryTest {
         remoteUpdater = remoteUpdater,
     )
 
-    private val episodeDtos = episodeTestDataList.toEpisodeDtos("test_key")
+    private val episodeDtos = episodeTestDataList.toEpisodeWithExtrasViews("test_key")
 
     @After
     fun teardown() {

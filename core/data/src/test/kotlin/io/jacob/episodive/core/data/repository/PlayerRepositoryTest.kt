@@ -2,7 +2,7 @@ package io.jacob.episodive.core.data.repository
 
 import app.cash.turbine.test
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
-import io.jacob.episodive.core.database.mapper.toEpisodeDtos
+import io.jacob.episodive.core.database.mapper.toEpisodeWithExtrasViews
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import io.jacob.episodive.core.testing.model.episodeTestData
@@ -322,7 +322,7 @@ class PlayerRepositoryTest {
             val playedAt = Instant.fromEpochSeconds(1757883700L)
             val position = 30.seconds
 
-            val episodeDtos = episodeTestDataList.toEpisodeDtos(cacheKey = "test")
+            val episodeDtos = episodeTestDataList.toEpisodeWithExtrasViews(cacheKey = "test")
             val episodesFromDb = listOf(
                 episodeDtos[0].copy(
                     likedAt = likedAt,
@@ -386,7 +386,7 @@ class PlayerRepositoryTest {
                 episodeTestDataList[1],
                 episodeTestData.copy(id = 999L, likedAt = null, playedAt = null)
             )
-            val episodeDtos = episodeTestDataList.toEpisodeDtos(cacheKey = "test")
+            val episodeDtos = episodeTestDataList.toEpisodeWithExtrasViews(cacheKey = "test")
             val episodesFromDb = listOf(
                 episodeDtos[0].copy(likedAt = Instant.fromEpochSeconds(1757883600L)),
                 episodeDtos[1]
@@ -423,7 +423,7 @@ class PlayerRepositoryTest {
     fun `Given empty playlist, When accessing playlist, Then returns empty list`() =
         runTest {
             // Given
-            val episodeDtos = episodeTestDataList.toEpisodeDtos(cacheKey = "test")
+            val episodeDtos = episodeTestDataList.toEpisodeWithExtrasViews(cacheKey = "test")
             every { playerDataSource.playlist } returns flowOf(emptyList())
             every { episodeLocalDataSource.getEpisodesByIds(any()) } returns flowOf(episodeDtos)
 

@@ -1,8 +1,8 @@
 package io.jacob.episodive.core.database.mapper
 
 import androidx.annotation.RestrictTo
-import io.jacob.episodive.core.database.model.EpisodeDto
 import io.jacob.episodive.core.database.model.EpisodeEntity
+import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.database.model.RecentFeedEntity
@@ -140,7 +140,7 @@ fun List<Podcast>.toPodcastEntities(
         )
     }
 
-fun EpisodeDto.toEpisode(): Episode =
+fun EpisodeWithExtrasView.toEpisode(): Episode =
     Episode(
         id = episode.id,
         guid = episode.guid,
@@ -178,19 +178,13 @@ fun EpisodeDto.toEpisode(): Episode =
         isCompleted = isCompleted ?: false,
     )
 
-fun List<EpisodeDto>.toEpisodes(): List<Episode> =
+fun List<EpisodeWithExtrasView>.toEpisodes(): List<Episode> =
     map { it.toEpisode() }
 
 @RestrictTo(RestrictTo.Scope.TESTS)
-fun Episode.toEpisodeDto(
-    cacheKey: String,
-    cachedAt: Instant = Clock.System.now(),
-): EpisodeDto =
-    EpisodeDto(
-        episode = toEpisodeEntity(
-            cacheKey = cacheKey,
-            cachedAt = cachedAt,
-        ),
+fun Episode.toEpisodeWithExtrasView(): EpisodeWithExtrasView =
+    EpisodeWithExtrasView(
+        episode = toEpisodeEntity(),
         likedAt = likedAt,
         playedAt = playedAt,
         position = position,
@@ -198,21 +192,10 @@ fun Episode.toEpisodeDto(
     )
 
 @RestrictTo(RestrictTo.Scope.TESTS)
-fun List<Episode>.toEpisodeDtos(
-    cacheKey: String,
-    cachedAt: Instant = Clock.System.now(),
-): List<EpisodeDto> =
-    map {
-        it.toEpisodeDto(
-            cacheKey = cacheKey,
-            cachedAt = cachedAt,
-        )
-    }
+fun List<Episode>.toEpisodeWithExtrasViews(): List<EpisodeWithExtrasView> =
+    map { it.toEpisodeWithExtrasView() }
 
-fun Episode.toEpisodeEntity(
-    cacheKey: String,
-    cachedAt: Instant = Clock.System.now(),
-): EpisodeEntity =
+fun Episode.toEpisodeEntity(): EpisodeEntity =
     EpisodeEntity(
         id = id,
         guid = guid,
@@ -244,20 +227,10 @@ fun Episode.toEpisodeEntity(
         categories = categories,
         chaptersUrl = chaptersUrl,
         transcriptUrl = transcriptUrl,
-        cacheKey = cacheKey,
-        cachedAt = cachedAt,
     )
 
-fun List<Episode>.toEpisodeEntities(
-    cacheKey: String,
-    cachedAt: Instant = Clock.System.now(),
-): List<EpisodeEntity> =
-    map {
-        it.toEpisodeEntity(
-            cacheKey = cacheKey,
-            cachedAt = cachedAt,
-        )
-    }
+fun List<Episode>.toEpisodeEntities(): List<EpisodeEntity> =
+    map { it.toEpisodeEntity() }
 
 fun TrendingFeed.toTrendingFeedEntity(
     cacheKey: String,

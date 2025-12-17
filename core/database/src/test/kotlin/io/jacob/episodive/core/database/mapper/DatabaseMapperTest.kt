@@ -87,7 +87,7 @@ class DatabaseMapperTest {
     @Test
     fun `toEpisode converts EpisodeEntity to Episode correctly`() {
         // Given
-        val episodeDto = episodeTestData.toEpisodeDto(cacheKey, cachedAt)
+        val episodeDto = episodeTestData.toEpisodeWithExtrasView(cacheKey, cachedAt)
 
         // When
         val episode = episodeDto.toEpisode()
@@ -103,7 +103,7 @@ class DatabaseMapperTest {
     @Test
     fun `toEpisodes converts list of EpisodeEntity to list of Episode correctly`() {
         // Given
-        val episodeDtos = episodeTestDataList.toEpisodeDtos(cacheKey, cachedAt)
+        val episodeDtos = episodeTestDataList.toEpisodeWithExtrasViews(cacheKey, cachedAt)
 
         // When
         val episodes = episodeDtos.toEpisodes()
