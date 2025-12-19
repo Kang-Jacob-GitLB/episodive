@@ -22,7 +22,7 @@ import kotlin.time.Instant
 interface EpisodeDao {
     companion object {
         private const val FTS_SEARCH_CONDITION = """
-            (:query IS NULL OR id IN (SELECT rowid FROM episodes_fts WHERE episodes_fts MATCH :query))
+            (:query IS NULL OR id IN (SELECT rowid FROM episodes_fts WHERE episodes_fts MATCH :query || '*'))
         """
     }
 

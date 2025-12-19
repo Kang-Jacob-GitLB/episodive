@@ -2,84 +2,65 @@ package io.jacob.episodive.core.database.datasource
 
 import androidx.paging.PagingSource
 import io.jacob.episodive.core.database.dao.PodcastDao
-import io.jacob.episodive.core.database.model.FollowedPodcastEntity
-import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
+import io.jacob.episodive.core.database.model.PodcastWithExtrasView
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 
 class PodcastLocalDataSourceImpl(
     private val podcastDao: PodcastDao,
 ) : PodcastLocalDataSource {
-    override suspend fun upsertPodcast(podcast: PodcastEntity) {
-        podcastDao.upsertPodcast(podcast)
+    override fun getPodcastById(id: Long): Flow<PodcastWithExtrasView?> {
+        return podcastDao.getPodcastById(id)
     }
 
-    override suspend fun upsertPodcasts(podcasts: List<PodcastEntity>) {
-        podcastDao.upsertPodcasts(podcasts)
+    override fun getPodcastsByIds(ids: List<Long>): Flow<List<PodcastWithExtrasView>> {
+        return podcastDao.getPodcastsByIds(ids)
     }
 
-    override suspend fun deletePodcast(id: Long) {
-        podcastDao.deletePodcast(id)
+    override fun getPodcasts(query: String?, limit: Int): Flow<List<PodcastWithExtrasView>> {
+        return podcastDao.getPodcasts(query, limit)
     }
 
-    override suspend fun deletePodcasts() {
-        podcastDao.deletePodcasts()
+    override fun getPodcastsPaging(query: String?): PagingSource<Int, PodcastWithExtrasView> {
+        return podcastDao.getPodcastsPaging(query)
     }
 
-    override suspend fun deletePodcastsByCacheKey(cacheKey: String) {
-        podcastDao.deletePodcastsByCacheKey(cacheKey)
+    override fun getPodcastsByGroupKey(
+        groupKey: String,
+        limit: Int,
+    ): Flow<List<PodcastWithExtrasView>> {
+        return podcastDao.getPodcastsByGroupKey(groupKey, limit)
     }
 
-    override suspend fun replacePodcasts(podcasts: List<PodcastEntity>) {
-        podcastDao.replacePodcasts(podcasts)
+    override fun getPodcastsByGroupKeyPaging(groupKey: String): PagingSource<Int, PodcastWithExtrasView> {
+        return podcastDao.getPodcastsByGroupKeyPaging(groupKey)
     }
 
-    override fun getPodcast(id: Long): Flow<PodcastDto?> {
-        return podcastDao.getPodcast(id)
+    override suspend fun getOldestCreatedAtByGroupKey(groupKey: String): Instant? {
+        return podcastDao.getOldestCreatedAtByGroupKey(groupKey)
     }
 
-    override fun getPodcasts(limit: Int): Flow<List<PodcastDto>> {
-        return podcastDao.getPodcasts(limit)
+    override suspend fun replacePodcasts(podcasts: List<PodcastEntity>, groupKey: String) {
+        podcastDao.replacePodcasts(podcasts, groupKey)
     }
 
-    override fun getPodcastsPaging(): PagingSource<Int, PodcastDto> {
-        return podcastDao.getPodcastsPaging()
+    override fun isFollowedPodcast(id: Long): Flow<Boolean> {
+        return podcastDao.isFollowedPodcast(id)
     }
 
-    override fun getPodcastsByCacheKey(cacheKey: String, limit: Int): Flow<List<PodcastDto>> {
-        return podcastDao.getPodcastsByCacheKey(cacheKey, limit)
+    override suspend fun toggleFollowedPodcast(id: Long): Boolean {
+        return podcastDao.toggleFollowedPodcast(id)
     }
 
-    override fun getPodcastsByCacheKeyPaging(cacheKey: String): PagingSource<Int, PodcastDto> {
-        return podcastDao.getPodcastsByCacheKeyPaging(cacheKey)
+    override fun getFollowedPodcasts(
+        query: String?,
+        limit: Int,
+    ): Flow<List<PodcastWithExtrasView>> {
+        return podcastDao.getFollowedPodcasts(query, limit)
     }
 
-    override suspend fun getPodcastsOldestCachedAtByCacheKey(cacheKey: String): Instant? {
-        return podcastDao.getPodcastsOldestCachedAtByCacheKey(cacheKey)
-    }
-
-    override suspend fun addFollowed(followedPodcastEntity: FollowedPodcastEntity) {
-        podcastDao.addFollowed(followedPodcastEntity)
-    }
-
-    override suspend fun removeFollowed(id: Long) {
-        podcastDao.removeFollowed(id)
-    }
-
-    override fun isFollowed(id: Long): Boolean {
-        return podcastDao.isFollowed(id)
-    }
-
-    override suspend fun toggleFollowed(id: Long): Boolean {
-        return podcastDao.toggleFollowed(id)
-    }
-
-    override fun getFollowedPodcasts(limit: Int): Flow<List<PodcastDto>> {
-        return podcastDao.getFollowedPodcasts(limit)
-    }
-
-    override fun getFollowedPodcastsPaging(): PagingSource<Int, PodcastDto> {
-        return podcastDao.getFollowedPodcastsPaging()
+    override fun getFollowedPodcastsPaging(query: String?): PagingSource<Int, PodcastWithExtrasView> {
+        return podcastDao.getFollowedPodcastsPaging(query)
     }
 }

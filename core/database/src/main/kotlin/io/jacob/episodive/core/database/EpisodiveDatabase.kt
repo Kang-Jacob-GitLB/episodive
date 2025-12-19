@@ -10,6 +10,7 @@ import io.jacob.episodive.core.database.dao.PodcastDao
 import io.jacob.episodive.core.database.dao.RecentSearchDao
 import io.jacob.episodive.core.database.migration.AutoMigration2to3
 import io.jacob.episodive.core.database.migration.AutoMigration3to4
+import io.jacob.episodive.core.database.migration.AutoMigration4to5
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeFtsEntity
 import io.jacob.episodive.core.database.model.EpisodeGroupEntity
@@ -18,6 +19,9 @@ import io.jacob.episodive.core.database.model.FollowedPodcastEntity
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import io.jacob.episodive.core.database.model.PodcastEntity
+import io.jacob.episodive.core.database.model.PodcastFtsEntity
+import io.jacob.episodive.core.database.model.PodcastGroupEntity
+import io.jacob.episodive.core.database.model.PodcastWithExtrasView
 import io.jacob.episodive.core.database.model.RecentFeedEntity
 import io.jacob.episodive.core.database.model.RecentNewFeedEntity
 import io.jacob.episodive.core.database.model.RecentSearchEntity
@@ -32,6 +36,8 @@ import io.jacob.episodive.core.database.util.MediumConverter
 @Database(
     entities = [
         PodcastEntity::class,
+        PodcastFtsEntity::class,
+        PodcastGroupEntity::class,
         FollowedPodcastEntity::class,
         EpisodeEntity::class,
         EpisodeFtsEntity::class,
@@ -45,13 +51,15 @@ import io.jacob.episodive.core.database.util.MediumConverter
         RecentSearchEntity::class,
     ],
     views = [
+        PodcastWithExtrasView::class,
         EpisodeWithExtrasView::class,
     ],
-    version = 4,
+    version = 5,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3, spec = AutoMigration2to3::class),
         AutoMigration(from = 3, to = 4, spec = AutoMigration3to4::class),
+        AutoMigration(from = 4, to = 5, spec = AutoMigration4to5::class),
     ],
     exportSchema = true
 )

@@ -6,11 +6,11 @@ import androidx.room.Index
 import kotlin.time.Instant
 
 @Entity(
-    tableName = "episode_group",
+    tableName = "podcast_group",
     primaryKeys = ["groupKey", "id"],
     foreignKeys = [
         ForeignKey(
-            entity = EpisodeEntity::class,
+            entity = PodcastEntity::class,
             parentColumns = ["id"],
             childColumns = ["id"],
             onDelete = ForeignKey.CASCADE
@@ -23,7 +23,7 @@ import kotlin.time.Instant
         Index(value = ["createdAt"]),
     ]
 )
-data class EpisodeGroupEntity(
+data class PodcastGroupEntity(
     val groupKey: String,
     val id: Long,
     val order: Int,

@@ -1,30 +1,23 @@
 package io.jacob.episodive.core.database.datasource
 
 import androidx.paging.PagingSource
-import io.jacob.episodive.core.database.model.FollowedPodcastEntity
-import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
+import io.jacob.episodive.core.database.model.PodcastWithExtrasView
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 
 interface PodcastLocalDataSource {
-    suspend fun upsertPodcast(podcast: PodcastEntity)
-    suspend fun upsertPodcasts(podcasts: List<PodcastEntity>)
-    suspend fun deletePodcast(id: Long)
-    suspend fun deletePodcasts()
-    suspend fun deletePodcastsByCacheKey(cacheKey: String)
-    suspend fun replacePodcasts(podcasts: List<PodcastEntity>)
-    fun getPodcast(id: Long): Flow<PodcastDto?>
-    fun getPodcasts(limit: Int): Flow<List<PodcastDto>>
-    fun getPodcastsPaging(): PagingSource<Int, PodcastDto>
-    fun getPodcastsByCacheKey(cacheKey: String, limit: Int): Flow<List<PodcastDto>>
-    fun getPodcastsByCacheKeyPaging(cacheKey: String): PagingSource<Int, PodcastDto>
-    suspend fun getPodcastsOldestCachedAtByCacheKey(cacheKey: String): Instant?
+    fun getPodcastById(id: Long): Flow<PodcastWithExtrasView?>
+    fun getPodcastsByIds(ids: List<Long>): Flow<List<PodcastWithExtrasView>>
+    fun getPodcasts(query: String? = null, limit: Int): Flow<List<PodcastWithExtrasView>>
+    fun getPodcastsPaging(query: String? = null): PagingSource<Int, PodcastWithExtrasView>
+    fun getPodcastsByGroupKey(groupKey: String, limit: Int): Flow<List<PodcastWithExtrasView>>
+    fun getPodcastsByGroupKeyPaging(groupKey: String): PagingSource<Int, PodcastWithExtrasView>
+    suspend fun getOldestCreatedAtByGroupKey(groupKey: String): Instant?
+    suspend fun replacePodcasts(podcasts: List<PodcastEntity>, groupKey: String)
 
-    suspend fun addFollowed(followedPodcastEntity: FollowedPodcastEntity)
-    suspend fun removeFollowed(id: Long)
-    fun isFollowed(id: Long): Boolean
-    suspend fun toggleFollowed(id: Long): Boolean
-    fun getFollowedPodcasts(limit: Int): Flow<List<PodcastDto>>
-    fun getFollowedPodcastsPaging(): PagingSource<Int, PodcastDto>
+    fun isFollowedPodcast(id: Long): Flow<Boolean>
+    suspend fun toggleFollowedPodcast(id: Long): Boolean
+    fun getFollowedPodcasts(query: String? = null, limit: Int): Flow<List<PodcastWithExtrasView>>
+    fun getFollowedPodcastsPaging(query: String? = null): PagingSource<Int, PodcastWithExtrasView>
 }

@@ -8,19 +8,52 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
 import io.jacob.episodive.core.database.model.FollowedPodcastEntity
-import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
+import io.jacob.episodive.core.database.model.PodcastGroupEntity
+import io.jacob.episodive.core.database.model.PodcastWithExtrasView
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlin.time.Clock
 import kotlin.time.Instant
 
 @Dao
 interface PodcastDao {
+    companion object {
+        private const val FTS_SEARCH_CONDITION = """
+            (:query IS NULL OR id IN (SELECT rowid FROM podcasts_fts WHERE podcasts_fts MATCH :query || '*'))
+        """
+    }
+
+
+    /** PODCASTS **/
+
     @Upsert
     suspend fun upsertPodcast(podcast: PodcastEntity)
 
     @Upsert
     suspend fun upsertPodcasts(podcasts: List<PodcastEntity>)
+
+    @Upsert
+    suspend fun upsertPodcastGroup(podcastGroup: PodcastGroupEntity)
+
+    @Upsert
+    suspend fun upsertPodcastGroups(podcastGroups: List<PodcastGroupEntity>)
+
+    @Transaction
+    suspend fun upsertPodcastsWithGroup(podcasts: List<PodcastEntity>, groupKey: String) {
+        upsertPodcasts(podcasts)
+
+        val createdAt = Clock.System.now()
+        val groups = podcasts.mapIndexed { order, podcast ->
+            PodcastGroupEntity(
+                groupKey = groupKey,
+                id = podcast.id,
+                order = order,
+                createdAt = createdAt,
+            )
+        }
+        upsertPodcastGroups(groups)
+    }
 
     @Query("DELETE FROM podcasts WHERE id = :id")
     suspend fun deletePodcast(id: Long)
@@ -28,103 +61,97 @@ interface PodcastDao {
     @Query("DELETE FROM podcasts")
     suspend fun deletePodcasts()
 
-    @Query("DELETE FROM podcasts WHERE cacheKey = :cacheKey")
-    suspend fun deletePodcastsByCacheKey(cacheKey: String)
+    @Query(
+        """
+        DELETE FROM podcasts
+        WHERE id IN (:ids)
+          AND NOT EXISTS (SELECT 1 FROM followed_podcasts WHERE followed_podcasts.id = podcasts.id)
+          AND NOT EXISTS (SELECT 1 FROM podcast_group WHERE podcast_group.id = podcasts.id)
+    """
+    )
+    suspend fun deletePodcastsIfOrphaned(ids: List<Long>)
+
+    @Query("DELETE FROM podcast_group WHERE groupKey = :groupKey")
+    suspend fun deletePodcastGroupsByGroupKey(groupKey: String)
+
+    @Query("SELECT * FROM podcast_with_extras WHERE id = :id")
+    fun getPodcastById(id: Long): Flow<PodcastWithExtrasView?>
+
+    @Query("SELECT * FROM podcast_with_extras WHERE id IN (:ids)")
+    fun getPodcastsByIds(ids: List<Long>): Flow<List<PodcastWithExtrasView>>
+
+    @Query(
+        """
+        SELECT * FROM podcast_with_extras
+        WHERE $FTS_SEARCH_CONDITION
+        ORDER BY lastUpdateTime DESC
+        LIMIT :limit
+    """
+    )
+    fun getPodcasts(query: String? = null, limit: Int): Flow<List<PodcastWithExtrasView>>
+
+    @Query(
+        """
+        SELECT * FROM podcast_with_extras
+        WHERE $FTS_SEARCH_CONDITION
+        ORDER BY lastUpdateTime DESC
+    """
+    )
+    fun getPodcastsPaging(query: String? = null): PagingSource<Int, PodcastWithExtrasView>
+
+    @Query(
+        """
+        SELECT * FROM podcast_with_extras
+        WHERE id IN (SELECT id FROM podcast_group WHERE groupKey = :groupKey)
+        ORDER BY lastUpdateTime DESC
+        LIMIT :limit
+    """
+    )
+    fun getPodcastsByGroupKey(groupKey: String, limit: Int): Flow<List<PodcastWithExtrasView>>
+
+    @Query(
+        """
+        SELECT * FROM podcast_with_extras
+        WHERE id IN (SELECT id FROM podcast_group WHERE groupKey = :groupKey)
+        ORDER BY lastUpdateTime DESC
+    """
+    )
+    fun getPodcastsByGroupKeyPaging(groupKey: String): PagingSource<Int, PodcastWithExtrasView>
+
+    @Query("SELECT * FROM podcast_group WHERE groupKey = :groupKey")
+    suspend fun getPodcastGroupsByGroupKey(groupKey: String): List<PodcastGroupEntity>
+
+    @Query("SELECT MIN(createdAt) FROM podcast_group WHERE groupKey = :groupKey")
+    suspend fun getOldestCreatedAtByGroupKey(groupKey: String): Instant?
 
     @Transaction
-    suspend fun replacePodcasts(podcasts: List<PodcastEntity>) {
-        podcasts.groupBy { it.cacheKey }.forEach { (cacheKey, podcastGroup) ->
-            deletePodcastsByCacheKey(cacheKey)
-            upsertPodcasts(podcastGroup)
-        }
+    suspend fun replacePodcasts(podcasts: List<PodcastEntity>, groupKey: String) {
+        val oldPodcastIds = getPodcastGroupsByGroupKey(groupKey).map { it.id }
+        deletePodcastGroupsByGroupKey(groupKey)
+        upsertPodcastsWithGroup(podcasts, groupKey)
+        deletePodcastsIfOrphaned(oldPodcastIds)
     }
 
-    @Query(
-        """
-        SELECT
-            podcasts.*,
-            followed_podcasts.followedAt,
-            followed_podcasts.isNotificationEnabled
-        FROM podcasts
-        LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
-        WHERE podcasts.id = :id
-        ORDER BY podcasts.cachedAt DESC
-        LIMIT 1
-    """
-    )
-    fun getPodcast(id: Long): Flow<PodcastDto?>
 
-    @Query(
-        """
-        SELECT
-            podcasts.*,
-            followed_podcasts.followedAt,
-            followed_podcasts.isNotificationEnabled
-        FROM podcasts
-        LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
-        LIMIT :limit
-    """
-    )
-    fun getPodcasts(limit: Int): Flow<List<PodcastDto>>
-
-    @Query(
-        """
-        SELECT
-            podcasts.*,
-            followed_podcasts.followedAt,
-            followed_podcasts.isNotificationEnabled
-        FROM podcasts
-        LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
-    """
-    )
-    fun getPodcastsPaging(): PagingSource<Int, PodcastDto>
-
-    @Query(
-        """
-        SELECT
-            podcasts.*,
-            followed_podcasts.followedAt,
-            followed_podcasts.isNotificationEnabled
-        FROM podcasts
-        LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
-        WHERE podcasts.cacheKey = :cacheKey
-        LIMIT :limit
-    """
-    )
-    fun getPodcastsByCacheKey(cacheKey: String, limit: Int): Flow<List<PodcastDto>>
-
-    @Query(
-        """
-        SELECT
-            podcasts.*,
-            followed_podcasts.followedAt,
-            followed_podcasts.isNotificationEnabled
-        FROM podcasts
-        LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
-        WHERE podcasts.cacheKey = :cacheKey
-    """
-    )
-    fun getPodcastsByCacheKeyPaging(cacheKey: String): PagingSource<Int, PodcastDto>
-
-    @Query("SELECT MIN(cachedAt) FROM podcasts WHERE cacheKey = :cacheKey")
-    suspend fun getPodcastsOldestCachedAtByCacheKey(cacheKey: String): Instant?
+    /** FOLLOWED PODCASTS **/
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun addFollowed(followedPodcastEntity: FollowedPodcastEntity)
+    suspend fun addFollowedPodcast(followedPodcast: FollowedPodcastEntity)
 
     @Query("DELETE FROM followed_podcasts WHERE id = :id")
-    suspend fun removeFollowed(id: Long)
+    suspend fun removeFollowedPodcast(id: Long)
 
     @Query("SELECT EXISTS(SELECT 1 FROM followed_podcasts WHERE id = :id)")
-    fun isFollowed(id: Long): Boolean
+    fun isFollowedPodcast(id: Long): Flow<Boolean>
 
     @Transaction
-    suspend fun toggleFollowed(id: Long): Boolean {
-        return if (isFollowed(id)) {
-            removeFollowed(id)
+    suspend fun toggleFollowedPodcast(id: Long): Boolean {
+        return if (isFollowedPodcast(id).first()) {
+            removeFollowedPodcast(id)
+            deletePodcastsIfOrphaned(listOf(id))
             false
         } else {
-            addFollowed(
+            addFollowedPodcast(
                 FollowedPodcastEntity(
                     id = id,
                     followedAt = Clock.System.now(),
@@ -137,38 +164,22 @@ interface PodcastDao {
 
     @Query(
         """
-        SELECT
-            podcasts.*,
-            followed_podcasts.followedAt,
-            followed_podcasts.isNotificationEnabled
-        FROM podcasts
-        INNER JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
-        WHERE podcasts.cachedAt = (
-            SELECT MAX(cachedAt)
-            FROM podcasts p2
-            WHERE p2.id = podcasts.id
-        )
-        ORDER BY followed_podcasts.followedAt DESC
+        SELECT * FROM podcast_with_extras
+        WHERE followedAt IS NOT NULL
+        AND $FTS_SEARCH_CONDITION
+        ORDER BY followedAt DESC
         LIMIT :limit
     """
     )
-    fun getFollowedPodcasts(limit: Int): Flow<List<PodcastDto>>
+    fun getFollowedPodcasts(query: String? = null, limit: Int): Flow<List<PodcastWithExtrasView>>
 
     @Query(
         """
-        SELECT
-            podcasts.*,
-            followed_podcasts.followedAt,
-            followed_podcasts.isNotificationEnabled
-        FROM podcasts
-        INNER JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
-        WHERE podcasts.cachedAt = (
-            SELECT MAX(cachedAt)
-            FROM podcasts p2
-            WHERE p2.id = podcasts.id
-        )
-        ORDER BY followed_podcasts.followedAt DESC
+        SELECT * FROM podcast_with_extras
+        WHERE followedAt IS NOT NULL
+        AND $FTS_SEARCH_CONDITION
+        ORDER BY followedAt DESC
     """
     )
-    fun getFollowedPodcastsPaging(): PagingSource<Int, PodcastDto>
+    fun getFollowedPodcastsPaging(query: String? = null): PagingSource<Int, PodcastWithExtrasView>
 }

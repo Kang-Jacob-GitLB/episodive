@@ -9,7 +9,6 @@ import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.mapper.toPodcast
 import io.jacob.episodive.core.database.mapper.toPodcasts
-import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Podcast
@@ -114,31 +113,22 @@ class PodcastRepositoryImpl @Inject constructor(
     }
 
     override fun getFollowedPodcasts(query: String?, max: Int): Flow<List<Podcast>> {
-        return localDataSource.getFollowedPodcasts(max).map { podcasts ->
-            podcasts
-                .filter { query == null || it.podcast.matchesQuery(query) }
-                .toPodcasts()
-        }
+        return localDataSource.getFollowedPodcasts(query, max)
+            .map { podcasts ->
+                podcasts.toPodcasts()
+            }
     }
 
     override fun getFollowedPodcastsPaging(query: String?): Flow<PagingData<Podcast>> {
         return Pager(
             config = config,
-            pagingSourceFactory = { localDataSource.getFollowedPodcastsPaging() }
-        ).flow
-            .map { pagingData ->
-                pagingData.map { it.toPodcast() }
-            }
+            pagingSourceFactory = { localDataSource.getFollowedPodcastsPaging(query) }
+        ).flow.map { pagingData ->
+            pagingData.map { it.toPodcast() }
+        }
     }
 
     override suspend fun toggleFollowed(id: Long): Boolean {
-        return localDataSource.toggleFollowed(id)
-    }
-
-    private fun PodcastEntity.matchesQuery(query: String): Boolean {
-        return title.contains(query, ignoreCase = true) ||
-                description.contains(query, ignoreCase = true) ||
-                author.contains(query, ignoreCase = true) ||
-                ownerName.contains(query, ignoreCase = true)
+        return localDataSource.toggleFollowedPodcast(id)
     }
 }

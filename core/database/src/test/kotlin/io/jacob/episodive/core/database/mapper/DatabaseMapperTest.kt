@@ -29,7 +29,7 @@ class DatabaseMapperTest {
     @Test
     fun `toPodcast converts PodcastDto to Podcast correctly`() {
         // Given
-        val podcastDto = podcastTestData.toPodcastDto(cacheKey, cachedAt)
+        val podcastDto = podcastTestData.toPodcastWithExtrasView(cacheKey, cachedAt)
 
         // When
         val podcast = podcastDto.toPodcast()
@@ -45,7 +45,7 @@ class DatabaseMapperTest {
     @Test
     fun `toPodcasts converts list of PodcastDto to list of Podcast correctly`() {
         // Given
-        val podcastDtos = podcastTestDataList.toPodcastDtos(cacheKey, cachedAt)
+        val podcastDtos = podcastTestDataList.toPodcastWithExtrasViews(cacheKey, cachedAt)
 
         // When
         val podcasts = podcastDtos.toPodcasts()

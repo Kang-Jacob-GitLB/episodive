@@ -3,8 +3,8 @@ package io.jacob.episodive.core.database.mapper
 import androidx.annotation.RestrictTo
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
-import io.jacob.episodive.core.database.model.PodcastDto
 import io.jacob.episodive.core.database.model.PodcastEntity
+import io.jacob.episodive.core.database.model.PodcastWithExtrasView
 import io.jacob.episodive.core.database.model.RecentFeedEntity
 import io.jacob.episodive.core.database.model.RecentNewFeedEntity
 import io.jacob.episodive.core.database.model.SoundbiteEntity
@@ -19,7 +19,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
 
-fun PodcastDto.toPodcast(): Podcast =
+fun PodcastWithExtrasView.toPodcast(): Podcast =
     Podcast(
         id = podcast.id,
         podcastGuid = podcast.podcastGuid,
@@ -58,39 +58,22 @@ fun PodcastDto.toPodcast(): Podcast =
         isNotificationEnabled = isNotificationEnabled ?: false,
     )
 
-fun List<PodcastDto>.toPodcasts(): List<Podcast> =
+fun List<PodcastWithExtrasView>.toPodcasts(): List<Podcast> =
     map { it.toPodcast() }
 
 @RestrictTo(RestrictTo.Scope.TESTS)
-fun Podcast.toPodcastDto(
-    cacheKey: String,
-    cachedAt: Instant = Clock.System.now(),
-): PodcastDto =
-    PodcastDto(
-        podcast = toPodcastEntity(
-            cacheKey = cacheKey,
-            cachedAt = cachedAt,
-        ),
+fun Podcast.toPodcastWithExtrasView(): PodcastWithExtrasView =
+    PodcastWithExtrasView(
+        podcast = toPodcastEntity(),
         followedAt = followedAt,
         isNotificationEnabled = isNotificationEnabled,
     )
 
 @RestrictTo(RestrictTo.Scope.TESTS)
-fun List<Podcast>.toPodcastDtos(
-    cacheKey: String,
-    cachedAt: Instant = Clock.System.now(),
-): List<PodcastDto> =
-    map {
-        it.toPodcastDto(
-            cacheKey = cacheKey,
-            cachedAt = cachedAt,
-        )
-    }
+fun List<Podcast>.toPodcastWithExtrasViews(): List<PodcastWithExtrasView> =
+    map { it.toPodcastWithExtrasView() }
 
-fun Podcast.toPodcastEntity(
-    cacheKey: String,
-    cachedAt: Instant = Clock.System.now(),
-): PodcastEntity =
+fun Podcast.toPodcastEntity(): PodcastEntity =
     PodcastEntity(
         id = id,
         podcastGuid = podcastGuid,
@@ -125,20 +108,10 @@ fun Podcast.toPodcastEntity(
         locked = locked,
         imageUrlHash = imageUrlHash,
         newestItemPublishTime = newestItemPublishTime,
-        cacheKey = cacheKey,
-        cachedAt = cachedAt,
     )
 
-fun List<Podcast>.toPodcastEntities(
-    cacheKey: String,
-    cachedAt: Instant = Clock.System.now(),
-): List<PodcastEntity> =
-    map {
-        it.toPodcastEntity(
-            cacheKey = cacheKey,
-            cachedAt = cachedAt,
-        )
-    }
+fun List<Podcast>.toPodcastEntities(): List<PodcastEntity> =
+    map { it.toPodcastEntity() }
 
 fun EpisodeWithExtrasView.toEpisode(): Episode =
     Episode(
