@@ -34,7 +34,7 @@ class FindInLibraryUseCaseTest {
     fun `Given dependencies, when invoke called, then repositories called`() =
         runTest {
             coEvery {
-                episodeRepository.getPlayingEpisodes(any(), any())
+                episodeRepository.getPlayedEpisodes(any(), any(), any())
             } returns mockk(relaxed = true)
             coEvery {
                 episodeRepository.getLikedEpisodes(any(), any())
@@ -50,7 +50,7 @@ class FindInLibraryUseCaseTest {
 
             // Then
             coVerifySequence {
-                episodeRepository.getPlayingEpisodes("query", 1000)
+                episodeRepository.getPlayedEpisodes(false, "query", 1000)
                 episodeRepository.getLikedEpisodes("query", 1000)
                 podcastRepository.getFollowedPodcasts("query", 1000)
             }

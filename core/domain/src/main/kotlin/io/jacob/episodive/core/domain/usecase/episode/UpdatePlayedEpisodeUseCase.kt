@@ -15,7 +15,7 @@ class UpdatePlayedEpisodeUseCase @Inject constructor(
             isCompleted = progress.positionRatio >= 1f,
         )
         if (progress.duration > Duration.ZERO) {
-            episodeRepository.updateDurationOfEpisodes(
+            episodeRepository.updateEpisodeDuration(
                 id = episodeId,
                 duration = progress.duration,
             )

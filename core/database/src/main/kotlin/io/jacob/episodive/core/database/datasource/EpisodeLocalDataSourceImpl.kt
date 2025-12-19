@@ -3,9 +3,7 @@ package io.jacob.episodive.core.database.datasource
 import androidx.paging.PagingSource
 import io.jacob.episodive.core.database.dao.EpisodeDao
 import io.jacob.episodive.core.database.model.EpisodeEntity
-import io.jacob.episodive.core.database.model.EpisodeGroupEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
-import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -15,50 +13,8 @@ import kotlin.time.Instant
 class EpisodeLocalDataSourceImpl @Inject constructor(
     private val episodeDao: EpisodeDao,
 ) : EpisodeLocalDataSource {
-    override suspend fun upsertEpisode(episode: EpisodeEntity) {
-        episodeDao.upsertEpisode(episode)
-    }
-
-    override suspend fun upsertEpisodes(episodes: List<EpisodeEntity>) {
-        episodeDao.upsertEpisodes(episodes)
-    }
-
-    override suspend fun upsertEpisodeGroup(episodeGroup: EpisodeGroupEntity) {
-        episodeDao.upsertEpisodeGroup(episodeGroup)
-    }
-
-    override suspend fun upsertEpisodeGroups(episodeGroups: List<EpisodeGroupEntity>) {
-        episodeDao.upsertEpisodeGroups(episodeGroups)
-    }
-
-    override suspend fun upsertEpisodes(episodes: List<EpisodeEntity>, groupKey: String) {
-        episodeDao.upsertEpisodes(
-            episodes = episodes,
-            groupKey = groupKey,
-        )
-    }
-
-    override suspend fun deleteEpisode(id: Long) {
-        episodeDao.deleteEpisode(id)
-    }
-
-    override suspend fun deleteEpisodes() {
-        episodeDao.deleteEpisodes()
-    }
-
-    override suspend fun deleteEpisodesByGroupKey(groupKey: String) {
-        episodeDao.deleteEpisodesByGroupKey(groupKey)
-    }
-
-    override suspend fun replaceEpisodes(episodes: List<EpisodeEntity>, groupKey: String) {
-        episodeDao.replaceEpisodes(
-            episodes = episodes,
-            groupKey = groupKey,
-        )
-    }
-
-    override suspend fun updateDurationOfEpisodes(id: Long, duration: Duration) {
-        episodeDao.updateDurationOfEpisodes(
+    override suspend fun updateEpisodeDuration(id: Long, duration: Duration) {
+        episodeDao.updateEpisodeDuration(
             id = id,
             duration = duration,
         )
@@ -97,24 +53,23 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         return episodeDao.getEpisodesByGroupKeyPaging(groupKey)
     }
 
-    override suspend fun getEpisodesOldestCreatedAtByGroupKey(groupKey: String): Instant? {
-        return episodeDao.getEpisodesOldestCreatedAtByGroupKey(groupKey)
+    override suspend fun getOldestCreatedAtByGroupKey(groupKey: String): Instant? {
+        return episodeDao.getOldestCreatedAtByGroupKey(groupKey)
     }
 
-    override suspend fun addLiked(likedEpisode: LikedEpisodeEntity) {
-        episodeDao.addLiked(likedEpisode)
+    override suspend fun replaceEpisodes(episodes: List<EpisodeEntity>, groupKey: String) {
+        episodeDao.replaceEpisodes(
+            episodes = episodes,
+            groupKey = groupKey,
+        )
     }
 
-    override suspend fun removeLiked(id: Long) {
-        episodeDao.removeLiked(id)
+    override fun isLikedEpisode(id: Long): Flow<Boolean> {
+        return episodeDao.isLikedEpisode(id)
     }
 
-    override fun isLiked(id: Long): Flow<Boolean> {
-        return episodeDao.isLiked(id)
-    }
-
-    override suspend fun toggleLiked(id: Long): Boolean {
-        return episodeDao.toggleLiked(id)
+    override suspend fun toggleLikedEpisode(id: Long): Boolean {
+        return episodeDao.toggleLikedEpisode(id)
     }
 
     override fun getLikedEpisodes(query: String?, limit: Int): Flow<List<EpisodeWithExtrasView>> {
@@ -128,12 +83,12 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         return episodeDao.getLikedEpisodesPaging(query?.ifBlank { null })
     }
 
-    override suspend fun upsertPlayed(playedEpisode: PlayedEpisodeEntity) {
-        episodeDao.upsertPlayed(playedEpisode)
+    override suspend fun updatePlayedEpisode(playedEpisode: PlayedEpisodeEntity) {
+        episodeDao.upsertPlayedEpisode(playedEpisode)
     }
 
-    override suspend fun removePlayed(id: Long) {
-        episodeDao.removePlayed(id)
+    override suspend fun removePlayedEpisode(id: Long) {
+        episodeDao.removePlayedEpisode(id)
     }
 
     override fun getPlayedEpisodes(

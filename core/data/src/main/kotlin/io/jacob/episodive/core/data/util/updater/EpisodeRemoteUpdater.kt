@@ -71,7 +71,7 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
     }
 
     override suspend fun isExpired(): Boolean {
-        val oldestCreatedAt = localDataSource.getEpisodesOldestCreatedAtByGroupKey(query.key)
+        val oldestCreatedAt = localDataSource.getOldestCreatedAtByGroupKey(query.key)
             ?: return true
 
         val now = Clock.System.now()

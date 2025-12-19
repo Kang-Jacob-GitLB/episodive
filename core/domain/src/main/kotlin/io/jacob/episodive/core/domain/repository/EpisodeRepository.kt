@@ -91,7 +91,7 @@ interface EpisodeRepository {
 
     suspend fun updatePlayed(id: Long, position: Duration, isCompleted: Boolean)
 
-    suspend fun updateDurationOfEpisodes(id: Long, duration: Duration)
+    suspend fun updateEpisodeDuration(id: Long, duration: Duration)
 
     suspend fun fetchChapters(url: String): List<Chapter>
 }

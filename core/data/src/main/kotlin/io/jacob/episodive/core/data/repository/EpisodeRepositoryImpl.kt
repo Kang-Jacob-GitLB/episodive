@@ -244,11 +244,11 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun isLiked(id: Long): Flow<Boolean> {
-        return localDataSource.isLiked(id)
+        return localDataSource.isLikedEpisode(id)
     }
 
     override suspend fun toggleLiked(id: Long): Boolean {
-        return localDataSource.toggleLiked(id)
+        return localDataSource.toggleLikedEpisode(id)
     }
 
     override suspend fun updatePlayed(
@@ -256,7 +256,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         position: Duration,
         isCompleted: Boolean,
     ) {
-        localDataSource.upsertPlayed(
+        localDataSource.updatePlayedEpisode(
             PlayedEpisodeEntity(
                 id = id,
                 playedAt = Clock.System.now(),
@@ -266,8 +266,8 @@ class EpisodeRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun updateDurationOfEpisodes(id: Long, duration: Duration) {
-        localDataSource.updateDurationOfEpisodes(id, duration)
+    override suspend fun updateEpisodeDuration(id: Long, duration: Duration) {
+        localDataSource.updateEpisodeDuration(id, duration)
     }
 
     override suspend fun fetchChapters(url: String): List<Chapter> {

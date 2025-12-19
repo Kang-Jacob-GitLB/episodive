@@ -20,6 +20,15 @@ import kotlin.time.Instant
 
 @Dao
 interface EpisodeDao {
+    companion object {
+        private const val FTS_SEARCH_CONDITION = """
+            (:query IS NULL OR id IN (SELECT rowid FROM episodes_fts WHERE episodes_fts MATCH :query))
+        """
+    }
+
+
+    /** EPISODES **/
+
     @Upsert
     suspend fun upsertEpisode(episode: EpisodeEntity)
 
@@ -33,7 +42,7 @@ interface EpisodeDao {
     suspend fun upsertEpisodeGroups(episodeGroups: List<EpisodeGroupEntity>)
 
     @Transaction
-    suspend fun upsertEpisodes(episodes: List<EpisodeEntity>, groupKey: String) {
+    suspend fun upsertEpisodesWithGroup(episodes: List<EpisodeEntity>, groupKey: String) {
         upsertEpisodes(episodes)
 
         val createdAt = Clock.System.now()
@@ -57,21 +66,19 @@ interface EpisodeDao {
     @Query(
         """
         DELETE FROM episodes
-        WHERE id IN (
-            SELECT id FROM episode_group WHERE groupKey = :groupKey
-        )
+        WHERE id IN (:ids)
+          AND NOT EXISTS (SELECT 1 FROM liked_episodes WHERE liked_episodes.id = episodes.id)
+          AND NOT EXISTS (SELECT 1 FROM played_episodes WHERE played_episodes.id = episodes.id)
+          AND NOT EXISTS (SELECT 1 FROM episode_group WHERE episode_group.id = episodes.id)
     """
     )
-    suspend fun deleteEpisodesByGroupKey(groupKey: String)
+    suspend fun deleteEpisodesIfOrphaned(ids: List<Long>)
 
-    @Transaction
-    suspend fun replaceEpisodes(episodes: List<EpisodeEntity>, groupKey: String) {
-        deleteEpisodesByGroupKey(groupKey)
-        upsertEpisodes(episodes, groupKey)
-    }
+    @Query("DELETE FROM episode_group WHERE groupKey = :groupKey")
+    suspend fun deleteEpisodeGroupsByGroupKey(groupKey: String)
 
     @Query("UPDATE episodes SET duration = :duration WHERE id = :id")
-    suspend fun updateDurationOfEpisodes(id: Long, duration: Duration)
+    suspend fun updateEpisodeDuration(id: Long, duration: Duration)
 
     @Query("SELECT * FROM episode_with_extras WHERE id = :id")
     fun getEpisodeById(id: Long): Flow<EpisodeWithExtrasView?>
@@ -82,9 +89,7 @@ interface EpisodeDao {
     @Query(
         """
         SELECT * FROM episode_with_extras
-        WHERE (:query IS NULL OR id IN (
-            SELECT id FROM episodes_fts WHERE episodes_fts MATCH :query
-        ))
+        WHERE $FTS_SEARCH_CONDITION
         ORDER BY datePublished DESC
         LIMIT :limit
     """
@@ -94,9 +99,7 @@ interface EpisodeDao {
     @Query(
         """
         SELECT * FROM episode_with_extras
-        WHERE (:query IS NULL OR id IN (
-            SELECT id FROM episodes_fts WHERE episodes_fts MATCH :query
-        ))
+        WHERE $FTS_SEARCH_CONDITION
         ORDER BY datePublished DESC
     """
     )
@@ -121,25 +124,40 @@ interface EpisodeDao {
     )
     fun getEpisodesByGroupKeyPaging(groupKey: String): PagingSource<Int, EpisodeWithExtrasView>
 
+    @Query("SELECT * FROM episode_group WHERE groupKey = :groupKey")
+    suspend fun getEpisodeGroupsByGroupKey(groupKey: String): List<EpisodeGroupEntity>
+
     @Query("SELECT MIN(createdAt) FROM episode_group WHERE groupKey = :groupKey")
-    suspend fun getEpisodesOldestCreatedAtByGroupKey(groupKey: String): Instant?
-
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun addLiked(likedEpisode: LikedEpisodeEntity)
-
-    @Query("DELETE FROM liked_episodes WHERE id = :id")
-    suspend fun removeLiked(id: Long)
-
-    @Query("SELECT EXISTS(SELECT 1 FROM liked_episodes WHERE id = :id)")
-    fun isLiked(id: Long): Flow<Boolean>
+    suspend fun getOldestCreatedAtByGroupKey(groupKey: String): Instant?
 
     @Transaction
-    suspend fun toggleLiked(id: Long): Boolean {
-        return if (isLiked(id).first()) {
-            removeLiked(id)
+    suspend fun replaceEpisodes(episodes: List<EpisodeEntity>, groupKey: String) {
+        val oldEpisodeIds = getEpisodeGroupsByGroupKey(groupKey).map { it.id }
+        deleteEpisodeGroupsByGroupKey(groupKey)
+        upsertEpisodesWithGroup(episodes, groupKey)
+        deleteEpisodesIfOrphaned(oldEpisodeIds)
+    }
+
+
+    /** LIKED EPISODES **/
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun addLikedEpisode(likedEpisode: LikedEpisodeEntity)
+
+    @Query("DELETE FROM liked_episodes WHERE id = :id")
+    suspend fun removeLikedEpisode(id: Long)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM liked_episodes WHERE id = :id)")
+    fun isLikedEpisode(id: Long): Flow<Boolean>
+
+    @Transaction
+    suspend fun toggleLikedEpisode(id: Long): Boolean {
+        return if (isLikedEpisode(id).first()) {
+            removeLikedEpisode(id)
+            deleteEpisodesIfOrphaned(listOf(id))
             false
         } else {
-            addLiked(
+            addLikedEpisode(
                 LikedEpisodeEntity(
                     id = id,
                     likedAt = Clock.System.now(),
@@ -153,9 +171,7 @@ interface EpisodeDao {
         """
         SELECT * FROM episode_with_extras
         WHERE likedAt IS NOT NULL
-        AND (:query IS NULL OR id IN (
-            SELECT id FROM episodes_fts WHERE episodes_fts MATCH :query
-        ))
+        AND $FTS_SEARCH_CONDITION
         ORDER BY likedAt DESC
         LIMIT :limit
     """
@@ -166,28 +182,33 @@ interface EpisodeDao {
         """
         SELECT * FROM episode_with_extras
         WHERE likedAt IS NOT NULL
-        AND (:query IS NULL OR id IN (
-            SELECT id FROM episodes_fts WHERE episodes_fts MATCH :query
-        ))
+        AND $FTS_SEARCH_CONDITION
         ORDER BY likedAt DESC
     """
     )
     fun getLikedEpisodesPaging(query: String? = null): PagingSource<Int, EpisodeWithExtrasView>
 
+
+    /** PLAYED EPISODES **/
+
     @Upsert
-    suspend fun upsertPlayed(playedEpisode: PlayedEpisodeEntity)
+    suspend fun upsertPlayedEpisode(playedEpisode: PlayedEpisodeEntity)
 
     @Query("DELETE FROM played_episodes WHERE id = :id")
-    suspend fun removePlayed(id: Long)
+    suspend fun deletePlayedEpisode(id: Long)
+
+    @Transaction
+    suspend fun removePlayedEpisode(id: Long) {
+        deletePlayedEpisode(id)
+        deleteEpisodesIfOrphaned(listOf(id))
+    }
 
     @Query(
         """
         SELECT * FROM episode_with_extras
-        WHERE playedAt IS NOT NULL 
+        WHERE playedAt IS NOT NULL
         AND (:isCompleted IS NULL OR isCompleted = :isCompleted)
-        AND (:query IS NULL OR id IN (
-            SELECT id FROM episodes_fts WHERE episodes_fts MATCH :query
-        ))
+        AND $FTS_SEARCH_CONDITION
         ORDER BY playedAt DESC
         LIMIT :limit
     """
@@ -201,11 +222,9 @@ interface EpisodeDao {
     @Query(
         """
         SELECT * FROM episode_with_extras
-        WHERE playedAt IS NOT NULL 
+        WHERE playedAt IS NOT NULL
         AND (:isCompleted IS NULL OR isCompleted = :isCompleted)
-        AND (:query IS NULL OR id IN (
-            SELECT id FROM episodes_fts WHERE episodes_fts MATCH :query
-        ))
+        AND $FTS_SEARCH_CONDITION
         ORDER BY playedAt DESC
     """
     )

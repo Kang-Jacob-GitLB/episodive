@@ -87,7 +87,7 @@ class DatabaseMapperTest {
     @Test
     fun `toEpisode converts EpisodeEntity to Episode correctly`() {
         // Given
-        val episodeDto = episodeTestData.toEpisodeWithExtrasView(cacheKey, cachedAt)
+        val episodeDto = episodeTestData.toEpisodeWithExtrasView()
 
         // When
         val episode = episodeDto.toEpisode()
@@ -103,7 +103,7 @@ class DatabaseMapperTest {
     @Test
     fun `toEpisodes converts list of EpisodeEntity to list of Episode correctly`() {
         // Given
-        val episodeDtos = episodeTestDataList.toEpisodeWithExtrasViews(cacheKey, cachedAt)
+        val episodeDtos = episodeTestDataList.toEpisodeWithExtrasViews()
 
         // When
         val episodes = episodeDtos.toEpisodes()
@@ -117,7 +117,7 @@ class DatabaseMapperTest {
     @Test
     fun `toEpisodeEntity converts Episode to EpisodeEntity correctly`() {
         // When
-        val episodeEntity = episodeTestData.toEpisodeEntity(cacheKey, cachedAt)
+        val episodeEntity = episodeTestData.toEpisodeEntity()
 
         // Then
         assertEquals(episodeTestData.id, episodeEntity.id)
@@ -125,21 +125,15 @@ class DatabaseMapperTest {
         assertEquals(episodeTestData.description, episodeEntity.description)
         assertEquals(episodeTestData.duration, episodeEntity.duration)
         assertEquals(episodeTestData.categories, episodeEntity.categories)
-        assertEquals(cacheKey, episodeEntity.cacheKey)
-        assertEquals(cachedAt, episodeEntity.cachedAt)
     }
 
     @Test
     fun `toEpisodeEntities converts list of Episode to list of EpisodeEntity correctly`() {
         // When
-        val episodeEntities = episodeTestDataList.toEpisodeEntities(cacheKey, cachedAt)
+        val episodeEntities = episodeTestDataList.toEpisodeEntities()
 
         // Then
         assertEquals(episodeTestDataList.size, episodeEntities.size)
-        episodeEntities.forEach { entity ->
-            assertEquals(cacheKey, entity.cacheKey)
-            assertEquals(cachedAt, entity.cachedAt)
-        }
     }
 
     @Test

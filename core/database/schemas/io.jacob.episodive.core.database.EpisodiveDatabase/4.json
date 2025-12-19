@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 4,
-    "identityHash": "8f007ad8c819a35c30e9f54b6711a08e",
+    "identityHash": "9d67273e0377bd0906e09a24e647082a",
     "entities": [
       {
         "tableName": "podcasts",
@@ -502,8 +502,10 @@
           }
         ],
         "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": []
+          "autoGenerate": true,
+          "columnNames": [
+            "rowid"
+          ]
         },
         "ftsVersion": "FTS4",
         "ftsOptions": {
@@ -1128,7 +1130,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8f007ad8c819a35c30e9f54b6711a08e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9d67273e0377bd0906e09a24e647082a')"
     ]
   }
 }
