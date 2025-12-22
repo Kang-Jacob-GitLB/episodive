@@ -9,8 +9,8 @@ import kotlin.time.Instant
     value = """
         SELECT
             podcasts.*,
-            followed_podcasts.followedAt,
-            followed_podcasts.isNotificationEnabled
+            followed_podcasts.followedAt AS followedAt,
+            followed_podcasts.isNotificationEnabled AS isNotificationEnabled
         FROM podcasts
         LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id
     """

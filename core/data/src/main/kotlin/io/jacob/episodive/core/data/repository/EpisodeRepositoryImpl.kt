@@ -194,6 +194,24 @@ class EpisodeRepositoryImpl @Inject constructor(
             }
     }
 
+    override fun getSoundbiteEpisodes(max: Int): Flow<List<Episode>> {
+        val query = EpisodeQuery.Soundbite
+
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toEpisodes() }
+    }
+
+    override fun getSoundbiteEpisodesPaging(): Flow<PagingData<Episode>> {
+        val query = EpisodeQuery.Soundbite
+
+        return remoteUpdater.create(query)
+            .getPagingData(config)
+            .map { pagingData ->
+                pagingData.map { it.toEpisode() }
+            }
+    }
+
     override fun getLikedEpisodes(query: String?, max: Int): Flow<List<Episode>> {
         return localDataSource.getLikedEpisodes(
             query = query,

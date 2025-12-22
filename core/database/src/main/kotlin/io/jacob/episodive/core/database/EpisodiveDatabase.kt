@@ -11,6 +11,7 @@ import io.jacob.episodive.core.database.dao.RecentSearchDao
 import io.jacob.episodive.core.database.migration.AutoMigration2to3
 import io.jacob.episodive.core.database.migration.AutoMigration3to4
 import io.jacob.episodive.core.database.migration.AutoMigration4to5
+import io.jacob.episodive.core.database.migration.AutoMigration5to6
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeFtsEntity
 import io.jacob.episodive.core.database.model.EpisodeGroupEntity
@@ -54,12 +55,13 @@ import io.jacob.episodive.core.database.util.MediumConverter
         PodcastWithExtrasView::class,
         EpisodeWithExtrasView::class,
     ],
-    version = 5,
+    version = 6,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3, spec = AutoMigration2to3::class),
         AutoMigration(from = 3, to = 4, spec = AutoMigration3to4::class),
         AutoMigration(from = 4, to = 5, spec = AutoMigration4to5::class),
+        AutoMigration(from = 5, to = 6, spec = AutoMigration5to6::class),
     ],
     exportSchema = true
 )

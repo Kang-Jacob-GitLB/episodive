@@ -56,4 +56,9 @@ sealed interface EpisodeQuery : CacheableQuery {
         override val key = "episodeId:$episodeId"
         override val timeToLive = 1.days
     }
+
+    data object Soundbite : EpisodeQuery {
+        override val key = "soundbite"
+        override val timeToLive = 10.minutes
+    }
 }

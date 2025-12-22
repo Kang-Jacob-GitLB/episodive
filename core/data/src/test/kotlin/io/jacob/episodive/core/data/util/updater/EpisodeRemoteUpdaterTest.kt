@@ -37,8 +37,8 @@ class EpisodeRemoteUpdaterTest {
             val person = "John Doe"
             val query = EpisodeQuery.Person(person)
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -75,8 +75,8 @@ class EpisodeRemoteUpdaterTest {
             val person = "John Doe"
             val query = EpisodeQuery.Person(person)
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -119,8 +119,8 @@ class EpisodeRemoteUpdaterTest {
             val feedId = 123L
             val query = EpisodeQuery.FeedId(feedId)
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -157,8 +157,8 @@ class EpisodeRemoteUpdaterTest {
             val feedId = 123L
             val query = EpisodeQuery.FeedId(feedId)
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -201,8 +201,8 @@ class EpisodeRemoteUpdaterTest {
             val feedUrl = "https://example.com/feed.xml"
             val query = EpisodeQuery.FeedUrl(feedUrl)
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -239,8 +239,8 @@ class EpisodeRemoteUpdaterTest {
             val feedUrl = "https://example.com/feed.xml"
             val query = EpisodeQuery.FeedUrl(feedUrl)
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -283,8 +283,8 @@ class EpisodeRemoteUpdaterTest {
             val podcastGuid = "test-guid"
             val query = EpisodeQuery.PodcastGuid(podcastGuid)
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -321,8 +321,8 @@ class EpisodeRemoteUpdaterTest {
             val podcastGuid = "test-guid"
             val query = EpisodeQuery.PodcastGuid(podcastGuid)
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -364,8 +364,8 @@ class EpisodeRemoteUpdaterTest {
             // Given
             val query = EpisodeQuery.Live
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -401,8 +401,8 @@ class EpisodeRemoteUpdaterTest {
             // Given
             val query = EpisodeQuery.Live
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -444,8 +444,8 @@ class EpisodeRemoteUpdaterTest {
             // Given
             val query = EpisodeQuery.Random()
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -481,8 +481,8 @@ class EpisodeRemoteUpdaterTest {
             // Given
             val query = EpisodeQuery.Random()
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -524,8 +524,8 @@ class EpisodeRemoteUpdaterTest {
             // Given
             val query = EpisodeQuery.Recent
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -561,8 +561,8 @@ class EpisodeRemoteUpdaterTest {
             // Given
             val query = EpisodeQuery.Recent
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -605,8 +605,8 @@ class EpisodeRemoteUpdaterTest {
             val episodeId = 123L
             val query = EpisodeQuery.EpisodeId(episodeId)
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -644,8 +644,8 @@ class EpisodeRemoteUpdaterTest {
             val episodeId = 123L
             val query = EpisodeQuery.EpisodeId(episodeId)
             val updater = EpisodeRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                episodeLocal = localDataSource,
+                episodeRemote = remoteDataSource,
                 query = query,
             )
             coEvery {

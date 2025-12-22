@@ -149,6 +149,8 @@ fun EpisodeWithExtrasView.toEpisode(): Episode =
         playedAt = playedAt,
         position = position ?: Duration.ZERO,
         isCompleted = isCompleted ?: false,
+        clipStartTime = clipStartTime,
+        clipDuration = clipDuration,
     )
 
 fun List<EpisodeWithExtrasView>.toEpisodes(): List<Episode> =
@@ -347,7 +349,6 @@ fun List<RecentNewFeedEntity>.toRecentNewFeeds(): List<RecentNewFeed> =
     map { it.toRecentNewFeed() }
 
 fun Soundbite.toSoundbiteEntity(
-    cacheKey: String,
     cachedAt: Instant = Clock.System.now(),
 ): SoundbiteEntity =
     SoundbiteEntity(
@@ -360,17 +361,14 @@ fun Soundbite.toSoundbiteEntity(
         feedTitle = feedTitle,
         feedUrl = feedUrl,
         feedId = feedId,
-        cacheKey = cacheKey,
         cachedAt = cachedAt,
     )
 
 fun List<Soundbite>.toSoundbiteEntities(
-    cacheKey: String,
     cachedAt: Instant = Clock.System.now(),
 ): List<SoundbiteEntity> =
     map {
         it.toSoundbiteEntity(
-            cacheKey = cacheKey,
             cachedAt = cachedAt,
         )
     }

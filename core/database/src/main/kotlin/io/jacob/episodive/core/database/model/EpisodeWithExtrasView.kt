@@ -10,13 +10,16 @@ import kotlin.time.Instant
     value = """
         SELECT
             episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
+            liked_episodes.likedAt AS likedAt,
+            played_episodes.playedAt AS playedAt,
+            played_episodes.position AS position,
+            played_episodes.isCompleted AS isCompleted,
+            soundbites.startTime AS clipStartTime,
+            soundbites.duration AS clipDuration
         FROM episodes
         LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
         LEFT JOIN played_episodes ON episodes.id = played_episodes.id
+        LEFT JOIN soundbites ON episodes.id = soundbites.episodeId
     """
 )
 data class EpisodeWithExtrasView(
@@ -25,4 +28,6 @@ data class EpisodeWithExtrasView(
     val playedAt: Instant? = null,
     val position: Duration? = null,
     val isCompleted: Boolean? = null,
+    val clipStartTime: Instant? = null,
+    val clipDuration: Duration? = null,
 )

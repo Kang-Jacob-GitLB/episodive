@@ -6,19 +6,28 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
+import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
+import io.jacob.episodive.core.database.mapper.toSoundbiteEntities
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.model.mapper.toCommaString
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
+import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toEpisodes
+import io.jacob.episodive.core.network.mapper.toSoundbites
 import io.jacob.episodive.core.network.model.EpisodeResponse
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Clock
 
 class EpisodeRemoteUpdater @AssistedInject constructor(
-    private val localDataSource: EpisodeLocalDataSource,
-    private val remoteDataSource: EpisodeRemoteDataSource,
+    private val episodeLocal: EpisodeLocalDataSource,
+    private val episodeRemote: EpisodeRemoteDataSource,
+    private val feedLocal: FeedLocalDataSource,
+    private val feedRemote: FeedRemoteDataSource,
     @Assisted("query") override val query: EpisodeQuery,
 ) : RemoteUpdater<EpisodeQuery, EpisodeResponse, EpisodeEntity, EpisodeWithExtrasView>(query) {
 
@@ -29,36 +38,56 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
 
     override suspend fun fetchFromRemote(fetchSize: Int): List<EpisodeResponse> {
         return when (query) {
-            is EpisodeQuery.Person -> remoteDataSource.searchEpisodesByPerson(
+            is EpisodeQuery.Person -> episodeRemote.searchEpisodesByPerson(
                 person = query.person,
                 max = fetchSize,
             )
 
-            is EpisodeQuery.FeedId -> remoteDataSource.getEpisodesByFeedId(
+            is EpisodeQuery.FeedId -> episodeRemote.getEpisodesByFeedId(
                 feedId = query.feedId,
                 max = fetchSize,
             )
 
-            is EpisodeQuery.FeedUrl -> remoteDataSource.getEpisodesByFeedUrl(
+            is EpisodeQuery.FeedUrl -> episodeRemote.getEpisodesByFeedUrl(
                 feedUrl = query.feedUrl,
                 max = fetchSize,
             )
 
-            is EpisodeQuery.PodcastGuid -> remoteDataSource.getEpisodesByPodcastGuid(
+            is EpisodeQuery.PodcastGuid -> episodeRemote.getEpisodesByPodcastGuid(
                 guid = query.podcastGuid,
                 max = fetchSize,
             )
 
-            is EpisodeQuery.Live -> remoteDataSource.getLiveEpisodes(max = 6)
-            is EpisodeQuery.Random -> remoteDataSource.getRandomEpisodes(
+            is EpisodeQuery.Live -> episodeRemote.getLiveEpisodes(max = 6)
+            is EpisodeQuery.Random -> episodeRemote.getRandomEpisodes(
                 max = 6,
                 language = query.language,
                 includeCategories = query.categories.toCommaString(),
             )
 
-            is EpisodeQuery.Recent -> remoteDataSource.getRecentEpisodes(max = 6)
-            is EpisodeQuery.EpisodeId -> remoteDataSource.getEpisodeById(query.episodeId)
+            is EpisodeQuery.Recent -> episodeRemote.getRecentEpisodes(max = 6)
+            is EpisodeQuery.EpisodeId -> episodeRemote.getEpisodeById(query.episodeId)
                 ?.let { listOf(it) } ?: emptyList()
+
+            is EpisodeQuery.Soundbite -> coroutineScope {
+                val soundbites = feedRemote.getRecentSoundbites(max = 100)
+                    .filterNot {
+                        val regex = Regex("\\p{InCJK_UNIFIED_IDEOGRAPHS}")
+
+                        it.title.contains(regex) ||
+                                it.episodeTitle.contains(regex) ||
+                                it.feedTitle.contains(regex)
+                    }
+                feedLocal.replaceSoundbites(soundbites.toSoundbites().toSoundbiteEntities())
+
+                soundbites.chunked(20).flatMap { chunk ->
+                    chunk.map { soundbite ->
+                        async {
+                            episodeRemote.getEpisodeById(soundbite.episodeId)
+                        }
+                    }.awaitAll().filterNotNull()
+                }
+            }
         }
     }
 
@@ -67,11 +96,11 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
     }
 
     override suspend fun replaceToLocal(entities: List<EpisodeEntity>) {
-        localDataSource.replaceEpisodes(entities, query.key)
+        episodeLocal.replaceEpisodes(entities, query.key)
     }
 
     override suspend fun isExpired(): Boolean {
-        val oldestCreatedAt = localDataSource.getOldestCreatedAtByGroupKey(query.key)
+        val oldestCreatedAt = episodeLocal.getOldestCreatedAtByGroupKey(query.key)
             ?: return true
 
         val now = Clock.System.now()
@@ -79,10 +108,10 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
     }
 
     override fun getPagingSource(): PagingSource<Int, EpisodeWithExtrasView> {
-        return localDataSource.getEpisodesByGroupKeyPaging(query.key)
+        return episodeLocal.getEpisodesByGroupKeyPaging(query.key)
     }
 
     override fun getFlowSource(count: Int): Flow<List<EpisodeWithExtrasView>> {
-        return localDataSource.getEpisodesByGroupKey(query.key, count)
+        return episodeLocal.getEpisodesByGroupKey(query.key, count)
     }
 }

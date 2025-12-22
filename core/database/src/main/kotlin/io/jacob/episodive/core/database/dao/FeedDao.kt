@@ -14,17 +14,10 @@ import kotlin.time.Instant
 
 @Dao
 interface FeedDao {
+    /** TRENDING FEEDS **/
+
     @Upsert
     suspend fun upsertTrendingFeeds(feeds: List<TrendingFeedEntity>)
-
-    @Upsert
-    suspend fun upsertRecentFeeds(feeds: List<RecentFeedEntity>)
-
-    @Upsert
-    suspend fun upsertRecentNewFeeds(feeds: List<RecentNewFeedEntity>)
-
-    @Upsert
-    suspend fun upsertSoundbites(soundbites: List<SoundbiteEntity>)
 
     @Query("DELETE FROM trending_feeds WHERE id = :id")
     suspend fun deleteTrendingFeed(id: Long)
@@ -43,6 +36,21 @@ interface FeedDao {
         }
     }
 
+    @Query("SELECT * FROM trending_feeds WHERE cacheKey = :cacheKey LIMIT :limit")
+    fun getTrendingFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<TrendingFeedEntity>>
+
+    @Query("SELECT * FROM trending_feeds WHERE cacheKey = :cacheKey")
+    fun getTrendingFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, TrendingFeedEntity>
+
+    @Query("SELECT MIN(cachedAt) FROM trending_feeds WHERE cacheKey = :cacheKey")
+    suspend fun getTrendingFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant?
+
+
+    /** RECENT FEEDS **/
+
+    @Upsert
+    suspend fun upsertRecentFeeds(feeds: List<RecentFeedEntity>)
+
     @Query("DELETE FROM recent_feeds WHERE id = :id")
     suspend fun deleteRecentFeed(id: Long)
 
@@ -59,6 +67,21 @@ interface FeedDao {
             upsertRecentFeeds(feedGroup)
         }
     }
+
+    @Query("SELECT * FROM recent_feeds WHERE cacheKey = :cacheKey LIMIT :limit")
+    fun getRecentFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<RecentFeedEntity>>
+
+    @Query("SELECT * FROM recent_feeds WHERE cacheKey = :cacheKey")
+    fun getRecentFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentFeedEntity>
+
+    @Query("SELECT MIN(cachedAt) FROM recent_feeds WHERE cacheKey = :cacheKey")
+    suspend fun getRecentFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant?
+
+
+    /** RECENT NEW FEEDS **/
+
+    @Upsert
+    suspend fun upsertRecentNewFeeds(feeds: List<RecentNewFeedEntity>)
 
     @Query("DELETE FROM recent_new_feeds WHERE id = :id")
     suspend fun deleteRecentNewFeed(id: Long)
@@ -77,41 +100,6 @@ interface FeedDao {
         }
     }
 
-    @Query("DELETE FROM soundbites WHERE episodeId = :episodeId")
-    suspend fun deleteSoundbite(episodeId: Long)
-
-    @Query("DELETE FROM soundbites")
-    suspend fun deleteSoundbites()
-
-    @Query("DELETE FROM soundbites WHERE cacheKey = :cacheKey")
-    suspend fun deleteSoundbitesByCacheKey(cacheKey: String)
-
-    @Transaction
-    suspend fun replaceSoundbites(soundbites: List<SoundbiteEntity>) {
-        soundbites.groupBy { it.cacheKey }.forEach { (cacheKey, soundbiteGroup) ->
-            deleteSoundbitesByCacheKey(cacheKey)
-            upsertSoundbites(soundbiteGroup)
-        }
-    }
-
-    @Query("SELECT * FROM trending_feeds WHERE cacheKey = :cacheKey LIMIT :limit")
-    fun getTrendingFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<TrendingFeedEntity>>
-
-    @Query("SELECT * FROM trending_feeds WHERE cacheKey = :cacheKey")
-    fun getTrendingFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, TrendingFeedEntity>
-
-    @Query("SELECT MIN(cachedAt) FROM trending_feeds WHERE cacheKey = :cacheKey")
-    suspend fun getTrendingFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant?
-
-    @Query("SELECT * FROM recent_feeds WHERE cacheKey = :cacheKey LIMIT :limit")
-    fun getRecentFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<RecentFeedEntity>>
-
-    @Query("SELECT * FROM recent_feeds WHERE cacheKey = :cacheKey")
-    fun getRecentFeedsByCacheKeyPaging(cacheKey: String): PagingSource<Int, RecentFeedEntity>
-
-    @Query("SELECT MIN(cachedAt) FROM recent_feeds WHERE cacheKey = :cacheKey")
-    suspend fun getRecentFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant?
-
     @Query("SELECT * FROM recent_new_feeds WHERE cacheKey = :cacheKey LIMIT :limit")
     fun getRecentNewFeedsByCacheKey(cacheKey: String, limit: Int): Flow<List<RecentNewFeedEntity>>
 
@@ -121,12 +109,30 @@ interface FeedDao {
     @Query("SELECT MIN(cachedAt) FROM recent_new_feeds WHERE cacheKey = :cacheKey")
     suspend fun getRecentNewFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant?
 
-    @Query("SELECT * FROM soundbites WHERE cacheKey = :cacheKey LIMIT :limit")
-    fun getSoundbitesByCacheKey(cacheKey: String, limit: Int): Flow<List<SoundbiteEntity>>
 
-    @Query("SELECT * FROM soundbites WHERE cacheKey = :cacheKey")
-    fun getSoundbitesByCacheKeyPaging(cacheKey: String): PagingSource<Int, SoundbiteEntity>
+    /** SOUNDBITES **/
 
-    @Query("SELECT MIN(cachedAt) FROM soundbites WHERE cacheKey = :cacheKey")
-    suspend fun getSoundbitesOldestCachedAtByCacheKey(cacheKey: String): Instant?
+    @Upsert
+    suspend fun upsertSoundbites(soundbites: List<SoundbiteEntity>)
+
+    @Query("DELETE FROM soundbites WHERE episodeId = :episodeId")
+    suspend fun deleteSoundbite(episodeId: Long)
+
+    @Query("DELETE FROM soundbites")
+    suspend fun deleteSoundbites()
+
+    @Transaction
+    suspend fun replaceSoundbites(soundbites: List<SoundbiteEntity>) {
+        deleteSoundbites()
+        upsertSoundbites(soundbites)
+    }
+
+    @Query("SELECT * FROM soundbites LIMIT :limit")
+    fun getSoundbites(limit: Int): Flow<List<SoundbiteEntity>>
+
+    @Query("SELECT * FROM soundbites")
+    fun getSoundbitesPaging(): PagingSource<Int, SoundbiteEntity>
+
+    @Query("SELECT MIN(cachedAt) FROM soundbites")
+    suspend fun getSoundbitesOldestCachedAt(): Instant?
 }
