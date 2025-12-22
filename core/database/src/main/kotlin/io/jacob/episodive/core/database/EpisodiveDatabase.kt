@@ -9,11 +9,20 @@ import io.jacob.episodive.core.database.dao.FeedDao
 import io.jacob.episodive.core.database.dao.PodcastDao
 import io.jacob.episodive.core.database.dao.RecentSearchDao
 import io.jacob.episodive.core.database.migration.AutoMigration2to3
+import io.jacob.episodive.core.database.migration.AutoMigration3to4
+import io.jacob.episodive.core.database.migration.AutoMigration4to5
+import io.jacob.episodive.core.database.migration.AutoMigration5to6
 import io.jacob.episodive.core.database.model.EpisodeEntity
+import io.jacob.episodive.core.database.model.EpisodeFtsEntity
+import io.jacob.episodive.core.database.model.EpisodeGroupEntity
+import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.database.model.FollowedPodcastEntity
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import io.jacob.episodive.core.database.model.PodcastEntity
+import io.jacob.episodive.core.database.model.PodcastFtsEntity
+import io.jacob.episodive.core.database.model.PodcastGroupEntity
+import io.jacob.episodive.core.database.model.PodcastWithExtrasView
 import io.jacob.episodive.core.database.model.RecentFeedEntity
 import io.jacob.episodive.core.database.model.RecentNewFeedEntity
 import io.jacob.episodive.core.database.model.RecentSearchEntity
@@ -24,13 +33,16 @@ import io.jacob.episodive.core.database.util.DurationConverter
 import io.jacob.episodive.core.database.util.EpisodeTypeConverter
 import io.jacob.episodive.core.database.util.InstantConverter
 import io.jacob.episodive.core.database.util.MediumConverter
-import io.jacob.episodive.core.database.util.SoundbiteConverter
 
 @Database(
     entities = [
         PodcastEntity::class,
+        PodcastFtsEntity::class,
+        PodcastGroupEntity::class,
         FollowedPodcastEntity::class,
         EpisodeEntity::class,
+        EpisodeFtsEntity::class,
+        EpisodeGroupEntity::class,
         LikedEpisodeEntity::class,
         PlayedEpisodeEntity::class,
         TrendingFeedEntity::class,
@@ -39,10 +51,17 @@ import io.jacob.episodive.core.database.util.SoundbiteConverter
         SoundbiteEntity::class,
         RecentSearchEntity::class,
     ],
-    version = 3,
+    views = [
+        PodcastWithExtrasView::class,
+        EpisodeWithExtrasView::class,
+    ],
+    version = 6,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3, spec = AutoMigration2to3::class),
+        AutoMigration(from = 3, to = 4, spec = AutoMigration3to4::class),
+        AutoMigration(from = 4, to = 5, spec = AutoMigration4to5::class),
+        AutoMigration(from = 5, to = 6, spec = AutoMigration5to6::class),
     ],
     exportSchema = true
 )
@@ -52,7 +71,6 @@ import io.jacob.episodive.core.database.util.SoundbiteConverter
     EpisodeTypeConverter::class,
     InstantConverter::class,
     MediumConverter::class,
-    SoundbiteConverter::class,
 )
 abstract class EpisodiveDatabase : RoomDatabase() {
     abstract fun podcastDao(): PodcastDao

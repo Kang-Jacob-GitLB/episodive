@@ -2,9 +2,8 @@ package io.jacob.episodive.core.database.datasource
 
 import androidx.paging.PagingSource
 import io.jacob.episodive.core.database.dao.EpisodeDao
-import io.jacob.episodive.core.database.model.EpisodeDto
 import io.jacob.episodive.core.database.model.EpisodeEntity
-import io.jacob.episodive.core.database.model.LikedEpisodeEntity
+import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -14,99 +13,103 @@ import kotlin.time.Instant
 class EpisodeLocalDataSourceImpl @Inject constructor(
     private val episodeDao: EpisodeDao,
 ) : EpisodeLocalDataSource {
-    override suspend fun upsertEpisode(episode: EpisodeEntity) {
-        episodeDao.upsertEpisode(episode)
+    override suspend fun updateEpisodeDuration(id: Long, duration: Duration) {
+        episodeDao.updateEpisodeDuration(
+            id = id,
+            duration = duration,
+        )
     }
 
-    override suspend fun upsertEpisodes(episodes: List<EpisodeEntity>) {
-        episodeDao.upsertEpisodes(episodes)
-    }
-
-    override suspend fun deleteEpisode(id: Long) {
-        episodeDao.deleteEpisode(id)
-    }
-
-    override suspend fun deleteEpisodes() {
-        episodeDao.deleteEpisodes()
-    }
-
-    override suspend fun deleteEpisodesByCacheKey(cacheKey: String) {
-        episodeDao.deleteEpisodesByCacheKey(cacheKey)
-    }
-
-    override suspend fun replaceEpisodes(episodes: List<EpisodeEntity>) {
-        episodeDao.replaceEpisodes(episodes)
-    }
-
-    override suspend fun updateDurationOfEpisodes(id: Long, duration: Duration) {
-        episodeDao.updateDurationOfEpisodes(id, duration)
-    }
-
-    override fun getEpisodeById(id: Long): Flow<EpisodeDto?> {
+    override fun getEpisodeById(id: Long): Flow<EpisodeWithExtrasView?> {
         return episodeDao.getEpisodeById(id)
     }
 
-    override fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>> {
+    override fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeWithExtrasView>> {
         return episodeDao.getEpisodesByIds(ids)
     }
 
-    override fun getEpisodes(limit: Int): Flow<List<EpisodeDto>> {
-        return episodeDao.getEpisodes(limit)
+    override fun getEpisodes(query: String?, limit: Int): Flow<List<EpisodeWithExtrasView>> {
+        return episodeDao.getEpisodes(
+            query = query?.ifBlank { null },
+            limit = limit,
+        )
     }
 
-    override fun getEpisodesPaging(): PagingSource<Int, EpisodeDto> {
-        return episodeDao.getEpisodesPaging()
+    override fun getEpisodesPaging(query: String?): PagingSource<Int, EpisodeWithExtrasView> {
+        return episodeDao.getEpisodesPaging(query?.ifBlank { null })
     }
 
-    override fun getEpisodesByCacheKey(cacheKey: String, limit: Int): Flow<List<EpisodeDto>> {
-        return episodeDao.getEpisodesByCacheKey(cacheKey, limit)
+    override fun getEpisodesByGroupKey(
+        groupKey: String,
+        limit: Int,
+    ): Flow<List<EpisodeWithExtrasView>> {
+        return episodeDao.getEpisodesByGroupKey(
+            groupKey = groupKey,
+            limit = limit,
+        )
     }
 
-    override fun getEpisodesByCacheKeyPaging(cacheKey: String): PagingSource<Int, EpisodeDto> {
-        return episodeDao.getEpisodesByCacheKeyPaging(cacheKey)
+    override fun getEpisodesByGroupKeyPaging(groupKey: String): PagingSource<Int, EpisodeWithExtrasView> {
+        return episodeDao.getEpisodesByGroupKeyPaging(groupKey)
     }
 
-    override suspend fun getEpisodesOldestCachedAtByCacheKey(cacheKey: String): Instant? {
-        return episodeDao.getEpisodesOldestCachedAtByCacheKey(cacheKey)
+    override suspend fun getOldestCreatedAtByGroupKey(groupKey: String): Instant? {
+        return episodeDao.getOldestCreatedAtByGroupKey(groupKey)
     }
 
-    override suspend fun addLiked(likedEpisode: LikedEpisodeEntity) {
-        episodeDao.addLiked(likedEpisode)
+    override suspend fun replaceEpisodes(episodes: List<EpisodeEntity>, groupKey: String) {
+        episodeDao.replaceEpisodes(
+            episodes = episodes,
+            groupKey = groupKey,
+        )
     }
 
-    override suspend fun removeLiked(id: Long) {
-        episodeDao.removeLiked(id)
+    override fun isLikedEpisode(id: Long): Flow<Boolean> {
+        return episodeDao.isLikedEpisode(id)
     }
 
-    override fun isLiked(id: Long): Flow<Boolean> {
-        return episodeDao.isLiked(id)
+    override suspend fun toggleLikedEpisode(id: Long): Boolean {
+        return episodeDao.toggleLikedEpisode(id)
     }
 
-    override suspend fun toggleLiked(id: Long): Boolean {
-        return episodeDao.toggleLiked(id)
+    override fun getLikedEpisodes(query: String?, limit: Int): Flow<List<EpisodeWithExtrasView>> {
+        return episodeDao.getLikedEpisodes(
+            query = query?.ifBlank { null },
+            limit = limit,
+        )
     }
 
-    override fun getLikedEpisodes(limit: Int): Flow<List<EpisodeDto>> {
-        return episodeDao.getLikedEpisodes(limit)
+    override fun getLikedEpisodesPaging(query: String?): PagingSource<Int, EpisodeWithExtrasView> {
+        return episodeDao.getLikedEpisodesPaging(query?.ifBlank { null })
     }
 
-    override fun getLikedEpisodesPaging(): PagingSource<Int, EpisodeDto> {
-        return episodeDao.getLikedEpisodesPaging()
+    override suspend fun updatePlayedEpisode(playedEpisode: PlayedEpisodeEntity) {
+        episodeDao.upsertPlayedEpisode(playedEpisode)
     }
 
-    override suspend fun upsertPlayed(playedEpisode: PlayedEpisodeEntity) {
-        episodeDao.upsertPlayed(playedEpisode)
+    override suspend fun removePlayedEpisode(id: Long) {
+        episodeDao.removePlayedEpisode(id)
     }
 
-    override suspend fun removePlayed(id: Long) {
-        episodeDao.removePlayed(id)
+    override fun getPlayedEpisodes(
+        isCompleted: Boolean?,
+        query: String?,
+        limit: Int,
+    ): Flow<List<EpisodeWithExtrasView>> {
+        return episodeDao.getPlayedEpisodes(
+            isCompleted = isCompleted,
+            query = query?.ifBlank { null },
+            limit = limit,
+        )
     }
 
-    override fun getPlayedEpisodes(limit: Int): Flow<List<EpisodeDto>> {
-        return episodeDao.getPlayedEpisodes(limit)
-    }
-
-    override fun getPlayedEpisodesPaging(): PagingSource<Int, EpisodeDto> {
-        return episodeDao.getPlayedEpisodesPaging()
+    override fun getPlayedEpisodesPaging(
+        isCompleted: Boolean?,
+        query: String?,
+    ): PagingSource<Int, EpisodeWithExtrasView> {
+        return episodeDao.getPlayedEpisodesPaging(
+            isCompleted = isCompleted,
+            query = query?.ifBlank { null },
+        )
     }
 }

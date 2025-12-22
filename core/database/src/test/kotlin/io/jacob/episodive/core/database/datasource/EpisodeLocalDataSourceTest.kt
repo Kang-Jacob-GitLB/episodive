@@ -3,413 +3,411 @@ package io.jacob.episodive.core.database.datasource
 import io.jacob.episodive.core.database.dao.EpisodeDao
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
 import io.jacob.episodive.core.database.mapper.toEpisodeEntity
-import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
-import io.mockk.Runs
-import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
-import io.mockk.just
 import io.mockk.mockk
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import kotlin.time.Clock
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 class EpisodeLocalDataSourceTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val episodeDao = mockk<EpisodeDao>(relaxed = true)
+    private val dao = mockk<EpisodeDao>(relaxed = true)
 
     private val dataSource: EpisodeLocalDataSource = EpisodeLocalDataSourceImpl(
-        episodeDao = episodeDao,
+        episodeDao = dao,
     )
 
-    private val cacheKey = "test_cache"
-    private val episodeEntity = episodeTestData.toEpisodeEntity(cacheKey = cacheKey)
-    private val episodeEntities = episodeTestDataList.toEpisodeEntities(cacheKey = cacheKey)
+    private val episodeEntity = episodeTestData.toEpisodeEntity()
+    private val episodeEntities = episodeTestDataList.toEpisodeEntities()
+
+    @After
+    fun teardown() {
+        confirmVerified(dao)
+    }
 
     @Test
-    fun `Given dependencies, When upsertEpisode is called, Then upsertEpisode of dao is called`() =
+    fun `Given id and duration, When updateEpisodeDuration is called, Then dao updateEpisodeDuration is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.upsertEpisode(any()) } just Runs
+            val id = episodeEntity.id
+            val duration = 1.minutes
 
             // When
-            dataSource.upsertEpisode(episodeEntity)
+            dataSource.updateEpisodeDuration(id, duration)
 
             // Then
-            coVerify { episodeDao.upsertEpisode(episodeEntity) }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When upsertEpisodes is called, Then upsertEpisodes of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.upsertEpisodes(any()) } just Runs
-
-            // When
-            dataSource.upsertEpisodes(episodeEntities)
-
-            // Then
-            coVerify { episodeDao.upsertEpisodes(episodeEntities) }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When deleteEpisode is called, Then deleteEpisode of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.deleteEpisode(any()) } just Runs
-
-            // When
-            dataSource.deleteEpisode(episodeEntity.id)
-
-            // Then
-            coVerify { episodeDao.deleteEpisode(episodeEntity.id) }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When deleteEpisodes is called, Then deleteEpisodes of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.deleteEpisodes() } just Runs
-
-            // When
-            dataSource.deleteEpisodes()
-
-            // Then
-            coVerify { episodeDao.deleteEpisodes() }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When deleteEpisodesByCacheKey is called, Then deleteEpisodesByCacheKey of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.deleteEpisodesByCacheKey(any()) } just Runs
-
-            // When
-            dataSource.deleteEpisodesByCacheKey(cacheKey)
-
-            // Then
-            coVerify { episodeDao.deleteEpisodesByCacheKey(cacheKey) }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When replaceEpisodes is called, Then replaceEpisodes of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.replaceEpisodes(any()) } just Runs
-
-            // When
-            dataSource.replaceEpisodes(episodeEntities)
-
-            // Then
-            coVerify { episodeDao.replaceEpisodes(episodeEntities) }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When updateDurationOfEpisodes is called, Then updateDurationOfEpisodes of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.updateDurationOfEpisodes(any(), any()) } just Runs
-
-            // When
-            dataSource.updateDurationOfEpisodes(episodeEntities[0].id, 2000.seconds)
-
-            // Then
-            coVerify { episodeDao.updateDurationOfEpisodes(any(), any()) }
-        }
-
-    @Test
-    fun `Given dependencies, When getEpisode is called, Then getEpisode of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.getEpisodeById(any()) } returns mockk()
-
-            // When
-            dataSource.getEpisodeById(episodeEntity.id)
-
-            // Then
-            coVerify { episodeDao.getEpisodeById(episodeEntity.id) }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When getEpisodes is called, Then getEpisodes of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.getEpisodes(10) } returns mockk()
-
-            // When
-            dataSource.getEpisodes(10)
-
-            // Then
-            coVerify { episodeDao.getEpisodes(10) }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When getEpisodesPaging is called, Then getEpisodesPaging of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.getEpisodesPaging() } returns mockk()
-
-            // When
-            dataSource.getEpisodesPaging()
-
-            // Then
-            coVerify { episodeDao.getEpisodesPaging() }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When getEpisodesByCacheKey is called, Then getEpisodesByCacheKey of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.getEpisodesByCacheKey(any(), 10) } returns mockk()
-
-            // When
-            dataSource.getEpisodesByCacheKey(cacheKey, 10)
-
-            // Then
-            coVerify { episodeDao.getEpisodesByCacheKey(cacheKey, 10) }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When getEpisodesByCacheKeyPaging is called, Then getEpisodesByCacheKeyPaging of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.getEpisodesByCacheKeyPaging(any()) } returns mockk()
-
-            // When
-            dataSource.getEpisodesByCacheKeyPaging(cacheKey)
-
-            // Then
-            coVerify { episodeDao.getEpisodesByCacheKeyPaging(cacheKey) }
-            confirmVerified(
-                episodeDao,
-            )
-        }
-
-    @Test
-    fun `Given dependencies, When addLiked is called, Then addLiked of dao is called`() =
-        runTest {
-            // Given
-            coEvery { episodeDao.addLiked(any()) } just Runs
-
-            // When
-            dataSource.addLiked(
-                LikedEpisodeEntity(
-                    id = episodeEntity.id,
-                    likedAt = Clock.System.now()
-                )
-            )
-
-            // Then
-            coVerifySequence {
-                episodeDao.addLiked(any())
+            coVerify {
+                dao.updateEpisodeDuration(id, duration)
             }
-            confirmVerified(
-                episodeDao,
-            )
         }
 
     @Test
-    fun `Given dependencies, When removeLiked is called, Then removeLiked of dao is called`() =
+    fun `Given id, When getEpisodeById is called, Then dao getEpisodeById is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.removeLiked(any()) } just Runs
+            val id = episodeEntity.id
 
             // When
-            dataSource.removeLiked(episodeEntity.id)
+            dataSource.getEpisodeById(id)
 
             // Then
-            coVerifySequence {
-                episodeDao.removeLiked(any())
+            coVerify {
+                dao.getEpisodeById(id)
             }
-            confirmVerified(
-                episodeDao,
-            )
         }
 
     @Test
-    fun `Given dependencies, When isLiked is called, Then isLiked of dao is called`() =
+    fun `Given ids, When getEpisodesByIds is called, Then dao getEpisodesByIds is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.isLiked(any()) } returns flowOf(false)
+            val ids = listOf(1L, 2L, 3L)
 
             // When
-            dataSource.isLiked(episodeEntity.id)
+            dataSource.getEpisodesByIds(ids)
 
             // Then
-            coVerify { episodeDao.isLiked(episodeEntity.id) }
-            confirmVerified(
-                episodeDao,
-            )
+            coVerify {
+                dao.getEpisodesByIds(ids)
+            }
         }
 
     @Test
-    fun `Given dependencies, When toggleLiked is called, Then toggleLiked of dao is called`() =
+    fun `Given query and limit, When getEpisodes is called, Then dao getEpisodes is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.toggleLiked(any()) } returns mockk()
+            val query = "test"
+            val limit = 10
 
             // When
-            dataSource.toggleLiked(episodeEntity.id)
+            dataSource.getEpisodes(query, limit)
 
             // Then
-            coVerify { episodeDao.toggleLiked(episodeEntity.id) }
+            coVerify {
+                dao.getEpisodes(query, limit)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getLikedEpisodes is called, Then getLikedEpisodes of dao is called`() =
+    fun `Given blank query and limit, When getEpisodes is called, Then dao getEpisodes is called with null query`() =
         runTest {
             // Given
-            coEvery { episodeDao.getLikedEpisodes(10) } returns mockk()
+            val query = "  "
+            val limit = 10
 
             // When
-            dataSource.getLikedEpisodes(10)
+            dataSource.getEpisodes(query, limit)
 
             // Then
-            coVerify { episodeDao.getLikedEpisodes(10) }
-            confirmVerified(
-                episodeDao,
-            )
+            coVerify {
+                dao.getEpisodes(null, limit)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getLikedEpisodesPaging is called, Then getLikedEpisodesPaging of dao is called`() =
+    fun `Given null query and limit, When getEpisodes is called, Then dao getEpisodes is called with null query`() =
         runTest {
             // Given
-            coEvery { episodeDao.getLikedEpisodesPaging() } returns mockk()
+            val limit = 10
 
             // When
-            dataSource.getLikedEpisodesPaging()
+            dataSource.getEpisodes(null, limit)
 
             // Then
-            coVerify { episodeDao.getLikedEpisodesPaging() }
-            confirmVerified(
-                episodeDao,
-            )
+            coVerify {
+                dao.getEpisodes(null, limit)
+            }
         }
 
     @Test
-    fun `Given dependencies, When upsertPlayed is called, Then upsertPlayed of dao is called`() =
+    fun `Given query, When getEpisodesPaging is called, Then dao getEpisodesPaging is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.upsertPlayed(any()) } just Runs
+            val query = "test"
 
             // When
-            dataSource.upsertPlayed(
-                PlayedEpisodeEntity(
-                    id = episodeEntity.id,
-                    playedAt = Clock.System.now(),
-                    position = 2000.seconds,
-                )
-            )
+            dataSource.getEpisodesPaging(query)
 
             // Then
-            coVerify { episodeDao.upsertPlayed(any()) }
-            confirmVerified(
-                episodeDao,
-            )
+            coVerify {
+                dao.getEpisodesPaging(query)
+            }
         }
 
     @Test
-    fun `Given dependencies, When removePlayed is called, Then removePlayed of dao is called`() =
+    fun `Given blank query, When getEpisodesPaging is called, Then dao getEpisodesPaging is called with null query`() =
         runTest {
             // Given
-            coEvery { episodeDao.removePlayed(any()) } just Runs
+            val query = "  "
 
             // When
-            dataSource.removePlayed(episodeEntity.id)
+            dataSource.getEpisodesPaging(query)
 
             // Then
-            coVerify { episodeDao.removePlayed(episodeEntity.id) }
-            confirmVerified(
-                episodeDao,
-            )
+            coVerify {
+                dao.getEpisodesPaging(null)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getPlayedEpisodes is called, Then getPlayedEpisodes of dao is called`() =
+    fun `Given groupKey and limit, When getEpisodesByGroupKey is called, Then dao getEpisodesByGroupKey is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.getPlayedEpisodes(10) } returns mockk()
+            val groupKey = "testGroup"
+            val limit = 10
 
             // When
-            dataSource.getPlayedEpisodes(10)
+            dataSource.getEpisodesByGroupKey(groupKey, limit)
 
             // Then
-            coVerify { episodeDao.getPlayedEpisodes(10) }
-            confirmVerified(
-                episodeDao,
-            )
+            coVerify {
+                dao.getEpisodesByGroupKey(groupKey, limit)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getPlayedEpisodesPaging is called, Then getPlayedEpisodesPaging of dao is called`() =
+    fun `Given groupKey, When getEpisodesByGroupKeyPaging is called, Then dao getEpisodesByGroupKeyPaging is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.getPlayedEpisodesPaging() } returns mockk()
+            val groupKey = "testGroup"
 
             // When
-            dataSource.getPlayedEpisodesPaging()
+            dataSource.getEpisodesByGroupKeyPaging(groupKey)
 
             // Then
-            coVerify { episodeDao.getPlayedEpisodesPaging() }
-            confirmVerified(
-                episodeDao,
-            )
+            coVerify {
+                dao.getEpisodesByGroupKeyPaging(groupKey)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getEpisodesOldestCachedAtByCacheKey is called, Then getEpisodesOldestCachedAtByCacheKey of dao is called`() =
+    fun `Given groupKey, When getOldestCreatedAtByGroupKey is called, Then dao getOldestCreatedAtByGroupKey is called`() =
         runTest {
             // Given
-            coEvery { episodeDao.getEpisodesOldestCachedAtByCacheKey(any()) } returns mockk()
+            val groupKey = "testGroup"
 
             // When
-            dataSource.getEpisodesOldestCachedAtByCacheKey(cacheKey)
+            dataSource.getOldestCreatedAtByGroupKey(groupKey)
 
             // Then
-            coVerify { episodeDao.getEpisodesOldestCachedAtByCacheKey(cacheKey) }
-            confirmVerified(
-                episodeDao,
+            coVerify {
+                dao.getOldestCreatedAtByGroupKey(groupKey)
+            }
+        }
+
+    @Test
+    fun `Given episodes and groupKey, When replaceEpisodes is called, Then dao replaceEpisodes is called`() =
+        runTest {
+            // Given
+            val groupKey = "testGroup"
+
+            // When
+            dataSource.replaceEpisodes(episodeEntities, groupKey)
+
+            // Then
+            coVerify {
+                dao.replaceEpisodes(episodeEntities, groupKey)
+            }
+        }
+
+    @Test
+    fun `Given id, When isLikedEpisode is called, Then dao isLikedEpisode is called`() =
+        runTest {
+            // Given
+            val id = episodeEntity.id
+
+            // When
+            dataSource.isLikedEpisode(id)
+
+            // Then
+            coVerify {
+                dao.isLikedEpisode(id)
+            }
+        }
+
+    @Test
+    fun `Given id, When toggleLikedEpisode is called, Then dao toggleLikedEpisode is called`() =
+        runTest {
+            // Given
+            val id = episodeEntity.id
+
+            // When
+            dataSource.toggleLikedEpisode(id)
+
+            // Then
+            coVerify {
+                dao.toggleLikedEpisode(id)
+            }
+        }
+
+    @Test
+    fun `Given query and limit, When getLikedEpisodes is called, Then dao getLikedEpisodes is called`() =
+        runTest {
+            // Given
+            val query = "test"
+            val limit = 10
+
+            // When
+            dataSource.getLikedEpisodes(query, limit)
+
+            // Then
+            coVerify {
+                dao.getLikedEpisodes(query, limit)
+            }
+        }
+
+    @Test
+    fun `Given blank query and limit, When getLikedEpisodes is called, Then dao getLikedEpisodes is called with null query`() =
+        runTest {
+            // Given
+            val query = "  "
+            val limit = 10
+
+            // When
+            dataSource.getLikedEpisodes(query, limit)
+
+            // Then
+            coVerify {
+                dao.getLikedEpisodes(null, limit)
+            }
+        }
+
+    @Test
+    fun `Given query, When getLikedEpisodesPaging is called, Then dao getLikedEpisodesPaging is called`() =
+        runTest {
+            // Given
+            val query = "test"
+
+            // When
+            dataSource.getLikedEpisodesPaging(query)
+
+            // Then
+            coVerify {
+                dao.getLikedEpisodesPaging(query)
+            }
+        }
+
+    @Test
+    fun `Given blank query, When getLikedEpisodesPaging is called, Then dao getLikedEpisodesPaging is called with null query`() =
+        runTest {
+            // Given
+            val query = "  "
+
+            // When
+            dataSource.getLikedEpisodesPaging(query)
+
+            // Then
+            coVerify {
+                dao.getLikedEpisodesPaging(null)
+            }
+        }
+
+    @Test
+    fun `Given playedEpisode, When updatePlayedEpisode is called, Then dao upsertPlayedEpisode is called`() =
+        runTest {
+            // Given
+            val playedEpisode = PlayedEpisodeEntity(
+                id = episodeEntity.id,
+                playedAt = Clock.System.now(),
+                position = 1.minutes,
             )
+
+            // When
+            dataSource.updatePlayedEpisode(playedEpisode)
+
+            // Then
+            coVerify {
+                dao.upsertPlayedEpisode(playedEpisode)
+            }
+        }
+
+    @Test
+    fun `Given id, When removePlayedEpisode is called, Then dao removePlayedEpisode is called`() =
+        runTest {
+            // Given
+            val id = episodeEntity.id
+
+            // When
+            dataSource.removePlayedEpisode(id)
+
+            // Then
+            coVerify {
+                dao.removePlayedEpisode(id)
+            }
+        }
+
+    @Test
+    fun `Given isCompleted, query and limit, When getPlayedEpisodes is called, Then dao getPlayedEpisodes is called`() =
+        runTest {
+            // Given
+            val isCompleted = true
+            val query = "test"
+            val limit = 10
+
+            // When
+            dataSource.getPlayedEpisodes(isCompleted, query, limit)
+
+            // Then
+            coVerify {
+                dao.getPlayedEpisodes(isCompleted, query, limit)
+            }
+        }
+
+    @Test
+    fun `Given isCompleted and blank query and limit, When getPlayedEpisodes is called, Then dao getPlayedEpisodes is called with null query`() =
+        runTest {
+            // Given
+            val isCompleted = false
+            val query = "  "
+            val limit = 10
+
+            // When
+            dataSource.getPlayedEpisodes(isCompleted, query, limit)
+
+            // Then
+            coVerify {
+                dao.getPlayedEpisodes(isCompleted, null, limit)
+            }
+        }
+
+    @Test
+    fun `Given isCompleted and query, When getPlayedEpisodesPaging is called, Then dao getPlayedEpisodesPaging is called`() =
+        runTest {
+            // Given
+            val isCompleted = true
+            val query = "test"
+
+            // When
+            dataSource.getPlayedEpisodesPaging(isCompleted, query)
+
+            // Then
+            coVerify {
+                dao.getPlayedEpisodesPaging(isCompleted, query)
+            }
+        }
+
+    @Test
+    fun `Given isCompleted and blank query, When getPlayedEpisodesPaging is called, Then dao getPlayedEpisodesPaging is called with null query`() =
+        runTest {
+            // Given
+            val isCompleted = false
+            val query = "  "
+
+            // When
+            dataSource.getPlayedEpisodesPaging(isCompleted, query)
+
+            // Then
+            coVerify {
+                dao.getPlayedEpisodesPaging(isCompleted, null)
+            }
         }
 }

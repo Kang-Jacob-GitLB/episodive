@@ -13,7 +13,7 @@ class FindInLibraryUseCase @Inject constructor(
 ) {
     operator fun invoke(query: String): Flow<LibraryFindResult> {
         return combine(
-            episodeRepository.getPlayingEpisodes(query, 1000),
+            episodeRepository.getPlayedEpisodes(false, query, 1000),
             episodeRepository.getLikedEpisodes(query, 1000),
             podcastRepository.getFollowedPodcasts(query, 1000),
         ) { playingEpisodes, likedEpisodes, followedPodcasts ->

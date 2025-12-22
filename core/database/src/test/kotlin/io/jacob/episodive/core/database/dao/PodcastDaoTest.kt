@@ -5,19 +5,20 @@ import io.jacob.episodive.core.database.RoomDatabaseRule
 import io.jacob.episodive.core.database.mapper.toPodcastEntities
 import io.jacob.episodive.core.database.mapper.toPodcastEntity
 import io.jacob.episodive.core.database.model.FollowedPodcastEntity
+import io.jacob.episodive.core.database.model.PodcastGroupEntity
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
+import io.jacob.episodive.core.testing.util.loadAsSnapshot
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import kotlin.time.Clock
+import kotlin.time.Instant
 
 @RunWith(RobolectricTestRunner::class)
 class PodcastDaoTest {
@@ -34,63 +35,153 @@ class PodcastDaoTest {
         dao = dbRule.db.podcastDao()
     }
 
-    private val cacheKey = "test_cache"
-    private val podcastEntity = podcastTestData.toPodcastEntity(cacheKey = cacheKey)
-    private val podcastEntities = podcastTestDataList.toPodcastEntities(cacheKey = cacheKey)
+    private val podcastEntity = podcastTestData.toPodcastEntity()
+    private val podcastEntities = podcastTestDataList.toPodcastEntities()
 
     @Test
-    fun `Given a podcast entity, When upsertPodcast is called, Then the podcast is inserted or updated`() =
+    fun `Given single podcast, When upsertPodcast is called, Then podcast is inserted`() =
         runTest {
             // Given
-            dao.upsertPodcast(podcastEntity)
+            dao.upsertPodcast(podcastEntity.copy(id = 100L, title = "aaa"))
 
             // When
-            dao.getPodcast(podcastEntity.id).test {
-                val podcast = awaitItem()
+            dao.getPodcasts(limit = 10).test {
+                val podcasts = awaitItem()
+
                 // Then
-                assertEquals(podcastEntity.id, podcast?.podcast?.id)
+                assertEquals(1, podcasts.size)
+                assertEquals(100L, podcasts[0].podcast.id)
+                assertEquals("aaa", podcasts[0].podcast.title)
+
                 cancel()
             }
         }
 
     @Test
-    fun `Given list podcast entities, When upsertPodcasts is called, Then the podcasts are inserted or updated`() =
+    fun `Given single podcast, When upsertPodcast is called, Then podcast is updated`() =
+        runTest {
+            // Given
+            dao.upsertPodcast(podcastEntity.copy(id = 100L, title = "aaa"))
+            dao.upsertPodcast(podcastEntity.copy(id = 100L, title = "bbb"))
+
+            // When
+            dao.getPodcasts(limit = 10).test {
+                val podcasts = awaitItem()
+
+                // Then
+                assertEquals(1, podcasts.size)
+                assertEquals(100L, podcasts[0].podcast.id)
+                assertEquals("bbb", podcasts[0].podcast.title)
+
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given multiple podcasts, When upsertPodcasts is called, Then podcasts are upserted`() =
         runTest {
             // Given
             dao.upsertPodcasts(podcastEntities)
+            dao.upsertPodcasts(podcastEntities.toMutableList().apply {
+                removeFirst()
+                add(podcastEntity.copy(id = 100L, lastUpdateTime = Instant.fromEpochSeconds(1)))
+            })
 
             // When
-            dao.getPodcasts(10).test {
+            dao.getPodcasts(limit = 100).test {
                 val podcasts = awaitItem()
+
                 // Then
-                assertEquals(10, podcasts.size)
-                val podcastIds = podcasts.map { it.podcast.id }
-                val entityIds = podcastEntities.map { it.id }
-                assertTrue(podcastIds.containsAll(entityIds))
+                assertEquals(11, podcasts.size)
+                assertEquals(100L, podcasts.last().podcast.id)
+
                 cancel()
             }
         }
 
     @Test
-    fun `Given a podcast entity, When deletePodcast is called, Then the podcast is deleted`() =
+    fun `Given single podcastGroup, When upsertPodcastGroup is called, Then podcastGroup is upserted`() =
+        runTest {
+            dao.upsertPodcast(podcastEntities[0])
+            // Given
+            val group = PodcastGroupEntity(
+                groupKey = "test_group",
+                id = podcastEntities[0].id,
+                order = 0,
+                createdAt = Instant.fromEpochSeconds(0),
+            )
+            dao.upsertPodcastGroup(group)
+            dao.upsertPodcastGroup(group.copy(order = 1))
+
+
+            // When
+            val groups = dao.getPodcastGroupsByGroupKey("test_group")
+
+            // Then
+            assertEquals(1, groups.size)
+            assertEquals(1, groups[0].order)
+        }
+
+    @Test
+    fun `Given multiple podcastGroups, When upsertPodcastGroups is called, Then podcastGroups are upserted`() =
         runTest {
             // Given
-            dao.upsertPodcasts(podcastEntities)
+            dao.upsertPodcasts(podcastEntities.take(3))
+            val groups = podcastEntities.take(3).mapIndexed { index, podcast ->
+                PodcastGroupEntity(
+                    groupKey = "test_group",
+                    id = podcast.id,
+                    order = index,
+                    createdAt = Instant.fromEpochSeconds(0),
+                )
+            }
 
             // When
-            dao.deletePodcast(podcastTestData.id)
+            dao.upsertPodcastGroups(groups)
 
-            dao.getPodcasts(10).test {
-                val podcasts = awaitItem()
-                // Then
-                assertEquals(9, podcasts.size)
-                assertFalse(podcasts.map { it.podcast }.contains(podcastEntity))
+            // Then
+            val result = dao.getPodcastGroupsByGroupKey("test_group")
+            assertEquals(3, result.size)
+            assertEquals(listOf(0, 1, 2), result.map { it.order })
+        }
+
+    @Test
+    fun `Given podcasts and groupKey, When upsertPodcastsWithGroup is called, Then podcasts and groups are upserted`() =
+        runTest {
+            // Given
+            val podcasts = podcastEntities.take(3)
+
+            // When
+            dao.upsertPodcastsWithGroup(podcasts, "test_group")
+
+            // Then
+            dao.getPodcastsByGroupKey("test_group", 10).test {
+                val result = awaitItem()
+                assertEquals(3, result.size)
+                assertEquals(podcasts.map { it.id }, result.map { it.podcast.id })
                 cancel()
             }
         }
 
     @Test
-    fun `Given some podcast entities, When deletePodcasts is called, Then all podcasts are deleted`() =
+    fun `Given podcast id, When deletePodcast is called, Then podcast is deleted`() =
+        runTest {
+            // Given
+            dao.upsertPodcast(podcastEntity.copy(id = 100L))
+
+            // When
+            dao.deletePodcast(100L)
+
+            // Then
+            dao.getPodcasts(limit = 10).test {
+                val podcasts = awaitItem()
+                assertEquals(0, podcasts.size)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given multiple podcasts, When deletePodcasts is called, Then all podcasts are deleted`() =
         runTest {
             // Given
             dao.upsertPodcasts(podcastEntities)
@@ -98,188 +189,142 @@ class PodcastDaoTest {
             // When
             dao.deletePodcasts()
 
-            dao.getPodcasts(10).test {
+            // Then
+            dao.getPodcasts(limit = 100).test {
                 val podcasts = awaitItem()
-                // Then
-                assertTrue(podcasts.isEmpty())
+                assertEquals(0, podcasts.size)
                 cancel()
             }
         }
 
     @Test
-    fun `Given some podcast entities, When deletePodcastsByCacheKey is called, Then the correct podcasts are deleted`() =
+    fun `Given orphaned podcast, When deletePodcastsIfOrphaned is called, Then podcast is deleted`() =
         runTest {
             // Given
-            val entities = podcastEntities.chunked(2)
-            dao.upsertPodcasts(entities[0].map { it.copy(cacheKey = "test_key1") })
-            dao.upsertPodcasts(entities[1].map { it.copy(cacheKey = "test_key2") })
-            dao.upsertPodcasts(entities[2])
+            dao.upsertPodcasts(podcastEntities.take(2))
 
             // When
-            dao.deletePodcastsByCacheKey("test_key1")
+            dao.deletePodcastsIfOrphaned(podcastEntities.take(2).map { it.id })
 
-            dao.getPodcasts(10).test {
+            // Then
+            dao.getPodcasts(limit = 10).test {
                 val podcasts = awaitItem()
-                // Then
-                val remainingSize = entities[1].size + entities[2].size
-                assertEquals(remainingSize, podcasts.size)
-                val deletedIds = entities[0].map { it.id }
-                val entityIds = podcasts.map { it.podcast.id }
-                deletedIds.forEach { id ->
-                    assertFalse(entityIds.contains(id))
-                }
+                assertEquals(0, podcasts.size)
                 cancel()
             }
         }
 
     @Test
-    fun `Given existing podcasts with different cache keys, When replacePodcasts is called, Then podcasts are replaced by cache key`() =
-        runTest {
-            // Given - Insert initial podcasts with different cache keys
-            val initialEntities = podcastEntities.chunked(2)
-            dao.upsertPodcasts(initialEntities[0].map { it.copy(cacheKey = "key1") })
-            dao.upsertPodcasts(initialEntities[1].map { it.copy(cacheKey = "key2") })
-            dao.upsertPodcasts(initialEntities[2].map { it.copy(cacheKey = "key3") })
-
-            // Verify initial state
-            dao.getPodcastsByCacheKey("key1", 10).test {
-                assertEquals(2, awaitItem().size)
-                cancel()
-            }
-
-            // When - Replace podcasts with mixed cache keys
-            val newEntities = listOf(
-                podcastEntity.copy(id = 999L, cacheKey = "key1"),
-                podcastEntity.copy(id = 998L, cacheKey = "key1"),
-                podcastEntity.copy(id = 997L, cacheKey = "key2")
-            )
-            dao.replacePodcasts(newEntities)
-
-            // Then - Verify key1 was replaced
-            dao.getPodcastsByCacheKey("key1", 10).test {
-                val key1Podcasts = awaitItem()
-                assertEquals(2, key1Podcasts.size)
-                assertTrue(key1Podcasts.any { it.podcast.id == 999L })
-                assertTrue(key1Podcasts.any { it.podcast.id == 998L })
-                assertFalse(key1Podcasts.any { it.podcast.id == initialEntities[0][0].id })
-                cancel()
-            }
-
-            // Then - Verify key2 was replaced
-            dao.getPodcastsByCacheKey("key2", 10).test {
-                val key2Podcasts = awaitItem()
-                assertEquals(1, key2Podcasts.size)
-                assertTrue(key2Podcasts.any { it.podcast.id == 997L })
-                assertFalse(key2Podcasts.any { it.podcast.id == initialEntities[1][0].id })
-                cancel()
-            }
-
-            // Then - Verify key3 was not affected
-            dao.getPodcastsByCacheKey("key3", 10).test {
-                val key3Podcasts = awaitItem()
-                assertEquals(2, key3Podcasts.size)
-                assertTrue(key3Podcasts.any { it.podcast.id == initialEntities[2][0].id })
-                assertTrue(key3Podcasts.any { it.podcast.id == initialEntities[2][1].id })
-                cancel()
-            }
-        }
-
-    @Test
-    fun `Given podcasts with same cache key, When replacePodcasts is called, Then old podcasts are deleted and new podcasts are inserted`() =
-        runTest {
-            // Given - Insert initial podcasts
-            val initialPodcasts = podcastEntities.take(3).map { it.copy(cacheKey = "trending") }
-            dao.upsertPodcasts(initialPodcasts)
-
-            // When - Replace with new podcasts
-            val newPodcasts = listOf(
-                podcastEntity.copy(id = 100L, cacheKey = "trending"),
-                podcastEntity.copy(id = 101L, cacheKey = "trending")
-            )
-            dao.replacePodcasts(newPodcasts)
-
-            // Then - Verify old podcasts are gone and new podcasts exist
-            dao.getPodcastsByCacheKey("trending", 10).test {
-                val podcasts = awaitItem()
-                assertEquals(2, podcasts.size)
-                assertTrue(podcasts.any { it.podcast.id == 100L })
-                assertTrue(podcasts.any { it.podcast.id == 101L })
-                assertFalse(podcasts.any { it.podcast.id in initialPodcasts.map { p -> p.id } })
-                cancel()
-            }
-        }
-
-    @Test
-    fun `Given some podcast entities, When getPodcastsByCacheKey is called, Then the correct podcasts are returned`() =
+    fun `Given followed podcast, When deletePodcastsIfOrphaned is called, Then podcast is not deleted`() =
         runTest {
             // Given
-            val entities = podcastEntities.chunked(3)
-            dao.upsertPodcasts(entities[0].map { it.copy(cacheKey = "test_key1") })
-            dao.upsertPodcasts(entities[1].map { it.copy(cacheKey = "test_key2") })
-            dao.upsertPodcasts(entities[2].map { it.copy(cacheKey = "test_key3") })
-            dao.upsertPodcasts(entities[3])
+            dao.upsertPodcast(podcastEntity.copy(id = 100L))
+            dao.addFollowedPodcast(
+                FollowedPodcastEntity(
+                    id = 100L,
+                    followedAt = Instant.fromEpochSeconds(0),
+                    isNotificationEnabled = false,
+                )
+            )
 
             // When
-            dao.getPodcastsByCacheKey("test_key1", 10).test {
+            dao.deletePodcastsIfOrphaned(listOf(100L))
+
+            // Then
+            dao.getPodcasts(limit = 10).test {
                 val podcasts = awaitItem()
-                // Then
-                assertEquals(entities[0].size, podcasts.size)
-                val podcastIds = entities[0].map { it.id }
-                val entityIds = podcasts.map { it.podcast.id }
-                assertTrue(podcastIds.containsAll(entityIds))
+                assertEquals(1, podcasts.size)
+                assertEquals(100L, podcasts[0].podcast.id)
                 cancel()
             }
         }
 
     @Test
-    fun `Given some podcast entity followed and some podcast entities, When getFollowedPodcasts is called, Then the correct followed podcasts are returned`() =
+    fun `Given podcast in group, When deletePodcastsIfOrphaned is called, Then podcast is not deleted`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(listOf(podcastEntity.copy(id = 100L)), "test_group")
+
+            // When
+            dao.deletePodcastsIfOrphaned(listOf(100L))
+
+            // Then
+            dao.getPodcasts(limit = 10).test {
+                val podcasts = awaitItem()
+                assertEquals(1, podcasts.size)
+                assertEquals(100L, podcasts[0].podcast.id)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given groupKey, When deletePodcastGroupsByGroupKey is called, Then groups are deleted`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "test_group")
+
+            // When
+            dao.deletePodcastGroupsByGroupKey("test_group")
+
+            // Then
+            val groups = dao.getPodcastGroupsByGroupKey("test_group")
+            assertEquals(0, groups.size)
+        }
+
+    @Test
+    fun `Given existing podcast id, When getPodcastById is called, Then podcast is returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcast(podcastEntity.copy(id = 100L))
+
+            // When
+            dao.getPodcastById(100L).test {
+                val podcast = awaitItem()
+                // Then
+                assertEquals(100L, podcast?.podcast?.id)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given non-existing podcast id, When getPodcastById is called, Then null is returned`() =
+        runTest {
+            // When
+            dao.getPodcastById(999L).test {
+                val podcast = awaitItem()
+                // Then
+                assertEquals(null, podcast)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given podcast ids, When getPodcastsByIds is called, Then podcasts are returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcasts(podcastEntities.take(3))
+            val ids = podcastEntities.take(3).map { it.id }
+
+            // When
+            dao.getPodcastsByIds(ids).test {
+                val podcasts = awaitItem()
+                // Then
+                assertEquals(3, podcasts.size)
+                assertTrue(podcasts.map { it.podcast.id }.contains(ids[0]))
+                assertTrue(podcasts.map { it.podcast.id }.contains(ids[1]))
+                assertTrue(podcasts.map { it.podcast.id }.contains(ids[2]))
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given no query, When getPodcasts is called, Then all podcasts are returned`() =
         runTest {
             // Given
             dao.upsertPodcasts(podcastEntities)
-            val followed = listOf(
-                podcastEntities[1].id,
-                podcastEntities[3].id,
-                podcastEntities[5].id,
-            )
-            val followedAt = Clock.System.now()
-            followed.forEach {
-                dao.addFollowed(
-                    FollowedPodcastEntity(
-                        id = it,
-                        followedAt = followedAt,
-                        isNotificationEnabled = true
-                    )
-                )
-            }
 
             // When
-            dao.getFollowedPodcasts(10).test {
-                val podcasts = awaitItem()
-                // Then
-                assertEquals(followed.size, podcasts.size)
-                val entityIds = podcasts.map { it.podcast.id }
-                assertTrue(followed.containsAll(entityIds))
-            }
-        }
-
-    @Test
-    fun `Given some podcast entities, When getFollowedPodcasts is called with query, Then the correct followed podcasts are returned`() =
-        runTest {
-            // Given
-            dao.upsertPodcasts(podcastEntities)
-            val followedAt = Clock.System.now()
-            podcastEntities.forEach {
-                dao.addFollowed(
-                    FollowedPodcastEntity(
-                        id = it.id,
-                        followedAt = followedAt,
-                        isNotificationEnabled = true
-                    )
-                )
-            }
-
-            // When
-            dao.getFollowedPodcasts(10).test {
+            dao.getPodcasts(limit = 100).test {
                 val podcasts = awaitItem()
                 // Then
                 assertEquals(10, podcasts.size)
@@ -288,296 +333,356 @@ class PodcastDaoTest {
         }
 
     @Test
-    fun `Given a followed podcast entity, When removeFollowed is called, Then the podcast is unfollowed`() =
+    fun `Given query, When getPodcasts is called, Then filtered podcasts are returned`() =
         runTest {
             // Given
-            dao.upsertPodcasts(podcastEntities)
-            val followed = listOf(
-                podcastEntities[1].id,
-                podcastEntities[3].id,
-                podcastEntities[5].id,
-            )
-            val followedAt = Clock.System.now()
-            followed.forEach {
-                dao.addFollowed(
-                    FollowedPodcastEntity(
-                        id = it,
-                        followedAt = followedAt,
-                        isNotificationEnabled = true
-                    )
+            dao.upsertPodcasts(
+                listOf(
+                    podcastEntity.copy(id = 100L, title = "Java Programming"),
+                    podcastEntity.copy(id = 101L, title = "Kotlin Programming"),
                 )
-            }
+            )
 
             // When
-            dao.removeFollowed(podcastEntities[3].id)
-
-            dao.getFollowedPodcasts(10).test {
+            dao.getPodcasts(query = "Kotlin", limit = 10).test {
                 val podcasts = awaitItem()
                 // Then
-                assertEquals(followed.size - 1, podcasts.size)
-                val entityIds = podcasts.map { it.podcast.id }
-                assertFalse(entityIds.contains(podcastEntities[3].id))
+                assertEquals(1, podcasts.size)
+                assertEquals("Kotlin Programming", podcasts[0].podcast.title)
+                cancel()
+            }
+
+            // When
+            dao.getPodcasts(query = "Java", limit = 10).test {
+                val podcasts = awaitItem()
+                // Then
+                assertEquals(1, podcasts.size)
+                assertEquals("Java Programming", podcasts[0].podcast.title)
                 cancel()
             }
         }
 
     @Test
-    fun `Given a followed podcast entity, When isFollowed is called, Then the correct result is returned`() =
+    fun `Given query, When getPodcastsPaging is called, Then all podcasts are returned`() =
         runTest {
             // Given
-            val followed = listOf(
-                podcastEntities[1].id,
-                podcastEntities[3].id,
-                podcastEntities[5].id,
+            dao.upsertPodcasts(podcastEntities)
+
+            // When
+            val podcasts = dao.getPodcastsPaging().loadAsSnapshot()
+
+            // Then
+            assertEquals(10, podcasts.size)
+        }
+
+    @Test
+    fun `Given query, When getPodcastsPaging is called, Then filtered podcasts are returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcasts(
+                listOf(
+                    podcastEntity.copy(id = 100L, title = "Java Programming"),
+                    podcastEntity.copy(id = 101L, title = "Kotlin Programming"),
+                )
             )
 
             // When
-            val followedAt = Clock.System.now()
-            followed.forEach {
-                dao.addFollowed(
+            val podcasts = dao.getPodcastsPaging(query = "Kotlin").loadAsSnapshot()
+
+            // Then
+            assertEquals(1, podcasts.size)
+            assertEquals("Kotlin Programming", podcasts[0].podcast.title)
+        }
+
+    @Test
+    fun `Given groupKey, When getPodcastsByGroupKey is called, Then podcasts in group are returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "test_group")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(3).take(2), "other_group")
+
+            // When
+            dao.getPodcastsByGroupKey("test_group", 10).test {
+                val podcasts = awaitItem()
+                // Then
+                assertEquals(3, podcasts.size)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given groupKey, When getPodcastsByGroupKeyPaging is called, Then podcasts in group are returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "test_group")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(3).take(2), "other_group")
+
+            // When
+            val podcasts = dao.getPodcastsByGroupKeyPaging("test_group").loadAsSnapshot()
+
+            // Then
+            assertEquals(3, podcasts.size)
+        }
+
+    @Test
+    fun `Given groupKey with podcasts, When getOldestCreatedAtByGroupKey is called, Then oldest timestamp is returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "test_group")
+
+            // When
+            val oldestCreatedAt = dao.getOldestCreatedAtByGroupKey("test_group")
+
+            // Then
+            assertEquals(true, oldestCreatedAt != null)
+        }
+
+    @Test
+    fun `Given groupKey without podcasts, When getOldestCreatedAtByGroupKey is called, Then null is returned`() =
+        runTest {
+            // When
+            val oldestCreatedAt = dao.getOldestCreatedAtByGroupKey("non_existing_group")
+
+            // Then
+            assertEquals(null, oldestCreatedAt)
+        }
+
+    @Test
+    fun `Given podcasts with groupKey, When replacePodcasts is called, Then old podcasts are replaced`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "test_group")
+
+            // When
+            val newPodcasts = podcastEntities.drop(3).take(2)
+            dao.replacePodcasts(newPodcasts, "test_group")
+
+            // Then
+            dao.getPodcastsByGroupKey("test_group", 10).test {
+                val podcasts = awaitItem()
+                assertEquals(2, podcasts.size)
+                assertEquals(newPodcasts.map { it.id }, podcasts.map { it.podcast.id })
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given podcast id, When addFollowedPodcast is called, Then podcast is followed`() =
+        runTest {
+            // Given
+            dao.upsertPodcast(podcastEntity.copy(id = 100L))
+
+            // When
+            dao.addFollowedPodcast(
+                FollowedPodcastEntity(
+                    id = 100L,
+                    followedAt = Instant.fromEpochSeconds(0),
+                    isNotificationEnabled = false,
+                )
+            )
+
+            // Then
+            dao.isFollowedPodcast(100L).test {
+                val isFollowed = awaitItem()
+                assertEquals(true, isFollowed)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given followed podcast id, When removeFollowedPodcast is called, Then podcast is unfollowed`() =
+        runTest {
+            // Given
+            dao.upsertPodcast(podcastEntity.copy(id = 100L))
+            dao.addFollowedPodcast(
+                FollowedPodcastEntity(
+                    id = 100L,
+                    followedAt = Instant.fromEpochSeconds(0),
+                    isNotificationEnabled = false,
+                )
+            )
+
+            // When
+            dao.removeFollowedPodcast(100L)
+
+            // Then
+            dao.isFollowedPodcast(100L).test {
+                val isFollowed = awaitItem()
+                assertEquals(false, isFollowed)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given followed podcast, When isFollowedPodcast is called, Then true is returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcast(podcastEntity.copy(id = 100L))
+            dao.addFollowedPodcast(
+                FollowedPodcastEntity(
+                    id = 100L,
+                    followedAt = Instant.fromEpochSeconds(0),
+                    isNotificationEnabled = false,
+                )
+            )
+
+            // When
+            dao.isFollowedPodcast(100L).test {
+                val isFollowed = awaitItem()
+                // Then
+                assertEquals(true, isFollowed)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given unfollowed podcast, When isFollowedPodcast is called, Then false is returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcast(podcastEntity.copy(id = 100L))
+
+            // When
+            dao.isFollowedPodcast(100L).test {
+                val isFollowed = awaitItem()
+                // Then
+                assertEquals(false, isFollowed)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given unfollowed podcast, When toggleFollowedPodcast is called, Then podcast is followed`() =
+        runTest {
+            // Given
+            dao.upsertPodcast(podcastEntity.copy(id = 100L))
+
+            // When
+            val result = dao.toggleFollowedPodcast(100L)
+
+            // Then
+            assertEquals(true, result)
+            dao.isFollowedPodcast(100L).test {
+                val isFollowed = awaitItem()
+                assertEquals(true, isFollowed)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given followed podcast, When toggleFollowedPodcast is called, Then podcast is unfollowed`() =
+        runTest {
+            // Given
+            dao.upsertPodcast(podcastEntity.copy(id = 100L))
+            dao.addFollowedPodcast(
+                FollowedPodcastEntity(
+                    id = 100L,
+                    followedAt = Instant.fromEpochSeconds(0),
+                    isNotificationEnabled = false,
+                )
+            )
+
+            // When
+            val result = dao.toggleFollowedPodcast(100L)
+
+            // Then
+            assertEquals(false, result)
+            dao.isFollowedPodcast(100L).test {
+                val isFollowed = awaitItem()
+                assertEquals(false, isFollowed)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given no query, When getFollowedPodcasts is called, Then all followed podcasts are returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcasts(podcastEntities.take(3))
+            podcastEntities.take(3).forEach {
+                dao.addFollowedPodcast(
                     FollowedPodcastEntity(
-                        id = it,
-                        followedAt = followedAt,
-                        isNotificationEnabled = true
+                        id = it.id,
+                        followedAt = Instant.fromEpochSeconds(0),
+                        isNotificationEnabled = false,
                     )
                 )
             }
 
-            // Then
-            assertTrue(dao.isFollowed(podcastEntities[3].id))
-            assertFalse(dao.isFollowed(podcastEntities[4].id))
-        }
-
-    @Test
-    fun `Given a followed podcast entity, When toggleFollowed is called, Then the podcast followed or unfollowed`() =
-        runTest {
             // When
-            dao.toggleFollowed(podcastEntities[3].id)
-
-            // Then
-            assertTrue(dao.isFollowed(podcastEntities[3].id))
-
-            // When
-            dao.toggleFollowed(podcastEntities[3].id)
-
-            // Then
-            assertFalse(dao.isFollowed(podcastEntities[3].id))
-        }
-
-    @Test
-    fun `Given a podcast, When addFollowed is called, Then getPodcast flow emits updated value`() =
-        runTest {
-            // Given - Insert podcast first
-            dao.upsertPodcast(podcastEntity)
-
-            dao.getPodcast(podcastEntity.id).test {
-                // Then - Initially no follow information
-                val initial = awaitItem()
-                assertEquals(podcastEntity.id, initial?.podcast?.id)
-                assertEquals(null, initial?.followedAt)
-                assertEquals(null, initial?.isNotificationEnabled)
-
-                // When - Add follow
-                val followedAt = Clock.System.now()
-                dao.addFollowed(
-                    FollowedPodcastEntity(
-                        id = podcastEntity.id,
-                        followedAt = followedAt,
-                        isNotificationEnabled = true
-                    )
-                )
-
-                // Then - Flow should emit updated value with follow information
-                val updated = awaitItem()
-                assertEquals(podcastEntity.id, updated?.podcast?.id)
-                // Check followedAt is not null (precision may be lost in Room storage)
-                assertTrue(updated?.followedAt != null)
-                assertEquals(true, updated?.isNotificationEnabled)
-
+            dao.getFollowedPodcasts(limit = 10).test {
+                val podcasts = awaitItem()
+                // Then
+                assertEquals(3, podcasts.size)
                 cancel()
             }
         }
 
     @Test
-    fun `Given a followed podcast, When removeFollowed is called, Then getPodcast flow emits updated value`() =
+    fun `Given query, When getFollowedPodcasts is called, Then filtered followed podcasts are returned`() =
         runTest {
-            // Given - Insert podcast and follow it
-            dao.upsertPodcast(podcastEntity)
-            val followedAt = Clock.System.now()
-            dao.addFollowed(
+            // Given
+            dao.upsertPodcasts(
+                listOf(
+                    podcastEntity.copy(id = 100L, title = "Kotlin Programming"),
+                    podcastEntity.copy(id = 101L, title = "Java Programming"),
+                )
+            )
+            dao.addFollowedPodcast(
                 FollowedPodcastEntity(
-                    id = podcastEntity.id,
-                    followedAt = followedAt,
-                    isNotificationEnabled = true
+                    id = 100L,
+                    followedAt = Instant.fromEpochSeconds(0),
+                    isNotificationEnabled = false,
+                )
+            )
+            dao.addFollowedPodcast(
+                FollowedPodcastEntity(
+                    id = 101L,
+                    followedAt = Instant.fromEpochSeconds(0),
+                    isNotificationEnabled = false,
                 )
             )
 
-            dao.getPodcast(podcastEntity.id).test {
-                // Then - Initially has follow information
-                val initial = awaitItem()
-                assertEquals(podcastEntity.id, initial?.podcast?.id)
-                // Check followedAt is not null (precision may be lost in Room storage)
-                assertTrue(initial?.followedAt != null)
-                assertEquals(true, initial?.isNotificationEnabled)
-
-                // When - Remove follow
-                dao.removeFollowed(podcastEntity.id)
-
-                // Then - Flow should emit updated value without follow information
-                val updated = awaitItem()
-                assertEquals(podcastEntity.id, updated?.podcast?.id)
-                assertEquals(null, updated?.followedAt)
-                assertEquals(null, updated?.isNotificationEnabled)
-
+            // When
+            dao.getFollowedPodcasts(query = "Kotlin", limit = 10).test {
+                val podcasts = awaitItem()
+                // Then
+                assertEquals(1, podcasts.size)
+                assertEquals("Kotlin Programming", podcasts[0].podcast.title)
                 cancel()
             }
         }
 
     @Test
-    fun `Given some podcast entities, When getPodcastsPaging is called, Then podcasts are returned`() =
+    fun `Given query, When getFollowedPodcastsPaging is called, Then filtered followed podcasts are returned`() =
         runTest {
             // Given
-            dao.upsertPodcasts(podcastEntities)
-
-            // When
-            val pagingSource = dao.getPodcastsPaging()
-            val loadResult = pagingSource.load(
-                androidx.paging.PagingSource.LoadParams.Refresh(
-                    key = null,
-                    loadSize = 10,
-                    placeholdersEnabled = false
+            dao.upsertPodcasts(
+                listOf(
+                    podcastEntity.copy(id = 100L, title = "Kotlin Programming"),
+                    podcastEntity.copy(id = 101L, title = "Java Programming"),
                 )
             )
-
-            // Then
-            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
-            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
-            assertEquals(podcastEntities.size, page.data.size)
-        }
-
-    @Test
-    fun `Given some podcast entities, When getPodcastsByCacheKeyPaging is called, Then podcasts with cache key are returned`() =
-        runTest {
-            // Given
-            val entities = podcastEntities.chunked(3)
-            dao.upsertPodcasts(entities[0].map { it.copy(cacheKey = "test_key1") })
-            dao.upsertPodcasts(entities[1].map { it.copy(cacheKey = "test_key2") })
-            dao.upsertPodcasts(entities[2].map { it.copy(cacheKey = "test_key3") })
-
-            // When
-            val pagingSource = dao.getPodcastsByCacheKeyPaging("test_key1")
-            val loadResult = pagingSource.load(
-                androidx.paging.PagingSource.LoadParams.Refresh(
-                    key = null,
-                    loadSize = 10,
-                    placeholdersEnabled = false
-                )
-            )
-
-            // Then
-            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
-            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
-            assertEquals(entities[0].size, page.data.size)
-            assertTrue(page.data.all { it.podcast.cacheKey == "test_key1" })
-        }
-
-    @Test
-    fun `Given some followed podcast entities, When getFollowedPodcastsPaging is called, Then followed podcasts are returned`() =
-        runTest {
-            // Given
-            dao.upsertPodcasts(podcastEntities)
-            val followedAt = Clock.System.now()
-            dao.addFollowed(
+            dao.addFollowedPodcast(
                 FollowedPodcastEntity(
-                    id = podcastEntities[0].id,
-                    followedAt = followedAt,
-                    isNotificationEnabled = true
+                    id = 100L,
+                    followedAt = Instant.fromEpochSeconds(0),
+                    isNotificationEnabled = false,
                 )
             )
-            dao.addFollowed(
+            dao.addFollowedPodcast(
                 FollowedPodcastEntity(
-                    id = podcastEntities[1].id,
-                    followedAt = followedAt,
-                    isNotificationEnabled = true
-                )
-            )
-            dao.addFollowed(
-                FollowedPodcastEntity(
-                    id = podcastEntities[2].id,
-                    followedAt = followedAt,
-                    isNotificationEnabled = true
+                    id = 101L,
+                    followedAt = Instant.fromEpochSeconds(0),
+                    isNotificationEnabled = false,
                 )
             )
 
             // When
-            val pagingSource = dao.getFollowedPodcastsPaging()
-            val loadResult = pagingSource.load(
-                androidx.paging.PagingSource.LoadParams.Refresh(
-                    key = null,
-                    loadSize = 10,
-                    placeholdersEnabled = false
-                )
-            )
+            val podcasts = dao.getFollowedPodcastsPaging(query = "Kotlin").loadAsSnapshot()
 
             // Then
-            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
-            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
-            assertEquals(3, page.data.size)
+            assertEquals(1, podcasts.size)
+            assertEquals("Kotlin Programming", podcasts[0].podcast.title)
         }
 
-    @Test
-    fun `Given no podcasts with cache key, When getPodcastsOldestCachedAtByCacheKey is called, Then null is returned`() =
-        runTest {
-            // Given - No podcasts inserted
-
-            // When
-            val oldestCachedAt = dao.getPodcastsOldestCachedAtByCacheKey("non_existent_key")
-
-            // Then
-            assertEquals(null, oldestCachedAt)
-        }
-
-    @Test
-    fun `Given one podcast with cache key, When getPodcastsOldestCachedAtByCacheKey is called, Then that cachedAt is returned`() =
-        runTest {
-            // Given
-            dao.upsertPodcast(podcastEntity.copy(cacheKey = "test_key"))
-
-            // When
-            val oldestCachedAt = dao.getPodcastsOldestCachedAtByCacheKey("test_key")
-
-            // Then
-            assertEquals(podcastEntity.cachedAt.epochSeconds, oldestCachedAt?.epochSeconds)
-        }
-
-    @Test
-    fun `Given multiple podcasts with same cache key, When getPodcastsOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
-        runTest {
-            // Given
-            dao.upsertPodcasts(podcastEntities)
-
-            // When
-            val oldestCachedAt = dao.getPodcastsOldestCachedAtByCacheKey(cacheKey)
-
-            // Then
-            val expectedOldest = podcastEntities.minByOrNull { it.cachedAt }?.cachedAt
-            assertEquals(expectedOldest?.epochSeconds, oldestCachedAt?.epochSeconds)
-        }
-
-    @Test
-    fun `Given podcasts with different cache keys, When getPodcastsOldestCachedAtByCacheKey is called, Then only matching cache key podcasts are considered`() =
-        runTest {
-            // Given
-            dao.upsertPodcasts(podcastEntities.map { it.copy(cacheKey = "key1") })
-            dao.upsertPodcasts(podcastEntities.map { it.copy(cacheKey = "key2") })
-
-            // When
-            val key1OldestCachedAt = dao.getPodcastsOldestCachedAtByCacheKey("key1")
-            val key2OldestCachedAt = dao.getPodcastsOldestCachedAtByCacheKey("key2")
-
-            // Then
-            val expectedOldest = podcastEntities.minByOrNull { it.cachedAt }?.cachedAt
-            assertEquals(expectedOldest?.epochSeconds, key1OldestCachedAt?.epochSeconds)
-            assertEquals(expectedOldest?.epochSeconds, key2OldestCachedAt?.epochSeconds)
-        }
 }

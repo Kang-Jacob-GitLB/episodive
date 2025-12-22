@@ -4,7 +4,8 @@ import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
-import io.jacob.episodive.core.database.mapper.toEpisodeDtos
+import io.jacob.episodive.core.database.mapper.toEpisodeWithExtrasViews
+import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
@@ -43,7 +44,7 @@ class EpisodeRepositoryTest {
         remoteUpdater = remoteUpdater,
     )
 
-    private val episodeDtos = episodeTestDataList.toEpisodeDtos("test_key")
+    private val episodeDtos = episodeTestDataList.toEpisodeWithExtrasViews()
 
     @After
     fun teardown() {
@@ -272,7 +273,7 @@ class EpisodeRepositoryTest {
             val dtos = episodeDtos.mapIndexed { index, dto ->
                 dto.copy(likedAt = Instant.fromEpochSeconds(1757883600L + index))
             }
-            coEvery { localDataSource.getLikedEpisodes(max) } returns flowOf(dtos)
+            coEvery { localDataSource.getLikedEpisodes(limit = max) } returns flowOf(dtos)
 
             // When
             repository.getLikedEpisodes(max = max).test {
@@ -286,36 +287,7 @@ class EpisodeRepositoryTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getLikedEpisodes(max)
-            }
-        }
-
-    @Test
-    fun `When getPlayingEpisodes, Then calls localDataSource directly`() =
-        runTest {
-            // Given
-            val max = 10
-            val dtos = episodeDtos.mapIndexed { index, dto ->
-                dto.copy(
-                    playedAt = Instant.fromEpochSeconds(1757883600L + index),
-                    isCompleted = index < 5,
-                )
-            }
-            coEvery { localDataSource.getPlayedEpisodes(max) } returns flowOf(dtos)
-
-            // When
-            repository.getPlayingEpisodes(max = max).test {
-                val result = awaitItem()
-                // Then
-                assertEquals(5, result.size)
-                assertEquals(dtos[5].episode.id, result[0].id)
-                assertEquals(dtos[6].episode.id, result[1].id)
-                awaitComplete()
-            }
-
-            // Then
-            coVerifySequence {
-                localDataSource.getPlayedEpisodes(max)
+                localDataSource.getLikedEpisodes(limit = max)
             }
         }
 
@@ -323,59 +295,24 @@ class EpisodeRepositoryTest {
     fun `When getPlayedEpisodes, Then calls localDataSource directly`() =
         runTest {
             // Given
-            val max = 10
-            val dtos = episodeDtos.mapIndexed { index, dto ->
-                dto.copy(
-                    playedAt = Instant.fromEpochSeconds(1757883600L + index),
-                    isCompleted = index < 5,
+            coEvery {
+                localDataSource.getPlayedEpisodes(
+                    any(),
+                    any(),
+                    any()
                 )
-            }
-            coEvery { localDataSource.getPlayedEpisodes(max) } returns flowOf(dtos)
+            } returns flowOf(mockk<List<EpisodeWithExtrasView>>(relaxed = true))
+
 
             // When
-            repository.getPlayedEpisodes(max = max).test {
+            repository.getPlayedEpisodes(max = 10).test {
                 val result = awaitItem()
-                // Then
-                assertEquals(5, result.size)
-                assertEquals(dtos[0].episode.id, result[0].id)
-                assertEquals(dtos[1].episode.id, result[1].id)
                 awaitComplete()
             }
 
             // Then
             coVerifySequence {
-                localDataSource.getPlayedEpisodes(max)
-            }
-        }
-
-    @Test
-    fun `When getAllPlayedEpisodes, Then calls localDataSource directly`() =
-        runTest {
-            // Given
-            val max = 10
-            val dtos = episodeDtos.mapIndexed { index, dto ->
-                dto.copy(
-                    playedAt = Instant.fromEpochSeconds(1757883600L + index),
-                    isCompleted = index < 5,
-                )
-            }
-            coEvery { localDataSource.getPlayedEpisodes(max) } returns flowOf(dtos)
-
-            // When
-            repository.getAllPlayedEpisodes(max = max).test {
-                val result = awaitItem()
-                // Then
-                assertEquals(10, result.size)
-                assertEquals(dtos[0].episode.id, result[0].id)
-                assertEquals(dtos[1].episode.id, result[1].id)
-                assertEquals(dtos[5].episode.id, result[5].id)
-                assertEquals(dtos[6].episode.id, result[6].id)
-                awaitComplete()
-            }
-
-            // Then
-            coVerifySequence {
-                localDataSource.getPlayedEpisodes(max)
+                localDataSource.getPlayedEpisodes(limit = 10)
             }
         }
 
@@ -384,14 +321,14 @@ class EpisodeRepositoryTest {
         runTest {
             // Given
             val episodeId = 123L
-            coEvery { localDataSource.toggleLiked(episodeId) } returns true
+            coEvery { localDataSource.toggleLikedEpisode(episodeId) } returns true
 
             // When
             repository.toggleLiked(episodeId)
 
             // Then
             coVerifySequence {
-                localDataSource.toggleLiked(episodeId)
+                localDataSource.toggleLikedEpisode(episodeId)
             }
         }
 
@@ -402,14 +339,14 @@ class EpisodeRepositoryTest {
             val episodeId = 123L
             val position = 30.seconds
             val isCompleted = false
-            coEvery { localDataSource.upsertPlayed(any()) } returns Unit
+            coEvery { localDataSource.updatePlayedEpisode(any()) } returns Unit
 
             // When
             repository.updatePlayed(episodeId, position, isCompleted)
 
             // Then
             coVerify {
-                localDataSource.upsertPlayed(
+                localDataSource.updatePlayedEpisode(
                     match {
                         it.id == episodeId && it.position == position && it.isCompleted == isCompleted
                     }
@@ -421,14 +358,14 @@ class EpisodeRepositoryTest {
     fun `Given dependencies, When updateDurationOfEpisodes is called, Then calls localDataSource updateDurationOfEpisodes`() =
         runTest {
             // Given
-            coEvery { localDataSource.updateDurationOfEpisodes(any(), any()) } just Runs
+            coEvery { localDataSource.updateEpisodeDuration(any(), any()) } just Runs
 
             // When
-            repository.updateDurationOfEpisodes(123L, 30.seconds)
+            repository.updateEpisodeDuration(123L, 30.seconds)
 
             // Then
             coVerifySequence {
-                localDataSource.updateDurationOfEpisodes(123L, 30.seconds)
+                localDataSource.updateEpisodeDuration(123L, 30.seconds)
             }
         }
 

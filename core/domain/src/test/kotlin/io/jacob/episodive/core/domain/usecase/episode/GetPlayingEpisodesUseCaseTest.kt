@@ -31,7 +31,9 @@ class GetPlayingEpisodesUseCaseTest {
     fun `Given dependencies, when invoke called, then repository not called`() =
         runTest {
             // Given
-            coEvery { episodeRepository.getPlayingEpisodes(max = 10) } returns mockk(relaxed = true)
+            coEvery { episodeRepository.getPlayedEpisodes(any(), any(), any()) } returns mockk(
+                relaxed = true
+            )
 
             // When
             useCase(max = 10).test {
@@ -40,7 +42,7 @@ class GetPlayingEpisodesUseCaseTest {
 
             // Then
             coVerifySequence {
-                episodeRepository.getPlayingEpisodes(max = 10)
+                episodeRepository.getPlayedEpisodes(isCompleted = false, query = null, max = 10)
             }
         }
 }

@@ -9,7 +9,12 @@ import javax.inject.Inject
 class GetAllPlayedEpisodesPagingUseCase @Inject constructor(
     private val episodeRepository: EpisodeRepository,
 ) {
-    operator fun invoke(): Flow<PagingData<Episode>> {
-        return episodeRepository.getAllPlayedEpisodesPaging()
+    operator fun invoke(
+        query: String? = null,
+    ): Flow<PagingData<Episode>> {
+        return episodeRepository.getPlayedEpisodesPaging(
+            isCompleted = null,
+            query = query,
+        )
     }
 }

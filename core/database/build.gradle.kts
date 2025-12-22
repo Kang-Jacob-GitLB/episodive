@@ -8,6 +8,10 @@ plugins {
 
 android {
     namespace = "io.jacob.episodive.core.database"
+
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {

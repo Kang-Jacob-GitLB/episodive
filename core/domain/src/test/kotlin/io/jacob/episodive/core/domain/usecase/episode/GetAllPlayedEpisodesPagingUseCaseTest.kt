@@ -32,7 +32,7 @@ class GetAllPlayedEpisodesPagingUseCaseTest {
         runTest {
             // Given
             coEvery {
-                episodeRepository.getAllPlayedEpisodesPaging()
+                episodeRepository.getPlayedEpisodesPaging(any(), any())
             } returns mockk(relaxed = true)
 
             // When
@@ -42,7 +42,7 @@ class GetAllPlayedEpisodesPagingUseCaseTest {
 
             // Then
             coVerifySequence {
-                episodeRepository.getAllPlayedEpisodesPaging()
+                episodeRepository.getPlayedEpisodesPaging(null, null)
             }
         }
 }

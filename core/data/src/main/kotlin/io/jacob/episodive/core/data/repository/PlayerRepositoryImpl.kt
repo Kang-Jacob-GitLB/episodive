@@ -2,7 +2,7 @@ package io.jacob.episodive.core.data.repository
 
 import androidx.media3.common.Player
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
-import io.jacob.episodive.core.database.model.EpisodeDto
+import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Playback
@@ -124,7 +124,7 @@ class PlayerRepositoryImpl @Inject constructor(
     override val nowPlaying: Flow<Episode?> = playerDataSource.nowPlaying
 
     private val _playlist: Flow<List<Episode>> = playerDataSource.playlist
-    private val _likeEpisodesInPlaylist: Flow<List<EpisodeDto>> =
+    private val _likeEpisodesInPlaylist: Flow<List<EpisodeWithExtrasView>> =
         _playlist.flatMapLatest { episodes ->
             episodeLocalDataSource.getEpisodesByIds(episodes.map { it.id })
         }

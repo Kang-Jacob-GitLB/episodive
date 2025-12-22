@@ -4,7 +4,7 @@ import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
-import io.jacob.episodive.core.database.mapper.toPodcastDtos
+import io.jacob.episodive.core.database.mapper.toPodcastWithExtrasViews
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
@@ -37,7 +37,7 @@ class PodcastRepositoryTest {
         remoteUpdater = remoteUpdater,
     )
 
-    private val podcastDtos = podcastTestDataList.toPodcastDtos("test_key")
+    private val podcastDtos = podcastTestDataList.toPodcastWithExtrasViews()
 
     @After
     fun teardown() {
@@ -183,7 +183,7 @@ class PodcastRepositoryTest {
                     isNotificationEnabled = true,
                 )
             }
-            coEvery { localDataSource.getFollowedPodcasts(max) } returns flowOf(dtos)
+            coEvery { localDataSource.getFollowedPodcasts(limit = max) } returns flowOf(dtos)
 
             // When
             repository.getFollowedPodcasts(max = max).test {
@@ -197,7 +197,7 @@ class PodcastRepositoryTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getFollowedPodcasts(max)
+                localDataSource.getFollowedPodcasts(limit = max)
             }
         }
 
@@ -206,14 +206,14 @@ class PodcastRepositoryTest {
         runTest {
             // Given
             val podcastId = 12345L
-            coEvery { localDataSource.toggleFollowed(podcastId) } returns true
+            coEvery { localDataSource.toggleFollowedPodcast(podcastId) } returns true
 
             // When
             repository.toggleFollowed(podcastId)
 
             // Then
             coVerifySequence {
-                localDataSource.toggleFollowed(podcastId)
+                localDataSource.toggleFollowedPodcast(podcastId)
             }
         }
 

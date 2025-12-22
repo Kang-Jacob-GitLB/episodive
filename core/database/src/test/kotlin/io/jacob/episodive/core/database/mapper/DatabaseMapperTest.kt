@@ -29,7 +29,7 @@ class DatabaseMapperTest {
     @Test
     fun `toPodcast converts PodcastDto to Podcast correctly`() {
         // Given
-        val podcastDto = podcastTestData.toPodcastDto(cacheKey, cachedAt)
+        val podcastDto = podcastTestData.toPodcastWithExtrasView()
 
         // When
         val podcast = podcastDto.toPodcast()
@@ -45,7 +45,7 @@ class DatabaseMapperTest {
     @Test
     fun `toPodcasts converts list of PodcastDto to list of Podcast correctly`() {
         // Given
-        val podcastDtos = podcastTestDataList.toPodcastDtos(cacheKey, cachedAt)
+        val podcastDtos = podcastTestDataList.toPodcastWithExtrasViews()
 
         // When
         val podcasts = podcastDtos.toPodcasts()
@@ -59,7 +59,7 @@ class DatabaseMapperTest {
     @Test
     fun `toPodcastEntity converts Podcast to PodcastEntity correctly`() {
         // When
-        val podcastEntity = podcastTestData.toPodcastEntity(cacheKey, cachedAt)
+        val podcastEntity = podcastTestData.toPodcastEntity()
 
         // Then
         assertEquals(podcastTestData.id, podcastEntity.id)
@@ -67,27 +67,21 @@ class DatabaseMapperTest {
         assertEquals(podcastTestData.description, podcastEntity.description)
         assertEquals(podcastTestData.medium, podcastEntity.medium)
         assertEquals(podcastTestData.categories, podcastEntity.categories)
-        assertEquals(cacheKey, podcastEntity.cacheKey)
-        assertEquals(cachedAt, podcastEntity.cachedAt)
     }
 
     @Test
     fun `toPodcastEntities converts list of Podcast to list of PodcastEntity correctly`() {
         // When
-        val podcastEntities = podcastTestDataList.toPodcastEntities(cacheKey, cachedAt)
+        val podcastEntities = podcastTestDataList.toPodcastEntities()
 
         // Then
         assertEquals(podcastTestDataList.size, podcastEntities.size)
-        podcastEntities.forEach { entity ->
-            assertEquals(cacheKey, entity.cacheKey)
-            assertEquals(cachedAt, entity.cachedAt)
-        }
     }
 
     @Test
     fun `toEpisode converts EpisodeEntity to Episode correctly`() {
         // Given
-        val episodeDto = episodeTestData.toEpisodeDto(cacheKey, cachedAt)
+        val episodeDto = episodeTestData.toEpisodeWithExtrasView()
 
         // When
         val episode = episodeDto.toEpisode()
@@ -103,7 +97,7 @@ class DatabaseMapperTest {
     @Test
     fun `toEpisodes converts list of EpisodeEntity to list of Episode correctly`() {
         // Given
-        val episodeDtos = episodeTestDataList.toEpisodeDtos(cacheKey, cachedAt)
+        val episodeDtos = episodeTestDataList.toEpisodeWithExtrasViews()
 
         // When
         val episodes = episodeDtos.toEpisodes()
@@ -117,7 +111,7 @@ class DatabaseMapperTest {
     @Test
     fun `toEpisodeEntity converts Episode to EpisodeEntity correctly`() {
         // When
-        val episodeEntity = episodeTestData.toEpisodeEntity(cacheKey, cachedAt)
+        val episodeEntity = episodeTestData.toEpisodeEntity()
 
         // Then
         assertEquals(episodeTestData.id, episodeEntity.id)
@@ -125,21 +119,15 @@ class DatabaseMapperTest {
         assertEquals(episodeTestData.description, episodeEntity.description)
         assertEquals(episodeTestData.duration, episodeEntity.duration)
         assertEquals(episodeTestData.categories, episodeEntity.categories)
-        assertEquals(cacheKey, episodeEntity.cacheKey)
-        assertEquals(cachedAt, episodeEntity.cachedAt)
     }
 
     @Test
     fun `toEpisodeEntities converts list of Episode to list of EpisodeEntity correctly`() {
         // When
-        val episodeEntities = episodeTestDataList.toEpisodeEntities(cacheKey, cachedAt)
+        val episodeEntities = episodeTestDataList.toEpisodeEntities()
 
         // Then
         assertEquals(episodeTestDataList.size, episodeEntities.size)
-        episodeEntities.forEach { entity ->
-            assertEquals(cacheKey, entity.cacheKey)
-            assertEquals(cachedAt, entity.cachedAt)
-        }
     }
 
     @Test
@@ -313,7 +301,7 @@ class DatabaseMapperTest {
     @Test
     fun `toSoundbiteEntity converts Soundbite to SoundbiteEntity correctly`() {
         // When
-        val soundbiteEntity = soundbiteTestData.toSoundbiteEntity(cacheKey, cachedAt)
+        val soundbiteEntity = soundbiteTestData.toSoundbiteEntity(cachedAt)
 
         // Then
         assertEquals(soundbiteTestData.enclosureUrl, soundbiteEntity.enclosureUrl)
@@ -321,19 +309,17 @@ class DatabaseMapperTest {
         assertEquals(soundbiteTestData.startTime, soundbiteEntity.startTime)
         assertEquals(soundbiteTestData.duration, soundbiteEntity.duration)
         assertEquals(soundbiteTestData.episodeId, soundbiteEntity.episodeId)
-        assertEquals(cacheKey, soundbiteEntity.cacheKey)
         assertEquals(cachedAt, soundbiteEntity.cachedAt)
     }
 
     @Test
     fun `toSoundbiteEntities converts list of Soundbite to list of SoundbiteEntity correctly`() {
         // When
-        val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities(cacheKey, cachedAt)
+        val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities(cachedAt)
 
         // Then
         assertEquals(soundbiteTestDataList.size, soundbiteEntities.size)
         soundbiteEntities.forEach { entity ->
-            assertEquals(cacheKey, entity.cacheKey)
             assertEquals(cachedAt, entity.cachedAt)
         }
     }
@@ -341,7 +327,7 @@ class DatabaseMapperTest {
     @Test
     fun `toSoundbite converts SoundbiteEntity to Soundbite correctly`() {
         // Given
-        val soundbiteEntity = soundbiteTestData.toSoundbiteEntity(cacheKey, cachedAt)
+        val soundbiteEntity = soundbiteTestData.toSoundbiteEntity(cachedAt)
 
         // When
         val soundbite = soundbiteEntity.toSoundbite()
@@ -357,7 +343,7 @@ class DatabaseMapperTest {
     @Test
     fun `toSoundbites converts list of SoundbiteEntity to list of Soundbite correctly`() {
         // Given
-        val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities(cacheKey, cachedAt)
+        val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities(cachedAt)
 
         // When
         val soundbites = soundbiteEntities.toSoundbites()

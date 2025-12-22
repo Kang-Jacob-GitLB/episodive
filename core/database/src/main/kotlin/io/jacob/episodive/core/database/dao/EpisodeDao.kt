@@ -7,8 +7,9 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
-import io.jacob.episodive.core.database.model.EpisodeDto
 import io.jacob.episodive.core.database.model.EpisodeEntity
+import io.jacob.episodive.core.database.model.EpisodeGroupEntity
+import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
@@ -19,11 +20,42 @@ import kotlin.time.Instant
 
 @Dao
 interface EpisodeDao {
+    companion object {
+        private const val FTS_SEARCH_CONDITION = """
+            (:query IS NULL OR id IN (SELECT rowid FROM episodes_fts WHERE episodes_fts MATCH :query || '*'))
+        """
+    }
+
+
+    /** EPISODES **/
+
     @Upsert
     suspend fun upsertEpisode(episode: EpisodeEntity)
 
     @Upsert
     suspend fun upsertEpisodes(episodes: List<EpisodeEntity>)
+
+    @Upsert
+    suspend fun upsertEpisodeGroup(episodeGroup: EpisodeGroupEntity)
+
+    @Upsert
+    suspend fun upsertEpisodeGroups(episodeGroups: List<EpisodeGroupEntity>)
+
+    @Transaction
+    suspend fun upsertEpisodesWithGroup(episodes: List<EpisodeEntity>, groupKey: String) {
+        upsertEpisodes(episodes)
+
+        val createdAt = Clock.System.now()
+        val groups = episodes.mapIndexed { order, episode ->
+            EpisodeGroupEntity(
+                groupKey = groupKey,
+                id = episode.id,
+                order = order,
+                createdAt = createdAt,
+            )
+        }
+        upsertEpisodeGroups(groups)
+    }
 
     @Query("DELETE FROM episodes WHERE id = :id")
     suspend fun deleteEpisode(id: Long)
@@ -31,154 +63,101 @@ interface EpisodeDao {
     @Query("DELETE FROM episodes")
     suspend fun deleteEpisodes()
 
-    @Query("DELETE FROM episodes WHERE cacheKey = :cacheKey")
-    suspend fun deleteEpisodesByCacheKey(cacheKey: String)
+    @Query(
+        """
+        DELETE FROM episodes
+        WHERE id IN (:ids)
+          AND NOT EXISTS (SELECT 1 FROM liked_episodes WHERE liked_episodes.id = episodes.id)
+          AND NOT EXISTS (SELECT 1 FROM played_episodes WHERE played_episodes.id = episodes.id)
+          AND NOT EXISTS (SELECT 1 FROM episode_group WHERE episode_group.id = episodes.id)
+    """
+    )
+    suspend fun deleteEpisodesIfOrphaned(ids: List<Long>)
 
-    @Transaction
-    suspend fun replaceEpisodes(episodes: List<EpisodeEntity>) {
-        episodes.groupBy { it.cacheKey }.forEach { (cacheKey, episodeGroup) ->
-            deleteEpisodesByCacheKey(cacheKey)
-            upsertEpisodes(episodeGroup)
-        }
-    }
+    @Query("DELETE FROM episode_group WHERE groupKey = :groupKey")
+    suspend fun deleteEpisodeGroupsByGroupKey(groupKey: String)
 
     @Query("UPDATE episodes SET duration = :duration WHERE id = :id")
-    suspend fun updateDurationOfEpisodes(id: Long, duration: Duration)
+    suspend fun updateEpisodeDuration(id: Long, duration: Duration)
+
+    @Query("SELECT * FROM episode_with_extras WHERE id = :id")
+    fun getEpisodeById(id: Long): Flow<EpisodeWithExtrasView?>
+
+    @Query("SELECT * FROM episode_with_extras WHERE id IN (:ids)")
+    fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeWithExtrasView>>
 
     @Query(
         """
-        SELECT
-            episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
-        FROM episodes
-        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
-        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
-        WHERE episodes.id = :id
-        ORDER BY episodes.cachedAt DESC
-        LIMIT 1
-    """
-    )
-    fun getEpisodeById(id: Long): Flow<EpisodeDto?>
-
-    @Query(
-        """
-        SELECT
-            episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
-        FROM episodes
-        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
-        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
-        WHERE episodes.id IN (:ids)
-        AND episodes.cachedAt = (
-            SELECT MAX(cachedAt)
-            FROM episodes e2
-            WHERE e2.id = episodes.id
-        )
-    """
-    )
-    fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeDto>>
-
-    @Query(
-        """
-        SELECT
-            episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
-        FROM episodes
-        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
-        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
-        WHERE episodes.cachedAt = (
-            SELECT MAX(cachedAt)
-            FROM episodes e2
-            WHERE e2.id = episodes.id
-        )
+        SELECT * FROM episode_with_extras
+        WHERE $FTS_SEARCH_CONDITION
+        ORDER BY datePublished DESC
         LIMIT :limit
     """
     )
-    fun getEpisodes(limit: Int): Flow<List<EpisodeDto>>
+    fun getEpisodes(query: String? = null, limit: Int): Flow<List<EpisodeWithExtrasView>>
 
     @Query(
         """
-        SELECT
-            episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
-        FROM episodes
-        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
-        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
-        WHERE episodes.cachedAt = (
-            SELECT MAX(cachedAt)
-            FROM episodes e2
-            WHERE e2.id = episodes.id
-        )
+        SELECT * FROM episode_with_extras
+        WHERE $FTS_SEARCH_CONDITION
+        ORDER BY datePublished DESC
     """
     )
-    fun getEpisodesPaging(): PagingSource<Int, EpisodeDto>
+    fun getEpisodesPaging(query: String? = null): PagingSource<Int, EpisodeWithExtrasView>
 
     @Query(
         """
-        SELECT
-            episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
-        FROM episodes
-        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
-        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
-        WHERE episodes.cacheKey = :cacheKey
-        ORDER BY episodes.datePublished DESC
+        SELECT * FROM episode_with_extras
+        WHERE id IN (SELECT id FROM episode_group WHERE groupKey = :groupKey)
+        ORDER BY datePublished DESC
         LIMIT :limit
     """
     )
-    fun getEpisodesByCacheKey(cacheKey: String, limit: Int): Flow<List<EpisodeDto>>
+    fun getEpisodesByGroupKey(groupKey: String, limit: Int): Flow<List<EpisodeWithExtrasView>>
 
     @Query(
         """
-        SELECT
-            episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
-        FROM episodes
-        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
-        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
-        WHERE episodes.cacheKey = :cacheKey
-        ORDER BY episodes.datePublished DESC
+        SELECT * FROM episode_with_extras
+        WHERE id IN (SELECT id FROM episode_group WHERE groupKey = :groupKey)
+        ORDER BY datePublished DESC
     """
     )
-    fun getEpisodesByCacheKeyPaging(cacheKey: String): PagingSource<Int, EpisodeDto>
+    fun getEpisodesByGroupKeyPaging(groupKey: String): PagingSource<Int, EpisodeWithExtrasView>
 
-    @Query("SELECT MIN(cachedAt) FROM episodes WHERE cacheKey = :cacheKey")
-    suspend fun getEpisodesOldestCachedAtByCacheKey(cacheKey: String): Instant?
+    @Query("SELECT * FROM episode_group WHERE groupKey = :groupKey")
+    suspend fun getEpisodeGroupsByGroupKey(groupKey: String): List<EpisodeGroupEntity>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun addLiked(likedEpisode: LikedEpisodeEntity)
-
-    @Query("DELETE FROM liked_episodes WHERE id = :id")
-    suspend fun removeLiked(id: Long)
-
-    @Query("SELECT EXISTS(SELECT 1 FROM liked_episodes WHERE id = :id)")
-    fun isLiked(id: Long): Flow<Boolean>
+    @Query("SELECT MIN(createdAt) FROM episode_group WHERE groupKey = :groupKey")
+    suspend fun getOldestCreatedAtByGroupKey(groupKey: String): Instant?
 
     @Transaction
-    suspend fun toggleLiked(id: Long): Boolean {
-        return if (isLiked(id).first()) {
-            removeLiked(id)
+    suspend fun replaceEpisodes(episodes: List<EpisodeEntity>, groupKey: String) {
+        val oldEpisodeIds = getEpisodeGroupsByGroupKey(groupKey).map { it.id }
+        deleteEpisodeGroupsByGroupKey(groupKey)
+        upsertEpisodesWithGroup(episodes, groupKey)
+        deleteEpisodesIfOrphaned(oldEpisodeIds)
+    }
+
+
+    /** LIKED EPISODES **/
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun addLikedEpisode(likedEpisode: LikedEpisodeEntity)
+
+    @Query("DELETE FROM liked_episodes WHERE id = :id")
+    suspend fun removeLikedEpisode(id: Long)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM liked_episodes WHERE id = :id)")
+    fun isLikedEpisode(id: Long): Flow<Boolean>
+
+    @Transaction
+    suspend fun toggleLikedEpisode(id: Long): Boolean {
+        return if (isLikedEpisode(id).first()) {
+            removeLikedEpisode(id)
+            deleteEpisodesIfOrphaned(listOf(id))
             false
         } else {
-            addLiked(
+            addLikedEpisode(
                 LikedEpisodeEntity(
                     id = id,
                     likedAt = Clock.System.now(),
@@ -190,93 +169,67 @@ interface EpisodeDao {
 
     @Query(
         """
-        SELECT
-            episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
-        FROM episodes
-        INNER JOIN liked_episodes ON episodes.id = liked_episodes.id
-        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
-        WHERE episodes.cachedAt = (
-            SELECT MAX(cachedAt)
-            FROM episodes e2
-            WHERE e2.id = episodes.id
-        )
-        ORDER BY liked_episodes.likedAt DESC
+        SELECT * FROM episode_with_extras
+        WHERE likedAt IS NOT NULL
+        AND $FTS_SEARCH_CONDITION
+        ORDER BY likedAt DESC
         LIMIT :limit
     """
     )
-    fun getLikedEpisodes(limit: Int): Flow<List<EpisodeDto>>
+    fun getLikedEpisodes(query: String? = null, limit: Int): Flow<List<EpisodeWithExtrasView>>
 
     @Query(
         """
-        SELECT
-            episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
-        FROM episodes
-        INNER JOIN liked_episodes ON episodes.id = liked_episodes.id
-        LEFT JOIN played_episodes ON episodes.id = played_episodes.id
-        WHERE episodes.cachedAt = (
-            SELECT MAX(cachedAt)
-            FROM episodes e2
-            WHERE e2.id = episodes.id
-        )
-        ORDER BY liked_episodes.likedAt DESC
+        SELECT * FROM episode_with_extras
+        WHERE likedAt IS NOT NULL
+        AND $FTS_SEARCH_CONDITION
+        ORDER BY likedAt DESC
     """
     )
-    fun getLikedEpisodesPaging(): PagingSource<Int, EpisodeDto>
+    fun getLikedEpisodesPaging(query: String? = null): PagingSource<Int, EpisodeWithExtrasView>
+
+
+    /** PLAYED EPISODES **/
 
     @Upsert
-    suspend fun upsertPlayed(playedEpisode: PlayedEpisodeEntity)
+    suspend fun upsertPlayedEpisode(playedEpisode: PlayedEpisodeEntity)
 
     @Query("DELETE FROM played_episodes WHERE id = :id")
-    suspend fun removePlayed(id: Long)
+    suspend fun deletePlayedEpisode(id: Long)
+
+    @Transaction
+    suspend fun removePlayedEpisode(id: Long) {
+        deletePlayedEpisode(id)
+        deleteEpisodesIfOrphaned(listOf(id))
+    }
 
     @Query(
         """
-        SELECT
-            episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
-        FROM episodes
-        INNER JOIN played_episodes ON episodes.id = played_episodes.id
-        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
-        WHERE episodes.cachedAt = (
-            SELECT MAX(cachedAt)
-            FROM episodes e2
-            WHERE e2.id = episodes.id
-        )
-        ORDER BY played_episodes.playedAt DESC
+        SELECT * FROM episode_with_extras
+        WHERE playedAt IS NOT NULL
+        AND (:isCompleted IS NULL OR isCompleted = :isCompleted)
+        AND $FTS_SEARCH_CONDITION
+        ORDER BY playedAt DESC
         LIMIT :limit
     """
     )
-    fun getPlayedEpisodes(limit: Int): Flow<List<EpisodeDto>>
+    fun getPlayedEpisodes(
+        isCompleted: Boolean? = null,
+        query: String? = null,
+        limit: Int,
+    ): Flow<List<EpisodeWithExtrasView>>
 
     @Query(
         """
-        SELECT
-            episodes.*,
-            liked_episodes.likedAt,
-            played_episodes.playedAt,
-            played_episodes.position,
-            played_episodes.isCompleted
-        FROM episodes
-        INNER JOIN played_episodes ON episodes.id = played_episodes.id
-        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
-        WHERE episodes.cachedAt = (
-            SELECT MAX(cachedAt)
-            FROM episodes e2
-            WHERE e2.id = episodes.id
-        )
-        ORDER BY played_episodes.playedAt DESC
+        SELECT * FROM episode_with_extras
+        WHERE playedAt IS NOT NULL
+        AND (:isCompleted IS NULL OR isCompleted = :isCompleted)
+        AND $FTS_SEARCH_CONDITION
+        ORDER BY playedAt DESC
     """
     )
-    fun getPlayedEpisodesPaging(): PagingSource<Int, EpisodeDto>
+    fun getPlayedEpisodesPaging(
+        isCompleted: Boolean? = null,
+        query: String? = null,
+    ): PagingSource<Int, EpisodeWithExtrasView>
 }

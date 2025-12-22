@@ -41,7 +41,7 @@ class UpdatePlayedEpisodeUseCaseTest {
                 duration = 4000L.seconds,
             )
             coEvery { episodeRepository.updatePlayed(any(), any(), any()) } just Runs
-            coEvery { episodeRepository.updateDurationOfEpisodes(any(), any()) } just Runs
+            coEvery { episodeRepository.updateEpisodeDuration(any(), any()) } just Runs
 
             // When
             useCase(id, progress)
@@ -53,7 +53,7 @@ class UpdatePlayedEpisodeUseCaseTest {
                     position = progress.position,
                     isCompleted = false,
                 )
-                episodeRepository.updateDurationOfEpisodes(
+                episodeRepository.updateEpisodeDuration(
                     id = id,
                     duration = progress.duration,
                 )

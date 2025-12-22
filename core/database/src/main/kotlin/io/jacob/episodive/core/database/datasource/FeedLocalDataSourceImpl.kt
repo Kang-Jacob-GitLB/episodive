@@ -17,22 +17,6 @@ class FeedLocalDataSourceImpl @Inject constructor(
         feedDao.upsertTrendingFeeds(feeds)
     }
 
-    override suspend fun upsertRecentFeeds(feeds: List<RecentFeedEntity>) {
-        feedDao.upsertRecentFeeds(feeds)
-    }
-
-    override suspend fun upsertRecentNewFeeds(feeds: List<RecentNewFeedEntity>) {
-        feedDao.upsertRecentNewFeeds(feeds)
-    }
-
-    override suspend fun upsertSoundbites(soundbites: List<SoundbiteEntity>) {
-        feedDao.upsertSoundbites(soundbites)
-    }
-
-    override suspend fun deleteTrendingFeed(id: Long) {
-        feedDao.deleteTrendingFeed(id)
-    }
-
     override suspend fun deleteTrendingFeeds() {
         feedDao.deleteTrendingFeeds()
     }
@@ -41,56 +25,8 @@ class FeedLocalDataSourceImpl @Inject constructor(
         feedDao.deleteTrendingFeedsByCacheKey(cacheKey)
     }
 
-    override suspend fun deleteRecentFeed(id: Long) {
-        feedDao.deleteRecentFeed(id)
-    }
-
-    override suspend fun deleteRecentFeeds() {
-        feedDao.deleteRecentFeeds()
-    }
-
-    override suspend fun deleteRecentFeedsByCacheKey(cacheKey: String) {
-        feedDao.deleteRecentFeedsByCacheKey(cacheKey)
-    }
-
-    override suspend fun deleteRecentNewFeed(id: Long) {
-        feedDao.deleteRecentNewFeed(id)
-    }
-
-    override suspend fun deleteRecentNewFeeds() {
-        feedDao.deleteRecentNewFeeds()
-    }
-
-    override suspend fun deleteRecentNewFeedsByCacheKey(cacheKey: String) {
-        feedDao.deleteRecentNewFeedsByCacheKey(cacheKey)
-    }
-
-    override suspend fun deleteSoundbite(episodeId: Long) {
-        feedDao.deleteSoundbite(episodeId)
-    }
-
-    override suspend fun deleteSoundbites() {
-        feedDao.deleteSoundbites()
-    }
-
-    override suspend fun deleteSoundbitesByCacheKey(cacheKey: String) {
-        feedDao.deleteSoundbitesByCacheKey(cacheKey)
-    }
-
     override suspend fun replaceTrendingFeeds(feeds: List<TrendingFeedEntity>) {
         feedDao.replaceTrendingFeeds(feeds)
-    }
-
-    override suspend fun replaceRecentFeeds(feeds: List<RecentFeedEntity>) {
-        feedDao.replaceRecentFeeds(feeds)
-    }
-
-    override suspend fun replaceRecentNewFeeds(feeds: List<RecentNewFeedEntity>) {
-        feedDao.replaceRecentNewFeeds(feeds)
-    }
-
-    override suspend fun replaceSoundbites(soundbites: List<SoundbiteEntity>) {
-        feedDao.replaceSoundbites(soundbites)
     }
 
     override fun getTrendingFeedsByCacheKey(
@@ -108,6 +44,27 @@ class FeedLocalDataSourceImpl @Inject constructor(
         return feedDao.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey)
     }
 
+
+    override suspend fun upsertRecentFeeds(feeds: List<RecentFeedEntity>) {
+        feedDao.upsertRecentFeeds(feeds)
+    }
+
+    override suspend fun deleteRecentFeed(id: Long) {
+        feedDao.deleteRecentFeed(id)
+    }
+
+    override suspend fun deleteRecentFeeds() {
+        feedDao.deleteRecentFeeds()
+    }
+
+    override suspend fun deleteRecentFeedsByCacheKey(cacheKey: String) {
+        feedDao.deleteRecentFeedsByCacheKey(cacheKey)
+    }
+
+    override suspend fun replaceRecentFeeds(feeds: List<RecentFeedEntity>) {
+        feedDao.replaceRecentFeeds(feeds)
+    }
+
     override fun getRecentFeedsByCacheKey(
         cacheKey: String,
         limit: Int,
@@ -121,6 +78,27 @@ class FeedLocalDataSourceImpl @Inject constructor(
 
     override suspend fun getRecentFeedsOldestCachedAtByCacheKey(cacheKey: String): Instant? {
         return feedDao.getRecentFeedsOldestCachedAtByCacheKey(cacheKey)
+    }
+
+
+    override suspend fun upsertRecentNewFeeds(feeds: List<RecentNewFeedEntity>) {
+        feedDao.upsertRecentNewFeeds(feeds)
+    }
+
+    override suspend fun deleteRecentNewFeed(id: Long) {
+        feedDao.deleteRecentNewFeed(id)
+    }
+
+    override suspend fun deleteRecentNewFeeds() {
+        feedDao.deleteRecentNewFeeds()
+    }
+
+    override suspend fun deleteRecentNewFeedsByCacheKey(cacheKey: String) {
+        feedDao.deleteRecentNewFeedsByCacheKey(cacheKey)
+    }
+
+    override suspend fun replaceRecentNewFeeds(feeds: List<RecentNewFeedEntity>) {
+        feedDao.replaceRecentNewFeeds(feeds)
     }
 
     override fun getRecentNewFeedsByCacheKey(
@@ -138,18 +116,36 @@ class FeedLocalDataSourceImpl @Inject constructor(
         return feedDao.getRecentNewFeedsOldestCachedAtByCacheKey(cacheKey)
     }
 
-    override fun getSoundbitesByCacheKey(
-        cacheKey: String,
-        limit: Int,
-    ): Flow<List<SoundbiteEntity>> {
-        return feedDao.getSoundbitesByCacheKey(cacheKey, limit)
+
+    override suspend fun upsertSoundbites(soundbites: List<SoundbiteEntity>) {
+        feedDao.upsertSoundbites(soundbites)
     }
 
-    override fun getSoundbitesByCacheKeyPaging(cacheKey: String): PagingSource<Int, SoundbiteEntity> {
-        return feedDao.getSoundbitesByCacheKeyPaging(cacheKey)
+    override suspend fun deleteTrendingFeed(id: Long) {
+        feedDao.deleteTrendingFeed(id)
     }
 
-    override suspend fun getSoundbitesOldestCachedAtByCacheKey(cacheKey: String): Instant? {
-        return feedDao.getSoundbitesOldestCachedAtByCacheKey(cacheKey)
+    override suspend fun deleteSoundbite(episodeId: Long) {
+        feedDao.deleteSoundbite(episodeId)
+    }
+
+    override suspend fun deleteSoundbites() {
+        feedDao.deleteSoundbites()
+    }
+
+    override suspend fun replaceSoundbites(soundbites: List<SoundbiteEntity>) {
+        feedDao.replaceSoundbites(soundbites)
+    }
+
+    override fun getSoundbites(limit: Int): Flow<List<SoundbiteEntity>> {
+        return feedDao.getSoundbites(limit)
+    }
+
+    override fun getSoundbitesPaging(): PagingSource<Int, SoundbiteEntity> {
+        return feedDao.getSoundbitesPaging()
+    }
+
+    override suspend fun getSoundbitesOldestCachedAt(): Instant? {
+        return feedDao.getSoundbitesOldestCachedAt()
     }
 }

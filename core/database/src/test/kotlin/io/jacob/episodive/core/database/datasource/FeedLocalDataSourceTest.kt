@@ -35,7 +35,7 @@ class FeedLocalDataSourceTest {
     private val trendingFeedEntities = trendingFeedTestDataList.toTrendingFeedEntities(cacheKey)
     private val recentFeedEntities = recentFeedTestDataList.toRecentFeedEntities(cacheKey)
     private val recentNewFeedEntities = recentNewFeedTestDataList.toRecentNewFeedEntities(cacheKey)
-    private val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities(cacheKey)
+    private val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities()
 
     @After
     fun teardown() {
@@ -53,45 +53,6 @@ class FeedLocalDataSourceTest {
 
             // Then
             coVerify { feedDao.upsertTrendingFeeds(trendingFeedEntities) }
-        }
-
-    @Test
-    fun `Given dependencies, When upsertRecentFeeds, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.upsertRecentFeeds(any()) } just Runs
-
-            // When
-            dataSource.upsertRecentFeeds(recentFeedEntities)
-
-            // Then
-            coVerify { feedDao.upsertRecentFeeds(recentFeedEntities) }
-        }
-
-    @Test
-    fun `Given dependencies, When upsertRecentNewFeeds, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.upsertRecentNewFeeds(any()) } just Runs
-
-            // When
-            dataSource.upsertRecentNewFeeds(recentNewFeedEntities)
-
-            // Then
-            coVerify { feedDao.upsertRecentNewFeeds(recentNewFeedEntities) }
-        }
-
-    @Test
-    fun `Given dependencies, When upsertSoundbites, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.upsertSoundbites(any()) } just Runs
-
-            // When
-            dataSource.upsertSoundbites(soundbiteEntities)
-
-            // Then
-            coVerify { feedDao.upsertSoundbites(soundbiteEntities) }
         }
 
     @Test
@@ -135,6 +96,71 @@ class FeedLocalDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When replaceTrendingFeeds, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.replaceTrendingFeeds(any()) } just Runs
+
+            // When
+            dataSource.replaceTrendingFeeds(trendingFeedEntities)
+
+            // Then
+            coVerify { feedDao.replaceTrendingFeeds(trendingFeedEntities) }
+        }
+
+    @Test
+    fun `Given dependencies, When getTrendingFeedsByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getTrendingFeedsByCacheKey(any(), 10) } returns mockk()
+
+            // When
+            dataSource.getTrendingFeedsByCacheKey(cacheKey, 10)
+
+            // Then
+            coVerify { feedDao.getTrendingFeedsByCacheKey(cacheKey, 10) }
+        }
+
+    @Test
+    fun `Given dependencies, When getTrendingFeedsByCacheKeyPaging, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getTrendingFeedsByCacheKeyPaging(any()) } returns mockk()
+
+            // When
+            dataSource.getTrendingFeedsByCacheKeyPaging(cacheKey)
+
+            // Then
+            coVerify { feedDao.getTrendingFeedsByCacheKeyPaging(cacheKey) }
+        }
+
+    @Test
+    fun `Given dependencies, When getTrendingFeedsOldestCachedAtByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getTrendingFeedsOldestCachedAtByCacheKey(any()) } returns mockk()
+
+            // When
+            dataSource.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            coVerify { feedDao.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey) }
+        }
+
+    @Test
+    fun `Given dependencies, When upsertRecentFeeds, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.upsertRecentFeeds(any()) } just Runs
+
+            // When
+            dataSource.upsertRecentFeeds(recentFeedEntities)
+
+            // Then
+            coVerify { feedDao.upsertRecentFeeds(recentFeedEntities) }
+        }
+
+    @Test
     fun `Given dependencies, When deleteRecentFeed, Then call dao's method`() =
         runTest {
             // Given
@@ -172,6 +198,71 @@ class FeedLocalDataSourceTest {
 
             // Then
             coVerify { feedDao.deleteRecentFeedsByCacheKey(cacheKey) }
+        }
+
+    @Test
+    fun `Given dependencies, When replaceRecentFeeds, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.replaceRecentFeeds(any()) } just Runs
+
+            // When
+            dataSource.replaceRecentFeeds(recentFeedEntities)
+
+            // Then
+            coVerify { feedDao.replaceRecentFeeds(recentFeedEntities) }
+        }
+
+    @Test
+    fun `Given dependencies, When getRecentFeedsByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getRecentFeedsByCacheKey(any(), 10) } returns mockk()
+
+            // When
+            dataSource.getRecentFeedsByCacheKey(cacheKey, 10)
+
+            // Then
+            coVerify { feedDao.getRecentFeedsByCacheKey(cacheKey, 10) }
+        }
+
+    @Test
+    fun `Given dependencies, When getRecentFeedsByCacheKeyPaging, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getRecentFeedsByCacheKeyPaging(any()) } returns mockk()
+
+            // When
+            dataSource.getRecentFeedsByCacheKeyPaging(cacheKey)
+
+            // Then
+            coVerify { feedDao.getRecentFeedsByCacheKeyPaging(cacheKey) }
+        }
+
+    @Test
+    fun `Given dependencies, When getRecentFeedsOldestCachedAtByCacheKey, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getRecentFeedsOldestCachedAtByCacheKey(any()) } returns mockk()
+
+            // When
+            dataSource.getRecentFeedsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            coVerify { feedDao.getRecentFeedsOldestCachedAtByCacheKey(cacheKey) }
+        }
+
+    @Test
+    fun `Given dependencies, When upsertRecentNewFeeds, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.upsertRecentNewFeeds(any()) } just Runs
+
+            // When
+            dataSource.upsertRecentNewFeeds(recentNewFeedEntities)
+
+            // Then
+            coVerify { feedDao.upsertRecentNewFeeds(recentNewFeedEntities) }
         }
 
     @Test
@@ -215,72 +306,6 @@ class FeedLocalDataSourceTest {
         }
 
     @Test
-    fun `Given dependencies, When deleteSoundbite, Then call dao's method`() =
-        runTest {
-            // Given
-            val episodeId = 1L
-            coEvery { feedDao.deleteSoundbite(any()) } just Runs
-
-            // When
-            dataSource.deleteSoundbite(episodeId)
-
-            // Then
-            coVerify { feedDao.deleteSoundbite(episodeId) }
-        }
-
-    @Test
-    fun `Given dependencies, When deleteSoundbites, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.deleteSoundbites() } just Runs
-
-            // When
-            dataSource.deleteSoundbites()
-
-            // Then
-            coVerify { feedDao.deleteSoundbites() }
-        }
-
-    @Test
-    fun `Given dependencies, When deleteSoundbitesByCacheKey, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.deleteSoundbitesByCacheKey(any()) } just Runs
-
-            // When
-            dataSource.deleteSoundbitesByCacheKey(cacheKey)
-
-            // Then
-            coVerify { feedDao.deleteSoundbitesByCacheKey(cacheKey) }
-        }
-
-    @Test
-    fun `Given dependencies, When replaceTrendingFeeds, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.replaceTrendingFeeds(any()) } just Runs
-
-            // When
-            dataSource.replaceTrendingFeeds(trendingFeedEntities)
-
-            // Then
-            coVerify { feedDao.replaceTrendingFeeds(trendingFeedEntities) }
-        }
-
-    @Test
-    fun `Given dependencies, When replaceRecentFeeds, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.replaceRecentFeeds(any()) } just Runs
-
-            // When
-            dataSource.replaceRecentFeeds(recentFeedEntities)
-
-            // Then
-            coVerify { feedDao.replaceRecentFeeds(recentFeedEntities) }
-        }
-
-    @Test
     fun `Given dependencies, When replaceRecentNewFeeds, Then call dao's method`() =
         runTest {
             // Given
@@ -291,71 +316,6 @@ class FeedLocalDataSourceTest {
 
             // Then
             coVerify { feedDao.replaceRecentNewFeeds(recentNewFeedEntities) }
-        }
-
-    @Test
-    fun `Given dependencies, When replaceSoundbites, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.replaceSoundbites(any()) } just Runs
-
-            // When
-            dataSource.replaceSoundbites(soundbiteEntities)
-
-            // Then
-            coVerify { feedDao.replaceSoundbites(soundbiteEntities) }
-        }
-
-    @Test
-    fun `Given dependencies, When getTrendingFeedsByCacheKey, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.getTrendingFeedsByCacheKey(any(), 10) } returns mockk()
-
-            // When
-            dataSource.getTrendingFeedsByCacheKey(cacheKey, 10)
-
-            // Then
-            coVerify { feedDao.getTrendingFeedsByCacheKey(cacheKey, 10) }
-        }
-
-    @Test
-    fun `Given dependencies, When getTrendingFeedsByCacheKeyPaging, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.getTrendingFeedsByCacheKeyPaging(any()) } returns mockk()
-
-            // When
-            dataSource.getTrendingFeedsByCacheKeyPaging(cacheKey)
-
-            // Then
-            coVerify { feedDao.getTrendingFeedsByCacheKeyPaging(cacheKey) }
-        }
-
-    @Test
-    fun `Given dependencies, When getRecentFeedsByCacheKey, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.getRecentFeedsByCacheKey(any(), 10) } returns mockk()
-
-            // When
-            dataSource.getRecentFeedsByCacheKey(cacheKey, 10)
-
-            // Then
-            coVerify { feedDao.getRecentFeedsByCacheKey(cacheKey, 10) }
-        }
-
-    @Test
-    fun `Given dependencies, When getRecentFeedsByCacheKeyPaging, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.getRecentFeedsByCacheKeyPaging(any()) } returns mockk()
-
-            // When
-            dataSource.getRecentFeedsByCacheKeyPaging(cacheKey)
-
-            // Then
-            coVerify { feedDao.getRecentFeedsByCacheKeyPaging(cacheKey) }
         }
 
     @Test
@@ -385,58 +345,6 @@ class FeedLocalDataSourceTest {
         }
 
     @Test
-    fun `Given dependencies, When getSoundbitesByCacheKey, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.getSoundbitesByCacheKey(any(), 10) } returns mockk()
-
-            // When
-            dataSource.getSoundbitesByCacheKey(cacheKey, 10)
-
-            // Then
-            coVerify { feedDao.getSoundbitesByCacheKey(cacheKey, 10) }
-        }
-
-    @Test
-    fun `Given dependencies, When getSoundbitesByCacheKeyPaging, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.getSoundbitesByCacheKeyPaging(any()) } returns mockk()
-
-            // When
-            dataSource.getSoundbitesByCacheKeyPaging(cacheKey)
-
-            // Then
-            coVerify { feedDao.getSoundbitesByCacheKeyPaging(cacheKey) }
-        }
-
-    @Test
-    fun `Given dependencies, When getTrendingFeedsOldestCachedAtByCacheKey, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.getTrendingFeedsOldestCachedAtByCacheKey(any()) } returns mockk()
-
-            // When
-            dataSource.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey)
-
-            // Then
-            coVerify { feedDao.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey) }
-        }
-
-    @Test
-    fun `Given dependencies, When getRecentFeedsOldestCachedAtByCacheKey, Then call dao's method`() =
-        runTest {
-            // Given
-            coEvery { feedDao.getRecentFeedsOldestCachedAtByCacheKey(any()) } returns mockk()
-
-            // When
-            dataSource.getRecentFeedsOldestCachedAtByCacheKey(cacheKey)
-
-            // Then
-            coVerify { feedDao.getRecentFeedsOldestCachedAtByCacheKey(cacheKey) }
-        }
-
-    @Test
     fun `Given dependencies, When getRecentNewFeedsOldestCachedAtByCacheKey, Then call dao's method`() =
         runTest {
             // Given
@@ -450,15 +358,94 @@ class FeedLocalDataSourceTest {
         }
 
     @Test
-    fun `Given dependencies, When getSoundbitesOldestCachedAtByCacheKey, Then call dao's method`() =
+    fun `Given dependencies, When upsertSoundbites, Then call dao's method`() =
         runTest {
             // Given
-            coEvery { feedDao.getSoundbitesOldestCachedAtByCacheKey(any()) } returns mockk()
+            coEvery { feedDao.upsertSoundbites(any()) } just Runs
 
             // When
-            dataSource.getSoundbitesOldestCachedAtByCacheKey(cacheKey)
+            dataSource.upsertSoundbites(soundbiteEntities)
 
             // Then
-            coVerify { feedDao.getSoundbitesOldestCachedAtByCacheKey(cacheKey) }
+            coVerify { feedDao.upsertSoundbites(soundbiteEntities) }
+        }
+
+    @Test
+    fun `Given dependencies, When deleteSoundbite, Then call dao's method`() =
+        runTest {
+            // Given
+            val episodeId = 1L
+            coEvery { feedDao.deleteSoundbite(any()) } just Runs
+
+            // When
+            dataSource.deleteSoundbite(episodeId)
+
+            // Then
+            coVerify { feedDao.deleteSoundbite(episodeId) }
+        }
+
+    @Test
+    fun `Given dependencies, When deleteSoundbites, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.deleteSoundbites() } just Runs
+
+            // When
+            dataSource.deleteSoundbites()
+
+            // Then
+            coVerify { feedDao.deleteSoundbites() }
+        }
+
+    @Test
+    fun `Given dependencies, When replaceSoundbites, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.replaceSoundbites(any()) } just Runs
+
+            // When
+            dataSource.replaceSoundbites(soundbiteEntities)
+
+            // Then
+            coVerify { feedDao.replaceSoundbites(soundbiteEntities) }
+        }
+
+    @Test
+    fun `Given dependencies, When getSoundbites, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getSoundbites(10) } returns mockk()
+
+            // When
+            dataSource.getSoundbites(10)
+
+            // Then
+            coVerify { feedDao.getSoundbites(10) }
+        }
+
+    @Test
+    fun `Given dependencies, When getSoundbitesPaging, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getSoundbitesPaging() } returns mockk()
+
+            // When
+            dataSource.getSoundbitesPaging()
+
+            // Then
+            coVerify { feedDao.getSoundbitesPaging() }
+        }
+
+    @Test
+    fun `Given dependencies, When getSoundbitesOldestCachedAt, Then call dao's method`() =
+        runTest {
+            // Given
+            coEvery { feedDao.getSoundbitesOldestCachedAt() } returns mockk()
+
+            // When
+            dataSource.getSoundbitesOldestCachedAt()
+
+            // Then
+            coVerify { feedDao.getSoundbitesOldestCachedAt() }
         }
 }

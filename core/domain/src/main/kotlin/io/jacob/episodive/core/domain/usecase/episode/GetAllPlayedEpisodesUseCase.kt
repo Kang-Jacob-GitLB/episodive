@@ -8,7 +8,14 @@ import javax.inject.Inject
 class GetAllPlayedEpisodesUseCase @Inject constructor(
     private val episodeRepository: EpisodeRepository,
 ) {
-    operator fun invoke(query: String? = null, max: Int): Flow<List<Episode>> {
-        return episodeRepository.getAllPlayedEpisodes(query, max)
+    operator fun invoke(
+        query: String? = null,
+        max: Int,
+    ): Flow<List<Episode>> {
+        return episodeRepository.getPlayedEpisodes(
+            isCompleted = null,
+            query = query,
+            max = max,
+        )
     }
 }

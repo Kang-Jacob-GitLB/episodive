@@ -1,24 +1,14 @@
 package io.jacob.episodive.core.database.model
 
 import androidx.room.Entity
-import androidx.room.Index
+import androidx.room.PrimaryKey
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Medium
 import kotlin.time.Instant
 
-@Entity(
-    tableName = "podcasts",
-    primaryKeys = ["id", "cacheKey"],
-    indices = [
-        Index(value = ["id", "cachedAt"]),
-        Index(value = ["title"]),
-        Index(value = ["description"]),
-        Index(value = ["author"]),
-        Index(value = ["ownerName"]),
-    ],
-)
+@Entity(tableName = "podcasts")
 data class PodcastEntity(
-    val id: Long,
+    @PrimaryKey val id: Long,
     val podcastGuid: String,
     val title: String,
     val url: String,
@@ -51,6 +41,4 @@ data class PodcastEntity(
     val locked: Int,
     val imageUrlHash: Long? = null,
     val newestItemPublishTime: Instant? = null,
-    val cacheKey: String,
-    val cachedAt: Instant,
 )

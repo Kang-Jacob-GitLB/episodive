@@ -9,7 +9,6 @@ import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisode
 import io.jacob.episodive.core.database.mapper.toEpisodes
-import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.model.Category
@@ -195,82 +194,79 @@ class EpisodeRepositoryImpl @Inject constructor(
             }
     }
 
+    override fun getSoundbiteEpisodes(max: Int): Flow<List<Episode>> {
+        val query = EpisodeQuery.Soundbite
+
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toEpisodes() }
+    }
+
+    override fun getSoundbiteEpisodesPaging(): Flow<PagingData<Episode>> {
+        val query = EpisodeQuery.Soundbite
+
+        return remoteUpdater.create(query)
+            .getPagingData(config)
+            .map { pagingData ->
+                pagingData.map { it.toEpisode() }
+            }
+    }
+
     override fun getLikedEpisodes(query: String?, max: Int): Flow<List<Episode>> {
-        return localDataSource.getLikedEpisodes(max).map { episodes ->
-            episodes
-                .filter { query == null || it.episode.matchesQuery(query) }
-                .toEpisodes()
+        return localDataSource.getLikedEpisodes(
+            query = query,
+            limit = max,
+        ).map { episodes ->
+            episodes.toEpisodes()
         }
     }
 
-    override fun getLikedEpisodesPaging(): Flow<PagingData<Episode>> {
+    override fun getLikedEpisodesPaging(query: String?): Flow<PagingData<Episode>> {
         return Pager(
             config = config,
-            pagingSourceFactory = { localDataSource.getLikedEpisodesPaging() }
+            pagingSourceFactory = { localDataSource.getLikedEpisodesPaging(query) }
         ).flow.map { pagingData ->
             pagingData.map { it.toEpisode() }
         }
     }
 
-    override fun getPlayingEpisodes(query: String?, max: Int): Flow<List<Episode>> {
-        return localDataSource.getPlayedEpisodes(max).map { episodes ->
-            episodes
-                .filter { it.isCompleted == false }
-                .filter { query == null || it.episode.matchesQuery(query) }
-                .toEpisodes()
+    override fun getPlayedEpisodes(
+        isCompleted: Boolean?,
+        query: String?,
+        max: Int,
+    ): Flow<List<Episode>> {
+        return localDataSource.getPlayedEpisodes(
+            isCompleted = isCompleted,
+            query = query,
+            limit = max,
+        ).map { episodes ->
+            episodes.toEpisodes()
         }
     }
 
-    override fun getPlayingEpisodesPaging(): Flow<PagingData<Episode>> {
+    override fun getPlayedEpisodesPaging(
+        isCompleted: Boolean?,
+        query: String?,
+    ): Flow<PagingData<Episode>> {
         return Pager(
             config = config,
-            pagingSourceFactory = { localDataSource.getPlayedEpisodesPaging() }
-        ).flow.map { pagingData ->
-            pagingData.map { it.toEpisode() }
-        }
-    }
-
-    override fun getPlayedEpisodes(query: String?, max: Int): Flow<List<Episode>> {
-        return localDataSource.getPlayedEpisodes(max).map { episodes ->
-            episodes
-                .filter { it.isCompleted == true }
-                .filter { query == null || it.episode.matchesQuery(query) }
-                .toEpisodes()
-        }
-    }
-
-    override fun getPlayedEpisodesPaging(): Flow<PagingData<Episode>> {
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getPlayedEpisodesPaging() }
-        ).flow.map { pagingData ->
-            pagingData.map { it.toEpisode() }
-        }
-    }
-
-    override fun getAllPlayedEpisodes(query: String?, max: Int): Flow<List<Episode>> {
-        return localDataSource.getPlayedEpisodes(max).map { episodes ->
-            episodes
-                .filter { query == null || it.episode.matchesQuery(query) }
-                .toEpisodes()
-        }
-    }
-
-    override fun getAllPlayedEpisodesPaging(): Flow<PagingData<Episode>> {
-        return Pager(
-            config = config,
-            pagingSourceFactory = { localDataSource.getPlayedEpisodesPaging() }
+            pagingSourceFactory = {
+                localDataSource.getPlayedEpisodesPaging(
+                    isCompleted = isCompleted,
+                    query = query,
+                )
+            }
         ).flow.map { pagingData ->
             pagingData.map { it.toEpisode() }
         }
     }
 
     override fun isLiked(id: Long): Flow<Boolean> {
-        return localDataSource.isLiked(id)
+        return localDataSource.isLikedEpisode(id)
     }
 
     override suspend fun toggleLiked(id: Long): Boolean {
-        return localDataSource.toggleLiked(id)
+        return localDataSource.toggleLikedEpisode(id)
     }
 
     override suspend fun updatePlayed(
@@ -278,7 +274,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         position: Duration,
         isCompleted: Boolean,
     ) {
-        localDataSource.upsertPlayed(
+        localDataSource.updatePlayedEpisode(
             PlayedEpisodeEntity(
                 id = id,
                 playedAt = Clock.System.now(),
@@ -288,18 +284,11 @@ class EpisodeRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun updateDurationOfEpisodes(id: Long, duration: Duration) {
-        localDataSource.updateDurationOfEpisodes(id, duration)
+    override suspend fun updateEpisodeDuration(id: Long, duration: Duration) {
+        localDataSource.updateEpisodeDuration(id, duration)
     }
 
     override suspend fun fetchChapters(url: String): List<Chapter> {
         return chapterRemoteDataSource.fetchChapters(url)
-    }
-
-    private fun EpisodeEntity.matchesQuery(query: String): Boolean {
-        return title.contains(query, ignoreCase = true) ||
-                description?.contains(query, ignoreCase = true) == true ||
-                feedAuthor?.contains(query, ignoreCase = true) == true ||
-                feedTitle?.contains(query, ignoreCase = true) == true
     }
 }

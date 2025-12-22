@@ -41,7 +41,7 @@ class SoundbiteRemoteUpdater @AssistedInject constructor(
     }
 
     override suspend fun convertToEntity(responses: List<SoundbiteResponse>): List<SoundbiteEntity> {
-        return responses.toSoundbites().toSoundbiteEntities(query.key)
+        return responses.toSoundbites().toSoundbiteEntities()
     }
 
     override suspend fun replaceToLocal(entities: List<SoundbiteEntity>) {
@@ -49,7 +49,7 @@ class SoundbiteRemoteUpdater @AssistedInject constructor(
     }
 
     override suspend fun isExpired(): Boolean {
-        val oldestCachedAt = localDataSource.getSoundbitesOldestCachedAtByCacheKey(query.key)
+        val oldestCachedAt = localDataSource.getSoundbitesOldestCachedAt()
             ?: return true
 
         val now = Clock.System.now()
@@ -57,10 +57,10 @@ class SoundbiteRemoteUpdater @AssistedInject constructor(
     }
 
     override fun getPagingSource(): PagingSource<Int, SoundbiteEntity> {
-        return localDataSource.getSoundbitesByCacheKeyPaging(query.key)
+        return localDataSource.getSoundbitesPaging()
     }
 
     override fun getFlowSource(count: Int): Flow<List<SoundbiteEntity>> {
-        return localDataSource.getSoundbitesByCacheKey(query.key, count)
+        return localDataSource.getSoundbites(count)
     }
 }
