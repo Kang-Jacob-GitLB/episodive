@@ -37,7 +37,7 @@ class PodcastRepositoryTest {
         remoteUpdater = remoteUpdater,
     )
 
-    private val podcastDtos = podcastTestDataList.toPodcastWithExtrasViews("test_key")
+    private val podcastDtos = podcastTestDataList.toPodcastWithExtrasViews()
 
     @After
     fun teardown() {
@@ -183,7 +183,7 @@ class PodcastRepositoryTest {
                     isNotificationEnabled = true,
                 )
             }
-            coEvery { localDataSource.getFollowedPodcasts(max) } returns flowOf(dtos)
+            coEvery { localDataSource.getFollowedPodcasts(limit = max) } returns flowOf(dtos)
 
             // When
             repository.getFollowedPodcasts(max = max).test {
@@ -197,7 +197,7 @@ class PodcastRepositoryTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getFollowedPodcasts(max)
+                localDataSource.getFollowedPodcasts(limit = max)
             }
         }
 
@@ -206,14 +206,14 @@ class PodcastRepositoryTest {
         runTest {
             // Given
             val podcastId = 12345L
-            coEvery { localDataSource.toggleFollowed(podcastId) } returns true
+            coEvery { localDataSource.toggleFollowedPodcast(podcastId) } returns true
 
             // When
             repository.toggleFollowed(podcastId)
 
             // Then
             coVerifySequence {
-                localDataSource.toggleFollowed(podcastId)
+                localDataSource.toggleFollowedPodcast(podcastId)
             }
         }
 

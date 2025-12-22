@@ -29,7 +29,7 @@ class DatabaseMapperTest {
     @Test
     fun `toPodcast converts PodcastDto to Podcast correctly`() {
         // Given
-        val podcastDto = podcastTestData.toPodcastWithExtrasView(cacheKey, cachedAt)
+        val podcastDto = podcastTestData.toPodcastWithExtrasView()
 
         // When
         val podcast = podcastDto.toPodcast()
@@ -45,7 +45,7 @@ class DatabaseMapperTest {
     @Test
     fun `toPodcasts converts list of PodcastDto to list of Podcast correctly`() {
         // Given
-        val podcastDtos = podcastTestDataList.toPodcastWithExtrasViews(cacheKey, cachedAt)
+        val podcastDtos = podcastTestDataList.toPodcastWithExtrasViews()
 
         // When
         val podcasts = podcastDtos.toPodcasts()
@@ -59,7 +59,7 @@ class DatabaseMapperTest {
     @Test
     fun `toPodcastEntity converts Podcast to PodcastEntity correctly`() {
         // When
-        val podcastEntity = podcastTestData.toPodcastEntity(cacheKey, cachedAt)
+        val podcastEntity = podcastTestData.toPodcastEntity()
 
         // Then
         assertEquals(podcastTestData.id, podcastEntity.id)
@@ -67,21 +67,15 @@ class DatabaseMapperTest {
         assertEquals(podcastTestData.description, podcastEntity.description)
         assertEquals(podcastTestData.medium, podcastEntity.medium)
         assertEquals(podcastTestData.categories, podcastEntity.categories)
-        assertEquals(cacheKey, podcastEntity.cacheKey)
-        assertEquals(cachedAt, podcastEntity.cachedAt)
     }
 
     @Test
     fun `toPodcastEntities converts list of Podcast to list of PodcastEntity correctly`() {
         // When
-        val podcastEntities = podcastTestDataList.toPodcastEntities(cacheKey, cachedAt)
+        val podcastEntities = podcastTestDataList.toPodcastEntities()
 
         // Then
         assertEquals(podcastTestDataList.size, podcastEntities.size)
-        podcastEntities.forEach { entity ->
-            assertEquals(cacheKey, entity.cacheKey)
-            assertEquals(cachedAt, entity.cachedAt)
-        }
     }
 
     @Test

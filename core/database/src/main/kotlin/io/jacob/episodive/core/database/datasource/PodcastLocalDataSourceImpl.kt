@@ -19,18 +19,26 @@ class PodcastLocalDataSourceImpl(
     }
 
     override fun getPodcasts(query: String?, limit: Int): Flow<List<PodcastWithExtrasView>> {
-        return podcastDao.getPodcasts(query, limit)
+        return podcastDao.getPodcasts(
+            query = query?.ifBlank { null },
+            limit = limit,
+        )
     }
 
     override fun getPodcastsPaging(query: String?): PagingSource<Int, PodcastWithExtrasView> {
-        return podcastDao.getPodcastsPaging(query)
+        return podcastDao.getPodcastsPaging(
+            query = query?.ifBlank { null },
+        )
     }
 
     override fun getPodcastsByGroupKey(
         groupKey: String,
         limit: Int,
     ): Flow<List<PodcastWithExtrasView>> {
-        return podcastDao.getPodcastsByGroupKey(groupKey, limit)
+        return podcastDao.getPodcastsByGroupKey(
+            groupKey = groupKey,
+            limit = limit,
+        )
     }
 
     override fun getPodcastsByGroupKeyPaging(groupKey: String): PagingSource<Int, PodcastWithExtrasView> {
@@ -42,7 +50,10 @@ class PodcastLocalDataSourceImpl(
     }
 
     override suspend fun replacePodcasts(podcasts: List<PodcastEntity>, groupKey: String) {
-        podcastDao.replacePodcasts(podcasts, groupKey)
+        podcastDao.replacePodcasts(
+            podcasts = podcasts,
+            groupKey = groupKey,
+        )
     }
 
     override fun isFollowedPodcast(id: Long): Flow<Boolean> {
@@ -57,10 +68,15 @@ class PodcastLocalDataSourceImpl(
         query: String?,
         limit: Int,
     ): Flow<List<PodcastWithExtrasView>> {
-        return podcastDao.getFollowedPodcasts(query, limit)
+        return podcastDao.getFollowedPodcasts(
+            query = query?.ifBlank { null },
+            limit = limit,
+        )
     }
 
     override fun getFollowedPodcastsPaging(query: String?): PagingSource<Int, PodcastWithExtrasView> {
-        return podcastDao.getFollowedPodcastsPaging(query)
+        return podcastDao.getFollowedPodcastsPaging(
+            query = query?.ifBlank { null }
+        )
     }
 }

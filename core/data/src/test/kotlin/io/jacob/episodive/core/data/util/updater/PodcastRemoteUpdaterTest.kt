@@ -44,16 +44,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKey(any(), any())
+                localDataSource.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.searchPodcasts(any(), any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -63,10 +63,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByCacheKey(any(), 10)
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getPodcastsByGroupKey("search:test podcast", 10)
+                localDataSource.getOldestCreatedAtByGroupKey("search:test podcast")
                 remoteDataSource.searchPodcasts(search, 1000)
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), "search:test podcast")
             }
         }
 
@@ -82,16 +82,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.searchPodcasts(any(), any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -107,10 +107,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey("search:test podcast")
                 remoteDataSource.searchPodcasts(search, 1000)
-                localDataSource.replacePodcasts(any())
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.replacePodcasts(any(), "search:test podcast")
+                localDataSource.getPodcastsByGroupKeyPaging("search:test podcast")
             }
         }
 
@@ -126,16 +126,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKey(any(), any())
+                localDataSource.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.getPodcastByFeedId(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -145,10 +145,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByCacheKey(any(), 10)
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getPodcastsByGroupKey("feedId:123", 10)
+                localDataSource.getOldestCreatedAtByGroupKey("feedId:123")
                 remoteDataSource.getPodcastByFeedId(any())
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), "feedId:123")
             }
         }
 
@@ -164,16 +164,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.getPodcastByFeedId(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -189,10 +189,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey("feedId:123")
                 remoteDataSource.getPodcastByFeedId(any())
-                localDataSource.replacePodcasts(any())
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.replacePodcasts(any(), "feedId:123")
+                localDataSource.getPodcastsByGroupKeyPaging("feedId:123")
             }
         }
 
@@ -208,16 +208,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKey(any(), any())
+                localDataSource.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.getPodcastByFeedUrl(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -227,10 +227,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByCacheKey(any(), 10)
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getPodcastsByGroupKey("feedUrl:test-url", 10)
+                localDataSource.getOldestCreatedAtByGroupKey("feedUrl:test-url")
                 remoteDataSource.getPodcastByFeedUrl(any())
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), "feedUrl:test-url")
             }
         }
 
@@ -246,16 +246,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.getPodcastByFeedUrl(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -271,10 +271,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey("feedUrl:test-url")
                 remoteDataSource.getPodcastByFeedUrl(any())
-                localDataSource.replacePodcasts(any())
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.replacePodcasts(any(), "feedUrl:test-url")
+                localDataSource.getPodcastsByGroupKeyPaging("feedUrl:test-url")
             }
         }
 
@@ -290,16 +290,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKey(any(), any())
+                localDataSource.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.getPodcastByGuid(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -309,10 +309,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByCacheKey(any(), 10)
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getPodcastsByGroupKey("feedGuid:test-guid", 10)
+                localDataSource.getOldestCreatedAtByGroupKey("feedGuid:test-guid")
                 remoteDataSource.getPodcastByGuid(any())
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), "feedGuid:test-guid")
             }
         }
 
@@ -328,16 +328,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.getPodcastByGuid(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -353,10 +353,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey("feedGuid:test-guid")
                 remoteDataSource.getPodcastByGuid(any())
-                localDataSource.replacePodcasts(any())
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.replacePodcasts(any(), "feedGuid:test-guid")
+                localDataSource.getPodcastsByGroupKeyPaging("feedGuid:test-guid")
             }
         }
 
@@ -372,16 +372,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKey(any(), any())
+                localDataSource.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.getPodcastsByMedium(any(), any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -391,10 +391,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByCacheKey(any(), 10)
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getPodcastsByGroupKey("medium:podcast", 10)
+                localDataSource.getOldestCreatedAtByGroupKey("medium:podcast")
                 remoteDataSource.getPodcastsByMedium(any(), 1000)
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), "medium:podcast")
             }
         }
 
@@ -410,16 +410,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.getPodcastsByMedium(any(), any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -435,10 +435,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey("medium:podcast")
                 remoteDataSource.getPodcastsByMedium(any(), 1000)
-                localDataSource.replacePodcasts(any())
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.replacePodcasts(any(), "medium:podcast")
+                localDataSource.getPodcastsByGroupKeyPaging("medium:podcast")
             }
         }
 
@@ -462,16 +462,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKey(any(), any())
+                localDataSource.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.getPodcastsByGuids(any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -481,10 +481,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByCacheKey(any(), 10)
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getPodcastsByGroupKey("channel:1", 10)
+                localDataSource.getOldestCreatedAtByGroupKey("channel:1")
                 remoteDataSource.getPodcastsByGuids(any())
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), "channel:1")
             }
         }
 
@@ -508,16 +508,16 @@ class PodcastRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
                 remoteDataSource.getPodcastsByGuids(any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any())
+                localDataSource.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -533,10 +533,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsOldestCachedAtByCacheKey(any())
+                localDataSource.getOldestCreatedAtByGroupKey("channel:1")
                 remoteDataSource.getPodcastsByGuids(any())
-                localDataSource.replacePodcasts(any())
-                localDataSource.getPodcastsByCacheKeyPaging(any())
+                localDataSource.replacePodcasts(any(), "channel:1")
+                localDataSource.getPodcastsByGroupKeyPaging("channel:1")
             }
         }
 }

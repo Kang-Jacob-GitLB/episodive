@@ -3,282 +3,292 @@ package io.jacob.episodive.core.database.datasource
 import io.jacob.episodive.core.database.dao.PodcastDao
 import io.jacob.episodive.core.database.mapper.toPodcastEntities
 import io.jacob.episodive.core.database.mapper.toPodcastEntity
-import io.jacob.episodive.core.database.model.FollowedPodcastEntity
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
-import io.mockk.Runs
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.confirmVerified
-import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
-import kotlin.time.Clock
 
 class PodcastLocalDataSourceTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val podcastDao = mockk<PodcastDao>(relaxed = true)
+    private val dao = mockk<PodcastDao>(relaxed = true)
 
-    private val dataSource: PodcastLocalDataSource =
-        PodcastLocalDataSourceImpl(
-            podcastDao = podcastDao,
-        )
+    private val dataSource: PodcastLocalDataSource = PodcastLocalDataSourceImpl(
+        podcastDao = dao,
+    )
 
-    private val cacheKey = "test_cache"
-    private val podcastEntity = podcastTestData.toPodcastEntity(cacheKey = cacheKey)
-    private val podcastEntities = podcastTestDataList.toPodcastEntities(cacheKey = cacheKey)
+    private val podcastEntity = podcastTestData.toPodcastEntity()
+    private val podcastEntities = podcastTestDataList.toPodcastEntities()
 
     @After
     fun teardown() {
-        confirmVerified(podcastDao)
+        confirmVerified(dao)
     }
 
     @Test
-    fun `Given dependencies, When upsertPodcast is called, Then upsertPodcast of dao is called`() =
+    fun `Given id, When getPodcastById is called, Then dao getPodcastById is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.upsertPodcast(any()) } just Runs
+            val id = podcastEntity.id
 
             // When
-            dataSource.upsertPodcast(podcastEntity)
+            dataSource.getPodcastById(id)
 
             // Then
-            coVerify { podcastDao.upsertPodcast(podcastEntity) }
-            confirmVerified(
-                podcastDao,
-            )
+            coVerify {
+                dao.getPodcastById(id)
+            }
         }
 
     @Test
-    fun `Given dependencies, When upsertPodcasts is called, Then upsertPodcasts of dao is called`() =
+    fun `Given ids, When getPodcastsByIds is called, Then dao getPodcastsByIds is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.upsertPodcasts(any()) } just Runs
+            val ids = listOf(1L, 2L, 3L)
 
             // When
-            dataSource.upsertPodcasts(podcastEntities)
+            dataSource.getPodcastsByIds(ids)
 
             // Then
-            coVerify { podcastDao.upsertPodcasts(podcastEntities) }
+            coVerify {
+                dao.getPodcastsByIds(ids)
+            }
         }
 
     @Test
-    fun `Given dependencies, When deletePodcast is called, Then deletePodcast of dao is called`() =
+    fun `Given query and limit, When getPodcasts is called, Then dao getPodcasts is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.deletePodcast(any()) } just Runs
+            val query = "test"
+            val limit = 10
 
             // When
-            dataSource.deletePodcast(podcastEntity.id)
+            dataSource.getPodcasts(query, limit)
 
             // Then
-            coVerify { podcastDao.deletePodcast(podcastEntity.id) }
+            coVerify {
+                dao.getPodcasts(query, limit)
+            }
         }
 
     @Test
-    fun `Given dependencies, When deletePodcasts is called, Then deletePodcasts of dao is called`() =
+    fun `Given blank query and limit, When getPodcasts is called, Then dao getPodcasts is called with null query`() =
         runTest {
             // Given
-            coEvery { podcastDao.deletePodcasts() } just Runs
+            val query = "  "
+            val limit = 10
 
             // When
-            dataSource.deletePodcasts()
+            dataSource.getPodcasts(query, limit)
 
             // Then
-            coVerify { podcastDao.deletePodcasts() }
+            coVerify {
+                dao.getPodcasts(null, limit)
+            }
         }
 
     @Test
-    fun `Given dependencies, When deletePodcastsByCacheKey is called, Then deletePodcastsByCacheKey of dao is called`() =
+    fun `Given null query and limit, When getPodcasts is called, Then dao getPodcasts is called with null query`() =
         runTest {
             // Given
-            coEvery { podcastDao.deletePodcastsByCacheKey(any()) } just Runs
+            val limit = 10
 
             // When
-            dataSource.deletePodcastsByCacheKey(cacheKey)
+            dataSource.getPodcasts(null, limit)
 
             // Then
-            coVerify { podcastDao.deletePodcastsByCacheKey(cacheKey) }
+            coVerify {
+                dao.getPodcasts(null, limit)
+            }
         }
 
     @Test
-    fun `Given dependencies, When replacePodcasts is called, Then replacePodcasts of dao is called`() =
+    fun `Given query, When getPodcastsPaging is called, Then dao getPodcastsPaging is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.replacePodcasts(any()) } just Runs
+            val query = "test"
 
             // When
-            dataSource.replacePodcasts(podcastEntities)
+            dataSource.getPodcastsPaging(query)
 
             // Then
-            coVerify { podcastDao.replacePodcasts(podcastEntities) }
+            coVerify {
+                dao.getPodcastsPaging(query)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getPodcast is called, Then getPodcast of dao is called`() =
+    fun `Given blank query, When getPodcastsPaging is called, Then dao getPodcastsPaging is called with null query`() =
         runTest {
             // Given
-            coEvery { podcastDao.getPodcast(any()) } returns mockk()
+            val query = "  "
 
             // When
-            dataSource.getPodcast(podcastEntity.id)
+            dataSource.getPodcastsPaging(query)
 
             // Then
-            coVerify { podcastDao.getPodcast(podcastEntity.id) }
+            coVerify {
+                dao.getPodcastsPaging(null)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getPodcasts is called, Then getPodcasts of dao is called`() =
+    fun `Given groupKey and limit, When getPodcastsByGroupKey is called, Then dao getPodcastsByGroupKey is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.getPodcasts(10) } returns mockk()
+            val groupKey = "testGroup"
+            val limit = 10
 
             // When
-            dataSource.getPodcasts(10)
+            dataSource.getPodcastsByGroupKey(groupKey, limit)
 
             // Then
-            coVerify { podcastDao.getPodcasts(10) }
+            coVerify {
+                dao.getPodcastsByGroupKey(groupKey, limit)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getPodcastsPaging is called, Then getPodcastsPaging of dao is called`() =
+    fun `Given groupKey, When getPodcastsByGroupKeyPaging is called, Then dao getPodcastsByGroupKeyPaging is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.getPodcastsPaging() } returns mockk()
+            val groupKey = "testGroup"
 
             // When
-            dataSource.getPodcastsPaging()
+            dataSource.getPodcastsByGroupKeyPaging(groupKey)
 
             // Then
-            coVerify { podcastDao.getPodcastsPaging() }
+            coVerify {
+                dao.getPodcastsByGroupKeyPaging(groupKey)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getPodcastsByCacheKey is called, Then getPodcastsByCacheKey of dao is called`() =
+    fun `Given groupKey, When getOldestCreatedAtByGroupKey is called, Then dao getOldestCreatedAtByGroupKey is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.getPodcastsByCacheKey(any(), 10) } returns mockk()
+            val groupKey = "testGroup"
 
             // When
-            dataSource.getPodcastsByCacheKey(cacheKey, 10)
+            dataSource.getOldestCreatedAtByGroupKey(groupKey)
 
             // Then
-            coVerify { podcastDao.getPodcastsByCacheKey(cacheKey, 10) }
+            coVerify {
+                dao.getOldestCreatedAtByGroupKey(groupKey)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getPodcastsByCacheKeyPaging is called, Then getPodcastsByCacheKeyPaging of dao is called`() =
+    fun `Given podcasts and groupKey, When replacePodcasts is called, Then dao replacePodcasts is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.getPodcastsByCacheKeyPaging(any()) } returns mockk()
+            val groupKey = "testGroup"
 
             // When
-            dataSource.getPodcastsByCacheKeyPaging(cacheKey)
+            dataSource.replacePodcasts(podcastEntities, groupKey)
 
             // Then
-            coVerify { podcastDao.getPodcastsByCacheKeyPaging(cacheKey) }
+            coVerify {
+                dao.replacePodcasts(podcastEntities, groupKey)
+            }
         }
 
     @Test
-    fun `Given dependencies, When addFollowed is called, Then addFollowed of dao is called`() =
+    fun `Given id, When isFollowedPodcast is called, Then dao isFollowedPodcast is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.addFollowed(any()) } just Runs
+            val id = podcastEntity.id
 
             // When
-            dataSource.addFollowed(
-                FollowedPodcastEntity(
-                    id = podcastEntity.id,
-                    followedAt = Clock.System.now(),
-                    isNotificationEnabled = true,
-                )
-            )
+            dataSource.isFollowedPodcast(id)
 
             // Then
-            coVerify { podcastDao.addFollowed(any()) }
+            coVerify {
+                dao.isFollowedPodcast(id)
+            }
         }
 
     @Test
-    fun `Given dependencies, When removeFollowed is called, Then removeFollowed of dao is called`() =
+    fun `Given id, When toggleFollowedPodcast is called, Then dao toggleFollowedPodcast is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.removeFollowed(any()) } just Runs
+            val id = podcastEntity.id
 
             // When
-            dataSource.removeFollowed(podcastEntity.id)
+            dataSource.toggleFollowedPodcast(id)
 
             // Then
-            coVerify { podcastDao.removeFollowed(podcastEntity.id) }
+            coVerify {
+                dao.toggleFollowedPodcast(id)
+            }
         }
 
     @Test
-    fun `Given dependencies, When isFollowed is called, Then isFollowed of dao is called`() =
+    fun `Given query and limit, When getFollowedPodcasts is called, Then dao getFollowedPodcasts is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.isFollowed(any()) } returns false
+            val query = "test"
+            val limit = 10
 
             // When
-            dataSource.isFollowed(podcastEntity.id)
+            dataSource.getFollowedPodcasts(query, limit)
 
             // Then
-            coVerify { podcastDao.isFollowed(podcastEntity.id) }
+            coVerify {
+                dao.getFollowedPodcasts(query, limit)
+            }
         }
 
     @Test
-    fun `Given dependencies, When toggleFollowed is called, Then toggleFollowed of dao is called`() =
+    fun `Given blank query and limit, When getFollowedPodcasts is called, Then dao getFollowedPodcasts is called with null query`() =
         runTest {
             // Given
-            coEvery { podcastDao.toggleFollowed(any()) } returns false
+            val query = "  "
+            val limit = 10
 
             // When
-            dataSource.toggleFollowed(podcastEntity.id)
+            dataSource.getFollowedPodcasts(query, limit)
 
             // Then
-            coVerify { podcastDao.toggleFollowed(podcastEntity.id) }
+            coVerify {
+                dao.getFollowedPodcasts(null, limit)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getFollowedPodcasts is called, Then getFollowedPodcasts of dao is called`() =
+    fun `Given query, When getFollowedPodcastsPaging is called, Then dao getFollowedPodcastsPaging is called`() =
         runTest {
             // Given
-            coEvery { podcastDao.getFollowedPodcasts(10) } returns mockk()
+            val query = "test"
 
             // When
-            dataSource.getFollowedPodcasts(10)
+            dataSource.getFollowedPodcastsPaging(query)
 
             // Then
-            coVerify { podcastDao.getFollowedPodcasts(10) }
+            coVerify {
+                dao.getFollowedPodcastsPaging(query)
+            }
         }
 
     @Test
-    fun `Given dependencies, When getFollowedPodcastsPaging is called, Then getFollowedPodcastsPaging of dao is called`() =
+    fun `Given blank query, When getFollowedPodcastsPaging is called, Then dao getFollowedPodcastsPaging is called with null query`() =
         runTest {
             // Given
-            coEvery { podcastDao.getFollowedPodcastsPaging() } returns mockk()
+            val query = "  "
 
             // When
-            dataSource.getFollowedPodcastsPaging()
+            dataSource.getFollowedPodcastsPaging(query)
 
             // Then
-            coVerify { podcastDao.getFollowedPodcastsPaging() }
-        }
-
-    @Test
-    fun `Given dependencies, When getPodcastsOldestCachedAtByCacheKey is called, Then getPodcastsOldestCachedAtByCacheKey of dao is called`() =
-        runTest {
-            // Given
-            coEvery { podcastDao.getPodcastsOldestCachedAtByCacheKey(any()) } returns mockk()
-
-            // When
-            dataSource.getPodcastsOldestCachedAtByCacheKey(cacheKey)
-
-            // Then
-            coVerify { podcastDao.getPodcastsOldestCachedAtByCacheKey(cacheKey) }
+            coVerify {
+                dao.getFollowedPodcastsPaging(null)
+            }
         }
 }
