@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.database.dao
 
+import androidx.paging.PagingSource
 import app.cash.turbine.test
 import io.jacob.episodive.core.database.RoomDatabaseRule
 import io.jacob.episodive.core.database.mapper.toRecentFeedEntities
@@ -11,6 +12,7 @@ import io.jacob.episodive.core.testing.model.recentNewFeedTestDataList
 import io.jacob.episodive.core.testing.model.soundbiteTestDataList
 import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
+import io.jacob.episodive.core.testing.util.loadAsSnapshot
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -39,7 +41,7 @@ class FeedDaoTest {
     private val trendingFeedEntities = trendingFeedTestDataList.toTrendingFeedEntities(cacheKey)
     private val recentFeedEntities = recentFeedTestDataList.toRecentFeedEntities(cacheKey)
     private val recentNewFeedEntities = recentNewFeedTestDataList.toRecentNewFeedEntities(cacheKey)
-    private val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities(cacheKey)
+    private val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities()
 
     @Test
     fun `Given trending feeds, When upsertTrendingFeeds, Then upserted correctly`() =
@@ -130,7 +132,7 @@ class FeedDaoTest {
             // When
             val pagingSource = dao.getTrendingFeedsByCacheKeyPaging(cacheKey)
             val loadResult = pagingSource.load(
-                androidx.paging.PagingSource.LoadParams.Refresh(
+                PagingSource.LoadParams.Refresh(
                     key = null,
                     loadSize = 10,
                     placeholdersEnabled = false
@@ -138,9 +140,23 @@ class FeedDaoTest {
             )
 
             // Then
-            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
-            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertTrue(loadResult is PagingSource.LoadResult.Page)
+            val page = loadResult as PagingSource.LoadResult.Page
             assertEquals(trendingFeedEntities.size, page.data.size)
+        }
+
+    @Test
+    fun `Given multiple trending feeds with same cache key, When getTrendingFeedsOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
+        runTest {
+            // Given
+            dao.upsertTrendingFeeds(trendingFeedEntities)
+
+            // When
+            val oldestCachedAt = dao.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            val expectedOldest = trendingFeedEntities.minByOrNull { it.cachedAt }?.cachedAt
+            assertEquals(expectedOldest?.epochSeconds, oldestCachedAt?.epochSeconds)
         }
 
     @Test
@@ -232,7 +248,7 @@ class FeedDaoTest {
             // When
             val pagingSource = dao.getRecentFeedsByCacheKeyPaging(cacheKey)
             val loadResult = pagingSource.load(
-                androidx.paging.PagingSource.LoadParams.Refresh(
+                PagingSource.LoadParams.Refresh(
                     key = null,
                     loadSize = 10,
                     placeholdersEnabled = false
@@ -240,9 +256,23 @@ class FeedDaoTest {
             )
 
             // Then
-            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
-            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertTrue(loadResult is PagingSource.LoadResult.Page)
+            val page = loadResult as PagingSource.LoadResult.Page
             assertEquals(recentFeedEntities.size, page.data.size)
+        }
+
+    @Test
+    fun `Given multiple recent feeds with same cache key, When getRecentFeedsOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
+        runTest {
+            // Given
+            dao.upsertRecentFeeds(recentFeedEntities)
+
+            // When
+            val oldestCachedAt = dao.getRecentFeedsOldestCachedAtByCacheKey(cacheKey)
+
+            // Then
+            val expectedOldest = recentFeedEntities.minByOrNull { it.cachedAt }?.cachedAt
+            assertEquals(expectedOldest?.epochSeconds, oldestCachedAt?.epochSeconds)
         }
 
     @Test
@@ -334,7 +364,7 @@ class FeedDaoTest {
             // When
             val pagingSource = dao.getRecentNewFeedsByCacheKeyPaging(cacheKey)
             val loadResult = pagingSource.load(
-                androidx.paging.PagingSource.LoadParams.Refresh(
+                PagingSource.LoadParams.Refresh(
                     key = null,
                     loadSize = 10,
                     placeholdersEnabled = false
@@ -342,139 +372,9 @@ class FeedDaoTest {
             )
 
             // Then
-            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
-            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
+            assertTrue(loadResult is PagingSource.LoadResult.Page)
+            val page = loadResult as PagingSource.LoadResult.Page
             assertEquals(recentNewFeedEntities.size, page.data.size)
-        }
-
-    @Test
-    fun `Given soundbites, When upsertSoundbites, Then upserted correctly`() =
-        runTest {
-            // Given
-            dao.upsertSoundbites(soundbiteEntities)
-
-            // When
-            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
-                val items = awaitItem()
-                // Then
-                assertEquals(items.size, soundbiteEntities.size)
-                cancel()
-            }
-
-            // When
-            dao.deleteSoundbite(soundbiteEntities.first().episodeId)
-            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
-                val items = awaitItem()
-                // Then
-                assertEquals(items.size, soundbiteEntities.size - 1)
-                cancel()
-            }
-
-            // When
-            dao.deleteSoundbites()
-            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
-                val items = awaitItem()
-                // Then
-                assertEquals(items.size, 0)
-                cancel()
-            }
-        }
-
-    @Test
-    fun `Given some soundbites, When deleteSoundbitesByCacheKey, Then deleted correctly`() =
-        runTest {
-            // Given
-            dao.upsertSoundbites(soundbiteEntities)
-            dao.upsertSoundbites(soundbiteEntities.map { it.copy(cacheKey = "test_cache1") })
-
-            // When
-            dao.deleteSoundbitesByCacheKey(cacheKey)
-            dao.getSoundbitesByCacheKey(cacheKey, 10).test {
-                val items = awaitItem()
-                // Then
-                assertEquals(items.size, 0)
-                cancel()
-            }
-            dao.getSoundbitesByCacheKey("test_cache1", 10).test {
-                val items = awaitItem()
-                // Then
-                assertEquals(items.size, soundbiteEntities.size)
-                cancel()
-            }
-        }
-
-    @Test
-    fun `Given soundbites with different cache keys, When replaceSoundbites, Then replaced by cache key`() =
-        runTest {
-            // Given - Insert initial soundbites
-            val initialSoundbites = soundbiteEntities.take(3).map { it.copy(cacheKey = "key1") }
-            dao.upsertSoundbites(initialSoundbites)
-
-            // When - Replace with new soundbites
-            val newSoundbites = listOf(
-                soundbiteEntities[5].copy(episodeId = 400L, cacheKey = "key1"),
-                soundbiteEntities[6].copy(episodeId = 401L, cacheKey = "key1")
-            )
-            dao.replaceSoundbites(newSoundbites)
-
-            // Then
-            dao.getSoundbitesByCacheKey("key1", 10).test {
-                val items = awaitItem()
-                assertEquals(2, items.size)
-                assertTrue(items.any { it.episodeId == 400L })
-                assertTrue(items.any { it.episodeId == 401L })
-                cancel()
-            }
-        }
-
-    @Test
-    fun `Given soundbites, When getSoundbitesByCacheKeyPaging is called, Then soundbites are returned`() =
-        runTest {
-            // Given
-            dao.upsertSoundbites(soundbiteEntities)
-
-            // When
-            val pagingSource = dao.getSoundbitesByCacheKeyPaging(cacheKey)
-            val loadResult = pagingSource.load(
-                androidx.paging.PagingSource.LoadParams.Refresh(
-                    key = null,
-                    loadSize = 10,
-                    placeholdersEnabled = false
-                )
-            )
-
-            // Then
-            assertTrue(loadResult is androidx.paging.PagingSource.LoadResult.Page)
-            val page = loadResult as androidx.paging.PagingSource.LoadResult.Page
-            assertEquals(soundbiteEntities.size, page.data.size)
-        }
-
-    @Test
-    fun `Given multiple trending feeds with same cache key, When getTrendingFeedsOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
-        runTest {
-            // Given
-            dao.upsertTrendingFeeds(trendingFeedEntities)
-
-            // When
-            val oldestCachedAt = dao.getTrendingFeedsOldestCachedAtByCacheKey(cacheKey)
-
-            // Then
-            val expectedOldest = trendingFeedEntities.minByOrNull { it.cachedAt }?.cachedAt
-            assertEquals(expectedOldest?.epochSeconds, oldestCachedAt?.epochSeconds)
-        }
-
-    @Test
-    fun `Given multiple recent feeds with same cache key, When getRecentFeedsOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
-        runTest {
-            // Given
-            dao.upsertRecentFeeds(recentFeedEntities)
-
-            // When
-            val oldestCachedAt = dao.getRecentFeedsOldestCachedAtByCacheKey(cacheKey)
-
-            // Then
-            val expectedOldest = recentFeedEntities.minByOrNull { it.cachedAt }?.cachedAt
-            assertEquals(expectedOldest?.epochSeconds, oldestCachedAt?.epochSeconds)
         }
 
     @Test
@@ -492,13 +392,99 @@ class FeedDaoTest {
         }
 
     @Test
-    fun `Given multiple soundbites with same cache key, When getSoundbitesOldestCachedAtByCacheKey is called, Then oldest cachedAt is returned`() =
+    fun `Given soundbites, When upsertSoundbites, Then upserted correctly`() =
         runTest {
             // Given
             dao.upsertSoundbites(soundbiteEntities)
 
             // When
-            val oldestCachedAt = dao.getSoundbitesOldestCachedAtByCacheKey(cacheKey)
+            dao.getSoundbites(10).test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, soundbiteEntities.size)
+                cancel()
+            }
+
+            // When
+            dao.deleteSoundbite(soundbiteEntities.first().episodeId)
+            dao.getSoundbites(10).test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, soundbiteEntities.size - 1)
+                cancel()
+            }
+
+            // When
+            dao.deleteSoundbites()
+            dao.getSoundbites(10).test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, 0)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given some soundbites, When deleteSoundbites, Then deleted correctly`() =
+        runTest {
+            // Given
+            dao.upsertSoundbites(soundbiteEntities)
+
+            // When
+            dao.deleteSoundbites()
+            dao.getSoundbites(10).test {
+                val items = awaitItem()
+                // Then
+                assertEquals(items.size, 0)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given soundbites with different cache keys, When replaceSoundbites, Then replaced by cache key`() =
+        runTest {
+            // Given - Insert initial soundbites
+            val initialSoundbites = soundbiteEntities.take(3)
+            dao.upsertSoundbites(initialSoundbites)
+
+            // When - Replace with new soundbites
+            val newSoundbites = listOf(
+                soundbiteEntities[5].copy(episodeId = 400L),
+                soundbiteEntities[6].copy(episodeId = 401L)
+            )
+            dao.replaceSoundbites(newSoundbites)
+
+            // Then
+            dao.getSoundbites(10).test {
+                val items = awaitItem()
+                assertEquals(2, items.size)
+                assertTrue(items.any { it.episodeId == 400L })
+                assertTrue(items.any { it.episodeId == 401L })
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given soundbites, When getSoundbitesPaging is called, Then soundbites are returned`() =
+        runTest {
+            // Given
+            dao.upsertSoundbites(soundbiteEntities)
+
+            // When
+            val soundbites = dao.getSoundbitesPaging().loadAsSnapshot()
+
+            // Then
+            assertEquals(10, soundbites.size)
+        }
+
+    @Test
+    fun `Given multiple soundbites with same cache key, When getSoundbitesOldestCachedAt is called, Then oldest cachedAt is returned`() =
+        runTest {
+            // Given
+            dao.upsertSoundbites(soundbiteEntities)
+
+            // When
+            val oldestCachedAt = dao.getSoundbitesOldestCachedAt()
 
             // Then
             val expectedOldest = soundbiteEntities.minByOrNull { it.cachedAt }?.cachedAt

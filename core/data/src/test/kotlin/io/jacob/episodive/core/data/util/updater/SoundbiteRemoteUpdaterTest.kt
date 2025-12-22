@@ -41,10 +41,10 @@ class SoundbiteRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getSoundbitesByCacheKey(any(), any())
+                localDataSource.getSoundbites(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getSoundbitesOldestCachedAtByCacheKey(any())
+                localDataSource.getSoundbitesOldestCachedAt()
             } returns null
             coEvery {
                 remoteDataSource.getRecentSoundbites(any())
@@ -60,8 +60,8 @@ class SoundbiteRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getSoundbitesByCacheKey(any(), 10)
-                localDataSource.getSoundbitesOldestCachedAtByCacheKey(any())
+                localDataSource.getSoundbites(10)
+                localDataSource.getSoundbitesOldestCachedAt()
                 remoteDataSource.getRecentSoundbites(1000)
                 localDataSource.replaceSoundbites(any())
             }
@@ -78,10 +78,10 @@ class SoundbiteRemoteUpdaterTest {
                 query = query,
             )
             coEvery {
-                localDataSource.getSoundbitesByCacheKeyPaging(any())
+                localDataSource.getSoundbitesPaging()
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getSoundbitesOldestCachedAtByCacheKey(any())
+                localDataSource.getSoundbitesOldestCachedAt()
             } returns null
             coEvery {
                 remoteDataSource.getRecentSoundbites(any())
@@ -103,10 +103,10 @@ class SoundbiteRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getSoundbitesOldestCachedAtByCacheKey(any())
+                localDataSource.getSoundbitesOldestCachedAt()
                 remoteDataSource.getRecentSoundbites(1000)
                 localDataSource.replaceSoundbites(any())
-                localDataSource.getSoundbitesByCacheKeyPaging(any())
+                localDataSource.getSoundbitesPaging()
             }
         }
 }

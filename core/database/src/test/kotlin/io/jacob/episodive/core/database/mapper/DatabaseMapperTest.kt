@@ -301,7 +301,7 @@ class DatabaseMapperTest {
     @Test
     fun `toSoundbiteEntity converts Soundbite to SoundbiteEntity correctly`() {
         // When
-        val soundbiteEntity = soundbiteTestData.toSoundbiteEntity(cacheKey, cachedAt)
+        val soundbiteEntity = soundbiteTestData.toSoundbiteEntity(cachedAt)
 
         // Then
         assertEquals(soundbiteTestData.enclosureUrl, soundbiteEntity.enclosureUrl)
@@ -309,19 +309,17 @@ class DatabaseMapperTest {
         assertEquals(soundbiteTestData.startTime, soundbiteEntity.startTime)
         assertEquals(soundbiteTestData.duration, soundbiteEntity.duration)
         assertEquals(soundbiteTestData.episodeId, soundbiteEntity.episodeId)
-        assertEquals(cacheKey, soundbiteEntity.cacheKey)
         assertEquals(cachedAt, soundbiteEntity.cachedAt)
     }
 
     @Test
     fun `toSoundbiteEntities converts list of Soundbite to list of SoundbiteEntity correctly`() {
         // When
-        val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities(cacheKey, cachedAt)
+        val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities(cachedAt)
 
         // Then
         assertEquals(soundbiteTestDataList.size, soundbiteEntities.size)
         soundbiteEntities.forEach { entity ->
-            assertEquals(cacheKey, entity.cacheKey)
             assertEquals(cachedAt, entity.cachedAt)
         }
     }
@@ -329,7 +327,7 @@ class DatabaseMapperTest {
     @Test
     fun `toSoundbite converts SoundbiteEntity to Soundbite correctly`() {
         // Given
-        val soundbiteEntity = soundbiteTestData.toSoundbiteEntity(cacheKey, cachedAt)
+        val soundbiteEntity = soundbiteTestData.toSoundbiteEntity(cachedAt)
 
         // When
         val soundbite = soundbiteEntity.toSoundbite()
@@ -345,7 +343,7 @@ class DatabaseMapperTest {
     @Test
     fun `toSoundbites converts list of SoundbiteEntity to list of Soundbite correctly`() {
         // Given
-        val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities(cacheKey, cachedAt)
+        val soundbiteEntities = soundbiteTestDataList.toSoundbiteEntities(cachedAt)
 
         // When
         val soundbites = soundbiteEntities.toSoundbites()
