@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.domain.repository
 
 import androidx.paging.PagingData
+import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Podcast
 import kotlinx.coroutines.flow.Flow
@@ -29,6 +30,34 @@ interface PodcastRepository {
     fun getPodcastsByChannel(channel: Channel): Flow<List<Podcast>>
 
     fun getPodcastsByChannelPaging(channel: Channel): Flow<PagingData<Podcast>>
+
+    fun getTrendingPodcasts(
+        max: Int,
+        language: String? = null,
+        includeCategories: List<Category> = emptyList(),
+    ): Flow<List<Podcast>>
+
+    fun getTrendingPodcastsPaging(
+        language: String? = null,
+        includeCategories: List<Category> = emptyList(),
+    ): Flow<PagingData<Podcast>>
+
+    fun getRecentPodcasts(
+        max: Int,
+        language: String? = null,
+        includeCategories: List<Category> = emptyList(),
+    ): Flow<List<Podcast>>
+
+    fun getRecentPodcastsPaging(
+        language: String? = null,
+        includeCategories: List<Category> = emptyList(),
+    ): Flow<PagingData<Podcast>>
+
+    fun getRecentNewPodcasts(
+        max: Int,
+    ): Flow<List<Podcast>>
+
+    fun getRecentNewPodcastsPaging(): Flow<PagingData<Podcast>>
 
     fun getFollowedPodcasts(
         query: String? = null,

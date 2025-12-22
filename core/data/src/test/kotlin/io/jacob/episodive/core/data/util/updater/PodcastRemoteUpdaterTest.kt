@@ -39,8 +39,8 @@ class PodcastRemoteUpdaterTest {
             val search = "test podcast"
             val query = PodcastQuery.Search(search)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -77,8 +77,8 @@ class PodcastRemoteUpdaterTest {
             val search = "test podcast"
             val query = PodcastQuery.Search(search)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -121,8 +121,8 @@ class PodcastRemoteUpdaterTest {
             val feedId = 123L
             val query = PodcastQuery.FeedId(feedId)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -159,8 +159,8 @@ class PodcastRemoteUpdaterTest {
             val feedId = 123L
             val query = PodcastQuery.FeedId(feedId)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -203,8 +203,8 @@ class PodcastRemoteUpdaterTest {
             val feedUrl = "test-url"
             val query = PodcastQuery.FeedUrl(feedUrl)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -241,8 +241,8 @@ class PodcastRemoteUpdaterTest {
             val feedUrl = "test-url"
             val query = PodcastQuery.FeedUrl(feedUrl)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -285,8 +285,8 @@ class PodcastRemoteUpdaterTest {
             val feedGuid = "test-guid"
             val query = PodcastQuery.FeedGuid(feedGuid)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -323,8 +323,8 @@ class PodcastRemoteUpdaterTest {
             val feedGuid = "test-guid"
             val query = PodcastQuery.FeedGuid(feedGuid)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -367,8 +367,8 @@ class PodcastRemoteUpdaterTest {
             val medium = Medium.PODCAST.value
             val query = PodcastQuery.Medium(medium)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -405,8 +405,8 @@ class PodcastRemoteUpdaterTest {
             val medium = Medium.PODCAST.value
             val query = PodcastQuery.Medium(medium)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -457,8 +457,8 @@ class PodcastRemoteUpdaterTest {
             )
             val query = PodcastQuery.ByChannel(channel)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {
@@ -503,8 +503,8 @@ class PodcastRemoteUpdaterTest {
             )
             val query = PodcastQuery.ByChannel(channel)
             val updater = PodcastRemoteUpdater(
-                localDataSource = localDataSource,
-                remoteDataSource = remoteDataSource,
+                podcastLocal = localDataSource,
+                podcastRemote = remoteDataSource,
                 query = query,
             )
             coEvery {

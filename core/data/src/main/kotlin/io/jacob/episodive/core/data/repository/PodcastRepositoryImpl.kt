@@ -10,6 +10,7 @@ import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.mapper.toPodcast
 import io.jacob.episodive.core.database.mapper.toPodcasts
 import io.jacob.episodive.core.domain.repository.PodcastRepository
+import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
@@ -104,6 +105,74 @@ class PodcastRepositoryImpl @Inject constructor(
 
     override fun getPodcastsByChannelPaging(channel: Channel): Flow<PagingData<Podcast>> {
         val query = PodcastQuery.ByChannel(channel)
+
+        return remoteUpdater.create(query)
+            .getPagingData(config)
+            .map { pagingData ->
+                pagingData.map { it.toPodcast() }
+            }
+    }
+
+    override fun getTrendingPodcasts(
+        max: Int,
+        language: String?,
+        includeCategories: List<Category>,
+    ): Flow<List<Podcast>> {
+        val query = PodcastQuery.Trending(language, includeCategories)
+
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toPodcasts() }
+    }
+
+    override fun getTrendingPodcastsPaging(
+        language: String?,
+        includeCategories: List<Category>,
+    ): Flow<PagingData<Podcast>> {
+        val query = PodcastQuery.Trending(language, includeCategories)
+
+        return remoteUpdater.create(query)
+            .getPagingData(config)
+            .map { pagingData ->
+                pagingData.map { it.toPodcast() }
+            }
+    }
+
+    override fun getRecentPodcasts(
+        max: Int,
+        language: String?,
+        includeCategories: List<Category>,
+    ): Flow<List<Podcast>> {
+        val query = PodcastQuery.Recent(language, includeCategories)
+
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toPodcasts() }
+    }
+
+    override fun getRecentPodcastsPaging(
+        language: String?,
+        includeCategories: List<Category>,
+    ): Flow<PagingData<Podcast>> {
+        val query = PodcastQuery.Recent(language, includeCategories)
+
+        return remoteUpdater.create(query)
+            .getPagingData(config)
+            .map { pagingData ->
+                pagingData.map { it.toPodcast() }
+            }
+    }
+
+    override fun getRecentNewPodcasts(max: Int): Flow<List<Podcast>> {
+        val query = PodcastQuery.RecentNew
+
+        return remoteUpdater.create(query)
+            .getFlowList(max)
+            .map { it.toPodcasts() }
+    }
+
+    override fun getRecentNewPodcastsPaging(): Flow<PagingData<Podcast>> {
+        val query = PodcastQuery.RecentNew
 
         return remoteUpdater.create(query)
             .getPagingData(config)
