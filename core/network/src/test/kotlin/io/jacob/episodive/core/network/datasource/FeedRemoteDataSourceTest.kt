@@ -5,7 +5,6 @@ import io.jacob.episodive.core.network.model.RecentFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewValueFeedResponse
 import io.jacob.episodive.core.network.model.ResponseListWrapper
-import io.jacob.episodive.core.network.model.SoundbiteResponse
 import io.jacob.episodive.core.network.model.TrendingFeedResponse
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
@@ -102,26 +101,6 @@ class FeedRemoteDataSourceTest {
             // Then
             coVerifySequence {
                 feedApi.getRecentNewValueFeeds(any(), any())
-                dataList.dataList
-            }
-            confirmVerified(feedApi)
-        }
-
-    @Test
-    fun `Given dependencies, When getRecentSoundbites called, Then dao called`() =
-        runTest {
-            // Given
-            val dataList = mockk<ResponseListWrapper<SoundbiteResponse>>(relaxed = true) {
-                every { dataList } returns emptyList()
-            }
-            coEvery { feedApi.getRecentSoundbites(any()) } returns dataList
-
-            // When
-            dataSource.getRecentSoundbites(5)
-
-            // Then
-            coVerifySequence {
-                feedApi.getRecentSoundbites(any())
                 dataList.dataList
             }
             confirmVerified(feedApi)

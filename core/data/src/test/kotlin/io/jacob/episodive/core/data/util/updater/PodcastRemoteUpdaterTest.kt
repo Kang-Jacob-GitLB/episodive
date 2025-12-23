@@ -3,7 +3,6 @@ package io.jacob.episodive.core.data.util.updater
 import androidx.paging.PagingConfig
 import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.PodcastQuery
-import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Channel
@@ -32,7 +31,6 @@ class PodcastRemoteUpdaterTest {
 
     private val podcastLocal = mockk<PodcastLocalDataSource>(relaxed = true)
     private val podcastRemote = mockk<PodcastRemoteDataSource>(relaxed = true)
-    private val feedLocal = mockk<FeedLocalDataSource>(relaxed = true)
     private val feedRemote = mockk<FeedRemoteDataSource>(relaxed = true)
 
     @After
@@ -40,7 +38,6 @@ class PodcastRemoteUpdaterTest {
         confirmVerified(
             podcastLocal,
             podcastRemote,
-            feedLocal,
             feedRemote,
         )
     }
@@ -54,7 +51,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -94,7 +90,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -140,7 +135,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -180,7 +174,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -226,7 +219,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -266,7 +258,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -312,7 +303,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -352,7 +342,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -398,7 +387,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -438,7 +426,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -492,7 +479,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -540,7 +526,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -588,7 +573,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -640,7 +624,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -698,7 +681,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -750,7 +732,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -805,7 +786,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )
@@ -851,7 +831,6 @@ class PodcastRemoteUpdaterTest {
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
-                feedLocal = feedLocal,
                 feedRemote = feedRemote,
                 query = query,
             )

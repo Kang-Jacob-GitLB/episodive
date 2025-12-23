@@ -5,7 +5,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import io.jacob.episodive.core.data.util.query.PodcastQuery
-import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.mapper.toPodcastEntities
 import io.jacob.episodive.core.database.model.PodcastEntity
@@ -24,7 +23,6 @@ import kotlin.time.Clock
 class PodcastRemoteUpdater @AssistedInject constructor(
     private val podcastLocal: PodcastLocalDataSource,
     private val podcastRemote: PodcastRemoteDataSource,
-    private val feedLocal: FeedLocalDataSource,
     private val feedRemote: FeedRemoteDataSource,
     @Assisted("query") override val query: PodcastQuery,
 ) : RemoteUpdater<PodcastQuery, PodcastResponse, PodcastEntity, PodcastWithExtrasView>(query) {
