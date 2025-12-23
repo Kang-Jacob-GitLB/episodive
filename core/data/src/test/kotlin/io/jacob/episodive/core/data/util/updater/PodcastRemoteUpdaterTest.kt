@@ -3,11 +3,17 @@ package io.jacob.episodive.core.data.util.updater
 import androidx.paging.PagingConfig
 import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.PodcastQuery
+import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
+import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Medium
+import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.model.PodcastResponse
+import io.jacob.episodive.core.network.model.RecentFeedResponse
+import io.jacob.episodive.core.network.model.RecentNewFeedResponse
+import io.jacob.episodive.core.network.model.TrendingFeedResponse
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -24,12 +30,19 @@ class PodcastRemoteUpdaterTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val localDataSource = mockk<PodcastLocalDataSource>(relaxed = true)
-    private val remoteDataSource = mockk<PodcastRemoteDataSource>(relaxed = true)
+    private val podcastLocal = mockk<PodcastLocalDataSource>(relaxed = true)
+    private val podcastRemote = mockk<PodcastRemoteDataSource>(relaxed = true)
+    private val feedLocal = mockk<FeedLocalDataSource>(relaxed = true)
+    private val feedRemote = mockk<FeedRemoteDataSource>(relaxed = true)
 
     @After
     fun teardown() {
-        confirmVerified(localDataSource, remoteDataSource)
+        confirmVerified(
+            podcastLocal,
+            podcastRemote,
+            feedLocal,
+            feedRemote,
+        )
     }
 
     @Test
@@ -39,21 +52,23 @@ class PodcastRemoteUpdaterTest {
             val search = "test podcast"
             val query = PodcastQuery.Search(search)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKey(any(), any())
+                podcastLocal.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.searchPodcasts(any(), any())
+                podcastRemote.searchPodcasts(any(), any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -63,10 +78,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByGroupKey("search:test podcast", 10)
-                localDataSource.getOldestCreatedAtByGroupKey("search:test podcast")
-                remoteDataSource.searchPodcasts(search, 1000)
-                localDataSource.replacePodcasts(any(), "search:test podcast")
+                podcastLocal.getPodcastsByGroupKey("search:test podcast", 10)
+                podcastLocal.getOldestCreatedAtByGroupKey("search:test podcast")
+                podcastRemote.searchPodcasts(search, 1000)
+                podcastLocal.replacePodcasts(any(), "search:test podcast")
             }
         }
 
@@ -77,21 +92,23 @@ class PodcastRemoteUpdaterTest {
             val search = "test podcast"
             val query = PodcastQuery.Search(search)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKeyPaging(any())
+                podcastLocal.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.searchPodcasts(any(), any())
+                podcastRemote.searchPodcasts(any(), any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -107,10 +124,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getOldestCreatedAtByGroupKey("search:test podcast")
-                remoteDataSource.searchPodcasts(search, 1000)
-                localDataSource.replacePodcasts(any(), "search:test podcast")
-                localDataSource.getPodcastsByGroupKeyPaging("search:test podcast")
+                podcastLocal.getOldestCreatedAtByGroupKey("search:test podcast")
+                podcastRemote.searchPodcasts(search, 1000)
+                podcastLocal.replacePodcasts(any(), "search:test podcast")
+                podcastLocal.getPodcastsByGroupKeyPaging("search:test podcast")
             }
         }
 
@@ -121,21 +138,23 @@ class PodcastRemoteUpdaterTest {
             val feedId = 123L
             val query = PodcastQuery.FeedId(feedId)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKey(any(), any())
+                podcastLocal.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.getPodcastByFeedId(any())
+                podcastRemote.getPodcastByFeedId(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -145,10 +164,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByGroupKey("feedId:123", 10)
-                localDataSource.getOldestCreatedAtByGroupKey("feedId:123")
-                remoteDataSource.getPodcastByFeedId(any())
-                localDataSource.replacePodcasts(any(), "feedId:123")
+                podcastLocal.getPodcastsByGroupKey("feedId:123", 10)
+                podcastLocal.getOldestCreatedAtByGroupKey("feedId:123")
+                podcastRemote.getPodcastByFeedId(any())
+                podcastLocal.replacePodcasts(any(), "feedId:123")
             }
         }
 
@@ -159,21 +178,23 @@ class PodcastRemoteUpdaterTest {
             val feedId = 123L
             val query = PodcastQuery.FeedId(feedId)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKeyPaging(any())
+                podcastLocal.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.getPodcastByFeedId(any())
+                podcastRemote.getPodcastByFeedId(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -189,10 +210,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getOldestCreatedAtByGroupKey("feedId:123")
-                remoteDataSource.getPodcastByFeedId(any())
-                localDataSource.replacePodcasts(any(), "feedId:123")
-                localDataSource.getPodcastsByGroupKeyPaging("feedId:123")
+                podcastLocal.getOldestCreatedAtByGroupKey("feedId:123")
+                podcastRemote.getPodcastByFeedId(any())
+                podcastLocal.replacePodcasts(any(), "feedId:123")
+                podcastLocal.getPodcastsByGroupKeyPaging("feedId:123")
             }
         }
 
@@ -203,21 +224,23 @@ class PodcastRemoteUpdaterTest {
             val feedUrl = "test-url"
             val query = PodcastQuery.FeedUrl(feedUrl)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKey(any(), any())
+                podcastLocal.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.getPodcastByFeedUrl(any())
+                podcastRemote.getPodcastByFeedUrl(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -227,10 +250,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByGroupKey("feedUrl:test-url", 10)
-                localDataSource.getOldestCreatedAtByGroupKey("feedUrl:test-url")
-                remoteDataSource.getPodcastByFeedUrl(any())
-                localDataSource.replacePodcasts(any(), "feedUrl:test-url")
+                podcastLocal.getPodcastsByGroupKey("feedUrl:test-url", 10)
+                podcastLocal.getOldestCreatedAtByGroupKey("feedUrl:test-url")
+                podcastRemote.getPodcastByFeedUrl(any())
+                podcastLocal.replacePodcasts(any(), "feedUrl:test-url")
             }
         }
 
@@ -241,21 +264,23 @@ class PodcastRemoteUpdaterTest {
             val feedUrl = "test-url"
             val query = PodcastQuery.FeedUrl(feedUrl)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKeyPaging(any())
+                podcastLocal.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.getPodcastByFeedUrl(any())
+                podcastRemote.getPodcastByFeedUrl(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -271,10 +296,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getOldestCreatedAtByGroupKey("feedUrl:test-url")
-                remoteDataSource.getPodcastByFeedUrl(any())
-                localDataSource.replacePodcasts(any(), "feedUrl:test-url")
-                localDataSource.getPodcastsByGroupKeyPaging("feedUrl:test-url")
+                podcastLocal.getOldestCreatedAtByGroupKey("feedUrl:test-url")
+                podcastRemote.getPodcastByFeedUrl(any())
+                podcastLocal.replacePodcasts(any(), "feedUrl:test-url")
+                podcastLocal.getPodcastsByGroupKeyPaging("feedUrl:test-url")
             }
         }
 
@@ -285,21 +310,23 @@ class PodcastRemoteUpdaterTest {
             val feedGuid = "test-guid"
             val query = PodcastQuery.FeedGuid(feedGuid)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKey(any(), any())
+                podcastLocal.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.getPodcastByGuid(any())
+                podcastRemote.getPodcastByGuid(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -309,10 +336,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByGroupKey("feedGuid:test-guid", 10)
-                localDataSource.getOldestCreatedAtByGroupKey("feedGuid:test-guid")
-                remoteDataSource.getPodcastByGuid(any())
-                localDataSource.replacePodcasts(any(), "feedGuid:test-guid")
+                podcastLocal.getPodcastsByGroupKey("feedGuid:test-guid", 10)
+                podcastLocal.getOldestCreatedAtByGroupKey("feedGuid:test-guid")
+                podcastRemote.getPodcastByGuid(any())
+                podcastLocal.replacePodcasts(any(), "feedGuid:test-guid")
             }
         }
 
@@ -323,21 +350,23 @@ class PodcastRemoteUpdaterTest {
             val feedGuid = "test-guid"
             val query = PodcastQuery.FeedGuid(feedGuid)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKeyPaging(any())
+                podcastLocal.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.getPodcastByGuid(any())
+                podcastRemote.getPodcastByGuid(any())
             } returns mockk<PodcastResponse>(relaxed = true)
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -353,10 +382,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getOldestCreatedAtByGroupKey("feedGuid:test-guid")
-                remoteDataSource.getPodcastByGuid(any())
-                localDataSource.replacePodcasts(any(), "feedGuid:test-guid")
-                localDataSource.getPodcastsByGroupKeyPaging("feedGuid:test-guid")
+                podcastLocal.getOldestCreatedAtByGroupKey("feedGuid:test-guid")
+                podcastRemote.getPodcastByGuid(any())
+                podcastLocal.replacePodcasts(any(), "feedGuid:test-guid")
+                podcastLocal.getPodcastsByGroupKeyPaging("feedGuid:test-guid")
             }
         }
 
@@ -367,21 +396,23 @@ class PodcastRemoteUpdaterTest {
             val medium = Medium.PODCAST.value
             val query = PodcastQuery.Medium(medium)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKey(any(), any())
+                podcastLocal.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.getPodcastsByMedium(any(), any())
+                podcastRemote.getPodcastsByMedium(any(), any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -391,10 +422,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByGroupKey("medium:podcast", 10)
-                localDataSource.getOldestCreatedAtByGroupKey("medium:podcast")
-                remoteDataSource.getPodcastsByMedium(any(), 1000)
-                localDataSource.replacePodcasts(any(), "medium:podcast")
+                podcastLocal.getPodcastsByGroupKey("medium:podcast", 10)
+                podcastLocal.getOldestCreatedAtByGroupKey("medium:podcast")
+                podcastRemote.getPodcastsByMedium(any(), 1000)
+                podcastLocal.replacePodcasts(any(), "medium:podcast")
             }
         }
 
@@ -405,21 +436,23 @@ class PodcastRemoteUpdaterTest {
             val medium = Medium.PODCAST.value
             val query = PodcastQuery.Medium(medium)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKeyPaging(any())
+                podcastLocal.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.getPodcastsByMedium(any(), any())
+                podcastRemote.getPodcastsByMedium(any(), any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -435,10 +468,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getOldestCreatedAtByGroupKey("medium:podcast")
-                remoteDataSource.getPodcastsByMedium(any(), 1000)
-                localDataSource.replacePodcasts(any(), "medium:podcast")
-                localDataSource.getPodcastsByGroupKeyPaging("medium:podcast")
+                podcastLocal.getOldestCreatedAtByGroupKey("medium:podcast")
+                podcastRemote.getPodcastsByMedium(any(), 1000)
+                podcastLocal.replacePodcasts(any(), "medium:podcast")
+                podcastLocal.getPodcastsByGroupKeyPaging("medium:podcast")
             }
         }
 
@@ -457,21 +490,23 @@ class PodcastRemoteUpdaterTest {
             )
             val query = PodcastQuery.ByChannel(channel)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKey(any(), any())
+                podcastLocal.getPodcastsByGroupKey(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.getPodcastsByGuids(any())
+                podcastRemote.getPodcastsByGuids(any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -481,10 +516,10 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getPodcastsByGroupKey("channel:1", 10)
-                localDataSource.getOldestCreatedAtByGroupKey("channel:1")
-                remoteDataSource.getPodcastsByGuids(any())
-                localDataSource.replacePodcasts(any(), "channel:1")
+                podcastLocal.getPodcastsByGroupKey("channel:1", 10)
+                podcastLocal.getOldestCreatedAtByGroupKey("channel:1")
+                podcastRemote.getPodcastsByGuids(any())
+                podcastLocal.replacePodcasts(any(), "channel:1")
             }
         }
 
@@ -503,21 +538,23 @@ class PodcastRemoteUpdaterTest {
             )
             val query = PodcastQuery.ByChannel(channel)
             val updater = PodcastRemoteUpdater(
-                podcastLocal = localDataSource,
-                podcastRemote = remoteDataSource,
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
                 query = query,
             )
             coEvery {
-                localDataSource.getPodcastsByGroupKeyPaging(any())
+                podcastLocal.getPodcastsByGroupKeyPaging(any())
             } returns mockk(relaxed = true)
             coEvery {
-                localDataSource.getOldestCreatedAtByGroupKey(any())
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
             } returns null
             coEvery {
-                remoteDataSource.getPodcastsByGuids(any())
+                podcastRemote.getPodcastsByGuids(any())
             } returns listOf(mockk<PodcastResponse>(relaxed = true))
             coEvery {
-                localDataSource.replacePodcasts(any(), any())
+                podcastLocal.replacePodcasts(any(), any())
             } just Runs
 
             // When
@@ -533,10 +570,328 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                localDataSource.getOldestCreatedAtByGroupKey("channel:1")
-                remoteDataSource.getPodcastsByGuids(any())
-                localDataSource.replacePodcasts(any(), "channel:1")
-                localDataSource.getPodcastsByGroupKeyPaging("channel:1")
+                podcastLocal.getOldestCreatedAtByGroupKey("channel:1")
+                podcastRemote.getPodcastsByGuids(any())
+                podcastLocal.replacePodcasts(any(), "channel:1")
+                podcastLocal.getPodcastsByGroupKeyPaging("channel:1")
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When trending query, Then call dataSources's functions`() =
+        runTest {
+            // Given
+            val query = PodcastQuery.Trending(
+                language = "ko",
+                categories = listOf(Category.BUSINESS, Category.POLITICS),
+            )
+            val updater = PodcastRemoteUpdater(
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
+                query = query,
+            )
+            coEvery {
+                podcastLocal.getPodcastsByGroupKey(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
+            } returns null
+            coEvery {
+                podcastLocal.replacePodcasts(any(), any())
+            } just Runs
+            coEvery {
+                feedRemote.getTrendingFeeds(any(), any(), any(), any(), any())
+            } returns listOf(mockk<TrendingFeedResponse>(relaxed = true))
+            coEvery {
+                podcastRemote.getPodcastByFeedId(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+
+            // When
+            updater.getFlowList(count = 100).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                podcastLocal.getPodcastsByGroupKey("trending:ko:9,59", 100)
+                podcastLocal.getOldestCreatedAtByGroupKey("trending:ko:9,59")
+                feedRemote.getTrendingFeeds(
+                    max = 100,
+                    since = any(),
+                    language = "ko",
+                    includeCategories = "9,59",
+                    excludeCategories = any(),
+                )
+                podcastRemote.getPodcastByFeedId(any())
+                podcastLocal.replacePodcasts(any(), "trending:ko:9,59")
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When trending query paging, Then call dataSources's functions`() =
+        runTest {
+            // Given
+            val query = PodcastQuery.Trending(
+                language = "ko",
+                categories = listOf(Category.BUSINESS, Category.POLITICS),
+            )
+            val updater = PodcastRemoteUpdater(
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
+                query = query,
+            )
+            coEvery {
+                podcastLocal.getPodcastsByGroupKey(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
+            } returns null
+            coEvery {
+                podcastLocal.replacePodcasts(any(), any())
+            } just Runs
+            coEvery {
+                feedRemote.getTrendingFeeds(any(), any(), any(), any(), any())
+            } returns listOf(mockk<TrendingFeedResponse>(relaxed = true))
+            coEvery {
+                podcastRemote.getPodcastByFeedId(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+
+            // When
+            updater.getPagingData(
+                pagingConfig = PagingConfig(
+                    pageSize = 10,
+                    initialLoadSize = 10,
+                    prefetchDistance = 5,
+                )
+            ).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                podcastLocal.getOldestCreatedAtByGroupKey("trending:ko:9,59")
+                feedRemote.getTrendingFeeds(
+                    max = 100,
+                    since = any(),
+                    language = "ko",
+                    includeCategories = "9,59",
+                    excludeCategories = any(),
+                )
+                podcastRemote.getPodcastByFeedId(any())
+                podcastLocal.replacePodcasts(any(), "trending:ko:9,59")
+                podcastLocal.getPodcastsByGroupKeyPaging("trending:ko:9,59")
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When recent query, Then call dataSources's functions`() =
+        runTest {
+            // Given
+            val query = PodcastQuery.Recent(
+                language = "ko",
+                categories = listOf(Category.BUSINESS, Category.POLITICS),
+            )
+            val updater = PodcastRemoteUpdater(
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
+                query = query,
+            )
+            coEvery {
+                podcastLocal.getPodcastsByGroupKey(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
+            } returns null
+            coEvery {
+                podcastLocal.replacePodcasts(any(), any())
+            } just Runs
+            coEvery {
+                feedRemote.getRecentFeeds(any(), any(), any(), any(), any())
+            } returns listOf(mockk<RecentFeedResponse>(relaxed = true))
+            coEvery {
+                podcastRemote.getPodcastByFeedId(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+
+            // When
+            updater.getFlowList(count = 100).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                podcastLocal.getPodcastsByGroupKey("recent:ko:9,59", 100)
+                podcastLocal.getOldestCreatedAtByGroupKey("recent:ko:9,59")
+                feedRemote.getRecentFeeds(
+                    max = 100,
+                    since = any(),
+                    language = "ko",
+                    includeCategories = "9,59",
+                    excludeCategories = any(),
+                )
+                podcastRemote.getPodcastByFeedId(any())
+                podcastLocal.replacePodcasts(any(), "recent:ko:9,59")
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When recent query paging, Then call dataSources's functions`() =
+        runTest {
+            // Given
+            val query = PodcastQuery.Recent(
+                language = "ko",
+                categories = listOf(Category.BUSINESS, Category.POLITICS),
+            )
+            val updater = PodcastRemoteUpdater(
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
+                query = query,
+            )
+            coEvery {
+                podcastLocal.getPodcastsByGroupKey(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
+            } returns null
+            coEvery {
+                podcastLocal.replacePodcasts(any(), any())
+            } just Runs
+            coEvery {
+                feedRemote.getRecentFeeds(any(), any(), any(), any(), any())
+            } returns listOf(mockk<RecentFeedResponse>(relaxed = true))
+            coEvery {
+                podcastRemote.getPodcastByFeedId(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+
+            // When
+            updater.getPagingData(
+                pagingConfig = PagingConfig(
+                    pageSize = 10,
+                    initialLoadSize = 10,
+                    prefetchDistance = 5,
+                )
+            ).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                podcastLocal.getOldestCreatedAtByGroupKey("recent:ko:9,59")
+                feedRemote.getRecentFeeds(
+                    max = 100,
+                    since = any(),
+                    language = "ko",
+                    includeCategories = "9,59",
+                    excludeCategories = any(),
+                )
+                podcastRemote.getPodcastByFeedId(any())
+                podcastLocal.replacePodcasts(any(), "recent:ko:9,59")
+                podcastLocal.getPodcastsByGroupKeyPaging("recent:ko:9,59")
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When recent new query, Then call dataSources's functions`() =
+        runTest {
+            // Given
+            val query = PodcastQuery.RecentNew
+            val updater = PodcastRemoteUpdater(
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
+                query = query,
+            )
+            coEvery {
+                podcastLocal.getPodcastsByGroupKey(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
+            } returns null
+            coEvery {
+                podcastLocal.replacePodcasts(any(), any())
+            } just Runs
+            coEvery {
+                feedRemote.getRecentNewFeeds(any(), any())
+            } returns listOf(mockk<RecentNewFeedResponse>(relaxed = true))
+            coEvery {
+                podcastRemote.getPodcastByFeedId(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+
+            // When
+            updater.getFlowList(count = 100).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                podcastLocal.getPodcastsByGroupKey("recent_new", 100)
+                podcastLocal.getOldestCreatedAtByGroupKey("recent_new")
+                feedRemote.getRecentNewFeeds(
+                    max = 100,
+                    since = any(),
+                )
+                podcastRemote.getPodcastByFeedId(any())
+                podcastLocal.replacePodcasts(any(), "recent_new")
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When recent new query paging, Then call dataSources's functions`() =
+        runTest {
+            // Given
+            val query = PodcastQuery.RecentNew
+            val updater = PodcastRemoteUpdater(
+                podcastLocal = podcastLocal,
+                podcastRemote = podcastRemote,
+                feedLocal = feedLocal,
+                feedRemote = feedRemote,
+                query = query,
+            )
+            coEvery {
+                podcastLocal.getPodcastsByGroupKey(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
+                podcastLocal.getOldestCreatedAtByGroupKey(any())
+            } returns null
+            coEvery {
+                podcastLocal.replacePodcasts(any(), any())
+            } just Runs
+            coEvery {
+                feedRemote.getRecentNewFeeds(any(), any())
+            } returns listOf(mockk<RecentNewFeedResponse>(relaxed = true))
+            coEvery {
+                podcastRemote.getPodcastByFeedId(any())
+            } returns mockk<PodcastResponse>(relaxed = true)
+
+            // When
+            updater.getPagingData(
+                pagingConfig = PagingConfig(
+                    pageSize = 10,
+                    initialLoadSize = 10,
+                    prefetchDistance = 5,
+                )
+            ).test {
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Then
+            coVerifySequence {
+                podcastLocal.getOldestCreatedAtByGroupKey("recent_new")
+                feedRemote.getRecentNewFeeds(
+                    max = 100,
+                    since = any(),
+                )
+                podcastRemote.getPodcastByFeedId(any())
+                podcastLocal.replacePodcasts(any(), "recent_new")
+                podcastLocal.getPodcastsByGroupKeyPaging("recent_new")
             }
         }
 }
