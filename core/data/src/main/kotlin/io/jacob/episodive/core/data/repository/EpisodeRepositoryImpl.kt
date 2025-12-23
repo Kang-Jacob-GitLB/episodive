@@ -8,6 +8,7 @@ import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisode
+import io.jacob.episodive.core.database.mapper.toEpisodeEntities
 import io.jacob.episodive.core.database.mapper.toEpisodes
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
@@ -122,14 +123,6 @@ class EpisodeRepositoryImpl @Inject constructor(
             }
     }
 
-    override fun getEpisodeById(id: Long): Flow<Episode?> {
-        val query = EpisodeQuery.EpisodeId(id)
-
-        return remoteUpdater.create(query)
-            .getFlowList(1)
-            .map { it.firstOrNull()?.toEpisode() }
-    }
-
     override fun getLiveEpisodes(max: Int): Flow<List<Episode>> {
         val query = EpisodeQuery.Live
 
@@ -214,13 +207,16 @@ class EpisodeRepositoryImpl @Inject constructor(
             }
     }
 
+    override fun getEpisodesByIds(ids: List<Long>): Flow<List<Episode>> {
+        return localDataSource.getEpisodesByIds(ids)
+            .map { it.toEpisodes() }
+    }
+
     override fun getLikedEpisodes(query: String?, max: Int): Flow<List<Episode>> {
         return localDataSource.getLikedEpisodes(
             query = query,
             limit = max,
-        ).map { episodes ->
-            episodes.toEpisodes()
-        }
+        ).map { it.toEpisodes() }
     }
 
     override fun getLikedEpisodesPaging(query: String?): Flow<PagingData<Episode>> {
@@ -241,9 +237,7 @@ class EpisodeRepositoryImpl @Inject constructor(
             isCompleted = isCompleted,
             query = query,
             limit = max,
-        ).map { episodes ->
-            episodes.toEpisodes()
-        }
+        ).map { it.toEpisodes() }
     }
 
     override fun getPlayedEpisodesPaging(
@@ -288,6 +282,10 @@ class EpisodeRepositoryImpl @Inject constructor(
 
     override suspend fun updateEpisodeDuration(id: Long, duration: Duration) {
         localDataSource.updateEpisodeDuration(id, duration)
+    }
+
+    override suspend fun replaceEpisodes(episodes: List<Episode>, groupKey: String) {
+        localDataSource.replaceEpisodes(episodes.toEpisodeEntities(), groupKey)
     }
 
     override suspend fun fetchChapters(url: String): List<Chapter> {

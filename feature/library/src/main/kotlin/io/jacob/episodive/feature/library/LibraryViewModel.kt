@@ -217,7 +217,7 @@ class LibraryViewModel @Inject constructor(
         _findQuery.emit("")
     }
 
-    private fun resumeEpisode(playedEpisode: Episode) {
+    private fun resumeEpisode(playedEpisode: Episode) = viewModelScope.launch {
         if (playedEpisode.isCompleted) {
             playEpisodeUseCase(playedEpisode)
         } else {
@@ -225,7 +225,7 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    private fun playEpisode(episode: Episode) {
+    private fun playEpisode(episode: Episode) = viewModelScope.launch {
         playEpisodeUseCase(episode)
     }
 

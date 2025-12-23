@@ -9,7 +9,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.episode.GetEpisodesByPodcastIdPagingUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
-import io.jacob.episodive.core.domain.usecase.player.PlayEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.model.Episode
@@ -28,7 +28,7 @@ class PodcastViewModel @AssistedInject constructor(
     getPodcastUseCase: GetPodcastUseCase,
     getEpisodesByPodcastIdPagingUseCase: GetEpisodesByPodcastIdPagingUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
-    private val playEpisodesUseCase: PlayEpisodesUseCase,
+    private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val toggleLikedUseCase: ToggleLikedUseCase,
     @Assisted("id") val id: Long,
 ) : ViewModel() {
@@ -79,14 +79,15 @@ class PodcastViewModel @AssistedInject constructor(
         toggleFollowedUseCase(id)
     }
 
-    private fun playEpisode(episode: Episode, visibleEpisodes: List<Episode>) {
+    private fun playEpisode(episode: Episode, visibleEpisodes: List<Episode>) =
+        viewModelScope.launch {
         val index = visibleEpisodes.indexOfFirst { it.id == episode.id }
         if (index == -1) {
-            playEpisodesUseCase(playEpisode = episode, episodes = visibleEpisodes)
-            return
+            playEpisodeUseCase(playEpisode = episode, episodes = visibleEpisodes)
+            return@launch
         }
         val playlist = visibleEpisodes.subList(0, index + 1).reversed()
-        playEpisodesUseCase(playEpisode = episode, episodes = playlist)
+            playEpisodeUseCase(playEpisode = episode, episodes = playlist)
     }
 
     private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {

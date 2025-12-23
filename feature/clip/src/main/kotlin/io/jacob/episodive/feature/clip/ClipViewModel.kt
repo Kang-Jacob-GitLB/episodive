@@ -87,7 +87,7 @@ class ClipViewModel @Inject constructor(
         playerRepository.pause()
     }
 
-    private fun playEpisode(episode: Episode) {
+    private fun playEpisode(episode: Episode) = viewModelScope.launch {
         playEpisodeUseCase(episode)
     }
 

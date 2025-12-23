@@ -12,7 +12,6 @@ import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.model.EpisodeResponse
-import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.Runs
@@ -188,32 +187,6 @@ class EpisodeRepositoryTest {
         }
 
     @Test
-    fun `Given episodeId, When getEpisodeById, Then calls remoteDataSource directly`() =
-        runTest {
-            // Given
-            val episodeId = 1234L
-            val query = EpisodeQuery.EpisodeId(episodeId)
-
-            val mockUpdater = mockk<EpisodeRemoteUpdater>(relaxed = true)
-            coEvery {
-                mockUpdater.getFlowList(any())
-            } returns flowOf(listOf(episodeDtos.first()))
-            coEvery { remoteUpdater.create(query) } returns mockUpdater
-
-            // When
-            repository.getEpisodeById(episodeId).test {
-                val result = awaitItem()
-                // Then
-                assertEquals(episodeTestData.id, result?.id)
-                awaitComplete()
-            }
-            coVerifySequence {
-                remoteUpdater.create(query)
-                mockUpdater.getFlowList(any())
-            }
-        }
-
-    @Test
     fun `When getLiveEpisodes, Then creates correct query and calls sourceFactory`() =
         runTest {
             // Given
@@ -289,6 +262,27 @@ class EpisodeRepositoryTest {
             coVerify {
                 remoteUpdater.create(expectedQuery)
                 mockUpdater.getFlowList(any())
+            }
+        }
+
+    @Test
+    fun `When getEpisodesByIds, Then calls localDataSource directly`() =
+        runTest {
+            // Given
+            val ids = episodeTestDataList.map { it.id }
+            coEvery {
+                localDataSource.getEpisodesByIds(any())
+            } returns flowOf(listOf(mockk<EpisodeWithExtrasView>(relaxed = true)))
+
+            // When
+            repository.getEpisodesByIds(ids).test {
+                awaitItem()
+                awaitComplete()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getEpisodesByIds(ids)
             }
         }
 

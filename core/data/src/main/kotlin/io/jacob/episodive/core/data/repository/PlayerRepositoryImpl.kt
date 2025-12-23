@@ -1,8 +1,6 @@
 package io.jacob.episodive.core.data.repository
 
 import androidx.media3.common.Player
-import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
-import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Playback
@@ -10,15 +8,11 @@ import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
-import kotlin.time.Duration
 
 class PlayerRepositoryImpl @Inject constructor(
     private val playerDataSource: PlayerDataSource,
-    private val episodeLocalDataSource: EpisodeLocalDataSource,
 ) : PlayerRepository {
     override fun getPlayer(): Player {
         return playerDataSource.getPlayer()
@@ -122,29 +116,7 @@ class PlayerRepositoryImpl @Inject constructor(
 
 
     override val nowPlaying: Flow<Episode?> = playerDataSource.nowPlaying
-
-    private val _playlist: Flow<List<Episode>> = playerDataSource.playlist
-    private val _likeEpisodesInPlaylist: Flow<List<EpisodeWithExtrasView>> =
-        _playlist.flatMapLatest { episodes ->
-            episodeLocalDataSource.getEpisodesByIds(episodes.map { it.id })
-        }
-
-    override val playlist: Flow<List<Episode>> = combine(
-        _playlist,
-        _likeEpisodesInPlaylist,
-    ) { playlist, episodes ->
-        playlist.map { episode ->
-            val ep = episodes.find { it.episode.id == episode.id } ?: return@map episode
-            episode.copy(
-                duration = ep.episode.duration,
-                likedAt = ep.likedAt,
-                playedAt = ep.playedAt,
-                position = ep.position ?: Duration.ZERO,
-                isCompleted = ep.isCompleted ?: false,
-            )
-        }
-    }
-
+    override val playlist: Flow<List<Episode>> = playerDataSource.playlist
     override val indexOfList: Flow<Int> = playerDataSource.indexOfList
     override val progress: Flow<Progress> = playerDataSource.progress
     override val playback: Flow<Playback> = playerDataSource.playback.map { Playback.fromValue(it) }

@@ -66,9 +66,6 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
             )
 
             is EpisodeQuery.Recent -> episodeRemote.getRecentEpisodes(max = 6)
-            is EpisodeQuery.EpisodeId -> episodeRemote.getEpisodeById(query.episodeId)
-                ?.let { listOf(it) } ?: emptyList()
-
             is EpisodeQuery.Soundbite -> coroutineScope {
                 val soundbites = soundbiteRemote.getSoundbites(max = 100)
                     .filterNot {
