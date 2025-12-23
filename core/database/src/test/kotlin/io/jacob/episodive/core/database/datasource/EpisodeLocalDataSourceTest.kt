@@ -93,7 +93,7 @@ class EpisodeLocalDataSourceTest {
 
             // Then
             coVerify {
-                dao.getEpisodes(query, limit)
+                dao.getEpisodes("*$query*", limit)
             }
         }
 
@@ -139,7 +139,7 @@ class EpisodeLocalDataSourceTest {
 
             // Then
             coVerify {
-                dao.getEpisodesPaging(query)
+                dao.getEpisodesPaging("*$query*")
             }
         }
 
@@ -261,7 +261,7 @@ class EpisodeLocalDataSourceTest {
 
             // Then
             coVerify {
-                dao.getLikedEpisodes(query, limit)
+                dao.getLikedEpisodes("*$query*", limit)
             }
         }
 
@@ -292,7 +292,7 @@ class EpisodeLocalDataSourceTest {
 
             // Then
             coVerify {
-                dao.getLikedEpisodesPaging(query)
+                dao.getLikedEpisodesPaging("*$query*")
             }
         }
 
@@ -358,7 +358,7 @@ class EpisodeLocalDataSourceTest {
 
             // Then
             coVerify {
-                dao.getPlayedEpisodes(isCompleted, query, limit)
+                dao.getPlayedEpisodes(isCompleted, "*$query*", limit)
             }
         }
 
@@ -391,7 +391,7 @@ class EpisodeLocalDataSourceTest {
 
             // Then
             coVerify {
-                dao.getPlayedEpisodesPaging(isCompleted, query)
+                dao.getPlayedEpisodesPaging(isCompleted, "*$query*")
             }
         }
 

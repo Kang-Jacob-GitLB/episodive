@@ -74,7 +74,7 @@ class PodcastLocalDataSourceTest {
 
             // Then
             coVerify {
-                dao.getPodcasts(query, limit)
+                dao.getPodcasts("*$query*", limit)
             }
         }
 
@@ -120,7 +120,7 @@ class PodcastLocalDataSourceTest {
 
             // Then
             coVerify {
-                dao.getPodcastsPaging(query)
+                dao.getPodcastsPaging("*$query*")
             }
         }
 
@@ -242,7 +242,7 @@ class PodcastLocalDataSourceTest {
 
             // Then
             coVerify {
-                dao.getFollowedPodcasts(query, limit)
+                dao.getFollowedPodcasts("*$query*", limit)
             }
         }
 
@@ -273,7 +273,7 @@ class PodcastLocalDataSourceTest {
 
             // Then
             coVerify {
-                dao.getFollowedPodcastsPaging(query)
+                dao.getFollowedPodcastsPaging("*$query*")
             }
         }
 

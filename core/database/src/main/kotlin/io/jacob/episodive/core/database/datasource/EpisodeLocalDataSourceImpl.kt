@@ -5,6 +5,7 @@ import io.jacob.episodive.core.database.dao.EpisodeDao
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
+import io.jacob.episodive.core.database.util.asFtsWildcard
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -30,13 +31,13 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
 
     override fun getEpisodes(query: String?, limit: Int): Flow<List<EpisodeWithExtrasView>> {
         return episodeDao.getEpisodes(
-            query = query?.ifBlank { null },
+            query = query?.asFtsWildcard(),
             limit = limit,
         )
     }
 
     override fun getEpisodesPaging(query: String?): PagingSource<Int, EpisodeWithExtrasView> {
-        return episodeDao.getEpisodesPaging(query?.ifBlank { null })
+        return episodeDao.getEpisodesPaging(query?.asFtsWildcard())
     }
 
     override fun getEpisodesByGroupKey(
@@ -74,13 +75,13 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
 
     override fun getLikedEpisodes(query: String?, limit: Int): Flow<List<EpisodeWithExtrasView>> {
         return episodeDao.getLikedEpisodes(
-            query = query?.ifBlank { null },
+            query = query?.asFtsWildcard(),
             limit = limit,
         )
     }
 
     override fun getLikedEpisodesPaging(query: String?): PagingSource<Int, EpisodeWithExtrasView> {
-        return episodeDao.getLikedEpisodesPaging(query?.ifBlank { null })
+        return episodeDao.getLikedEpisodesPaging(query?.asFtsWildcard())
     }
 
     override suspend fun updatePlayedEpisode(playedEpisode: PlayedEpisodeEntity) {
@@ -98,7 +99,7 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
     ): Flow<List<EpisodeWithExtrasView>> {
         return episodeDao.getPlayedEpisodes(
             isCompleted = isCompleted,
-            query = query?.ifBlank { null },
+            query = query?.asFtsWildcard(),
             limit = limit,
         )
     }
@@ -109,7 +110,7 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
     ): PagingSource<Int, EpisodeWithExtrasView> {
         return episodeDao.getPlayedEpisodesPaging(
             isCompleted = isCompleted,
-            query = query?.ifBlank { null },
+            query = query?.asFtsWildcard(),
         )
     }
 }

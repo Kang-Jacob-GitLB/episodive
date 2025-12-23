@@ -1,6 +1,6 @@
 # Code Coverage Report
 
-Generated: 2025-12-23 18:34:32
+Generated: 2025-12-23 19:00:17
 
 ---
 
@@ -9,12 +9,12 @@ Generated: 2025-12-23 18:34:32
 | Module         | Line Coverage  | Branch Coverage  | Total Lines   | Covered    | Missed     |
 |----------------|----------------|------------------|---------------|------------|------------|
 | core:data      | 75.3%          | 41.7%            | 546           | 411        | 135        |
-| core:database  | 84.9%          | 53.3%            | 5451          | 4629       | 822        |
+| core:database  | 84.9%          | 52.8%            | 5454          | 4632       | 822        |
 | core:datastore | 91.5%          | 60.0%            | 71            | 65         | 6          |
 | core:domain    | 85.0%          | 60.0%            | 273           | 232        | 41         |
 | core:network   | 86.7%          | 58.1%            | 457           | 396        | 61         |
 | --------       | -------------- | ---------------- | ------------- | ---------  | --------   |
-| **TOTAL**      | ** 84.3%**     | ** 52.4%**       | **  6798**    | **  5733** | **  1065** |
+| **TOTAL**      | ** 84.3%**     | ** 52.0%**       | **  6801**    | **  5736** | **  1065** |
 
 ---
 
@@ -91,6 +91,7 @@ Generated: 2025-12-23 18:34:32
 
 | Class                     | Coverage | Lines Covered/Total | Branches Covered/Total |
 |---------------------------|----------|---------------------|------------------------|
+| ✅ FtsExtKt.kt             | 100.0%   | 3/3                 | 6/6                    |
 | ✅ DurationConverter.kt    | 100.0%   | 3/3                 | 3/4                    |
 | ✅ InstantConverter.kt     | 100.0%   | 3/3                 | 4/4                    |
 | ✅ MediumConverter.kt      | 100.0%   | 3/3                 | 2/4                    |
@@ -101,8 +102,8 @@ Generated: 2025-12-23 18:34:32
 
 | Class                                | Coverage | Lines Covered/Total | Branches Covered/Total |
 |--------------------------------------|----------|---------------------|------------------------|
-| ✅ PodcastLocalDataSourceImpl.kt      | 100.0%   | 25/25               | 13/16                  |
-| ✅ EpisodeLocalDataSourceImpl.kt      | 100.0%   | 38/38               | 19/24                  |
+| ✅ PodcastLocalDataSourceImpl.kt      | 100.0%   | 25/25               | 5/8                    |
+| ✅ EpisodeLocalDataSourceImpl.kt      | 100.0%   | 38/38               | 7/12                   |
 | ✅ RecentSearchLocalDataSourceImpl.kt | 100.0%   | 9/9                 | N/A                    |
 | ✅ SoundbiteLocalDataSourceImpl.kt    | 100.0%   | 13/13               | N/A                    |
 
