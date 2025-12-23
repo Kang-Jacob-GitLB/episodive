@@ -43,90 +43,6 @@ class PodcastRemoteUpdaterTest {
     }
 
     @Test
-    fun `Given dependencies, When search query, Then call dataSource's functions`() =
-        runTest {
-            // Given
-            val search = "test podcast"
-            val query = PodcastQuery.Search(search)
-            val updater = PodcastRemoteUpdater(
-                podcastLocal = podcastLocal,
-                podcastRemote = podcastRemote,
-                feedRemote = feedRemote,
-                query = query,
-            )
-            coEvery {
-                podcastLocal.getPodcastsByGroupKey(any(), any())
-            } returns mockk(relaxed = true)
-            coEvery {
-                podcastLocal.getOldestCreatedAtByGroupKey(any())
-            } returns null
-            coEvery {
-                podcastRemote.searchPodcasts(any(), any())
-            } returns listOf(mockk<PodcastResponse>(relaxed = true))
-            coEvery {
-                podcastLocal.replacePodcasts(any(), any())
-            } just Runs
-
-            // When
-            updater.getFlowList(count = 10).test {
-                cancelAndIgnoreRemainingEvents()
-            }
-
-            // Then
-            coVerifySequence {
-                podcastLocal.getPodcastsByGroupKey("search:test podcast", 10)
-                podcastLocal.getOldestCreatedAtByGroupKey("search:test podcast")
-                podcastRemote.searchPodcasts(search, 1000)
-                podcastLocal.replacePodcasts(any(), "search:test podcast")
-            }
-        }
-
-    @Test
-    fun `Given dependencies, When search query paging, Then call dataSource's functions`() =
-        runTest {
-            // Given
-            val search = "test podcast"
-            val query = PodcastQuery.Search(search)
-            val updater = PodcastRemoteUpdater(
-                podcastLocal = podcastLocal,
-                podcastRemote = podcastRemote,
-                feedRemote = feedRemote,
-                query = query,
-            )
-            coEvery {
-                podcastLocal.getPodcastsByGroupKeyPaging(any())
-            } returns mockk(relaxed = true)
-            coEvery {
-                podcastLocal.getOldestCreatedAtByGroupKey(any())
-            } returns null
-            coEvery {
-                podcastRemote.searchPodcasts(any(), any())
-            } returns listOf(mockk<PodcastResponse>(relaxed = true))
-            coEvery {
-                podcastLocal.replacePodcasts(any(), any())
-            } just Runs
-
-            // When
-            updater.getPagingData(
-                pagingConfig = PagingConfig(
-                    pageSize = 10,
-                    initialLoadSize = 10,
-                    prefetchDistance = 5,
-                )
-            ).test {
-                cancelAndIgnoreRemainingEvents()
-            }
-
-            // Then
-            coVerifySequence {
-                podcastLocal.getOldestCreatedAtByGroupKey("search:test podcast")
-                podcastRemote.searchPodcasts(search, 1000)
-                podcastLocal.replacePodcasts(any(), "search:test podcast")
-                podcastLocal.getPodcastsByGroupKeyPaging("search:test podcast")
-            }
-        }
-
-    @Test
     fun `Given dependencies, When feedId query, Then call dataSource's functions`() =
         runTest {
             // Given
@@ -812,14 +728,14 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                podcastLocal.getPodcastsByGroupKey("recent_new", 100)
-                podcastLocal.getOldestCreatedAtByGroupKey("recent_new")
+                podcastLocal.getPodcastsByGroupKey("recentNew", 100)
+                podcastLocal.getOldestCreatedAtByGroupKey("recentNew")
                 feedRemote.getRecentNewFeeds(
                     max = 100,
                     since = any(),
                 )
                 podcastRemote.getPodcastByFeedId(any())
-                podcastLocal.replacePodcasts(any(), "recent_new")
+                podcastLocal.replacePodcasts(any(), "recentNew")
             }
         }
 
@@ -863,14 +779,14 @@ class PodcastRemoteUpdaterTest {
 
             // Then
             coVerifySequence {
-                podcastLocal.getOldestCreatedAtByGroupKey("recent_new")
+                podcastLocal.getOldestCreatedAtByGroupKey("recentNew")
                 feedRemote.getRecentNewFeeds(
                     max = 100,
                     since = any(),
                 )
                 podcastRemote.getPodcastByFeedId(any())
-                podcastLocal.replacePodcasts(any(), "recent_new")
-                podcastLocal.getPodcastsByGroupKeyPaging("recent_new")
+                podcastLocal.replacePodcasts(any(), "recentNew")
+                podcastLocal.getPodcastsByGroupKeyPaging("recentNew")
             }
         }
 }

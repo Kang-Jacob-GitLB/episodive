@@ -34,7 +34,6 @@ class PodcastRemoteUpdater @AssistedInject constructor(
 
     override suspend fun fetchFromRemote(fetchSize: Int): List<PodcastResponse> {
         return when (query) {
-            is PodcastQuery.Search -> podcastRemote.searchPodcasts(query.query, fetchSize)
             is PodcastQuery.FeedId -> podcastRemote.getPodcastByFeedId(query.feedId)
                 ?.let { listOf(it) } ?: emptyList()
 

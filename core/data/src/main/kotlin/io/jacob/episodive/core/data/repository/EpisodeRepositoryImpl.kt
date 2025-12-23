@@ -16,7 +16,9 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
+import io.jacob.episodive.core.network.mapper.toEpisodes
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import kotlin.time.Clock
@@ -60,12 +62,12 @@ class EpisodeRepositoryImpl @Inject constructor(
     override fun getEpisodesByFeedId(
         feedId: Long,
         max: Int,
-    ): Flow<List<Episode>> {
-        val query = EpisodeQuery.FeedId(feedId)
-
-        return remoteUpdater.create(query)
-            .getFlowList(max)
-            .map { it.toEpisodes() }
+    ): Flow<List<Episode>> = flow {
+        remoteDataSource.getEpisodesByFeedId(
+            feedId = feedId,
+            max = max,
+        ).toEpisodes()
+            .let { emit(it) }
     }
 
     override fun getEpisodesByFeedIdPaging(feedId: Long): Flow<PagingData<Episode>> {

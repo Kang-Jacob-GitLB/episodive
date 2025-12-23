@@ -14,7 +14,9 @@ import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
+import io.jacob.episodive.core.network.mapper.toPodcasts
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -32,22 +34,12 @@ class PodcastRepositoryImpl @Inject constructor(
     override fun searchPodcasts(
         query: String,
         max: Int,
-    ): Flow<List<Podcast>> {
-        val query = PodcastQuery.Search(query)
-
-        return remoteUpdater.create(query)
-            .getFlowList(max)
-            .map { it.toPodcasts() }
-    }
-
-    override fun searchPodcastsPaging(query: String): Flow<PagingData<Podcast>> {
-        val query = PodcastQuery.Search(query)
-
-        return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toPodcast() }
-            }
+    ): Flow<List<Podcast>> = flow {
+        remoteDataSource.searchPodcasts(
+            query = query,
+            max = max,
+        ).toPodcasts()
+            .let { emit(it) }
     }
 
     override fun getPodcastByFeedId(feedId: Long): Flow<Podcast?> {

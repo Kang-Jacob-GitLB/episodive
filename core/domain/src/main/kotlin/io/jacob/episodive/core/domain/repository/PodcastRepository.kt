@@ -12,8 +12,6 @@ interface PodcastRepository {
         max: Int,
     ): Flow<List<Podcast>>
 
-    fun searchPodcastsPaging(query: String): Flow<PagingData<Podcast>>
-
     fun getPodcastByFeedId(feedId: Long): Flow<Podcast?>
 
     fun getPodcastByFeedUrl(feedUrl: String): Flow<Podcast?>

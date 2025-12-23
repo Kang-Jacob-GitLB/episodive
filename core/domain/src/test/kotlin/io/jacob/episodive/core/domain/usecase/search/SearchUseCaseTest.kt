@@ -39,7 +39,7 @@ class SearchUseCaseTest {
         runTest {
             // Given
             coEvery {
-                podcastRepository.searchPodcasts(any(), 10)
+                podcastRepository.searchPodcasts(any(), any())
             } returns flowOf(podcastTestDataList.take(2))
             coEvery {
                 episodeRepository.getEpisodesByFeedId(podcastTestDataList[0].id, any())
@@ -50,24 +50,32 @@ class SearchUseCaseTest {
 
             // When
             useCase("query", 10).test {
-                val result = awaitItem()
+                val result1 = awaitItem()
 
                 // Then
-                assertEquals(2, result.podcasts.size)
-                result.podcasts.forEachIndexed { index, podcast ->
+                assertEquals(2, result1.podcasts.size)
+                result1.podcasts.forEachIndexed { index, podcast ->
                     assertEquals(podcastTestDataList[index], podcast)
                 }
-                assertEquals(10, result.episodes.size)
-                result.episodes.forEachIndexed { index, episode ->
-                    assertEquals(episodeTestDataList[index], episode)
+                assertEquals(5, result1.episodes.size)
+                assertEquals(episodeTestDataList.take(5), result1.episodes)
+
+                val result2 = awaitItem()
+
+                // Then
+                assertEquals(2, result2.podcasts.size)
+                result2.podcasts.forEachIndexed { index, podcast ->
+                    assertEquals(podcastTestDataList[index], podcast)
                 }
+                assertEquals(10, result2.episodes.size)
+                assertEquals(episodeTestDataList, result2.episodes)
 
                 awaitComplete()
             }
             coVerifySequence {
                 podcastRepository.searchPodcasts(any(), 10)
-                episodeRepository.getEpisodesByFeedId(podcastTestDataList[0].id, any())
-                episodeRepository.getEpisodesByFeedId(podcastTestDataList[1].id, any())
+                episodeRepository.getEpisodesByFeedId(podcastTestDataList[0].id, 5)
+                episodeRepository.getEpisodesByFeedId(podcastTestDataList[1].id, 5)
             }
         }
 }
