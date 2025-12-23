@@ -4,7 +4,6 @@ import io.jacob.episodive.core.network.api.FeedApi
 import io.jacob.episodive.core.network.model.RecentFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewValueFeedResponse
-import io.jacob.episodive.core.network.model.SoundbiteResponse
 import io.jacob.episodive.core.network.model.TrendingFeedResponse
 import javax.inject.Inject
 
@@ -61,9 +60,5 @@ class FeedRemoteDataSourceImpl @Inject constructor(
             max = max,
             since = since,
         ).dataList
-    }
-
-    override suspend fun getRecentSoundbites(max: Int?): List<SoundbiteResponse> {
-        return feedApi.getRecentSoundbites(max = max).dataList
     }
 }

@@ -1,6 +1,9 @@
 package io.jacob.episodive.core.data.util.query
 
+import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Channel
+import io.jacob.episodive.core.model.mapper.toCommaString
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -35,5 +38,26 @@ sealed interface PodcastQuery : CacheableQuery {
     data class ByChannel(val channel: Channel) : PodcastQuery {
         override val key = "channel:${channel.id}"
         override val timeToLive = 7.days
+    }
+
+    data class Trending(
+        val language: String? = null,
+        val categories: List<Category> = emptyList(),
+    ) : PodcastQuery {
+        override val key: String = "trending:${language ?: "all"}:${categories.toCommaString()}"
+        override val timeToLive: Duration = 1.hours
+    }
+
+    data class Recent(
+        val language: String? = null,
+        val categories: List<Category> = emptyList(),
+    ) : PodcastQuery {
+        override val key: String = "recent:${language ?: "all"}:${categories.toCommaString()}"
+        override val timeToLive: Duration = 1.hours
+    }
+
+    data object RecentNew : PodcastQuery {
+        override val key: String = "recent_new"
+        override val timeToLive: Duration = 1.hours
     }
 }

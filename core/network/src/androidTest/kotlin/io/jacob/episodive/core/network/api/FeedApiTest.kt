@@ -63,16 +63,4 @@ class FeedApiTest {
         assertNotNull(feed)
         assertEquals(10, response.dataList.size)
     }
-
-    @Test
-    fun getRecentSoundbitesTest() = runTest {
-        val response = api.getRecentSoundbites(
-            max = 10,
-        )
-        val soundbite = response.dataList.first()
-
-        assertNotNull(response)
-        assertNotNull(soundbite)
-        assertEquals(10, response.dataList.size)
-    }
 }

@@ -6,14 +6,14 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
-import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
+import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
 import io.jacob.episodive.core.database.mapper.toSoundbiteEntities
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.model.mapper.toCommaString
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
-import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
+import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toEpisodes
 import io.jacob.episodive.core.network.mapper.toSoundbites
 import io.jacob.episodive.core.network.model.EpisodeResponse
@@ -26,8 +26,8 @@ import kotlin.time.Clock
 class EpisodeRemoteUpdater @AssistedInject constructor(
     private val episodeLocal: EpisodeLocalDataSource,
     private val episodeRemote: EpisodeRemoteDataSource,
-    private val feedLocal: FeedLocalDataSource,
-    private val feedRemote: FeedRemoteDataSource,
+    private val soundbiteLocal: SoundbiteLocalDataSource,
+    private val soundbiteRemote: SoundbiteRemoteDataSource,
     @Assisted("query") override val query: EpisodeQuery,
 ) : RemoteUpdater<EpisodeQuery, EpisodeResponse, EpisodeEntity, EpisodeWithExtrasView>(query) {
 
@@ -70,7 +70,7 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
                 ?.let { listOf(it) } ?: emptyList()
 
             is EpisodeQuery.Soundbite -> coroutineScope {
-                val soundbites = feedRemote.getRecentSoundbites(max = 100)
+                val soundbites = soundbiteRemote.getSoundbites(max = 100)
                     .filterNot {
                         val regex = Regex("\\p{InCJK_UNIFIED_IDEOGRAPHS}")
 
@@ -78,7 +78,7 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
                                 it.episodeTitle.contains(regex) ||
                                 it.feedTitle.contains(regex)
                     }
-                feedLocal.replaceSoundbites(soundbites.toSoundbites().toSoundbiteEntities())
+                soundbiteLocal.replaceSoundbites(soundbites.toSoundbites().toSoundbiteEntities())
 
                 soundbites.chunked(20).flatMap { chunk ->
                     chunk.map { soundbite ->

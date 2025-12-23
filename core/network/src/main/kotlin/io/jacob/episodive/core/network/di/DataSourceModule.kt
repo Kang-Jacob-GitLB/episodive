@@ -12,6 +12,7 @@ import io.jacob.episodive.core.network.api.ChapterApi
 import io.jacob.episodive.core.network.api.EpisodeApi
 import io.jacob.episodive.core.network.api.FeedApi
 import io.jacob.episodive.core.network.api.PodcastApi
+import io.jacob.episodive.core.network.api.SoundbiteApi
 import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSourceImpl
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
@@ -22,6 +23,8 @@ import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSourceImpl
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSourceImpl
+import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
+import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSourceImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Singleton
 
@@ -55,6 +58,16 @@ object DataSourceModule {
     ): FeedRemoteDataSource {
         return FeedRemoteDataSourceImpl(
             feedApi = feedApi,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideSoundbiteRemoteDataSource(
+        soundbiteApi: SoundbiteApi,
+    ): SoundbiteRemoteDataSource {
+        return SoundbiteRemoteDataSourceImpl(
+            soundbiteApi = soundbiteApi,
         )
     }
 

@@ -4,9 +4,9 @@ import androidx.paging.PagingConfig
 import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
-import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
+import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
-import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
+import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.model.EpisodeResponse
 import io.jacob.episodive.core.network.model.SoundbiteResponse
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -27,16 +27,16 @@ class EpisodeRemoteUpdaterTest {
 
     private val episodeLocal = mockk<EpisodeLocalDataSource>(relaxed = true)
     private val episodeRemote = mockk<EpisodeRemoteDataSource>(relaxed = true)
-    private val feedLocal = mockk<FeedLocalDataSource>(relaxed = true)
-    private val feedRemote = mockk<FeedRemoteDataSource>(relaxed = true)
+    private val soundbiteLocal = mockk<SoundbiteLocalDataSource>(relaxed = true)
+    private val soundbiteRemote = mockk<SoundbiteRemoteDataSource>(relaxed = true)
 
     @After
     fun teardown() {
         confirmVerified(
             episodeLocal,
             episodeRemote,
-            feedLocal,
-            feedRemote,
+            soundbiteLocal,
+            soundbiteRemote,
         )
     }
 
@@ -49,8 +49,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -89,8 +89,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -135,8 +135,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -175,8 +175,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -221,8 +221,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -261,8 +261,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -307,8 +307,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -347,8 +347,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -392,8 +392,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -431,8 +431,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -476,8 +476,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -515,8 +515,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -560,8 +560,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -599,8 +599,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -645,8 +645,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -686,8 +686,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -731,8 +731,8 @@ class EpisodeRemoteUpdaterTest {
             val updater = EpisodeRemoteUpdater(
                 episodeLocal = episodeLocal,
                 episodeRemote = episodeRemote,
-                feedLocal = feedLocal,
-                feedRemote = feedRemote,
+                soundbiteLocal = soundbiteLocal,
+                soundbiteRemote = soundbiteRemote,
                 query = query,
             )
             coEvery {
@@ -748,10 +748,10 @@ class EpisodeRemoteUpdaterTest {
                 episodeLocal.replaceEpisodes(any(), any())
             } just Runs
             coEvery {
-                feedLocal.replaceSoundbites(any())
+                soundbiteLocal.replaceSoundbites(any())
             } just Runs
             coEvery {
-                feedRemote.getRecentSoundbites(any())
+                soundbiteRemote.getSoundbites(any())
             } returns listOf(mockk<SoundbiteResponse>(relaxed = true))
 
             // When
@@ -763,8 +763,8 @@ class EpisodeRemoteUpdaterTest {
             coVerifySequence {
                 episodeLocal.getEpisodesByGroupKey(any(), 10)
                 episodeLocal.getOldestCreatedAtByGroupKey(any())
-                feedRemote.getRecentSoundbites(max = 100)
-                feedLocal.replaceSoundbites(any())
+                soundbiteRemote.getSoundbites(max = 100)
+                soundbiteLocal.replaceSoundbites(any())
                 episodeRemote.getEpisodeById(any())
                 episodeLocal.replaceEpisodes(any(), any())
             }

@@ -4,7 +4,6 @@ import io.jacob.episodive.core.network.model.RecentFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewValueFeedResponse
 import io.jacob.episodive.core.network.model.ResponseListWrapper
-import io.jacob.episodive.core.network.model.SoundbiteResponse
 import io.jacob.episodive.core.network.model.TrendingFeedResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
@@ -39,9 +38,4 @@ interface FeedApi {
         @Query("max") max: Int? = null,
         @Query("since") since: Long? = null,
     ): ResponseListWrapper<RecentNewValueFeedResponse>
-
-    @GET("recent/soundbites")
-    suspend fun getRecentSoundbites(
-        @Query("max") max: Int? = null,
-    ): ResponseListWrapper<SoundbiteResponse>
 }

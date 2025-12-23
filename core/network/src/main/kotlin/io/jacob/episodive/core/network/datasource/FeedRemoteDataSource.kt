@@ -3,7 +3,6 @@ package io.jacob.episodive.core.network.datasource
 import io.jacob.episodive.core.network.model.RecentFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewValueFeedResponse
-import io.jacob.episodive.core.network.model.SoundbiteResponse
 import io.jacob.episodive.core.network.model.TrendingFeedResponse
 
 interface FeedRemoteDataSource {
@@ -32,6 +31,4 @@ interface FeedRemoteDataSource {
         max: Int? = null,
         since: Long? = null,
     ): List<RecentNewValueFeedResponse>
-
-    suspend fun getRecentSoundbites(max: Int? = null): List<SoundbiteResponse>
 }

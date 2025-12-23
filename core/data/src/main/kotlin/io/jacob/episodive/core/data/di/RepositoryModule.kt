@@ -8,25 +8,18 @@ import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.data.repository.ChannelRepositoryImpl
 import io.jacob.episodive.core.data.repository.EpisodeRepositoryImpl
-import io.jacob.episodive.core.data.repository.FeedRepositoryImpl
 import io.jacob.episodive.core.data.repository.PlayerRepositoryImpl
 import io.jacob.episodive.core.data.repository.PodcastRepositoryImpl
 import io.jacob.episodive.core.data.repository.RecentSearchRepositoryImpl
 import io.jacob.episodive.core.data.repository.UserRepositoryImpl
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
-import io.jacob.episodive.core.data.util.updater.RecentFeedRemoteUpdater
-import io.jacob.episodive.core.data.util.updater.RecentNewFeedRemoteUpdater
-import io.jacob.episodive.core.data.util.updater.SoundbiteRemoteUpdater
-import io.jacob.episodive.core.data.util.updater.TrendingFeedRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
-import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.datasource.RecentSearchLocalDataSource
 import io.jacob.episodive.core.datastore.datasource.UserPreferencesDataSource
 import io.jacob.episodive.core.domain.repository.ChannelRepository
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
-import io.jacob.episodive.core.domain.repository.FeedRepository
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.domain.repository.RecentSearchRepository
@@ -34,7 +27,6 @@ import io.jacob.episodive.core.domain.repository.UserRepository
 import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
-import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import javax.inject.Singleton
@@ -79,26 +71,6 @@ object RepositoryModule {
             remoteDataSource = episodeRemoteDataSource,
             chapterRemoteDataSource = chapterRemoteDataSource,
             remoteUpdater = episodeRemoteUpdater,
-        )
-    }
-
-    @Provides
-    @Singleton
-    fun provideFeedRepository(
-        feedLocalDataSource: FeedLocalDataSource,
-        feedRemoteDataSource: FeedRemoteDataSource,
-        trendingFeedRemoteUpdater: TrendingFeedRemoteUpdater.Factory,
-        recentFeedRemoteUpdater: RecentFeedRemoteUpdater.Factory,
-        recentNewFeedRemoteUpdater: RecentNewFeedRemoteUpdater.Factory,
-        soundbiteRemoteUpdater: SoundbiteRemoteUpdater.Factory,
-    ): FeedRepository {
-        return FeedRepositoryImpl(
-            localDataSource = feedLocalDataSource,
-            remoteDataSource = feedRemoteDataSource,
-            trendingFeedRemoteUpdater = trendingFeedRemoteUpdater,
-            recentFeedRemoteUpdater = recentFeedRemoteUpdater,
-            recentNewFeedRemoteUpdater = recentNewFeedRemoteUpdater,
-            soundbiteRemoteUpdater = soundbiteRemoteUpdater,
         )
     }
 
