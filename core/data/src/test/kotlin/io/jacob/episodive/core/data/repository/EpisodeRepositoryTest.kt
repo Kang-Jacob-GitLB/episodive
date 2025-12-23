@@ -272,7 +272,7 @@ class EpisodeRepositoryTest {
             val ids = episodeTestDataList.map { it.id }
             coEvery {
                 localDataSource.getEpisodesByIds(any())
-            } returns flowOf(listOf(mockk<EpisodeWithExtrasView>(relaxed = true)))
+            } returns flowOf(episodeDtos)
 
             // When
             repository.getEpisodesByIds(ids).test {
