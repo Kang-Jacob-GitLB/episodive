@@ -21,19 +21,14 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.domain.repository.PlayerRepository
-import io.jacob.episodive.core.domain.usecase.episode.IsLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
+import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.model.Episode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -46,7 +41,7 @@ class MediaNotificationService : MediaSessionService() {
     lateinit var playerRepository: PlayerRepository
 
     @Inject
-    lateinit var isLikedEpisodeUseCase: IsLikedEpisodeUseCase
+    lateinit var getNowPlayingUseCase: GetNowPlayingUseCase
 
     @Inject
     lateinit var toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase
@@ -54,18 +49,8 @@ class MediaNotificationService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    private val nowPlaying = MutableStateFlow<Episode?>(null)
-    private val isLiked: StateFlow<Boolean> = nowPlaying.flatMapLatest { episode ->
-        if (episode == null) {
-            MutableStateFlow(false)
-        } else {
-            isLikedEpisodeUseCase(episode)
-        }
-    }.stateIn(
-        scope = serviceScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = false
-    )
+    private lateinit var nowPlaying: Episode
+    private var isLiked = false
 
     companion object {
         private const val NOTIFICATION_ID = 1001
@@ -93,14 +78,9 @@ class MediaNotificationService : MediaSessionService() {
         setMediaNotificationProvider(notificationProvider)
 
         serviceScope.launch {
-            playerRepository.nowPlaying.collectLatest { episode ->
-                nowPlaying.value = episode
-            }
-        }
-
-        serviceScope.launch {
-            isLiked.collectLatest { liked ->
-                updateCustomLayout(liked)
+            getNowPlayingUseCase().collectLatest { episode ->
+                episode?.let { nowPlaying = it }
+                updateCustomLayout(episode?.isLiked ?: false)
             }
         }
     }
@@ -111,7 +91,7 @@ class MediaNotificationService : MediaSessionService() {
     }
 
     private fun getCustomLayout(): ImmutableList<CommandButton> {
-        return getCustomLayout(isLiked.value)
+        return getCustomLayout(isLiked)
     }
 
     private fun getCustomLayout(isLiked: Boolean): ImmutableList<CommandButton> {
@@ -233,7 +213,7 @@ class MediaNotificationService : MediaSessionService() {
     }
 
     private fun toggleLikeEpisode() = serviceScope.launch {
-        nowPlaying.value?.let { toggleLikedEpisodeUseCase(it) }
+        toggleLikedEpisodeUseCase(nowPlaying)
     }
 }
 
