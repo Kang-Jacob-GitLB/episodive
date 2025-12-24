@@ -10,6 +10,7 @@ import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
+import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetPlaylistUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
@@ -42,6 +43,7 @@ class PlayerViewModel @Inject constructor(
     private val updatePlayedEpisodeUseCase: UpdatePlayedEpisodeUseCase,
     private val getPodcastUseCase: GetPodcastUseCase,
     @param:Player(EpisodivePlayers.Main) private val playerRepository: PlayerRepository,
+    getNowPlayingUseCase: GetNowPlayingUseCase,
     getPlaylistUseCase: GetPlaylistUseCase,
     private val setSpeedUseCase: SetSpeedUseCase,
     private val getUserDataUseCase: GetUserDataUseCase,
@@ -49,16 +51,16 @@ class PlayerViewModel @Inject constructor(
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
 ) : ViewModel() {
     private val playingEpisode = combine(
-        playerRepository.nowPlaying,
+        getNowPlayingUseCase(),
         playerRepository.progress,
     ) { episode, progress ->
         episode?.id to progress
     }
 
-    private val podcast = playerRepository.nowPlaying.mapNotNull { it?.feedId }
+    private val podcast = getNowPlayingUseCase().mapNotNull { it?.feedId }
         .flatMapLatest { feedId -> getPodcastUseCase(feedId) }
 
-    private val chapters = playerRepository.nowPlaying.map { it?.chaptersUrl }
+    private val chapters = getNowPlayingUseCase().map { it?.chaptersUrl }
         .flatMapLatest { chaptersUrl ->
             val chapters = chaptersUrl?.let { getChaptersUseCase(it) } ?: emptyList()
             flowOf(chapters)
@@ -67,7 +69,7 @@ class PlayerViewModel @Inject constructor(
 
     val state: StateFlow<PlayerState> = combine(
         podcast,
-        playerRepository.nowPlaying,
+        getNowPlayingUseCase(),
         getPlaylistUseCase(),
         playerRepository.indexOfList,
         playerRepository.progress,

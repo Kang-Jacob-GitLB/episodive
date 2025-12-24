@@ -212,6 +212,11 @@ class EpisodeRepositoryImpl @Inject constructor(
             }
     }
 
+    override fun getEpisodeById(id: Long): Flow<Episode?> {
+        return localDataSource.getEpisodeById(id)
+            .map { it?.toEpisode() }
+    }
+
     override fun getEpisodesByIds(ids: List<Long>): Flow<List<Episode>> {
         return localDataSource.getEpisodesByIds(ids)
             .map { it.toEpisodes() }

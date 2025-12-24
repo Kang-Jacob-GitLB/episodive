@@ -74,6 +74,8 @@ interface EpisodeRepository {
 
     fun getSoundbiteEpisodesPaging(): Flow<PagingData<Episode>>
 
+    fun getEpisodeById(id: Long): Flow<Episode?>
+
     fun getEpisodesByIds(ids: List<Long>): Flow<List<Episode>>
 
     fun getLikedEpisodes(query: String? = null, max: Int): Flow<List<Episode>>
