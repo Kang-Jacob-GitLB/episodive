@@ -89,11 +89,9 @@ object RepositoryModule {
     @Player(EpisodivePlayers.Main)
     fun provideMainPlayerRepository(
         @Player(EpisodivePlayers.Main) mainPlayerDataSource: PlayerDataSource,
-        episodeLocalDataSource: EpisodeLocalDataSource,
     ): PlayerRepository {
         return PlayerRepositoryImpl(
             playerDataSource = mainPlayerDataSource,
-            episodeLocalDataSource = episodeLocalDataSource,
         )
     }
 
@@ -102,11 +100,9 @@ object RepositoryModule {
     @Player(EpisodivePlayers.Clip)
     fun provideClipPlayerRepository(
         @Player(EpisodivePlayers.Clip) clipPlayerDataSource: PlayerDataSource,
-        episodeLocalDataSource: EpisodeLocalDataSource,
     ): PlayerRepository {
         return PlayerRepositoryImpl(
             playerDataSource = clipPlayerDataSource,
-            episodeLocalDataSource = episodeLocalDataSource,
         )
     }
 

@@ -44,8 +44,6 @@ interface EpisodeRepository {
         guid: String,
     ): Flow<PagingData<Episode>>
 
-    fun getEpisodeById(id: Long): Flow<Episode?>
-
     fun getLiveEpisodes(max: Int): Flow<List<Episode>>
 
     fun getLiveEpisodesPaging(): Flow<PagingData<Episode>>
@@ -74,6 +72,8 @@ interface EpisodeRepository {
 
     fun getSoundbiteEpisodesPaging(): Flow<PagingData<Episode>>
 
+    fun getEpisodesByIds(ids: List<Long>): Flow<List<Episode>>
+
     fun getLikedEpisodes(query: String? = null, max: Int): Flow<List<Episode>>
 
     fun getLikedEpisodesPaging(query: String? = null): Flow<PagingData<Episode>>
@@ -96,6 +96,8 @@ interface EpisodeRepository {
     suspend fun updatePlayed(id: Long, position: Duration, isCompleted: Boolean)
 
     suspend fun updateEpisodeDuration(id: Long, duration: Duration)
+
+    suspend fun replaceEpisodes(episodes: List<Episode>, groupKey: String)
 
     suspend fun fetchChapters(url: String): List<Chapter>
 }

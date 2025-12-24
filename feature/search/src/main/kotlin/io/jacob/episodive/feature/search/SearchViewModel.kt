@@ -32,11 +32,12 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val searchUseCase: SearchUseCase,
+    searchUseCase: SearchUseCase,
     getRecentEpisodesUseCase: GetRecentEpisodesUseCase,
     getTrendingPodcastsUseCase: GetTrendingPodcastsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
@@ -81,7 +82,7 @@ class SearchViewModel @Inject constructor(
         e.printStackTrace()
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
+        started = SharingStarted.WhileSubscribed(60_000),
         initialValue = SearchState.Loading
     )
 
@@ -145,11 +146,13 @@ class SearchViewModel @Inject constructor(
     }
 
     private fun clickEpisode(episode: Episode) = viewModelScope.launch {
+        Timber.w("episode: $episode")
         playEpisodeUseCase(episode)
 //        _effect.emit(SearchEffect.NavigateToEpisode(episode))
     }
 
     private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {
+        Timber.w("episode: $episode")
         toggleLikedUseCase(episode.id)
     }
 }

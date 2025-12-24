@@ -1,5 +1,7 @@
 package io.jacob.episodive.core.data.repository
 
+import androidx.paging.PagingData
+import androidx.paging.testing.asSnapshot
 import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
@@ -9,7 +11,7 @@ import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
-import io.jacob.episodive.core.testing.model.episodeTestData
+import io.jacob.episodive.core.network.model.EpisodeResponse
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.Runs
@@ -88,23 +90,47 @@ class EpisodeRepositoryTest {
             // Given
             val max = 10
             val feedId = 123L
-            val expectedQuery = EpisodeQuery.FeedId(feedId)
 
-            val mockUpdater = mockk<EpisodeRemoteUpdater>(relaxed = true)
-            coEvery { mockUpdater.getFlowList(any()) } returns flowOf(episodeDtos)
-            coEvery { remoteUpdater.create(expectedQuery) } returns mockUpdater
+            coEvery {
+                remoteDataSource.getEpisodesByFeedId(any(), any())
+            } returns listOf(mockk<EpisodeResponse>(relaxed = true))
 
             // When
             repository.getEpisodesByFeedId(feedId, max = max).test {
-                val result = awaitItem()
-                // Then
-                assertEquals(episodeTestDataList.size, result.size)
-                assertEquals(episodeTestDataList, result)
+                awaitItem()
                 awaitComplete()
             }
+
+            // Then
+            coVerifySequence {
+                remoteDataSource.getEpisodesByFeedId(feedId, max)
+            }
+        }
+
+    @Test
+    fun `Given feedId, When getEpisodesByFeedIdPaging, Then creates correct query and calls sourceFactory`() =
+        runTest {
+            // Given
+            val max = 10
+            val feedId = 123L
+            val expectedQuery = EpisodeQuery.FeedId(feedId)
+
+            val mockUpdater = mockk<EpisodeRemoteUpdater>(relaxed = true)
+            coEvery {
+                mockUpdater.getPagingData(any())
+            } returns flowOf(PagingData.from(episodeDtos))
+            coEvery { remoteUpdater.create(expectedQuery) } returns mockUpdater
+
+            // When
+            val result = repository.getEpisodesByFeedIdPaging(feedId).asSnapshot()
+
+            // Then
+            assertEquals(episodeTestDataList.size, result.size)
+            assertEquals(episodeTestDataList, result)
+
             coVerifySequence {
                 remoteUpdater.create(expectedQuery)
-                mockUpdater.getFlowList(any())
+                mockUpdater.getPagingData(any())
             }
         }
 
@@ -156,32 +182,6 @@ class EpisodeRepositoryTest {
             }
             coVerifySequence {
                 remoteUpdater.create(expectedQuery)
-                mockUpdater.getFlowList(any())
-            }
-        }
-
-    @Test
-    fun `Given episodeId, When getEpisodeById, Then calls remoteDataSource directly`() =
-        runTest {
-            // Given
-            val episodeId = 1234L
-            val query = EpisodeQuery.EpisodeId(episodeId)
-
-            val mockUpdater = mockk<EpisodeRemoteUpdater>(relaxed = true)
-            coEvery {
-                mockUpdater.getFlowList(any())
-            } returns flowOf(listOf(episodeDtos.first()))
-            coEvery { remoteUpdater.create(query) } returns mockUpdater
-
-            // When
-            repository.getEpisodeById(episodeId).test {
-                val result = awaitItem()
-                // Then
-                assertEquals(episodeTestData.id, result?.id)
-                awaitComplete()
-            }
-            coVerifySequence {
-                remoteUpdater.create(query)
                 mockUpdater.getFlowList(any())
             }
         }
@@ -262,6 +262,27 @@ class EpisodeRepositoryTest {
             coVerify {
                 remoteUpdater.create(expectedQuery)
                 mockUpdater.getFlowList(any())
+            }
+        }
+
+    @Test
+    fun `When getEpisodesByIds, Then calls localDataSource directly`() =
+        runTest {
+            // Given
+            val ids = episodeTestDataList.map { it.id }
+            coEvery {
+                localDataSource.getEpisodesByIds(any())
+            } returns flowOf(episodeDtos)
+
+            // When
+            repository.getEpisodesByIds(ids).test {
+                awaitItem()
+                awaitComplete()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getEpisodesByIds(ids)
             }
         }
 

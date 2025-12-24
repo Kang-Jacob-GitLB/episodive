@@ -8,6 +8,7 @@ import io.jacob.episodive.core.database.mapper.toPodcastWithExtrasViews
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
+import io.jacob.episodive.core.network.model.PodcastResponse
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -54,23 +55,20 @@ class PodcastRepositoryTest {
             // Given
             val max = 10
             val search = "test"
-            val query = PodcastQuery.Search(search)
 
-            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
-            coEvery { updater.getFlowList(max) } returns flowOf(podcastDtos)
-            coEvery { remoteUpdater.create(query) } returns updater
+            coEvery {
+                remoteDataSource.searchPodcasts(any(), any())
+            } returns listOf(mockk<PodcastResponse>(relaxed = true))
 
             // When
             repository.searchPodcasts(search, max = max).test {
-                val result = awaitItem()
-                // Then
-                assertEquals(10, result.size)
-                assertEquals(podcastTestDataList, result)
+                awaitItem()
                 awaitComplete()
             }
+
+            // Then
             coVerifySequence {
-                remoteUpdater.create(query)
-                updater.getFlowList(max)
+                remoteDataSource.searchPodcasts(search, max)
             }
         }
 

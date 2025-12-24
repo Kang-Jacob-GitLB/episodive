@@ -11,6 +11,7 @@ import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
 import io.jacob.episodive.core.domain.usecase.episode.IsLikedUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
+import io.jacob.episodive.core.domain.usecase.player.GetPlaylistUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
@@ -43,6 +44,7 @@ class PlayerViewModel @Inject constructor(
     private val updatePlayedEpisodeUseCase: UpdatePlayedEpisodeUseCase,
     private val getPodcastUseCase: GetPodcastUseCase,
     @param:Player(EpisodivePlayers.Main) private val playerRepository: PlayerRepository,
+    getPlaylistUseCase: GetPlaylistUseCase,
     private val setSpeedUseCase: SetSpeedUseCase,
     private val getUserDataUseCase: GetUserDataUseCase,
     private val getChaptersUseCase: GetChaptersUseCase,
@@ -71,7 +73,7 @@ class PlayerViewModel @Inject constructor(
     val state: StateFlow<PlayerState> = combine(
         podcast,
         playerRepository.nowPlaying,
-        playerRepository.playlist,
+        getPlaylistUseCase(),
         playerRepository.indexOfList,
         playerRepository.progress,
         playerRepository.isPlaying,

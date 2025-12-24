@@ -4,6 +4,7 @@ import androidx.paging.PagingSource
 import io.jacob.episodive.core.database.dao.PodcastDao
 import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.database.model.PodcastWithExtrasView
+import io.jacob.episodive.core.database.util.asFtsWildcard
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 
@@ -20,14 +21,14 @@ class PodcastLocalDataSourceImpl(
 
     override fun getPodcasts(query: String?, limit: Int): Flow<List<PodcastWithExtrasView>> {
         return podcastDao.getPodcasts(
-            query = query?.ifBlank { null },
+            query = query?.asFtsWildcard(),
             limit = limit,
         )
     }
 
     override fun getPodcastsPaging(query: String?): PagingSource<Int, PodcastWithExtrasView> {
         return podcastDao.getPodcastsPaging(
-            query = query?.ifBlank { null },
+            query = query?.asFtsWildcard(),
         )
     }
 
@@ -69,14 +70,14 @@ class PodcastLocalDataSourceImpl(
         limit: Int,
     ): Flow<List<PodcastWithExtrasView>> {
         return podcastDao.getFollowedPodcasts(
-            query = query?.ifBlank { null },
+            query = query?.asFtsWildcard(),
             limit = limit,
         )
     }
 
     override fun getFollowedPodcastsPaging(query: String?): PagingSource<Int, PodcastWithExtrasView> {
         return podcastDao.getFollowedPodcastsPaging(
-            query = query?.ifBlank { null }
+            query = query?.asFtsWildcard()
         )
     }
 }
