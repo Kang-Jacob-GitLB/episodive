@@ -69,7 +69,7 @@ fun EpisodesSection(
     title: String,
     episodes: List<Episode>,
     onEpisodeClick: (Episode) -> Unit,
-    onToggleEpisodeLiked: (Episode) -> Unit,
+    onToggleLikedEpisode: (Episode) -> Unit,
 ) {
     SectionHeader(
         modifier = modifier,
@@ -87,7 +87,7 @@ fun EpisodesSection(
                     progress = 0f,
                     isLoading = false,
                     onClick = { onEpisodeClick(episode) },
-                    onToggleLiked = { onToggleEpisodeLiked(episode) }
+                    onToggleLiked = { onToggleLikedEpisode(episode) }
                 )
             }
         }
@@ -99,7 +99,7 @@ fun LazyListScope.episodeItems(
     episodes: List<Episode>,
     playingIndex: Int,
     onEpisodeClick: (Episode) -> Unit,
-    onToggleEpisodeLiked: (Episode) -> Unit,
+    onToggleLikedEpisode: (Episode) -> Unit,
 ) {
     itemsIndexed(
         items = episodes,
@@ -113,7 +113,7 @@ fun LazyListScope.episodeItems(
             progress = 0f,
             isLoading = index == playingIndex,
             onClick = { onEpisodeClick(episode) },
-            onToggleLiked = { onToggleEpisodeLiked(episode) }
+            onToggleLiked = { onToggleLikedEpisode(episode) }
         )
     }
 }
@@ -522,7 +522,7 @@ fun EpisodeClipItem(
     remaining: Duration,
     onClick: () -> Unit,
     onPlayEpisode: () -> Unit,
-    onToggleEpisodeLiked: () -> Unit,
+    onToggleLikedEpisode: () -> Unit,
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -605,7 +605,7 @@ fun EpisodeClipItem(
 
                 EpisodiveIconToggleButton(
                     checked = episode.isLiked,
-                    onCheckedChange = { onToggleEpisodeLiked() },
+                    onCheckedChange = { onToggleLikedEpisode() },
                     colors = IconButtonDefaults.iconToggleButtonColors(
                         checkedContainerColor = Color.Transparent,
                         checkedContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -717,7 +717,7 @@ private fun EpisodeClipItemPreview() {
             remaining = 45.seconds,
             onClick = {},
             onPlayEpisode = {},
-            onToggleEpisodeLiked = {},
+            onToggleLikedEpisode = {},
         )
     }
 }

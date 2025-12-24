@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
 
 interface EpisodeRepository {
+    suspend fun upsertEpisode(episode: Episode)
+
     fun searchEpisodesByPerson(
         person: String,
         max: Int,
@@ -89,9 +91,9 @@ interface EpisodeRepository {
         query: String? = null,
     ): Flow<PagingData<Episode>>
 
-    fun isLiked(id: Long): Flow<Boolean>
+    fun isLikedEpisode(episode: Episode): Flow<Boolean>
 
-    suspend fun toggleLiked(id: Long): Boolean
+    suspend fun toggleLikedEpisode(episode: Episode): Boolean
 
     suspend fun updatePlayed(id: Long, position: Duration, isCompleted: Boolean)
 

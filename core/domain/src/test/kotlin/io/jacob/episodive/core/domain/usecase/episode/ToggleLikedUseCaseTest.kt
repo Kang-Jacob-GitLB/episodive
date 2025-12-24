@@ -18,7 +18,7 @@ class ToggleLikedUseCaseTest {
 
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = ToggleLikedUseCase(
+    private val useCase = ToggleLikedEpisodeUseCase(
         episodeRepository = episodeRepository,
     )
 
@@ -32,7 +32,7 @@ class ToggleLikedUseCaseTest {
         runTest {
             // Given
             val id = 1L
-            coEvery { episodeRepository.toggleLiked(any()) } returns true
+            coEvery { episodeRepository.toggleLikedEpisode(any()) } returns true
 
             // When
             val result = useCase(id)
@@ -40,7 +40,7 @@ class ToggleLikedUseCaseTest {
             // Then
             assertTrue(result)
             coVerifySequence {
-                episodeRepository.toggleLiked(id)
+                episodeRepository.toggleLikedEpisode(id)
             }
         }
 }

@@ -20,7 +20,7 @@ class IsLikedUseCaseTest {
 
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = IsLikedUseCase(
+    private val useCase = IsLikedEpisodeUseCase(
         episodeRepository = episodeRepository,
     )
 
@@ -34,7 +34,7 @@ class IsLikedUseCaseTest {
         runTest {
             // Given
             val id = 1L
-            coEvery { episodeRepository.isLiked(any()) } returns flowOf(true)
+            coEvery { episodeRepository.isLikedEpisode(any()) } returns flowOf(true)
 
             // When
             useCase(id).test {
@@ -45,7 +45,7 @@ class IsLikedUseCaseTest {
             }
 
             coVerifySequence {
-                episodeRepository.isLiked(id)
+                episodeRepository.isLikedEpisode(id)
             }
         }
 }

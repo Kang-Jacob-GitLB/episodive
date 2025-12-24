@@ -76,7 +76,7 @@ internal fun ClipRoute(
         isPlaying = clipPlayerState.isPlaying,
         onEpisodeChanged = { viewModel.sendAction(ClipAction.PlayClip(it)) },
         onEpisodeClick = { viewModel.sendAction(ClipAction.ClickEpisode(it)) },
-        onToggleEpisodeLiked = { viewModel.sendAction(ClipAction.ToggleEpisodeLiked(it)) },
+        onToggleLikedEpisode = { viewModel.sendAction(ClipAction.ToggleLikedEpisode(it)) },
         onPodcastClick = { viewModel.sendAction(ClipAction.ClickPodcast(it)) },
         onShowSnackbar = onShowSnackbar,
     )
@@ -91,7 +91,7 @@ private fun ClipScreen(
     isPlaying: Boolean,
     onEpisodeChanged: (Episode) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
-    onToggleEpisodeLiked: (Episode) -> Unit = {},
+    onToggleLikedEpisode: (Episode) -> Unit = {},
     onPodcastClick: (Long) -> Unit = {},
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean = { _, _ -> false },
 ) {
@@ -103,7 +103,7 @@ private fun ClipScreen(
         isPlaying = isPlaying,
         onEpisodeChanged = onEpisodeChanged,
         onEpisodeClick = onEpisodeClick,
-        onToggleEpisodeLiked = onToggleEpisodeLiked,
+        onToggleLikedEpisode = onToggleLikedEpisode,
         onPodcastClick = onPodcastClick,
     )
 
@@ -118,7 +118,7 @@ fun EpisodeClipPager(
     isPlaying: Boolean,
     onEpisodeChanged: (Episode) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
-    onToggleEpisodeLiked: (Episode) -> Unit = {},
+    onToggleLikedEpisode: (Episode) -> Unit = {},
     onPodcastClick: (Long) -> Unit = {},
 ) {
     val episodesPaging = episodes.collectAsLazyPagingItems()
@@ -185,8 +185,8 @@ fun EpisodeClipPager(
                 onPlayEpisode = {
                     onEpisodeChanged(episode)
                 },
-                onToggleEpisodeLiked = {
-                    onToggleEpisodeLiked(episode)
+                onToggleLikedEpisode = {
+                    onToggleLikedEpisode(episode)
                 },
             )
         }

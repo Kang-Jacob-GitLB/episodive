@@ -14,6 +14,10 @@ import kotlin.time.Instant
 class EpisodeLocalDataSourceImpl @Inject constructor(
     private val episodeDao: EpisodeDao,
 ) : EpisodeLocalDataSource {
+    override suspend fun upsertEpisode(episode: EpisodeEntity) {
+        episodeDao.upsertEpisode(episode)
+    }
+
     override suspend fun updateEpisodeDuration(id: Long, duration: Duration) {
         episodeDao.updateEpisodeDuration(
             id = id,
@@ -65,12 +69,12 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         )
     }
 
-    override fun isLikedEpisode(id: Long): Flow<Boolean> {
-        return episodeDao.isLikedEpisode(id)
+    override fun isLikedEpisode(episode: EpisodeEntity): Flow<Boolean> {
+        return episodeDao.isLikedEpisode(episode.id)
     }
 
-    override suspend fun toggleLikedEpisode(id: Long): Boolean {
-        return episodeDao.toggleLikedEpisode(id)
+    override suspend fun toggleLikedEpisode(episode: EpisodeEntity): Boolean {
+        return episodeDao.toggleLikedEpisode(episode)
     }
 
     override fun getLikedEpisodes(query: String?, limit: Int): Flow<List<EpisodeWithExtrasView>> {

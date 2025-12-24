@@ -146,7 +146,6 @@ fun PlayerBottomSheet(
             nowPlaying = s.nowPlaying,
             progress = s.progress,
             isPlaying = s.isPlaying,
-            isLike = s.isLiked,
             onCollapse = { collapse() },
             onToggleLike = { viewModel.sendAction(PlayerAction.ToggleLike) },
             onSeekTo = { viewModel.sendAction(PlayerAction.SeekTo(it)) },
@@ -163,11 +162,11 @@ fun PlayerBottomSheet(
             indexOfList = s.indexOfList,
             onEpisodeClick = { viewModel.sendAction(PlayerAction.ClickEpisode(it)) },
             onPlayIndex = { viewModel.sendAction(PlayerAction.PlayIndex(it)) },
-            onToggleEpisodeLiked = { viewModel.sendAction(PlayerAction.ToggleEpisodeLiked(it)) },
+            onToggleLikedEpisode = { viewModel.sendAction(PlayerAction.ToggleLikedEpisode(it)) },
             speed = s.speed,
             onSpeedChange = { viewModel.sendAction(PlayerAction.Speed(it)) },
             chapters = s.chapters,
-            onTogglePodcastFollowed = { viewModel.sendAction(PlayerAction.TogglePodcastFollowed(it)) },
+            onToggleFollowedPodcast = { viewModel.sendAction(PlayerAction.ToggleFollowedPodcast(it)) },
             cue = s.cue,
         )
     }
@@ -181,7 +180,6 @@ private fun PlayerScreen(
     nowPlaying: Episode,
     progress: Progress,
     isPlaying: Boolean,
-    isLike: Boolean,
     onCollapse: () -> Unit,
     onToggleLike: () -> Unit,
     onSeekTo: (Long) -> Unit,
@@ -195,11 +193,11 @@ private fun PlayerScreen(
     indexOfList: Int,
     onEpisodeClick: (Episode) -> Unit,
     onPlayIndex: (Int) -> Unit,
-    onToggleEpisodeLiked: (Episode) -> Unit,
+    onToggleLikedEpisode: (Episode) -> Unit,
     speed: Float,
     onSpeedChange: (Float) -> Unit,
     chapters: List<Chapter>,
-    onTogglePodcastFollowed: (Podcast) -> Unit,
+    onToggleFollowedPodcast: (Podcast) -> Unit,
     cue: String,
 ) {
     val listState = rememberLazyListState()
@@ -234,7 +232,7 @@ private fun PlayerScreen(
                         title = {},
                         navigationIcon = EpisodiveIcons.CaretDown,
                         navigationIconContentDescription = "Down",
-                        actionIcon = if (isLike) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
+                        actionIcon = if (nowPlaying.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
                         actionIconContentDescription = "Like",
                         onNavigationClick = onCollapse,
                         onActionClick = onToggleLike,
@@ -353,7 +351,7 @@ private fun PlayerScreen(
             PodcastInfoSection(
                 podcast = podcast,
                 onPodcastClick = { onPodcastClick(podcast) },
-                onToggleFollowed = { onTogglePodcastFollowed(podcast) }
+                onToggleFollowed = { onToggleFollowedPodcast(podcast) }
             )
         }
 
@@ -375,7 +373,7 @@ private fun PlayerScreen(
             playlist = playlist,
             playingIndex = indexOfList,
             onEpisodeClick = onEpisodeClick,
-            onToggleEpisodeLiked = onToggleEpisodeLiked,
+            onToggleLikedEpisode = onToggleLikedEpisode,
             onDismiss = { showPlaylistSheet = false }
         )
     }
@@ -814,7 +812,7 @@ private fun PlaylistSheet(
     playlist: List<Episode>,
     playingIndex: Int,
     onEpisodeClick: (Episode) -> Unit = {},
-    onToggleEpisodeLiked: (Episode) -> Unit = {},
+    onToggleLikedEpisode: (Episode) -> Unit = {},
     onDismiss: () -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -836,7 +834,7 @@ private fun PlaylistSheet(
                 episodes = playlist,
                 playingIndex = playingIndex,
                 onEpisodeClick = onEpisodeClick,
-                onToggleEpisodeLiked = onToggleEpisodeLiked
+                onToggleLikedEpisode = onToggleLikedEpisode
             )
         }
     }
@@ -916,7 +914,6 @@ private fun PlayerScreenPreview() {
             nowPlaying = episodeTestData,
             progress = Progress(1000.seconds, 2000.seconds, 6000.seconds),
             isPlaying = true,
-            isLike = false,
             onCollapse = {},
             onToggleLike = {},
             onSeekTo = {},
@@ -930,7 +927,7 @@ private fun PlayerScreenPreview() {
             indexOfList = 0,
             onEpisodeClick = {},
             onPlayIndex = {},
-            onToggleEpisodeLiked = {},
+            onToggleLikedEpisode = {},
             speed = 1f,
             onSpeedChange = {},
             chapters = listOf(
@@ -938,7 +935,7 @@ private fun PlayerScreenPreview() {
                 Chapter("Chapter 2", 500.seconds, 1500.seconds),
                 Chapter("Chapter 3", 1500.seconds, 2500.seconds),
             ),
-            onTogglePodcastFollowed = {},
+            onToggleFollowedPodcast = {},
             cue = "we start again after a rejection or a perceived",
         )
     }

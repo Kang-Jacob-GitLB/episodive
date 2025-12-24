@@ -21,8 +21,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.domain.repository.PlayerRepository
-import io.jacob.episodive.core.domain.usecase.episode.IsLikedUseCase
-import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
+import io.jacob.episodive.core.domain.usecase.episode.IsLikedEpisodeUseCase
+import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.model.Episode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,10 +46,10 @@ class MediaNotificationService : MediaSessionService() {
     lateinit var playerRepository: PlayerRepository
 
     @Inject
-    lateinit var isLikedUseCase: IsLikedUseCase
+    lateinit var isLikedEpisodeUseCase: IsLikedEpisodeUseCase
 
     @Inject
-    lateinit var toggleLikedUseCase: ToggleLikedUseCase
+    lateinit var toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase
 
     private var mediaSession: MediaSession? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -59,7 +59,7 @@ class MediaNotificationService : MediaSessionService() {
         if (episode == null) {
             MutableStateFlow(false)
         } else {
-            isLikedUseCase(episode.id)
+            isLikedEpisodeUseCase(episode)
         }
     }.stateIn(
         scope = serviceScope,
@@ -204,7 +204,7 @@ class MediaNotificationService : MediaSessionService() {
             when (CustomCommand.fromAction(customCommand.customAction)) {
                 CustomCommand.SEEK_BACKWARD -> playerRepository.seekBackward()
                 CustomCommand.SEEK_FORWARD -> playerRepository.seekForward()
-                CustomCommand.TOGGLE_LIKE -> toggleLike()
+                CustomCommand.TOGGLE_LIKE -> toggleLikeEpisode()
                 null -> {} // Unknown command
             }
             return Futures.immediateFuture(
@@ -232,10 +232,8 @@ class MediaNotificationService : MediaSessionService() {
         super.onDestroy()
     }
 
-    private fun toggleLike() = serviceScope.launch {
-        nowPlaying.value?.let {
-            toggleLikedUseCase(it.id)
-        }
+    private fun toggleLikeEpisode() = serviceScope.launch {
+        nowPlaying.value?.let { toggleLikedEpisodeUseCase(it) }
     }
 }
 

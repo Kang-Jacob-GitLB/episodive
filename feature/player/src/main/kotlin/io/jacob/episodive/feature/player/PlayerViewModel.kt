@@ -8,8 +8,7 @@ import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.common.combine
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
-import io.jacob.episodive.core.domain.usecase.episode.IsLikedUseCase
-import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
+import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetPlaylistUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
@@ -39,8 +38,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    private val isLikedUseCase: IsLikedUseCase,
-    private val toggleLikedUseCase: ToggleLikedUseCase,
+    private val toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase,
     private val updatePlayedEpisodeUseCase: UpdatePlayedEpisodeUseCase,
     private val getPodcastUseCase: GetPodcastUseCase,
     @param:Player(EpisodivePlayers.Main) private val playerRepository: PlayerRepository,
@@ -60,9 +58,6 @@ class PlayerViewModel @Inject constructor(
     private val podcast = playerRepository.nowPlaying.mapNotNull { it?.feedId }
         .flatMapLatest { feedId -> getPodcastUseCase(feedId) }
 
-    private val isLiked = playerRepository.nowPlaying.mapNotNull { it?.id }
-        .flatMapLatest { episodeId -> isLikedUseCase(episodeId) }
-
     private val chapters = playerRepository.nowPlaying.map { it?.chaptersUrl }
         .flatMapLatest { chaptersUrl ->
             val chapters = chaptersUrl?.let { getChaptersUseCase(it) } ?: emptyList()
@@ -78,10 +73,9 @@ class PlayerViewModel @Inject constructor(
         playerRepository.progress,
         playerRepository.isPlaying,
         playerRepository.speed,
-        isLiked,
         chapters,
         playerRepository.cue,
-    ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, isLiked, chapters, cue ->
+    ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, chapters, cue ->
         if (podcast != null && nowPlaying != null) {
             PlayerState.Success(
                 podcast = podcast,
@@ -91,7 +85,6 @@ class PlayerViewModel @Inject constructor(
                 progress = progress,
                 isPlaying = isPlaying,
                 speed = speed,
-                isLiked = isLiked,
                 chapters = chapters,
                 cue = cue,
             ) as PlayerState
@@ -147,9 +140,9 @@ class PlayerViewModel @Inject constructor(
                 is PlayerAction.Speed -> speed(action.speed)
                 is PlayerAction.ClickPodcast -> clickPodcast(action.podcast)
                 is PlayerAction.ClickEpisode -> clickEpisode(action.episode)
-                is PlayerAction.ToggleLike -> toggleCurrentEpisodeLiked()
-                is PlayerAction.ToggleEpisodeLiked -> toggleEpisodeLiked(action.episode)
-                is PlayerAction.TogglePodcastFollowed -> togglePodcastFollowed(action.podcast)
+                is PlayerAction.ToggleLike -> toggleCurrentLikedEpisode()
+                is PlayerAction.ToggleLikedEpisode -> toggleLikedEpisode(action.episode)
+                is PlayerAction.ToggleFollowedPodcast -> toggleFollowedPodcast(action.podcast)
                 is PlayerAction.ExpandPlayer -> expandPlayer()
                 is PlayerAction.CollapsePlayer -> collapsePlayer()
             }
@@ -213,18 +206,18 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    private fun toggleCurrentEpisodeLiked() = viewModelScope.launch {
+    private fun toggleCurrentLikedEpisode() = viewModelScope.launch {
         val currentState = state.value
         if (currentState is PlayerState.Success) {
-            toggleLikedUseCase(currentState.nowPlaying.id)
+            toggleLikedEpisodeUseCase(currentState.nowPlaying)
         }
     }
 
-    private fun toggleEpisodeLiked(episode: Episode) = viewModelScope.launch {
-        toggleLikedUseCase(episode.id)
+    private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {
+        toggleLikedEpisodeUseCase(episode)
     }
 
-    private fun togglePodcastFollowed(podcast: Podcast) = viewModelScope.launch {
+    private fun toggleFollowedPodcast(podcast: Podcast) = viewModelScope.launch {
         toggleFollowedUseCase(podcast.id)
     }
 
@@ -247,7 +240,6 @@ sealed interface PlayerState {
         val progress: Progress,
         val isPlaying: Boolean,
         val speed: Float,
-        val isLiked: Boolean,
         val chapters: List<Chapter>,
         val cue: String,
     ) : PlayerState
@@ -269,8 +261,8 @@ sealed interface PlayerAction {
     data class ClickPodcast(val podcast: Podcast) : PlayerAction
     data class ClickEpisode(val episode: Episode) : PlayerAction
     data object ToggleLike : PlayerAction
-    data class ToggleEpisodeLiked(val episode: Episode) : PlayerAction
-    data class TogglePodcastFollowed(val podcast: Podcast) : PlayerAction
+    data class ToggleLikedEpisode(val episode: Episode) : PlayerAction
+    data class ToggleFollowedPodcast(val podcast: Podcast) : PlayerAction
     data object ExpandPlayer : PlayerAction
     data object CollapsePlayer : PlayerAction
 }

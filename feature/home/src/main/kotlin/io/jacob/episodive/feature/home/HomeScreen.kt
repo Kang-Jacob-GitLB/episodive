@@ -92,7 +92,7 @@ internal fun HomeRoute(
             channels = s.channels,
             onPlayEpisode = { viewModel.sendAction(HomeAction.PlayEpisode(it)) },
             onResumeEpisode = { viewModel.sendAction(HomeAction.ResumeEpisode(it)) },
-            onToggleEpisodeLiked = { viewModel.sendAction(HomeAction.ToggleEpisodeLiked(it)) },
+            onToggleLikedEpisode = { viewModel.sendAction(HomeAction.ToggleLikedEpisode(it)) },
             onPodcastClick = { viewModel.sendAction(HomeAction.ClickPodcast(it)) },
             onChannelClick = { viewModel.sendAction(HomeAction.ClickChannel(it)) },
         )
@@ -115,7 +115,7 @@ private fun HomeScreen(
     channels: List<Channel>,
     onPlayEpisode: (Episode) -> Unit,
     onResumeEpisode: (Episode) -> Unit,
-    onToggleEpisodeLiked: (Episode) -> Unit,
+    onToggleLikedEpisode: (Episode) -> Unit,
     onPodcastClick: (Long) -> Unit,
     onChannelClick: (Long) -> Unit,
 ) {
@@ -198,7 +198,7 @@ private fun HomeScreen(
                                 title = stringResource(R.string.feature_home_section_random_episodes),
                                 episodes = randomEpisodes,
                                 onEpisodeClick = onPlayEpisode,
-                                onToggleEpisodeLiked = onToggleEpisodeLiked
+                                onToggleLikedEpisode = onToggleLikedEpisode
                             )
                         }
 
@@ -250,7 +250,7 @@ private fun HomeScreen(
                                 title = stringResource(R.string.feature_home_section_live_episodes),
                                 episodes = liveEpisodes,
                                 onEpisodeClick = onPlayEpisode,
-                                onToggleEpisodeLiked = onToggleEpisodeLiked,
+                                onToggleLikedEpisode = onToggleLikedEpisode,
                             )
                         }
 
@@ -299,7 +299,7 @@ private fun HomeScreenPreview() {
             channels = channelTestDataList,
             onPlayEpisode = {},
             onResumeEpisode = {},
-            onToggleEpisodeLiked = {},
+            onToggleLikedEpisode = {},
             onPodcastClick = {},
             onChannelClick = {},
         )

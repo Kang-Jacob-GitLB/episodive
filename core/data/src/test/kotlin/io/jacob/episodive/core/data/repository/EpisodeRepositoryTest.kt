@@ -345,7 +345,7 @@ class EpisodeRepositoryTest {
             coEvery { localDataSource.toggleLikedEpisode(episodeId) } returns true
 
             // When
-            repository.toggleLiked(episodeId)
+            repository.toggleLikedEpisode(episodeId)
 
             // Then
             coVerifySequence {
