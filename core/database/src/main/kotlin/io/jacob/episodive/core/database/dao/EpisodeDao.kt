@@ -151,15 +151,15 @@ interface EpisodeDao {
     fun isLikedEpisode(id: Long): Flow<Boolean>
 
     @Transaction
-    suspend fun toggleLikedEpisode(id: Long): Boolean {
-        return if (isLikedEpisode(id).first()) {
-            removeLikedEpisode(id)
-            deleteEpisodesIfOrphaned(listOf(id))
+    suspend fun toggleLikedEpisode(episode: EpisodeEntity): Boolean {
+        return if (isLikedEpisode(episode.id).first()) {
+            removeLikedEpisode(episode.id)
+            deleteEpisodesIfOrphaned(listOf(episode.id))
             false
         } else {
             addLikedEpisode(
                 LikedEpisodeEntity(
-                    id = id,
+                    id = episode.id,
                     likedAt = Clock.System.now(),
                 )
             )

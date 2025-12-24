@@ -114,7 +114,7 @@ fun OnboardingScreen(
                     PodcastSelectionScreen(
                         modifier = modifier,
                         podcasts = state.podcasts,
-                        onTogglePodcastFollowed = { podcast ->
+                        onToggleFollowedPodcast = { podcast ->
                             viewModel.sendAction(OnboardingAction.ChoosePodcast(podcast))
                         },
                     )
@@ -286,7 +286,7 @@ private fun CategorySelectionScreen(
 private fun PodcastSelectionScreen(
     modifier: Modifier = Modifier,
     podcasts: List<Podcast>,
-    onTogglePodcastFollowed: (Podcast) -> Unit,
+    onToggleFollowedPodcast: (Podcast) -> Unit,
 ) {
     val lazyListState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
@@ -334,8 +334,8 @@ private fun PodcastSelectionScreen(
             ) { podcast ->
                 PodcastDetailItem(
                     podcast = podcast,
-                    onClick = { onTogglePodcastFollowed(podcast) },
-                    onToggleFollowed = { onTogglePodcastFollowed(podcast) },
+                    onClick = { onToggleFollowedPodcast(podcast) },
+                    onToggleFollowed = { onToggleFollowedPodcast(podcast) },
                 )
             }
         }
@@ -457,7 +457,7 @@ private fun PodcastSelectionScreenPreview() {
     EpisodiveTheme {
         PodcastSelectionScreen(
             podcasts = podcastTestDataList,
-            onTogglePodcastFollowed = {},
+            onToggleFollowedPodcast = {},
         )
     }
 }

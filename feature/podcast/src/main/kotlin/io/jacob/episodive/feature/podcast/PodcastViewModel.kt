@@ -8,7 +8,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.episode.GetEpisodesByPodcastIdPagingUseCase
-import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
+import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
@@ -29,7 +29,7 @@ class PodcastViewModel @AssistedInject constructor(
     getEpisodesByPodcastIdPagingUseCase: GetEpisodesByPodcastIdPagingUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
-    private val toggleLikedUseCase: ToggleLikedUseCase,
+    private val toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase,
     @Assisted("id") val id: Long,
 ) : ViewModel() {
     @AssistedFactory
@@ -91,7 +91,7 @@ class PodcastViewModel @AssistedInject constructor(
     }
 
     private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {
-        toggleLikedUseCase(episode.id)
+        toggleLikedEpisodeUseCase(episode)
     }
 }
 

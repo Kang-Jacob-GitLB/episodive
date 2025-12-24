@@ -86,7 +86,7 @@ fun SearchRoute(
                 podcasts = s.trendingPodcasts,
                 onPodcastClick = { viewModel.sendAction(SearchAction.ClickPodcast(it)) },
                 onEpisodeClick = { viewModel.sendAction(SearchAction.ClickEpisode(it)) },
-                onToggleEpisodeLiked = { viewModel.sendAction(SearchAction.ToggleEpisodeLiked(it)) },
+                onToggleLikedEpisode = { viewModel.sendAction(SearchAction.ToggleLikedEpisode(it)) },
                 onRecentSearchClick = { viewModel.sendAction(SearchAction.ClickRecentSearch(it)) },
                 onRemoveRecentSearch = { viewModel.sendAction(SearchAction.RemoveRecentSearch(it)) },
                 onClearRecentSearches = { viewModel.sendAction(SearchAction.ClearRecentSearches) },
@@ -109,7 +109,7 @@ private fun SearchScreen(
     episodes: List<Episode>,
     onPodcastClick: (Podcast) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
-    onToggleEpisodeLiked: (Episode) -> Unit = {},
+    onToggleLikedEpisode: (Episode) -> Unit = {},
     onRecentSearchClick: (String) -> Unit = {},
     onRemoveRecentSearch: (String) -> Unit = {},
     onClearRecentSearches: () -> Unit = {},
@@ -135,7 +135,7 @@ private fun SearchScreen(
                     episodes = episodes,
                     podcasts = podcasts,
                     onEpisodeClick = onEpisodeClick,
-                    onToggleEpisodeLiked = onToggleEpisodeLiked,
+                    onToggleLikedEpisode = onToggleLikedEpisode,
                     onPodcastClick = onPodcastClick,
                 )
             },
@@ -146,7 +146,7 @@ private fun SearchScreen(
                     searchResult = searchResult,
                     onPodcastClick = onPodcastClick,
                     onEpisodeClick = onEpisodeClick,
-                    onToggleEpisodeLiked = onToggleEpisodeLiked,
+                    onToggleLikedEpisode = onToggleLikedEpisode,
                     onRecentSearchClick = onRecentSearchClick,
                     onRemoveRecentSearch = onRemoveRecentSearch,
                     onClearRecentSearches = onClearRecentSearches
@@ -162,7 +162,7 @@ private fun SearchContentsOnCollapse(
     podcasts: List<Podcast>,
     episodes: List<Episode>,
     onEpisodeClick: (Episode) -> Unit = {},
-    onToggleEpisodeLiked: (Episode) -> Unit = {},
+    onToggleLikedEpisode: (Episode) -> Unit = {},
     onPodcastClick: (Podcast) -> Unit = {},
 ) {
     LazyColumn(
@@ -193,7 +193,7 @@ private fun SearchContentsOnCollapse(
                     title = stringResource(R.string.feature_search_section_global_recent_episodes),
                     episodes = episodes,
                     onEpisodeClick = onEpisodeClick,
-                    onToggleEpisodeLiked = onToggleEpisodeLiked,
+                    onToggleLikedEpisode = onToggleLikedEpisode,
                 )
             }
         }
@@ -212,7 +212,7 @@ private fun SearchResultsOnExpand(
     searchResult: SearchResult,
     onPodcastClick: (Podcast) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
-    onToggleEpisodeLiked: (Episode) -> Unit = {},
+    onToggleLikedEpisode: (Episode) -> Unit = {},
     onRecentSearchClick: (String) -> Unit = {},
     onRemoveRecentSearch: (String) -> Unit = {},
     onClearRecentSearches: () -> Unit = {},
@@ -261,7 +261,7 @@ private fun SearchResultsOnExpand(
                         title = stringResource(R.string.feature_search_section_episodes),
                         episodes = emptyList(),
                         onEpisodeClick = onEpisodeClick,
-                        onToggleEpisodeLiked = onToggleEpisodeLiked,
+                        onToggleLikedEpisode = onToggleLikedEpisode,
                     )
                 }
 
@@ -278,7 +278,7 @@ private fun SearchResultsOnExpand(
                         episode = episode,
                         isLoading = false,
                         onClick = { onEpisodeClick(episode) },
-                        onToggleLiked = { onToggleEpisodeLiked(episode) }
+                        onToggleLiked = { onToggleLikedEpisode(episode) }
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))

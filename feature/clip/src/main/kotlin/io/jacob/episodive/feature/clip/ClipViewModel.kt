@@ -8,7 +8,7 @@ import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetClipEpisodesPagingUseCase
-import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedUseCase
+import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Playback
@@ -29,7 +29,7 @@ class ClipViewModel @Inject constructor(
     getClipEpisodesPagingUseCase: GetClipEpisodesPagingUseCase,
     @param:Player(EpisodivePlayers.Clip) private val playerRepository: PlayerRepository,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
-    private val toggleLikedUseCase: ToggleLikedUseCase,
+    private val toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase,
 ) : ViewModel() {
     val episodes = getClipEpisodesPagingUseCase().cachedIn(viewModelScope)
 
@@ -63,7 +63,7 @@ class ClipViewModel @Inject constructor(
             when (action) {
                 is ClipAction.PlayClip -> playClip(action.episode)
                 is ClipAction.ClickEpisode -> playEpisode(action.episode)
-                is ClipAction.ToggleEpisodeLiked -> toggleEpisodeLiked(action.episode)
+                is ClipAction.ToggleLikedEpisode -> toggleLikedEpisode(action.episode)
                 is ClipAction.ClickPodcast -> clickPodcast(action.podcastId)
                 is ClipAction.Resume -> resume()
                 is ClipAction.Pause -> pause()
@@ -91,8 +91,8 @@ class ClipViewModel @Inject constructor(
         playEpisodeUseCase(episode)
     }
 
-    private fun toggleEpisodeLiked(episode: Episode) = viewModelScope.launch {
-        toggleLikedUseCase(episode.id)
+    private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {
+        toggleLikedEpisodeUseCase(episode)
     }
 
 
@@ -110,7 +110,7 @@ data class ClipPlayerState(
 sealed interface ClipAction {
     data class PlayClip(val episode: Episode) : ClipAction
     data class ClickEpisode(val episode: Episode) : ClipAction
-    data class ToggleEpisodeLiked(val episode: Episode) : ClipAction
+    data class ToggleLikedEpisode(val episode: Episode) : ClipAction
     data class ClickPodcast(val podcastId: Long) : ClipAction
     data object Resume : ClipAction
     data object Pause : ClipAction

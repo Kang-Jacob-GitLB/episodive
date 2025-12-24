@@ -9,6 +9,7 @@ import kotlin.time.Duration
 import kotlin.time.Instant
 
 interface EpisodeLocalDataSource {
+    suspend fun upsertEpisode(episode: EpisodeEntity)
     suspend fun updateEpisodeDuration(id: Long, duration: Duration)
     fun getEpisodeById(id: Long): Flow<EpisodeWithExtrasView?>
     fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeWithExtrasView>>
@@ -20,8 +21,8 @@ interface EpisodeLocalDataSource {
     suspend fun replaceEpisodes(episodes: List<EpisodeEntity>, groupKey: String)
 
 
-    fun isLikedEpisode(id: Long): Flow<Boolean>
-    suspend fun toggleLikedEpisode(id: Long): Boolean
+    fun isLikedEpisode(episode: EpisodeEntity): Flow<Boolean>
+    suspend fun toggleLikedEpisode(episode: EpisodeEntity): Boolean
     fun getLikedEpisodes(query: String? = null, limit: Int): Flow<List<EpisodeWithExtrasView>>
     fun getLikedEpisodesPaging(query: String? = null): PagingSource<Int, EpisodeWithExtrasView>
 

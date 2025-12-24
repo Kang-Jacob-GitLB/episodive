@@ -95,7 +95,6 @@ fun PlayerBar(
                 nowPlaying = s.nowPlaying,
                 progress = s.progress,
                 isPlaying = s.isPlaying,
-                isLike = s.isLiked,
                 chapters = s.chapters,
                 onExpand = { viewModel.sendAction(PlayerAction.ExpandPlayer) },
                 onToggleLike = { viewModel.sendAction(PlayerAction.ToggleLike) },
@@ -116,7 +115,6 @@ private fun PlayerBar(
     nowPlaying: Episode,
     progress: Progress,
     isPlaying: Boolean,
-    isLike: Boolean,
     chapters: List<Chapter>,
     onExpand: () -> Unit,
     onToggleLike: () -> Unit,
@@ -183,7 +181,7 @@ private fun PlayerBar(
                 EpisodiveIconToggleButton(
                     modifier = Modifier
                         .size(32.dp),
-                    checked = isLike,
+                    checked = nowPlaying.isLiked,
                     onCheckedChange = { onToggleLike() },
                     colors = IconButtonDefaults.iconToggleButtonColors(
                         checkedContainerColor = Color.Transparent,
@@ -263,7 +261,6 @@ private fun PlayerBarPreview() {
                 duration = 100.seconds,
             ),
             isPlaying = false,
-            isLike = false,
             chapters = listOf(
                 Chapter("Chapter 1", 0.seconds, 10.seconds),
                 Chapter("Chapter 2", 10.seconds, 80.seconds),

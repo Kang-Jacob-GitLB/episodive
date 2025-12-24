@@ -9,6 +9,7 @@ import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisode
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
+import io.jacob.episodive.core.database.mapper.toEpisodeEntity
 import io.jacob.episodive.core.database.mapper.toEpisodes
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
@@ -36,6 +37,10 @@ class EpisodeRepositoryImpl @Inject constructor(
         prefetchDistance = 5,
         enablePlaceholders = false
     )
+
+    override suspend fun upsertEpisode(episode: Episode) {
+        localDataSource.upsertEpisode(episode.toEpisodeEntity())
+    }
 
     override fun searchEpisodesByPerson(
         person: String,
@@ -207,6 +212,11 @@ class EpisodeRepositoryImpl @Inject constructor(
             }
     }
 
+    override fun getEpisodeById(id: Long): Flow<Episode?> {
+        return localDataSource.getEpisodeById(id)
+            .map { it?.toEpisode() }
+    }
+
     override fun getEpisodesByIds(ids: List<Long>): Flow<List<Episode>> {
         return localDataSource.getEpisodesByIds(ids)
             .map { it.toEpisodes() }
@@ -257,12 +267,12 @@ class EpisodeRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun isLiked(id: Long): Flow<Boolean> {
-        return localDataSource.isLikedEpisode(id)
+    override fun isLikedEpisode(episode: Episode): Flow<Boolean> {
+        return localDataSource.isLikedEpisode(episode.toEpisodeEntity())
     }
 
-    override suspend fun toggleLiked(id: Long): Boolean {
-        return localDataSource.toggleLikedEpisode(id)
+    override suspend fun toggleLikedEpisode(episode: Episode): Boolean {
+        return localDataSource.toggleLikedEpisode(episode.toEpisodeEntity())
     }
 
     override suspend fun updatePlayed(

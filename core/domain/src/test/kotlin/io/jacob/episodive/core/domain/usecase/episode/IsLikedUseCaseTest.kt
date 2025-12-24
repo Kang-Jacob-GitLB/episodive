@@ -2,6 +2,7 @@ package io.jacob.episodive.core.domain.usecase.episode
 
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
+import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerifySequence
@@ -20,7 +21,7 @@ class IsLikedUseCaseTest {
 
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = IsLikedUseCase(
+    private val useCase = IsLikedEpisodeUseCase(
         episodeRepository = episodeRepository,
     )
 
@@ -33,11 +34,11 @@ class IsLikedUseCaseTest {
     fun `Given dependencies, when invoke called, then repository called`() =
         runTest {
             // Given
-            val id = 1L
-            coEvery { episodeRepository.isLiked(any()) } returns flowOf(true)
+            val episode = episodeTestData
+            coEvery { episodeRepository.isLikedEpisode(any()) } returns flowOf(true)
 
             // When
-            useCase(id).test {
+            useCase(episode).test {
                 val result = awaitItem()
                 // Then
                 assertTrue(result)
@@ -45,7 +46,7 @@ class IsLikedUseCaseTest {
             }
 
             coVerifySequence {
-                episodeRepository.isLiked(id)
+                episodeRepository.isLikedEpisode(episode)
             }
         }
 }
