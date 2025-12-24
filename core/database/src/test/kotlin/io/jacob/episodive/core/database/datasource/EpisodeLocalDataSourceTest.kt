@@ -226,7 +226,7 @@ class EpisodeLocalDataSourceTest {
             val id = episodeEntity.id
 
             // When
-            dataSource.isLikedEpisode(id)
+            dataSource.isLikedEpisode(episodeEntity)
 
             // Then
             coVerify {
@@ -237,15 +237,12 @@ class EpisodeLocalDataSourceTest {
     @Test
     fun `Given id, When toggleLikedEpisode is called, Then dao toggleLikedEpisode is called`() =
         runTest {
-            // Given
-            val id = episodeEntity.id
-
             // When
-            dataSource.toggleLikedEpisode(id)
+            dataSource.toggleLikedEpisode(episodeEntity)
 
             // Then
             coVerify {
-                dao.toggleLikedEpisode(id)
+                dao.toggleLikedEpisode(episodeEntity)
             }
         }
 

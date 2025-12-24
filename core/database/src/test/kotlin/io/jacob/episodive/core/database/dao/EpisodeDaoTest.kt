@@ -596,10 +596,11 @@ class EpisodeDaoTest {
     fun `Given unliked episode, When toggleLikedEpisode is called, Then episode is liked`() =
         runTest {
             // Given
-            dao.upsertEpisode(episodeEntity.copy(id = 100L))
+            val episode = episodeEntity.copy(id = 100L)
+            dao.upsertEpisode(episode)
 
             // When
-            val result = dao.toggleLikedEpisode(100L)
+            val result = dao.toggleLikedEpisode(episode)
 
             // Then
             assertEquals(true, result)
@@ -614,7 +615,8 @@ class EpisodeDaoTest {
     fun `Given liked episode, When toggleLikedEpisode is called, Then episode is unliked`() =
         runTest {
             // Given
-            dao.upsertEpisode(episodeEntity.copy(id = 100L))
+            val episode = episodeEntity.copy(id = 100L)
+            dao.upsertEpisode(episode)
             dao.addLikedEpisode(
                 LikedEpisodeEntity(
                     id = 100L,
@@ -623,7 +625,7 @@ class EpisodeDaoTest {
             )
 
             // When
-            val result = dao.toggleLikedEpisode(100L)
+            val result = dao.toggleLikedEpisode(episode)
 
             // Then
             assertEquals(false, result)

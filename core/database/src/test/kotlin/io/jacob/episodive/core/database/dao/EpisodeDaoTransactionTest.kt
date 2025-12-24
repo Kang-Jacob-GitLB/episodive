@@ -96,9 +96,9 @@ class EpisodeDaoTransactionTest {
     fun `Given liked episode, When toggleLikedEpisode is called, Then removeLikedEpisode and deleteEpisodesIfOrphaned are called`() =
         runTest {
             // Given
-            val episodeId = 100L
+            val episode = episodeEntities[0]
 
-            coEvery { dao.isLikedEpisode(episodeId) } returns flowOf(true)
+            coEvery { dao.isLikedEpisode(any()) } returns flowOf(true)
             coEvery { dao.removeLikedEpisode(any()) } just Runs
             coEvery { dao.deleteEpisodesIfOrphaned(any()) } just Runs
             coEvery { dao.toggleLikedEpisode(any()) } answers {
@@ -106,14 +106,14 @@ class EpisodeDaoTransactionTest {
             }
 
             // When
-            val result = dao.toggleLikedEpisode(episodeId)
+            val result = dao.toggleLikedEpisode(episode)
 
             // Then
             coVerify(exactly = 1) {
-                dao.removeLikedEpisode(episodeId)
+                dao.removeLikedEpisode(episode.id)
             }
             coVerify(exactly = 1) {
-                dao.deleteEpisodesIfOrphaned(listOf(episodeId))
+                dao.deleteEpisodesIfOrphaned(listOf(episode.id))
             }
             assert(!result)
         }
@@ -122,20 +122,20 @@ class EpisodeDaoTransactionTest {
     fun `Given unliked episode, When toggleLikedEpisode is called, Then addLikedEpisode is called`() =
         runTest {
             // Given
-            val episodeId = 100L
+            val episode = episodeEntities[0]
 
-            coEvery { dao.isLikedEpisode(episodeId) } returns flowOf(false)
+            coEvery { dao.isLikedEpisode(any()) } returns flowOf(false)
             coEvery { dao.addLikedEpisode(any()) } just Runs
             coEvery { dao.toggleLikedEpisode(any()) } answers {
                 callOriginal()
             }
 
             // When
-            val result = dao.toggleLikedEpisode(episodeId)
+            val result = dao.toggleLikedEpisode(episode)
 
             // Then
             coVerify(exactly = 1) {
-                dao.addLikedEpisode(match { it.id == episodeId })
+                dao.addLikedEpisode(match { it.id == episode.id })
             }
             coVerify(exactly = 0) {
                 dao.deleteEpisodesIfOrphaned(any())

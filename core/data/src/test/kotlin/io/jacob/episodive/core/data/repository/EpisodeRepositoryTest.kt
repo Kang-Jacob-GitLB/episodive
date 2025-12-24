@@ -6,12 +6,14 @@ import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
+import io.jacob.episodive.core.database.mapper.toEpisodeEntity
 import io.jacob.episodive.core.database.mapper.toEpisodeWithExtrasViews
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.model.EpisodeResponse
+import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.Runs
@@ -341,15 +343,15 @@ class EpisodeRepositoryTest {
     fun `Given dependencies, When toggleLiked, Then calls localDataSource toggleLiked`() =
         runTest {
             // Given
-            val episodeId = 123L
-            coEvery { localDataSource.toggleLikedEpisode(episodeId) } returns true
+            val episode = episodeTestData.toEpisodeEntity()
+            coEvery { localDataSource.toggleLikedEpisode(episode) } returns true
 
             // When
-            repository.toggleLikedEpisode(episodeId)
+            repository.toggleLikedEpisode(episodeTestData)
 
             // Then
             coVerifySequence {
-                localDataSource.toggleLikedEpisode(episodeId)
+                localDataSource.toggleLikedEpisode(episode)
             }
         }
 

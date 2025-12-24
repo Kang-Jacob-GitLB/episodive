@@ -1,51 +1,54 @@
-package io.jacob.episodive.core.domain.usecase.episode
+package io.jacob.episodive.core.domain.usecase.player
 
+import app.cash.turbine.test
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
+import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
-import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
-import io.mockk.just
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-class ToggleLikedUseCaseTest {
+class GetNowPlayingUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private val playerRepository = mockk<PlayerRepository>(relaxed = true)
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = ToggleLikedEpisodeUseCase(
+    private val useCase = GetNowPlayingUseCase(
+        playerRepository = playerRepository,
         episodeRepository = episodeRepository,
     )
 
     @After
     fun teardown() {
-        confirmVerified(episodeRepository)
+        confirmVerified(playerRepository, episodeRepository)
     }
 
     @Test
     fun `Given dependencies, when invoke called, then repository called`() =
         runTest {
             // Given
-            val episode = episodeTestData
-            coEvery { episodeRepository.upsertEpisode(any()) } just Runs
-            coEvery { episodeRepository.toggleLikedEpisode(any()) } returns true
+            coEvery { playerRepository.nowPlaying } returns flowOf(episodeTestData)
+            coEvery { episodeRepository.getEpisodeById(any()) } returns flowOf(episodeTestData)
 
             // When
-            val result = useCase(episode)
+            useCase().test {
+                awaitItem()
+                awaitComplete()
+            }
 
             // Then
-            assertTrue(result)
             coVerifySequence {
-                episodeRepository.upsertEpisode(episode)
-                episodeRepository.toggleLikedEpisode(episode)
+                playerRepository.nowPlaying
+                episodeRepository.getEpisodeById(any())
             }
         }
 }

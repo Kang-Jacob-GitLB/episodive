@@ -47,12 +47,14 @@ class SearchUseCaseTest {
             coEvery {
                 episodeRepository.getEpisodesByFeedId(podcastTestDataList[1].id, any())
             } returns flowOf(episodeTestDataList.drop(5).take(5))
+            coEvery {
+                episodeRepository.getLikedEpisodes(max = any())
+            } returns flowOf(emptyList())
 
             // When
             useCase("query", 10).test {
+                // First emission: episodes from first podcast
                 val result1 = awaitItem()
-
-                // Then
                 assertEquals(2, result1.podcasts.size)
                 result1.podcasts.forEachIndexed { index, podcast ->
                     assertEquals(podcastTestDataList[index], podcast)
@@ -60,9 +62,8 @@ class SearchUseCaseTest {
                 assertEquals(5, result1.episodes.size)
                 assertEquals(episodeTestDataList.take(5), result1.episodes)
 
+                // Second emission: episodes from both podcasts
                 val result2 = awaitItem()
-
-                // Then
                 assertEquals(2, result2.podcasts.size)
                 result2.podcasts.forEachIndexed { index, podcast ->
                     assertEquals(podcastTestDataList[index], podcast)
@@ -70,12 +71,15 @@ class SearchUseCaseTest {
                 assertEquals(10, result2.episodes.size)
                 assertEquals(episodeTestDataList, result2.episodes)
 
-                awaitComplete()
+                // Cancel as the flow continues observing liked episodes
+                cancelAndIgnoreRemainingEvents()
             }
             coVerifySequence {
                 podcastRepository.searchPodcasts(any(), 10)
+                episodeRepository.getLikedEpisodes(max = 10000)
                 episodeRepository.getEpisodesByFeedId(podcastTestDataList[0].id, 5)
                 episodeRepository.getEpisodesByFeedId(podcastTestDataList[1].id, 5)
+                episodeRepository.getLikedEpisodes(max = 10000)
             }
         }
 }
