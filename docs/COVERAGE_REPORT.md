@@ -1,6 +1,6 @@
 # Code Coverage Report
 
-Generated: 2025-12-24 15:14:59
+Generated: 2025-12-26 16:59:57
 
 ---
 
@@ -9,12 +9,12 @@ Generated: 2025-12-24 15:14:59
 | Module         | Line Coverage  | Branch Coverage  | Total Lines   | Covered    | Missed     |
 |----------------|----------------|------------------|---------------|------------|------------|
 | core:data      | 74.7%          | 41.7%            | 550           | 411        | 139        |
-| core:database  | 84.9%          | 52.8%            | 5456          | 4632       | 824        |
+| core:database  | 85.4%          | 54.1%            | 5676          | 4848       | 828        |
 | core:datastore | 91.5%          | 60.0%            | 71            | 65         | 6          |
-| core:domain    | 85.1%          | 43.6%            | 296           | 252        | 44         |
+| core:domain    | 85.0%          | 43.6%            | 293           | 249        | 44         |
 | core:network   | 86.7%          | 58.1%            | 457           | 396        | 61         |
 | --------       | -------------- | ---------------- | ------------- | ---------  | --------   |
-| **TOTAL**      | ** 84.3%**     | ** 51.6%**       | **  6830**    | **  5756** | **  1074** |
+| **TOTAL**      | ** 84.7%**     | ** 52.7%**       | **  7047**    | **  5969** | **  1078** |
 
 ---
 
@@ -60,18 +60,18 @@ Generated: 2025-12-24 15:14:59
 | ✅ EpisodeRemoteUpdater.kt | 94.6%    | 35/37               | 15/18                  |
 | ✅ RemoteUpdater.kt        | 100.0%   | 18/18               | 1/2                    |
 
-### core:database - 84.9% Coverage
+### core:database - 85.4% Coverage
 
-#### 📦 io.jacob.episodive.core.database.dao - 90.5%
+#### 📦 io.jacob.episodive.core.database.dao - 91.0%
 
 | Class                      | Coverage | Lines Covered/Total | Branches Covered/Total |
 |----------------------------|----------|---------------------|------------------------|
 | ⚠️ RecentSearchDao_Impl.kt | 83.3%    | 45/54               | 4/6                    |
-| ⚠️ EpisodeDao_Impl.kt      | 89.6%    | 1364/1523           | 233/416                |
-| ✅ PodcastDao_Impl.kt       | 91.6%    | 1033/1128           | 148/264                |
+| ✅ EpisodeDao_Impl.kt       | 90.1%    | 1451/1611           | 250/434                |
 | ✅ SoundbiteDao_Impl.kt     | 92.0%    | 104/113             | 10/18                  |
-| ✅ EpisodeDao.kt            | 94.9%    | 37/39               | 2/2                    |
-| ✅ PodcastDao.kt            | 96.8%    | 30/31               | 2/2                    |
+| ✅ PodcastDao_Impl.kt       | 92.1%    | 1120/1216           | 165/282                |
+| ✅ EpisodeDao.kt            | 95.0%    | 57/60               | 8/10                   |
+| ✅ PodcastDao.kt            | 96.2%    | 50/52               | 8/10                   |
 | ✅ SoundbiteDao.kt          | 100.0%   | 3/3                 | N/A                    |
 
 #### 📦 io.jacob.episodive.core.database - 95.9%
@@ -137,7 +137,7 @@ Generated: 2025-12-24 15:14:59
 |------------------------|----------|---------------------|------------------------|
 | ✅ DataStoreMapperKt.kt | 100.0%   | 12/12               | N/A                    |
 
-### core:domain - 85.1% Coverage
+### core:domain - 85.0% Coverage
 
 #### 📦 io.jacob.episodive.core.domain.usecase.episode - 98.5%
 
@@ -150,7 +150,6 @@ Generated: 2025-12-24 15:14:59
 | ✅ GetAllPlayedEpisodesUseCase.kt         | 100.0%   | 8/8                 | N/A                    |
 | ✅ GetLiveEpisodesUseCase.kt              | 100.0%   | 3/3                 | N/A                    |
 | ✅ GetClipEpisodesPagingUseCase.kt        | 100.0%   | 3/3                 | N/A                    |
-| ✅ IsLikedEpisodeUseCase.kt               | 100.0%   | 3/3                 | N/A                    |
 | ✅ GetAllPlayedEpisodesPagingUseCase.kt   | 100.0%   | 7/7                 | N/A                    |
 | ✅ UpdatePlayedEpisodeUseCase.kt          | 100.0%   | 11/11               | 2/4                    |
 | ✅ GetMyRandomEpisodesUseCase.kt          | 100.0%   | 4/4                 | N/A                    |

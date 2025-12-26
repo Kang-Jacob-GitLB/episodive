@@ -448,6 +448,339 @@ class PodcastDaoTest {
         }
 
     @Test
+    fun `Given no podcast groups, When getPodcastGroupCount is called, Then zero is returned`() =
+        runTest {
+            // When
+            val count = dao.getPodcastGroupCount()
+
+            // Then
+            assertEquals(0, count)
+        }
+
+    @Test
+    fun `Given podcast groups, When getPodcastGroupCount is called without prefix, Then total count is returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "trending:feed1")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(3).take(2), "trending:feed2")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(5).take(2), "recent:feed1")
+
+            // When
+            val count = dao.getPodcastGroupCount()
+
+            // Then
+            assertEquals(7, count)
+        }
+
+    @Test
+    fun `Given podcast groups, When getPodcastGroupCount is called with prefix, Then filtered count is returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "trending:feed1")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(3).take(2), "trending:feed2")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(5).take(2), "recent:feed1")
+
+            // When
+            val trendingCount = dao.getPodcastGroupCount(prefix = "trending")
+            val recentCount = dao.getPodcastGroupCount(prefix = "recent")
+
+            // Then
+            assertEquals(5, trendingCount)
+            assertEquals(2, recentCount)
+        }
+
+    @Test
+    fun `Given no podcast groups, When getGroupKeysWithCounts is called, Then empty list is returned`() =
+        runTest {
+            // When
+            val groupKeys = dao.getGroupKeysWithCounts()
+
+            // Then
+            assertEquals(0, groupKeys.size)
+        }
+
+    @Test
+    fun `Given podcast groups, When getGroupKeysWithCounts is called without prefix, Then all groups with counts are returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcasts(podcastEntities.take(7))
+            val groups = listOf(
+                // trending:feed1 - 3 podcasts (oldest)
+                PodcastGroupEntity(
+                    "trending:feed1",
+                    podcastEntities[0].id,
+                    0,
+                    Instant.fromEpochSeconds(100)
+                ),
+                PodcastGroupEntity(
+                    "trending:feed1",
+                    podcastEntities[1].id,
+                    1,
+                    Instant.fromEpochSeconds(100)
+                ),
+                PodcastGroupEntity(
+                    "trending:feed1",
+                    podcastEntities[2].id,
+                    2,
+                    Instant.fromEpochSeconds(100)
+                ),
+                // trending:feed2 - 2 podcasts
+                PodcastGroupEntity(
+                    "trending:feed2",
+                    podcastEntities[3].id,
+                    0,
+                    Instant.fromEpochSeconds(200)
+                ),
+                PodcastGroupEntity(
+                    "trending:feed2",
+                    podcastEntities[4].id,
+                    1,
+                    Instant.fromEpochSeconds(200)
+                ),
+                // recent:feed1 - 2 podcasts (newest)
+                PodcastGroupEntity(
+                    "recent:feed1",
+                    podcastEntities[5].id,
+                    0,
+                    Instant.fromEpochSeconds(300)
+                ),
+                PodcastGroupEntity(
+                    "recent:feed1",
+                    podcastEntities[6].id,
+                    1,
+                    Instant.fromEpochSeconds(300)
+                ),
+            )
+            dao.upsertPodcastGroups(groups)
+
+            // When
+            val groupKeys = dao.getGroupKeysWithCounts()
+
+            // Then
+            assertEquals(3, groupKeys.size)
+            assertEquals("trending:feed1", groupKeys[0].groupKey)
+            assertEquals(3, groupKeys[0].count)
+            assertEquals("trending:feed2", groupKeys[1].groupKey)
+            assertEquals(2, groupKeys[1].count)
+            assertEquals("recent:feed1", groupKeys[2].groupKey)
+            assertEquals(2, groupKeys[2].count)
+        }
+
+    @Test
+    fun `Given podcast groups, When getGroupKeysWithCounts is called with prefix, Then filtered groups with counts are returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "trending:feed1")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(3).take(2), "trending:feed2")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(5).take(2), "recent:feed1")
+
+            // When
+            val trendingGroups = dao.getGroupKeysWithCounts(prefix = "trending")
+            val recentGroups = dao.getGroupKeysWithCounts(prefix = "recent")
+
+            // Then
+            assertEquals(2, trendingGroups.size)
+            assertEquals("trending:feed1", trendingGroups[0].groupKey)
+            assertEquals(3, trendingGroups[0].count)
+            assertEquals("trending:feed2", trendingGroups[1].groupKey)
+            assertEquals(2, trendingGroups[1].count)
+
+            assertEquals(1, recentGroups.size)
+            assertEquals("recent:feed1", recentGroups[0].groupKey)
+            assertEquals(2, recentGroups[0].count)
+        }
+
+    @Test
+    fun `Given no podcast groups, When getPodcastIdsByGroupKeys is called, Then empty list is returned`() =
+        runTest {
+            // When
+            val podcastIds = dao.getPodcastIdsByGroupKeys(listOf("non_existing_group"))
+
+            // Then
+            assertEquals(0, podcastIds.size)
+        }
+
+    @Test
+    fun `Given podcast groups, When getPodcastIdsByGroupKeys is called, Then podcast ids are returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "group1")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(3).take(2), "group2")
+
+            // When
+            val podcastIds = dao.getPodcastIdsByGroupKeys(listOf("group1", "group2"))
+
+            // Then
+            assertEquals(5, podcastIds.size)
+            assertEquals(podcastEntities.take(5).map { it.id }.toSet(), podcastIds.toSet())
+        }
+
+    @Test
+    fun `Given podcast groups, When getPodcastIdsByGroupKeys is called with single group, Then only that group's podcast ids are returned`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "group1")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(3).take(2), "group2")
+
+            // When
+            val podcastIds = dao.getPodcastIdsByGroupKeys(listOf("group1"))
+
+            // Then
+            assertEquals(3, podcastIds.size)
+            assertEquals(podcastEntities.take(3).map { it.id }.toSet(), podcastIds.toSet())
+        }
+
+    @Test
+    fun `Given podcast groups, When deletePodcastGroupsByGroupKeys is called, Then specified groups are deleted`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "group1")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(3).take(2), "group2")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(5).take(2), "group3")
+
+            // When
+            dao.deletePodcastGroupsByGroupKeys(listOf("group1", "group3"))
+
+            // Then
+            val group1 = dao.getPodcastGroupsByGroupKey("group1")
+            val group2 = dao.getPodcastGroupsByGroupKey("group2")
+            val group3 = dao.getPodcastGroupsByGroupKey("group3")
+
+            assertEquals(0, group1.size)
+            assertEquals(2, group2.size)
+            assertEquals(0, group3.size)
+        }
+
+    @Test
+    fun `Given total count below threshold, When deleteOldestGroupsIfExceedsLimit is called, Then no groups are deleted`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(3), "trending:feed1")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(3).take(2), "trending:feed2")
+
+            // When
+            dao.deleteOldestGroupsIfExceedsLimit(
+                threshold = 10,
+                targetCount = 5,
+                prefix = "trending"
+            )
+
+            // Then
+            val count = dao.getPodcastGroupCount(prefix = "trending")
+            assertEquals(5, count)
+        }
+
+    @Test
+    fun `Given total count exceeds threshold, When deleteOldestGroupsIfExceedsLimit is called, Then oldest groups are deleted`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(2), "trending:feed1")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(2).take(2), "trending:feed2")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(4).take(2), "trending:feed3")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(6).take(2), "trending:feed4")
+
+            // When
+            dao.deleteOldestGroupsIfExceedsLimit(
+                threshold = 5,
+                targetCount = 3,
+                prefix = "trending"
+            )
+
+            // Then
+            val count = dao.getPodcastGroupCount(prefix = "trending")
+            val groups = dao.getGroupKeysWithCounts(prefix = "trending")
+
+            assertEquals(2, count)
+            assertEquals(1, groups.size)
+            // Oldest groups (feed1, feed2, feed3) should be deleted, only feed4 remains
+            assertEquals("trending:feed4", groups[0].groupKey)
+        }
+
+    @Test
+    fun `Given total count exceeds threshold without prefix, When deleteOldestGroupsIfExceedsLimit is called, Then oldest groups are deleted`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(2), "feed1")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(2).take(2), "feed2")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(4).take(2), "feed3")
+
+            // When
+            dao.deleteOldestGroupsIfExceedsLimit(threshold = 4, targetCount = 2)
+
+            // Then
+            val count = dao.getPodcastGroupCount()
+            val groups = dao.getGroupKeysWithCounts()
+
+            assertEquals(2, count)
+            assertEquals(1, groups.size)
+            // Oldest groups (feed1, feed2) should be deleted
+            assertEquals("feed3", groups[0].groupKey)
+        }
+
+    @Test
+    fun `Given orphaned podcasts after group deletion, When deleteOldestGroupsIfExceedsLimit is called, Then orphaned podcasts are deleted`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(2), "trending:feed1")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(2).take(2), "trending:feed2")
+
+            // When
+            dao.deleteOldestGroupsIfExceedsLimit(
+                threshold = 2,
+                targetCount = 2,
+                prefix = "trending"
+            )
+
+            // Then
+            val groupCount = dao.getPodcastGroupCount(prefix = "trending")
+            assertEquals(2, groupCount)
+
+            // Verify orphaned podcasts are deleted
+            dao.getPodcasts(limit = 100).test {
+                val podcasts = awaitItem()
+                assertEquals(2, podcasts.size)
+                // Only feed2 podcasts should remain
+                assertEquals(
+                    podcastEntities.drop(2).take(2).map { it.id }.toSet(),
+                    podcasts.map { it.podcast.id }.toSet()
+                )
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given followed podcasts in oldest groups, When deleteOldestGroupsIfExceedsLimit is called, Then followed podcasts are not deleted`() =
+        runTest {
+            // Given
+            dao.upsertPodcastsWithGroup(podcastEntities.take(2), "trending:feed1")
+            dao.upsertPodcastsWithGroup(podcastEntities.drop(2).take(2), "trending:feed2")
+
+            // Follow first podcast
+            dao.addFollowedPodcast(
+                FollowedPodcastEntity(
+                    id = podcastEntities[0].id,
+                    followedAt = Instant.fromEpochSeconds(0),
+                    isNotificationEnabled = false,
+                )
+            )
+
+            // When
+            dao.deleteOldestGroupsIfExceedsLimit(
+                threshold = 2,
+                targetCount = 2,
+                prefix = "trending"
+            )
+
+            // Then
+            dao.getPodcasts(limit = 100).test {
+                val podcasts = awaitItem()
+                // Followed podcast from feed1 + 2 podcasts from feed2 = 3 podcasts
+                assertEquals(3, podcasts.size)
+                cancel()
+            }
+        }
+
+    @Test
     fun `Given podcasts with groupKey, When replacePodcasts is called, Then old podcasts are replaced`() =
         runTest {
             // Given
