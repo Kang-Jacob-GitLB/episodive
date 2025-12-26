@@ -176,9 +176,9 @@ interface PodcastDao {
 
         if (groupKeysToDelete.isEmpty()) return
 
-        val episodeIds = getPodcastIdsByGroupKeys(groupKeysToDelete)
+        val ids = getPodcastIdsByGroupKeys(groupKeysToDelete)
         deletePodcastGroupsByGroupKeys(groupKeysToDelete)
-        deletePodcastsIfOrphaned(episodeIds)
+        deletePodcastsIfOrphaned(ids)
     }
 
     @Transaction

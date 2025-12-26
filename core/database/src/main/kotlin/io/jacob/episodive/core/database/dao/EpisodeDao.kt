@@ -182,9 +182,9 @@ interface EpisodeDao {
 
         if (groupKeysToDelete.isEmpty()) return
 
-        val episodeIds = getEpisodeIdsByGroupKeys(groupKeysToDelete)
+        val ids = getEpisodeIdsByGroupKeys(groupKeysToDelete)
         deleteEpisodeGroupsByGroupKeys(groupKeysToDelete)
-        deleteEpisodesIfOrphaned(episodeIds)
+        deleteEpisodesIfOrphaned(ids)
     }
 
     @Transaction
