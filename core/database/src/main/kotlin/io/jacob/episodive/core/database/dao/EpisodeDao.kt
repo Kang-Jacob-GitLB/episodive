@@ -10,6 +10,7 @@ import androidx.room.Upsert
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeGroupEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
+import io.jacob.episodive.core.database.model.GroupKeyWithCount
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import kotlinx.coroutines.flow.Flow
@@ -124,11 +125,67 @@ interface EpisodeDao {
     )
     fun getEpisodesByGroupKeyPaging(groupKey: String): PagingSource<Int, EpisodeWithExtrasView>
 
+
+    /** EPISODE GROUPS **/
+
     @Query("SELECT * FROM episode_group WHERE groupKey = :groupKey")
     suspend fun getEpisodeGroupsByGroupKey(groupKey: String): List<EpisodeGroupEntity>
 
     @Query("SELECT MIN(createdAt) FROM episode_group WHERE groupKey = :groupKey")
     suspend fun getOldestCreatedAtByGroupKey(groupKey: String): Instant?
+
+    @Query(
+        """
+        SELECT COUNT(*)
+        FROM episode_group
+        WHERE :prefix IS NULL OR groupKey LIKE :prefix || '%'
+    """
+    )
+    suspend fun getEpisodeGroupCount(prefix: String? = null): Int
+
+    @Query(
+        """
+        SELECT groupKey, COUNT(*) as count
+        FROM episode_group
+        WHERE :prefix IS NULL OR groupKey LIKE :prefix || '%'
+        GROUP BY groupKey
+        ORDER BY MIN(createdAt) ASC
+    """
+    )
+    suspend fun getGroupKeysWithCounts(prefix: String? = null): List<GroupKeyWithCount>
+
+    @Query("SELECT id FROM episode_group WHERE groupKey IN (:groupKeys)")
+    suspend fun getEpisodeIdsByGroupKeys(groupKeys: List<String>): List<Long>
+
+    @Query("DELETE FROM episode_group WHERE groupKey IN (:groupKeys)")
+    suspend fun deleteEpisodeGroupsByGroupKeys(groupKeys: List<String>)
+
+    @Transaction
+    suspend fun deleteOldestGroupsIfExceedsLimit(
+        threshold: Int,
+        targetCount: Int = threshold,
+        prefix: String? = null,
+    ) {
+        val totalCount = getEpisodeGroupCount(prefix)
+        if (totalCount <= threshold) return
+
+        val groupKeysWithCounts = getGroupKeysWithCounts(prefix)
+
+        var currentCount = totalCount
+        val groupKeysToDelete = mutableListOf<String>()
+
+        for ((groupKey, count) in groupKeysWithCounts) {
+            if (currentCount <= targetCount) break
+            groupKeysToDelete.add(groupKey)
+            currentCount -= count
+        }
+
+        if (groupKeysToDelete.isEmpty()) return
+
+        val episodeIds = getEpisodeIdsByGroupKeys(groupKeysToDelete)
+        deleteEpisodeGroupsByGroupKeys(groupKeysToDelete)
+        deleteEpisodesIfOrphaned(episodeIds)
+    }
 
     @Transaction
     suspend fun replaceEpisodes(episodes: List<EpisodeEntity>, groupKey: String) {
@@ -136,6 +193,9 @@ interface EpisodeDao {
         deleteEpisodeGroupsByGroupKey(groupKey)
         upsertEpisodesWithGroup(episodes, groupKey)
         deleteEpisodesIfOrphaned(oldEpisodeIds)
+
+        val prefix = groupKey.split(":").first()
+        deleteOldestGroupsIfExceedsLimit(threshold = 30_000, targetCount = 20_000, prefix = prefix)
     }
 
 

@@ -54,14 +54,78 @@ class EpisodeDaoTransactionTest {
         }
 
     @Test
+    fun `Given count exceeds threshold, When deleteOldestGroupsIfExceedsLimit is called, Then correct sequence is called`() =
+        runTest {
+            // Given
+            val groupKeysWithCounts = listOf(
+                io.jacob.episodive.core.database.model.GroupKeyWithCount("group1", 3),
+                io.jacob.episodive.core.database.model.GroupKeyWithCount("group2", 2),
+            )
+            val episodeIds = listOf(1L, 2L, 3L)
+
+            coEvery { dao.getEpisodeGroupCount(any()) } returns 5
+            coEvery { dao.getGroupKeysWithCounts(any()) } returns groupKeysWithCounts
+            coEvery { dao.getEpisodeIdsByGroupKeys(any()) } returns episodeIds
+            coEvery { dao.deleteEpisodeGroupsByGroupKeys(any()) } just Runs
+            coEvery { dao.deleteEpisodesIfOrphaned(any()) } just Runs
+            coEvery { dao.deleteOldestGroupsIfExceedsLimit(any(), any(), any()) } answers {
+                callOriginal()
+            }
+
+            // When
+            dao.deleteOldestGroupsIfExceedsLimit(threshold = 3, targetCount = 2, prefix = "test")
+
+            // Then
+            coVerify(exactly = 1) {
+                dao.getEpisodeGroupCount(prefix = "test")
+            }
+            coVerify(exactly = 1) {
+                dao.getGroupKeysWithCounts(prefix = "test")
+            }
+            coVerify(exactly = 1) {
+                dao.getEpisodeIdsByGroupKeys(match { it.contains("group1") })
+            }
+            coVerify(exactly = 1) {
+                dao.deleteEpisodeGroupsByGroupKeys(match { it.contains("group1") })
+            }
+            coVerify(exactly = 1) {
+                dao.deleteEpisodesIfOrphaned(episodeIds)
+            }
+        }
+
+    @Test
+    fun `Given count below threshold, When deleteOldestGroupsIfExceedsLimit is called, Then no deletion happens`() =
+        runTest {
+            // Given
+            coEvery { dao.getEpisodeGroupCount(any()) } returns 2
+            coEvery { dao.deleteOldestGroupsIfExceedsLimit(any(), any(), any()) } answers {
+                callOriginal()
+            }
+
+            // When
+            dao.deleteOldestGroupsIfExceedsLimit(threshold = 5, targetCount = 3, prefix = "test")
+
+            // Then
+            coVerify(exactly = 1) {
+                dao.getEpisodeGroupCount(prefix = "test")
+            }
+            coVerify(exactly = 0) {
+                dao.getGroupKeysWithCounts(any())
+            }
+            coVerify(exactly = 0) {
+                dao.deleteEpisodesIfOrphaned(any())
+            }
+        }
+
+    @Test
     fun `Given episodes and groupKey, When replaceEpisodes is called, Then correct sequence is called`() =
         runTest {
             // Given
             val oldEpisodeIds = listOf(1L, 2L, 3L)
 
-            coEvery { dao.getEpisodeGroupsByGroupKey("test_group") } returns oldEpisodeIds.map {
+            coEvery { dao.getEpisodeGroupsByGroupKey("test_group:group1") } returns oldEpisodeIds.map {
                 EpisodeGroupEntity(
-                    groupKey = "test_group",
+                    groupKey = "test_group:group1",
                     id = it,
                     order = 0,
                     createdAt = kotlin.time.Clock.System.now(),
@@ -70,25 +134,33 @@ class EpisodeDaoTransactionTest {
             coEvery { dao.deleteEpisodeGroupsByGroupKey(any()) } just Runs
             coEvery { dao.upsertEpisodesWithGroup(any(), any()) } just Runs
             coEvery { dao.deleteEpisodesIfOrphaned(any()) } just Runs
+            coEvery { dao.deleteOldestGroupsIfExceedsLimit(any(), any(), any()) } just Runs
             coEvery { dao.replaceEpisodes(any(), any()) } answers {
                 callOriginal()
             }
 
             // When
-            dao.replaceEpisodes(episodeEntities, "test_group")
+            dao.replaceEpisodes(episodeEntities, "test_group:group1")
 
             // Then
             coVerify(exactly = 1) {
-                dao.getEpisodeGroupsByGroupKey("test_group")
+                dao.getEpisodeGroupsByGroupKey("test_group:group1")
             }
             coVerify(exactly = 1) {
-                dao.deleteEpisodeGroupsByGroupKey("test_group")
+                dao.deleteEpisodeGroupsByGroupKey("test_group:group1")
             }
             coVerify(exactly = 1) {
-                dao.upsertEpisodesWithGroup(episodeEntities, "test_group")
+                dao.upsertEpisodesWithGroup(episodeEntities, "test_group:group1")
             }
             coVerify(exactly = 1) {
                 dao.deleteEpisodesIfOrphaned(oldEpisodeIds)
+            }
+            coVerify(exactly = 1) {
+                dao.deleteOldestGroupsIfExceedsLimit(
+                    threshold = 30_000,
+                    targetCount = 20_000,
+                    prefix = "test_group"
+                )
             }
         }
 
