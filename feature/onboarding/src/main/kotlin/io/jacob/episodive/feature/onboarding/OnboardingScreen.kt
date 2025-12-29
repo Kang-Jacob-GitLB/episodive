@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.LinearWavyProgressIndicator
@@ -54,8 +55,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
+import io.jacob.episodive.core.designsystem.component.LoadingWheel
 import io.jacob.episodive.core.designsystem.component.scrollbar.DraggableScrollbar
 import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
+import io.jacob.episodive.core.designsystem.screen.ErrorScreen
+import io.jacob.episodive.core.designsystem.screen.LoadingScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.GradientColors
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
@@ -69,7 +73,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
-fun OnboardingScreen(
+fun OnboardingRoute(
     modifier: Modifier = Modifier,
     viewModel: OnboardingViewModel = hiltViewModel(),
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
@@ -88,6 +92,33 @@ fun OnboardingScreen(
         }
     }
 
+    when (val s = state) {
+        is OnboardingState.Loading -> LoadingScreen()
+
+        is OnboardingState.Success -> OnboardingScreen(
+            modifier = modifier,
+            pagerState = pagerState,
+            categories = s.categories,
+            podcasts = s.podcasts,
+            onChooseCategory = { viewModel.sendAction(OnboardingAction.ChooseCategory(it)) },
+            onChoosePodcast = { viewModel.sendAction(OnboardingAction.ChoosePodcast(it)) },
+            onNextPage = { viewModel.sendAction(OnboardingAction.NextPage) },
+        )
+
+        is OnboardingState.Error -> ErrorScreen(message = s.message)
+    }
+}
+
+@Composable
+private fun OnboardingScreen(
+    modifier: Modifier = Modifier,
+    pagerState: PagerState,
+    categories: List<SelectableCategory>,
+    podcasts: List<Podcast>,
+    onChooseCategory: (Category) -> Unit,
+    onChoosePodcast: (Podcast) -> Unit,
+    onNextPage: () -> Unit,
+) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -104,19 +135,15 @@ fun OnboardingScreen(
                 OnboardingPage.CategorySelection ->
                     CategorySelectionScreen(
                         modifier = modifier,
-                        categories = state.categories,
-                        onCategoryCheckedChanged = { category ->
-                            viewModel.sendAction(OnboardingAction.ChooseCategory(category))
-                        },
+                        categories = categories,
+                        onCategoryCheckedChanged = onChooseCategory,
                     )
 
                 OnboardingPage.PodcastSelection ->
                     PodcastSelectionScreen(
                         modifier = modifier,
-                        podcasts = state.podcasts,
-                        onToggleFollowedPodcast = { podcast ->
-                            viewModel.sendAction(OnboardingAction.ChoosePodcast(podcast))
-                        },
+                        podcasts = podcasts,
+                        onToggleFollowedPodcast = onChoosePodcast,
                     )
 
                 OnboardingPage.Completion ->
@@ -155,7 +182,7 @@ fun OnboardingScreen(
                         modifier = Modifier
                             .fillMaxWidth(),
                         shape = MaterialTheme.shapes.medium,
-                        onClick = { viewModel.sendAction(OnboardingAction.NextPage) },
+                        onClick = onNextPage,
                         text = { Text(text = stringResource(R.string.feature_onboarding_next)) },
                         enabled = true,
                     )
@@ -296,6 +323,12 @@ private fun PodcastSelectionScreen(
         modifier = modifier
             .fillMaxSize(),
     ) {
+        if (podcasts.isEmpty()) {
+            LoadingWheel(
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+
         LazyColumn(
             state = lazyListState,
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -406,7 +439,7 @@ private fun CompletionScreen(
 private fun PagerIndicator(
     pageCount: Int,
     currentPage: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier,
