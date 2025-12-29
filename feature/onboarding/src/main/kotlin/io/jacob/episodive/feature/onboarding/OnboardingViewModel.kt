@@ -3,7 +3,6 @@ package io.jacob.episodive.feature.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetRecommendedPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetPreferredCategoriesUseCase
@@ -19,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -36,7 +36,6 @@ class OnboardingViewModel @Inject constructor(
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
     private val getPreferredCategoriesUseCase: GetPreferredCategoriesUseCase,
     getRecommendedPodcastsUseCase: GetRecommendedPodcastsUseCase,
-    getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
 ) : ViewModel() {
 
     private val _page = MutableStateFlow(OnboardingPage.Welcome)
@@ -50,22 +49,30 @@ class OnboardingViewModel @Inject constructor(
                 )
             }.let { flowOf(it) }
         }
+    private val _recommendedPodcasts: Flow<List<Podcast>> = _page
+        .flatMapLatest { page ->
+            if (page == OnboardingPage.PodcastSelection) {
+                getRecommendedPodcastsUseCase()
+            } else {
+                flowOf(emptyList())
+            }
+        }
 
     val state: StateFlow<OnboardingState> = combine(
         _categories,
-        getRecommendedPodcastsUseCase(),
+        _recommendedPodcasts,
     ) { categories, podcasts ->
-        OnboardingState(
+        OnboardingState.Success(
             categories = categories,
             podcasts = podcasts
-        )
+        ) as OnboardingState
+    }.catch { e ->
+        emit(OnboardingState.Error(e.message ?: "An unknown error occurred"))
+        e.printStackTrace()
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = OnboardingState(
-            categories = emptyList(),
-            podcasts = emptyList(),
-        )
+        initialValue = OnboardingState.Loading
     )
 
     private val _action = MutableSharedFlow<OnboardingAction>(extraBufferCapacity = 1)
@@ -115,7 +122,8 @@ class OnboardingViewModel @Inject constructor(
     private fun previousPage() = viewModelScope.launch {
         when (_page.value) {
             OnboardingPage.Welcome,
-            OnboardingPage.Completion -> return@launch
+            OnboardingPage.Completion,
+                -> return@launch
 
             else -> {}
         }
@@ -138,10 +146,15 @@ class OnboardingViewModel @Inject constructor(
     }
 }
 
-data class OnboardingState(
-    val categories: List<SelectableCategory>,
-    val podcasts: List<Podcast>,
-)
+sealed interface OnboardingState {
+    data object Loading : OnboardingState
+    data class Success(
+        val categories: List<SelectableCategory>,
+        val podcasts: List<Podcast>,
+    ) : OnboardingState
+
+    data class Error(val message: String) : OnboardingState
+}
 
 sealed interface OnboardingAction {
     data object NextPage : OnboardingAction

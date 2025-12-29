@@ -3,6 +3,7 @@ package io.jacob.episodive.core.ui
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -66,12 +68,35 @@ fun CategoryButton(
             label = "blurRadius"
         )
 
+        val gradientAlpha by animateFloatAsState(
+            targetValue = if (isSelected) 0f else 1f,
+            animationSpec = tween(300),
+            label = "gradientAlpha"
+        )
+
         StateImage(
             modifier = Modifier
                 .fillMaxSize()
                 .blur(blurRadius),
             imageUrl = category.imageUrl,
             contentDescription = category.label,
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0f),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                        ),
+                        startY = 0f,
+                        endY = Float.POSITIVE_INFINITY
+                    ),
+                    alpha = gradientAlpha
+                )
         )
 
         Box(
@@ -92,7 +117,7 @@ fun CategoryButton(
             Text(
                 text = category.label,
                 fontSize = textSize.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .align(Alignment.Center)
                     .offset(y = offsetY),
@@ -104,7 +129,7 @@ fun CategoryButton(
                     .size(24.dp)
                     .align(Alignment.TopEnd),
                 checked = isSelected,
-                onCheckedChange = { checked -> onClick(category) },
+                onCheckedChange = { _ -> onClick(category) },
                 icon = {
                     Icon(
                         modifier = Modifier
