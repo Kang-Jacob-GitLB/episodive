@@ -3,12 +3,14 @@ package io.jacob.episodive.core.network.datasource
 import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.network.api.ChapterApi
 import io.jacob.episodive.core.network.mapper.toChapters
+import timber.log.Timber
 import javax.inject.Inject
 
 class ChapterRemoteDataSourceImpl @Inject constructor(
     private val chapterApi: ChapterApi,
 ) : ChapterRemoteDataSource {
     override suspend fun fetchChapters(url: String): List<Chapter> {
+        Timber.i("fetchChapters url: $url")
         return try {
             val response = chapterApi.fetchChapters(url)
             response.toChapters()

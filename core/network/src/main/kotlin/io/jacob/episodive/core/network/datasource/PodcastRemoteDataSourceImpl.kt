@@ -2,6 +2,7 @@ package io.jacob.episodive.core.network.datasource
 
 import io.jacob.episodive.core.network.api.PodcastApi
 import io.jacob.episodive.core.network.model.PodcastResponse
+import timber.log.Timber
 import javax.inject.Inject
 
 class PodcastRemoteDataSourceImpl @Inject constructor(
@@ -11,6 +12,7 @@ class PodcastRemoteDataSourceImpl @Inject constructor(
         query: String,
         max: Int?,
     ): List<PodcastResponse> {
+        Timber.i("searchPodcasts query: $query")
         return podcastApi.searchPodcasts(
             query = query,
             max = max,
@@ -18,14 +20,17 @@ class PodcastRemoteDataSourceImpl @Inject constructor(
     }
 
     override suspend fun getPodcastByFeedId(feedId: Long): PodcastResponse? {
+        Timber.i("getPodcastByFeedId feedId: $feedId")
         return podcastApi.getPodcastByFeedId(feedId = feedId).data
     }
 
     override suspend fun getPodcastByFeedUrl(feedUrl: String): PodcastResponse? {
+        Timber.i("getPodcastByFeedUrl feedUrl: $feedUrl")
         return podcastApi.getPodcastByFeedUrl(feedUrl = feedUrl).data
     }
 
     override suspend fun getPodcastByGuid(guid: String): PodcastResponse? {
+        Timber.i("getPodcastByGuid guid: $guid")
         return podcastApi.getPodcastByGuid(guid = guid).data
     }
 
@@ -33,6 +38,7 @@ class PodcastRemoteDataSourceImpl @Inject constructor(
         medium: String,
         max: Int?,
     ): List<PodcastResponse> {
+        Timber.i("getPodcastsByMedium medium: $medium")
         return podcastApi.getPodcastsByMedium(
             medium = medium,
             max = max,
@@ -40,6 +46,7 @@ class PodcastRemoteDataSourceImpl @Inject constructor(
     }
 
     override suspend fun getPodcastsByGuids(guids: List<String>): List<PodcastResponse> {
+        Timber.i("getPodcastsByGuids guids: $guids")
         return podcastApi.getPodcastsByGuids(guids = guids).dataList
     }
 }

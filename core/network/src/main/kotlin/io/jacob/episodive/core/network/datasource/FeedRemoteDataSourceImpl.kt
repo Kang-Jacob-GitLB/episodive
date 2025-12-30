@@ -5,6 +5,7 @@ import io.jacob.episodive.core.network.model.RecentFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewFeedResponse
 import io.jacob.episodive.core.network.model.RecentNewValueFeedResponse
 import io.jacob.episodive.core.network.model.TrendingFeedResponse
+import timber.log.Timber
 import javax.inject.Inject
 
 class FeedRemoteDataSourceImpl @Inject constructor(
@@ -17,6 +18,7 @@ class FeedRemoteDataSourceImpl @Inject constructor(
         includeCategories: String?,
         excludeCategories: String?,
     ): List<TrendingFeedResponse> {
+        Timber.i("getTrendingFeeds max: $max")
         return feedApi.getTrendingFeeds(
             max = max,
             since = since,
@@ -33,6 +35,7 @@ class FeedRemoteDataSourceImpl @Inject constructor(
         includeCategories: String?,
         excludeCategories: String?,
     ): List<RecentFeedResponse> {
+        Timber.i("getRecentFeeds max: $max")
         return feedApi.getRecentFeeds(
             max = max,
             since = since,
@@ -46,6 +49,7 @@ class FeedRemoteDataSourceImpl @Inject constructor(
         max: Int?,
         since: Long?,
     ): List<RecentNewFeedResponse> {
+        Timber.i("getRecentNewFeeds max: $max")
         return feedApi.getRecentNewFeeds(
             max = max,
             since = since,
@@ -56,6 +60,7 @@ class FeedRemoteDataSourceImpl @Inject constructor(
         max: Int?,
         since: Long?,
     ): List<RecentNewValueFeedResponse> {
+        Timber.i("getRecentNewValueFeeds max: $max")
         return feedApi.getRecentNewValueFeeds(
             max = max,
             since = since,
