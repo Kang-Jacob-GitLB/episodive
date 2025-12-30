@@ -110,24 +110,11 @@ class PodcastRepositoryImpl @Inject constructor(
         language: String?,
         includeCategories: List<Category>,
     ): Flow<List<Podcast>> {
-        val query = PodcastQuery.Trending(language, includeCategories)
+        val query = PodcastQuery.Trending(max, language, includeCategories)
 
         return remoteUpdater.create(query)
             .getFlowList(max)
             .map { it.toPodcasts() }
-    }
-
-    override fun getTrendingPodcastsPaging(
-        language: String?,
-        includeCategories: List<Category>,
-    ): Flow<PagingData<Podcast>> {
-        val query = PodcastQuery.Trending(language, includeCategories)
-
-        return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toPodcast() }
-            }
     }
 
     override fun getRecentPodcasts(
@@ -135,42 +122,31 @@ class PodcastRepositoryImpl @Inject constructor(
         language: String?,
         includeCategories: List<Category>,
     ): Flow<List<Podcast>> {
-        val query = PodcastQuery.Recent(language, includeCategories)
+        val query = PodcastQuery.Recent(max, language, includeCategories)
 
         return remoteUpdater.create(query)
             .getFlowList(max)
             .map { it.toPodcasts() }
-    }
-
-    override fun getRecentPodcastsPaging(
-        language: String?,
-        includeCategories: List<Category>,
-    ): Flow<PagingData<Podcast>> {
-        val query = PodcastQuery.Recent(language, includeCategories)
-
-        return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toPodcast() }
-            }
     }
 
     override fun getRecentNewPodcasts(max: Int): Flow<List<Podcast>> {
-        val query = PodcastQuery.RecentNew
+        val query = PodcastQuery.RecentNew(max)
 
         return remoteUpdater.create(query)
             .getFlowList(max)
             .map { it.toPodcasts() }
     }
 
-    override fun getRecentNewPodcastsPaging(): Flow<PagingData<Podcast>> {
-        val query = PodcastQuery.RecentNew
+    override fun getRecommendedPodcasts(
+        max: Int,
+        language: String?,
+        includeCategories: List<Category>
+    ): Flow<List<Podcast>> {
+        val query = PodcastQuery.Recommended(max, language, includeCategories)
 
         return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toPodcast() }
-            }
+            .getFlowList(max)
+            .map { it.toPodcasts() }
     }
 
     override fun getFollowedPodcasts(query: String?, max: Int): Flow<List<Podcast>> {

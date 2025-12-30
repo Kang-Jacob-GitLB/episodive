@@ -3,7 +3,7 @@ package io.jacob.episodive.feature.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.jacob.episodive.core.domain.usecase.podcast.GetRecommendedPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetUserRecommendedPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetPreferredCategoriesUseCase
 import io.jacob.episodive.core.domain.usecase.user.SetFirstLaunchOffUseCase
@@ -35,7 +35,7 @@ class OnboardingViewModel @Inject constructor(
     private val toggleCategoryUseCase: ToggleCategoryUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
     private val getPreferredCategoriesUseCase: GetPreferredCategoriesUseCase,
-    getRecommendedPodcastsUseCase: GetRecommendedPodcastsUseCase,
+    getUserRecommendedPodcastsUseCase: GetUserRecommendedPodcastsUseCase,
 ) : ViewModel() {
 
     private val _page = MutableStateFlow(OnboardingPage.Welcome)
@@ -52,7 +52,7 @@ class OnboardingViewModel @Inject constructor(
     private val _recommendedPodcasts: Flow<List<Podcast>> = _page
         .flatMapLatest { page ->
             if (page == OnboardingPage.PodcastSelection) {
-                getRecommendedPodcastsUseCase()
+                getUserRecommendedPodcastsUseCase(max = 50)
             } else {
                 flowOf(emptyList())
             }

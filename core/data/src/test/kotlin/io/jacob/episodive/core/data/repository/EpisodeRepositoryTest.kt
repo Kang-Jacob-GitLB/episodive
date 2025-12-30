@@ -193,7 +193,7 @@ class EpisodeRepositoryTest {
         runTest {
             // Given
             val max = 10
-            val expectedQuery = EpisodeQuery.Live
+            val expectedQuery = EpisodeQuery.Live(max)
 
             val mockUpdater = mockk<EpisodeRemoteUpdater>(relaxed = true)
             coEvery { mockUpdater.getFlowList(any()) } returns flowOf(episodeDtos)
@@ -219,6 +219,7 @@ class EpisodeRepositoryTest {
             // Given
             val max = 10
             val query = EpisodeQuery.Random(
+                max = max,
                 language = null,
                 categories = emptyList(),
             )
@@ -247,7 +248,7 @@ class EpisodeRepositoryTest {
         runTest {
             // Given
             val max = 10
-            val expectedQuery = EpisodeQuery.Recent
+            val expectedQuery = EpisodeQuery.Recent(max = max)
 
             val mockUpdater = mockk<EpisodeRemoteUpdater>(relaxed = true)
             coEvery { mockUpdater.getFlowList(any()) } returns flowOf(episodeDtos)

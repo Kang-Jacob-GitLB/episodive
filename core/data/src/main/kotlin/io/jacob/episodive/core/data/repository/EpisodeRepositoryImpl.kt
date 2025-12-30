@@ -129,21 +129,11 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun getLiveEpisodes(max: Int): Flow<List<Episode>> {
-        val query = EpisodeQuery.Live
+        val query = EpisodeQuery.Live(max = max)
 
         return remoteUpdater.create(query)
             .getFlowList(max)
             .map { it.toEpisodes() }
-    }
-
-    override fun getLiveEpisodesPaging(): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Live
-
-        return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toEpisode() }
-            }
     }
 
     override fun getRandomEpisodes(
@@ -152,58 +142,34 @@ class EpisodeRepositoryImpl @Inject constructor(
         includeCategories: List<Category>,
         excludeCategories: List<Category>,
     ): Flow<List<Episode>> {
-        val query = EpisodeQuery.Random(language, includeCategories)
+        val query = EpisodeQuery.Random(max, language, includeCategories)
 
         return remoteUpdater.create(query)
             .getFlowList(max)
             .map { it.toEpisodes() }
-    }
-
-    override fun getRandomEpisodesPaging(
-        language: String?,
-        includeCategories: List<Category>,
-        excludeCategories: List<Category>,
-    ): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Random(language, includeCategories)
-
-        return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toEpisode() }
-            }
     }
 
     override fun getRecentEpisodes(
         max: Int,
         excludeString: String?,
     ): Flow<List<Episode>> {
-        val query = EpisodeQuery.Recent
+        val query = EpisodeQuery.Recent(max)
 
         return remoteUpdater.create(query)
             .getFlowList(max)
             .map { it.toEpisodes() }
-    }
-
-    override fun getRecentEpisodesPaging(): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Recent
-
-        return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toEpisode() }
-            }
     }
 
     override fun getSoundbiteEpisodes(max: Int): Flow<List<Episode>> {
-        val query = EpisodeQuery.Soundbite
+        val query = EpisodeQuery.Soundbite(max)
 
         return remoteUpdater.create(query)
             .getFlowList(max)
             .map { it.toEpisodes() }
     }
 
-    override fun getSoundbiteEpisodesPaging(): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Soundbite
+    override fun getSoundbiteEpisodesPaging(max: Int): Flow<PagingData<Episode>> {
+        val query = EpisodeQuery.Soundbite(max)
 
         return remoteUpdater.create(query)
             .getPagingData(config)

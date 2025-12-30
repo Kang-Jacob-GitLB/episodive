@@ -40,7 +40,7 @@ class GetClipEpisodesPagingUseCaseTest {
         runTest {
             // Given
             coEvery {
-                episodeRepository.getSoundbiteEpisodesPaging()
+                episodeRepository.getSoundbiteEpisodesPaging(any())
             } returns flowOf(
                 PagingData.from(
                     listOf(
@@ -53,7 +53,7 @@ class GetClipEpisodesPagingUseCaseTest {
             )
 
             // When
-            val result = useCase().asSnapshot {
+            val result = useCase(100).asSnapshot {
                 appendScrollWhile { !endOfPaginationReached }
             }
 
@@ -65,7 +65,7 @@ class GetClipEpisodesPagingUseCaseTest {
 
             // Then
             coVerifySequence {
-                episodeRepository.getSoundbiteEpisodesPaging()
+                episodeRepository.getSoundbiteEpisodesPaging(100)
             }
         }
 }

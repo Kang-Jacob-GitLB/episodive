@@ -15,9 +15,15 @@ import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toPodcasts
 import io.jacob.episodive.core.network.model.PodcastResponse
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.withIndex
 import kotlin.time.Clock
 
 class PodcastRemoteUpdater @AssistedInject constructor(
@@ -46,48 +52,77 @@ class PodcastRemoteUpdater @AssistedInject constructor(
             is PodcastQuery.Medium -> podcastRemote.getPodcastsByMedium(query.medium, fetchSize)
             is PodcastQuery.ByChannel -> podcastRemote.getPodcastsByGuids(query.channel.podcastGuids)
 
-            is PodcastQuery.Trending -> coroutineScope {
-                val trends = feedRemote.getTrendingFeeds(
-                    max = 100,
+            is PodcastQuery.Trending -> {
+                feedRemote.getTrendingFeeds(
+                    max = query.max,
                     language = query.language,
                     includeCategories = query.categories.toCommaString(),
-                )
-
-                trends.chunked(20).flatMap { chunk ->
-                    chunk.map { trend ->
-                        async {
-                            podcastRemote.getPodcastByFeedId(trend.id)
-                        }
-                    }.awaitAll().filterNotNull()
-                }
+                ).asFlow()
+                    .flatMapMerge(concurrency = 10) { trend ->
+                        flow { emit(podcastRemote.getPodcastByFeedId(trend.id)) }
+                    }
+                    .filterNotNull()
+                    .toList()
             }
 
-            is PodcastQuery.Recent -> coroutineScope {
-                val recents = feedRemote.getRecentFeeds(
-                    max = 100,
+            is PodcastQuery.Recent -> {
+                feedRemote.getRecentFeeds(
+                    max = query.max,
                     language = query.language,
                     includeCategories = query.categories.toCommaString(),
-                )
-
-                recents.chunked(20).flatMap { chunk ->
-                    chunk.map { recent ->
-                        async {
-                            podcastRemote.getPodcastByFeedId(recent.id)
-                        }
-                    }.awaitAll().filterNotNull()
-                }
+                ).asFlow()
+                    .flatMapMerge(concurrency = 10) { recent ->
+                        flow { emit(podcastRemote.getPodcastByFeedId(recent.id)) }
+                    }
+                    .filterNotNull()
+                    .toList()
             }
 
-            is PodcastQuery.RecentNew -> coroutineScope {
-                val recents = feedRemote.getRecentNewFeeds(max = 100)
+            is PodcastQuery.RecentNew -> {
+                feedRemote.getRecentNewFeeds(max = query.max)
+                    .asFlow()
+                    .flatMapMerge(concurrency = 10) { recentNew ->
+                        flow { emit(podcastRemote.getPodcastByFeedId(recentNew.id)) }
+                    }
+                    .filterNotNull()
+                    .toList()
+            }
 
-                recents.chunked(20).flatMap { chunk ->
-                    chunk.map { recent ->
-                        async {
-                            podcastRemote.getPodcastByFeedId(recent.id)
-                        }
-                    }.awaitAll().filterNotNull()
+            is PodcastQuery.Recommended -> coroutineScope {
+                val trending = async {
+                    feedRemote.getTrendingFeeds(
+                        max = query.max / 2,
+                        language = query.language,
+                        includeCategories = query.categories.toCommaString(),
+                    ).map { it.id to it.newestItemPublishTime }
                 }
+                val recent = async {
+                    feedRemote.getRecentFeeds(
+                        max = query.max / 2,
+                        language = query.language,
+                        includeCategories = query.categories.toCommaString(),
+                    ).map { it.id to it.newestItemPublishTime }
+                }
+
+                val recommend = (trending.await() + recent.await())
+                    .distinctBy { it.first }
+                    .sortedByDescending { it.second }
+
+                recommend.map { it.first }
+                    .asFlow()
+                    .withIndex()
+                    .flatMapMerge(concurrency = 5) { (index, id) ->
+                        flow {
+                            podcastRemote.getPodcastByFeedId(id)?.let { podcast ->
+                                emit(index to podcast)
+                            }
+                        }.catch { e ->
+                            e.printStackTrace()
+                        }
+                    }
+                    .toList()
+                    .sortedBy { it.first }
+                    .map { it.second }
             }
         }
     }

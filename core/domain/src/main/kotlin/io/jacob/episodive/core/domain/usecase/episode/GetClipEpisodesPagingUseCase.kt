@@ -9,7 +9,7 @@ import javax.inject.Inject
 class GetClipEpisodesPagingUseCase @Inject constructor(
     private val episodeRepository: EpisodeRepository,
 ) {
-    operator fun invoke(): Flow<PagingData<Episode>> {
-        return episodeRepository.getSoundbiteEpisodesPaging()
+    operator fun invoke(max: Int): Flow<PagingData<Episode>> {
+        return episodeRepository.getSoundbiteEpisodesPaging(max)
     }
 }

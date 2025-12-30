@@ -9,6 +9,7 @@ enum class GroupKey(val value: String) {
     TRENDING("trending"),
     RECENT("recent"),
     RECENT_NEW("recentNew"),
+    RECOMMENDED("recommended"),
     PERSON("person"),
     PODCAST_GUID("podcastGuid"),
     LIVE("live"),

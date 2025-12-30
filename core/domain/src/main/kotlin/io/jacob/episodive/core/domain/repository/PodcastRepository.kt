@@ -35,27 +35,21 @@ interface PodcastRepository {
         includeCategories: List<Category> = emptyList(),
     ): Flow<List<Podcast>>
 
-    fun getTrendingPodcastsPaging(
-        language: String? = null,
-        includeCategories: List<Category> = emptyList(),
-    ): Flow<PagingData<Podcast>>
-
     fun getRecentPodcasts(
         max: Int,
         language: String? = null,
         includeCategories: List<Category> = emptyList(),
     ): Flow<List<Podcast>>
 
-    fun getRecentPodcastsPaging(
-        language: String? = null,
-        includeCategories: List<Category> = emptyList(),
-    ): Flow<PagingData<Podcast>>
-
     fun getRecentNewPodcasts(
         max: Int,
     ): Flow<List<Podcast>>
 
-    fun getRecentNewPodcastsPaging(): Flow<PagingData<Podcast>>
+    fun getRecommendedPodcasts(
+        max: Int,
+        language: String? = null,
+        includeCategories: List<Category> = emptyList(),
+    ): Flow<List<Podcast>>
 
     fun getFollowedPodcasts(
         query: String? = null,

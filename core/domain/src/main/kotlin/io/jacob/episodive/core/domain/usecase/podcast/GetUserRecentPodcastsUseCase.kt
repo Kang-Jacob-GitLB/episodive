@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import javax.inject.Inject
 
-class GetMyRecentPodcastsUseCase @Inject constructor(
+class GetUserRecentPodcastsUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val getRecentPodcastsUseCase: GetRecentPodcastsUseCase,
 ) {

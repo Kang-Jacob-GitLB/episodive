@@ -48,8 +48,6 @@ interface EpisodeRepository {
 
     fun getLiveEpisodes(max: Int): Flow<List<Episode>>
 
-    fun getLiveEpisodesPaging(): Flow<PagingData<Episode>>
-
     fun getRandomEpisodes(
         max: Int,
         language: String? = null,
@@ -57,22 +55,14 @@ interface EpisodeRepository {
         excludeCategories: List<Category> = emptyList(),
     ): Flow<List<Episode>>
 
-    fun getRandomEpisodesPaging(
-        language: String?,
-        includeCategories: List<Category>,
-        excludeCategories: List<Category>,
-    ): Flow<PagingData<Episode>>
-
     fun getRecentEpisodes(
         max: Int,
         excludeString: String? = null,
     ): Flow<List<Episode>>
 
-    fun getRecentEpisodesPaging(): Flow<PagingData<Episode>>
-
     fun getSoundbiteEpisodes(max: Int): Flow<List<Episode>>
 
-    fun getSoundbiteEpisodesPaging(): Flow<PagingData<Episode>>
+    fun getSoundbiteEpisodesPaging(max: Int): Flow<PagingData<Episode>>
 
     fun getEpisodeById(id: Long): Flow<Episode?>
 

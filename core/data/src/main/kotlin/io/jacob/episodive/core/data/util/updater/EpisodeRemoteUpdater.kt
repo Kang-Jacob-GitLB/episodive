@@ -17,10 +17,12 @@ import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toEpisodes
 import io.jacob.episodive.core.network.mapper.toSoundbites
 import io.jacob.episodive.core.network.model.EpisodeResponse
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
 import kotlin.time.Clock
 
 class EpisodeRemoteUpdater @AssistedInject constructor(
@@ -58,16 +60,16 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
                 max = fetchSize,
             )
 
-            is EpisodeQuery.Live -> episodeRemote.getLiveEpisodes(max = 6)
+            is EpisodeQuery.Live -> episodeRemote.getLiveEpisodes(max = query.max)
             is EpisodeQuery.Random -> episodeRemote.getRandomEpisodes(
-                max = 6,
+                max = query.max,
                 language = query.language,
                 includeCategories = query.categories.toCommaString(),
             )
 
-            is EpisodeQuery.Recent -> episodeRemote.getRecentEpisodes(max = 6)
-            is EpisodeQuery.Soundbite -> coroutineScope {
-                val soundbites = soundbiteRemote.getSoundbites(max = 100)
+            is EpisodeQuery.Recent -> episodeRemote.getRecentEpisodes(max = query.max)
+            is EpisodeQuery.Soundbite -> {
+                val soundbites = soundbiteRemote.getSoundbites(max = query.max)
                     .filterNot {
                         val regex = Regex("\\p{InCJK_UNIFIED_IDEOGRAPHS}")
 
@@ -77,13 +79,12 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
                     }
                 soundbiteLocal.replaceSoundbites(soundbites.toSoundbites().toSoundbiteEntities())
 
-                soundbites.chunked(20).flatMap { chunk ->
-                    chunk.map { soundbite ->
-                        async {
-                            episodeRemote.getEpisodeById(soundbite.episodeId)
-                        }
-                    }.awaitAll().filterNotNull()
-                }
+                soundbites.asFlow()
+                    .flatMapMerge(concurrency = 10) { soundbite ->
+                        flow { emit(episodeRemote.getEpisodeById(soundbite.episodeId)) }
+                    }
+                    .filterNotNull()
+                    .toList()
             }
         }
     }
