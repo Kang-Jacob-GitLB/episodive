@@ -43,15 +43,21 @@ interface EpisodeDao {
     suspend fun upsertEpisodeGroups(episodeGroups: List<EpisodeGroupEntity>)
 
     @Transaction
+    @Query("SELECT COALESCE(MAX(`order`), -1) FROM episode_group WHERE groupKey = :groupKey")
+    suspend fun getMaxOrderByGroupKey(groupKey: String): Int
+
     suspend fun upsertEpisodesWithGroup(episodes: List<EpisodeEntity>, groupKey: String) {
+        if (episodes.isEmpty()) return
+
         upsertEpisodes(episodes)
 
         val createdAt = Clock.System.now()
-        val groups = episodes.mapIndexed { order, episode ->
+        val startOrder = getMaxOrderByGroupKey(groupKey) + 1
+        val groups = episodes.mapIndexed { index, episode ->
             EpisodeGroupEntity(
                 groupKey = groupKey,
                 id = episode.id,
-                order = order,
+                order = startOrder + index,
                 createdAt = createdAt,
             )
         }

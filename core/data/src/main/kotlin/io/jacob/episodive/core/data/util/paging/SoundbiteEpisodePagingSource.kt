@@ -7,6 +7,7 @@ import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeEntity
 import io.jacob.episodive.core.database.mapper.toSoundbiteEntities
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
+import io.jacob.episodive.core.model.GroupKey
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toEpisode
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
+import timber.log.Timber
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -42,6 +44,7 @@ class SoundbiteEpisodePagingSource(
 
             val offset = params.key ?: 0
             val limit = params.loadSize
+            Timber.w("offset: $offset, limit: $limit")
 
             val soundbites = soundbiteLocal.getSoundbitesPagingList(
                 offset = offset,
@@ -96,6 +99,9 @@ class SoundbiteEpisodePagingSource(
                 .toSoundbiteEntities()
 
             soundbiteLocal.replaceSoundbites(soundbiteEntities)
+            // 기존 soundbite 그룹의 episodes와 groups 정리
+            episodeLocal.replaceEpisodes(emptyList(), GROUP_KEY_SOUNDBITE)
+            Timber.w("replaceSoundbites size: ${soundbiteEntities.size}")
         }
     }
 
@@ -103,6 +109,7 @@ class SoundbiteEpisodePagingSource(
         val cachedEpisodes = episodeLocal.getEpisodesByIdsOneShot(episodeIds)
         val cachedEpisodeIds = cachedEpisodes.map { it.episode.id }.toSet()
         val missingEpisodeIds = episodeIds.filterNot { it in cachedEpisodeIds }
+        Timber.w("cached size: ${cachedEpisodes.size}, missing size: ${missingEpisodeIds.size}")
 
         if (missingEpisodeIds.isEmpty()) return
 
@@ -128,6 +135,7 @@ class SoundbiteEpisodePagingSource(
             .map { it.second }
 
         if (episodeEntities.isNotEmpty()) {
+            Timber.w("add soundbite episodes size: ${episodeEntities.size}")
             episodeLocal.upsertEpisodesWithGroup(
                 episodes = episodeEntities,
                 groupKey = GROUP_KEY_SOUNDBITE
@@ -136,6 +144,6 @@ class SoundbiteEpisodePagingSource(
     }
 
     companion object {
-        private const val GROUP_KEY_SOUNDBITE = "soundbite"
+        private val GROUP_KEY_SOUNDBITE = GroupKey.SOUNDBITE.toString()
     }
 }
