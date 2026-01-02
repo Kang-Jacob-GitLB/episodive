@@ -3,10 +3,12 @@ package io.jacob.episodive.core.database.mapper
 import androidx.annotation.RestrictTo
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
+import io.jacob.episodive.core.database.model.FeedEntity
 import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.database.model.PodcastWithExtrasView
 import io.jacob.episodive.core.database.model.SoundbiteEntity
 import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.Feed
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Soundbite
 import kotlin.time.Clock
@@ -200,6 +202,35 @@ fun Episode.toEpisodeEntity(): EpisodeEntity =
 
 fun List<Episode>.toEpisodeEntities(): List<EpisodeEntity> =
     map { it.toEpisodeEntity() }
+
+fun Feed.toFeedEntity(
+    groupKey: String,
+    cachedAt: Instant = Clock.System.now(),
+): FeedEntity =
+    FeedEntity(
+        id = id,
+        url = url,
+        title = title,
+        newestItemPublishTime = newestItemPublishTime,
+        description = description,
+        image = image,
+        itunesId = itunesId,
+        language = language,
+        categories = categories,
+        groupKey = groupKey,
+        cachedAt = cachedAt,
+    )
+
+fun List<Feed>.toFeedEntities(
+    groupKey: String,
+    cachedAt: Instant = Clock.System.now(),
+): List<FeedEntity> =
+    map {
+        it.toFeedEntity(
+            groupKey = groupKey,
+            cachedAt = cachedAt,
+        )
+    }
 
 fun Soundbite.toSoundbiteEntity(
     cachedAt: Instant = Clock.System.now(),

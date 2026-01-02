@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import io.jacob.episodive.core.database.dao.EpisodeDao
+import io.jacob.episodive.core.database.dao.FeedDao
 import io.jacob.episodive.core.database.dao.PodcastDao
 import io.jacob.episodive.core.database.dao.RecentSearchDao
 import io.jacob.episodive.core.database.dao.SoundbiteDao
@@ -17,6 +18,7 @@ import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeFtsEntity
 import io.jacob.episodive.core.database.model.EpisodeGroupEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
+import io.jacob.episodive.core.database.model.FeedEntity
 import io.jacob.episodive.core.database.model.FollowedPodcastEntity
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
@@ -43,6 +45,7 @@ import io.jacob.episodive.core.database.util.MediumConverter
         EpisodeGroupEntity::class,
         LikedEpisodeEntity::class,
         PlayedEpisodeEntity::class,
+        FeedEntity::class,
         SoundbiteEntity::class,
         RecentSearchEntity::class,
     ],
@@ -50,7 +53,7 @@ import io.jacob.episodive.core.database.util.MediumConverter
         PodcastWithExtrasView::class,
         EpisodeWithExtrasView::class,
     ],
-    version = 7,
+    version = 8,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3, spec = AutoMigration2to3::class),
@@ -58,6 +61,7 @@ import io.jacob.episodive.core.database.util.MediumConverter
         AutoMigration(from = 4, to = 5, spec = AutoMigration4to5::class),
         AutoMigration(from = 5, to = 6, spec = AutoMigration5to6::class),
         AutoMigration(from = 6, to = 7, spec = AutoMigration6to7::class),
+        AutoMigration(from = 7, to = 8),
     ],
     exportSchema = true
 )
@@ -71,6 +75,7 @@ import io.jacob.episodive.core.database.util.MediumConverter
 abstract class EpisodiveDatabase : RoomDatabase() {
     abstract fun podcastDao(): PodcastDao
     abstract fun episodeDao(): EpisodeDao
+    abstract fun feedDao(): FeedDao
     abstract fun soundbiteDao(): SoundbiteDao
     abstract fun recentSearchDao(): RecentSearchDao
 }

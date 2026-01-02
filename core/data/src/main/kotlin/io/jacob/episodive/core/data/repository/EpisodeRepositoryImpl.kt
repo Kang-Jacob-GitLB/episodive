@@ -30,8 +30,8 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 
 class EpisodeRepositoryImpl @Inject constructor(
-    private val localDataSource: EpisodeLocalDataSource,
-    private val remoteDataSource: EpisodeRemoteDataSource,
+    private val episodeLocalDataSource: EpisodeLocalDataSource,
+    private val episodeRemoteDataSource: EpisodeRemoteDataSource,
     private val chapterRemoteDataSource: ChapterRemoteDataSource,
     private val soundbiteLocalDataSource: SoundbiteLocalDataSource,
     private val soundbiteRemoteDataSource: SoundbiteRemoteDataSource,
@@ -44,7 +44,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     )
 
     override suspend fun upsertEpisode(episode: Episode) {
-        localDataSource.upsertEpisode(episode.toEpisodeEntity())
+        episodeLocalDataSource.upsertEpisode(episode.toEpisodeEntity())
     }
 
     override fun searchEpisodesByPerson(
@@ -74,7 +74,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         feedId: Long,
         max: Int,
     ): Flow<List<Episode>> = flow {
-        remoteDataSource.getEpisodesByFeedId(
+        episodeRemoteDataSource.getEpisodesByFeedId(
             feedId = feedId,
             max = max,
         ).toEpisodes()
@@ -175,8 +175,8 @@ class EpisodeRepositoryImpl @Inject constructor(
             ),
             pagingSourceFactory = {
                 SoundbiteEpisodePagingSource(
-                    episodeLocal = localDataSource,
-                    episodeRemote = remoteDataSource,
+                    episodeLocal = episodeLocalDataSource,
+                    episodeRemote = episodeRemoteDataSource,
                     soundbiteLocal = soundbiteLocalDataSource,
                     soundbiteRemote = soundbiteRemoteDataSource,
                     maxSoundbites = max
@@ -188,17 +188,17 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun getEpisodeById(id: Long): Flow<Episode?> {
-        return localDataSource.getEpisodeById(id)
+        return episodeLocalDataSource.getEpisodeById(id)
             .map { it?.toEpisode() }
     }
 
     override fun getEpisodesByIds(ids: List<Long>): Flow<List<Episode>> {
-        return localDataSource.getEpisodesByIds(ids)
+        return episodeLocalDataSource.getEpisodesByIds(ids)
             .map { it.toEpisodes() }
     }
 
     override fun getLikedEpisodes(query: String?, max: Int): Flow<List<Episode>> {
-        return localDataSource.getLikedEpisodes(
+        return episodeLocalDataSource.getLikedEpisodes(
             query = query,
             limit = max,
         ).map { it.toEpisodes() }
@@ -207,7 +207,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     override fun getLikedEpisodesPaging(query: String?): Flow<PagingData<Episode>> {
         return Pager(
             config = config,
-            pagingSourceFactory = { localDataSource.getLikedEpisodesPaging(query) }
+            pagingSourceFactory = { episodeLocalDataSource.getLikedEpisodesPaging(query) }
         ).flow.map { pagingData ->
             pagingData.map { it.toEpisode() }
         }
@@ -218,7 +218,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         query: String?,
         max: Int,
     ): Flow<List<Episode>> {
-        return localDataSource.getPlayedEpisodes(
+        return episodeLocalDataSource.getPlayedEpisodes(
             isCompleted = isCompleted,
             query = query,
             limit = max,
@@ -232,7 +232,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         return Pager(
             config = config,
             pagingSourceFactory = {
-                localDataSource.getPlayedEpisodesPaging(
+                episodeLocalDataSource.getPlayedEpisodesPaging(
                     isCompleted = isCompleted,
                     query = query,
                 )
@@ -243,11 +243,11 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun isLikedEpisode(episode: Episode): Flow<Boolean> {
-        return localDataSource.isLikedEpisode(episode.toEpisodeEntity())
+        return episodeLocalDataSource.isLikedEpisode(episode.toEpisodeEntity())
     }
 
     override suspend fun toggleLikedEpisode(episode: Episode): Boolean {
-        return localDataSource.toggleLikedEpisode(episode.toEpisodeEntity())
+        return episodeLocalDataSource.toggleLikedEpisode(episode.toEpisodeEntity())
     }
 
     override suspend fun updatePlayed(
@@ -255,7 +255,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         position: Duration,
         isCompleted: Boolean,
     ) {
-        localDataSource.updatePlayedEpisode(
+        episodeLocalDataSource.updatePlayedEpisode(
             PlayedEpisodeEntity(
                 id = id,
                 playedAt = Clock.System.now(),
@@ -266,11 +266,11 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateEpisodeDuration(id: Long, duration: Duration) {
-        localDataSource.updateEpisodeDuration(id, duration)
+        episodeLocalDataSource.updateEpisodeDuration(id, duration)
     }
 
     override suspend fun replaceEpisodes(episodes: List<Episode>, groupKey: String) {
-        localDataSource.replaceEpisodes(episodes.toEpisodeEntities(), groupKey)
+        episodeLocalDataSource.replaceEpisodes(episodes.toEpisodeEntities(), groupKey)
     }
 
     override suspend fun fetchChapters(url: String): List<Chapter> {

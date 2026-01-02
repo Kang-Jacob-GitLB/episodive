@@ -15,6 +15,7 @@ import io.jacob.episodive.core.data.repository.UserRepositoryImpl
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
+import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.datasource.RecentSearchLocalDataSource
 import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
@@ -28,6 +29,7 @@ import io.jacob.episodive.core.domain.repository.UserRepository
 import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
+import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
@@ -51,11 +53,15 @@ object RepositoryModule {
     fun providePodcastRepository(
         podcastLocalDataSource: PodcastLocalDataSource,
         podcastRemoteDataSource: PodcastRemoteDataSource,
+        feedLocalDataSource: FeedLocalDataSource,
+        feedRemoteDataSource: FeedRemoteDataSource,
         podcastRemoteUpdater: PodcastRemoteUpdater.Factory,
     ): PodcastRepository {
         return PodcastRepositoryImpl(
-            localDataSource = podcastLocalDataSource,
-            remoteDataSource = podcastRemoteDataSource,
+            podcastLocalDataSource = podcastLocalDataSource,
+            podcastRemoteDataSource = podcastRemoteDataSource,
+            feedLocalDataSource = feedLocalDataSource,
+            feedRemoteDataSource = feedRemoteDataSource,
             remoteUpdater = podcastRemoteUpdater,
         )
     }
@@ -71,8 +77,8 @@ object RepositoryModule {
         episodeRemoteUpdater: EpisodeRemoteUpdater.Factory,
     ): EpisodeRepository {
         return EpisodeRepositoryImpl(
-            localDataSource = episodeLocalDataSource,
-            remoteDataSource = episodeRemoteDataSource,
+            episodeLocalDataSource = episodeLocalDataSource,
+            episodeRemoteDataSource = episodeRemoteDataSource,
             chapterRemoteDataSource = chapterRemoteDataSource,
             soundbiteLocalDataSource = soundbiteLocalDataSource,
             soundbiteRemoteDataSource = soundbiteRemoteDataSource,

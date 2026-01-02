@@ -16,14 +16,14 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
-class GetUserRecommendedPodcastsUseCaseTest {
+class GetUserRecommendedPodcastsPagingUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     private val userRepository = mockk<UserRepository>(relaxed = true)
     private val podcastRepository = mockk<PodcastRepository>(relaxed = true)
 
-    private val useCase = GetUserRecommendedPodcastsUseCase(
+    private val useCase = GetUserRecommendedPodcastsPagingUseCase(
         userRepository = userRepository,
         podcastRepository = podcastRepository,
     )
@@ -49,7 +49,7 @@ class GetUserRecommendedPodcastsUseCaseTest {
                 )
             )
             coEvery {
-                podcastRepository.getRecommendedPodcasts(any(), any(), any())
+                podcastRepository.getRecommendedPodcastsPaging(any(), any(), any())
             } returns mockk(relaxed = true)
 
             // When
@@ -60,7 +60,7 @@ class GetUserRecommendedPodcastsUseCaseTest {
             // Then
             coVerifySequence {
                 userRepository.getUserData()
-                podcastRepository.getRecommendedPodcasts(
+                podcastRepository.getRecommendedPodcastsPaging(
                     50,
                     "ko",
                     listOf(Category.AFTER_SHOWS, Category.BUSINESS)

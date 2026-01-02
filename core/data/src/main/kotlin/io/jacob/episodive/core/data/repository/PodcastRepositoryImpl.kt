@@ -4,8 +4,10 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import io.jacob.episodive.core.data.util.paging.RecommendedPodcastPagingSource
 import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
+import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.mapper.toPodcast
 import io.jacob.episodive.core.database.mapper.toPodcasts
@@ -13,6 +15,7 @@ import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Podcast
+import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toPodcasts
 import kotlinx.coroutines.flow.Flow
@@ -21,8 +24,10 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class PodcastRepositoryImpl @Inject constructor(
-    private val localDataSource: PodcastLocalDataSource,
-    private val remoteDataSource: PodcastRemoteDataSource,
+    private val podcastLocalDataSource: PodcastLocalDataSource,
+    private val podcastRemoteDataSource: PodcastRemoteDataSource,
+    private val feedLocalDataSource: FeedLocalDataSource,
+    private val feedRemoteDataSource: FeedRemoteDataSource,
     private val remoteUpdater: PodcastRemoteUpdater.Factory,
 ) : PodcastRepository {
     private val config = PagingConfig(
@@ -35,7 +40,7 @@ class PodcastRepositoryImpl @Inject constructor(
         query: String,
         max: Int,
     ): Flow<List<Podcast>> = flow {
-        remoteDataSource.searchPodcasts(
+        podcastRemoteDataSource.searchPodcasts(
             query = query,
             max = max,
         ).toPodcasts()
@@ -149,8 +154,36 @@ class PodcastRepositoryImpl @Inject constructor(
             .map { it.toPodcasts() }
     }
 
+    override fun getRecommendedPodcastsPaging(
+        max: Int,
+        language: String?,
+        includeCategories: List<Category>
+    ): Flow<PagingData<Podcast>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 10,
+                prefetchDistance = 5,
+                initialLoadSize = 10,
+                enablePlaceholders = false,
+            ),
+            pagingSourceFactory = {
+                RecommendedPodcastPagingSource(
+                    podcastLocal = podcastLocalDataSource,
+                    podcastRemote = podcastRemoteDataSource,
+                    feedLocal = feedLocalDataSource,
+                    feedRemote = feedRemoteDataSource,
+                    maxFeeds = max,
+                    language = language,
+                    categories = includeCategories,
+                )
+            }
+        ).flow.map { pagingData ->
+            pagingData.map { it.toPodcast() }
+        }
+    }
+
     override fun getFollowedPodcasts(query: String?, max: Int): Flow<List<Podcast>> {
-        return localDataSource.getFollowedPodcasts(query, max)
+        return podcastLocalDataSource.getFollowedPodcasts(query, max)
             .map { podcasts ->
                 podcasts.toPodcasts()
             }
@@ -159,13 +192,13 @@ class PodcastRepositoryImpl @Inject constructor(
     override fun getFollowedPodcastsPaging(query: String?): Flow<PagingData<Podcast>> {
         return Pager(
             config = config,
-            pagingSourceFactory = { localDataSource.getFollowedPodcastsPaging(query) }
+            pagingSourceFactory = { podcastLocalDataSource.getFollowedPodcastsPaging(query) }
         ).flow.map { pagingData ->
             pagingData.map { it.toPodcast() }
         }
     }
 
     override suspend fun toggleFollowed(id: Long): Boolean {
-        return localDataSource.toggleFollowedPodcast(id)
+        return podcastLocalDataSource.toggleFollowedPodcast(id)
     }
 }

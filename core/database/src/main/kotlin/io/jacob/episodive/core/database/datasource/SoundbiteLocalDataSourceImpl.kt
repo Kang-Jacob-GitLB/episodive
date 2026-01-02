@@ -14,10 +14,6 @@ class SoundbiteLocalDataSourceImpl @Inject constructor(
         soundbiteDao.upsertSoundbites(soundbites)
     }
 
-    override suspend fun deleteSoundbite(episodeId: Long) {
-        soundbiteDao.deleteSoundbite(episodeId)
-    }
-
     override suspend fun deleteSoundbites() {
         soundbiteDao.deleteSoundbites()
     }

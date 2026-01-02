@@ -7,7 +7,6 @@ import kotlin.time.Instant
 
 interface SoundbiteLocalDataSource {
     suspend fun upsertSoundbites(soundbites: List<SoundbiteEntity>)
-    suspend fun deleteSoundbite(episodeId: Long)
     suspend fun deleteSoundbites()
     suspend fun replaceSoundbites(soundbites: List<SoundbiteEntity>)
     fun getSoundbites(limit: Int): Flow<List<SoundbiteEntity>>

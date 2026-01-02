@@ -20,6 +20,10 @@ object DaoModule {
 
     @Provides
     @Singleton
+    fun provideFeedDao(database: EpisodiveDatabase) = database.feedDao()
+
+    @Provides
+    @Singleton
     fun provideSoundbiteDao(database: EpisodiveDatabase) = database.soundbiteDao()
 
     @Provides

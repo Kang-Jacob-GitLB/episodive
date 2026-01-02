@@ -37,8 +37,8 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         return episodeDao.getEpisodesByIds(ids)
     }
 
-    override suspend fun getEpisodesByIdsOneShot(ids: List<Long>): List<EpisodeWithExtrasView> {
-        return episodeDao.getEpisodesByIdsOneShot(ids)
+    override suspend fun getEpisodesByIdsOnce(ids: List<Long>): List<EpisodeWithExtrasView> {
+        return episodeDao.getEpisodesByIdsOnce(ids)
     }
 
     override fun getEpisodes(query: String?, limit: Int): Flow<List<EpisodeWithExtrasView>> {

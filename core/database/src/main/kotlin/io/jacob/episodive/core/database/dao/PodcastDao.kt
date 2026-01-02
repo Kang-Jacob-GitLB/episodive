@@ -81,6 +81,9 @@ interface PodcastDao {
     @Query("SELECT * FROM podcast_with_extras WHERE id IN (:ids)")
     fun getPodcastsByIds(ids: List<Long>): Flow<List<PodcastWithExtrasView>>
 
+    @Query("SELECT * FROM podcast_with_extras WHERE id IN (:ids)")
+    suspend fun getPodcastsByIdsOnce(ids: List<Long>): List<PodcastWithExtrasView>
+
     @Query(
         """
         SELECT * FROM podcast_with_extras

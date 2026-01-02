@@ -63,7 +63,7 @@ class SoundbiteEpisodePagingSource(
 
             fetchMissingEpisodes(episodeIds, concurrency = limit)
 
-            val allEpisodes = episodeLocal.getEpisodesByIdsOneShot(episodeIds)
+            val allEpisodes = episodeLocal.getEpisodesByIdsOnce(episodeIds)
             val orderedEpisodes = episodeIds.mapNotNull { id ->
                 allEpisodes.find { it.episode.id == id }
             }
@@ -106,7 +106,7 @@ class SoundbiteEpisodePagingSource(
     }
 
     private suspend fun fetchMissingEpisodes(episodeIds: List<Long>, concurrency: Int) {
-        val cachedEpisodes = episodeLocal.getEpisodesByIdsOneShot(episodeIds)
+        val cachedEpisodes = episodeLocal.getEpisodesByIdsOnce(episodeIds)
         val cachedEpisodeIds = cachedEpisodes.map { it.episode.id }.toSet()
         val missingEpisodeIds = episodeIds.filterNot { it in cachedEpisodeIds }
         Timber.w("cached size: ${cachedEpisodes.size}, missing size: ${missingEpisodeIds.size}")

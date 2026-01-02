@@ -33,8 +33,8 @@ class PodcastRepositoryTest {
     private val remoteUpdater = mockk<PodcastRemoteUpdater.Factory>(relaxed = true)
 
     private val repository: PodcastRepository = PodcastRepositoryImpl(
-        localDataSource = localDataSource,
-        remoteDataSource = remoteDataSource,
+        podcastLocalDataSource = localDataSource,
+        podcastRemoteDataSource = remoteDataSource,
         remoteUpdater = remoteUpdater,
     )
 

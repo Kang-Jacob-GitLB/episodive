@@ -7,8 +7,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 
 interface PodcastLocalDataSource {
+    suspend fun upsertPodcastsWithGroup(podcasts: List<PodcastEntity>, groupKey: String)
     fun getPodcastById(id: Long): Flow<PodcastWithExtrasView?>
     fun getPodcastsByIds(ids: List<Long>): Flow<List<PodcastWithExtrasView>>
+    suspend fun getPodcastsByIdsOnce(ids: List<Long>): List<PodcastWithExtrasView>
     fun getPodcasts(query: String? = null, limit: Int): Flow<List<PodcastWithExtrasView>>
     fun getPodcastsPaging(query: String? = null): PagingSource<Int, PodcastWithExtrasView>
     fun getPodcastsByGroupKey(groupKey: String, limit: Int): Flow<List<PodcastWithExtrasView>>
