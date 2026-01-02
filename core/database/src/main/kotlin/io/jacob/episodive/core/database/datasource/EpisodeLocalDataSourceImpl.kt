@@ -18,6 +18,10 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
         episodeDao.upsertEpisode(episode)
     }
 
+    override suspend fun upsertEpisodesWithGroup(episodes: List<EpisodeEntity>, groupKey: String) {
+        episodeDao.upsertEpisodesWithGroup(episodes, groupKey)
+    }
+
     override suspend fun updateEpisodeDuration(id: Long, duration: Duration) {
         episodeDao.updateEpisodeDuration(
             id = id,
@@ -31,6 +35,10 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
 
     override fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeWithExtrasView>> {
         return episodeDao.getEpisodesByIds(ids)
+    }
+
+    override suspend fun getEpisodesByIdsOneShot(ids: List<Long>): List<EpisodeWithExtrasView> {
+        return episodeDao.getEpisodesByIdsOneShot(ids)
     }
 
     override fun getEpisodes(query: String?, limit: Int): Flow<List<EpisodeWithExtrasView>> {

@@ -32,6 +32,9 @@ interface SoundbiteDao {
     @Query("SELECT * FROM soundbites")
     fun getSoundbitesPaging(): PagingSource<Int, SoundbiteEntity>
 
+    @Query("SELECT * FROM soundbites LIMIT :limit OFFSET :offset")
+    suspend fun getSoundbitesPagingList(offset: Int, limit: Int): List<SoundbiteEntity>
+
     @Query("SELECT MIN(cachedAt) FROM soundbites")
     suspend fun getSoundbitesOldestCachedAt(): Instant?
 }

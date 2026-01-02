@@ -34,6 +34,10 @@ class SoundbiteLocalDataSourceImpl @Inject constructor(
         return soundbiteDao.getSoundbitesPaging()
     }
 
+    override suspend fun getSoundbitesPagingList(offset: Int, limit: Int): List<SoundbiteEntity> {
+        return soundbiteDao.getSoundbitesPagingList(offset, limit)
+    }
+
     override suspend fun getSoundbitesOldestCachedAt(): Instant? {
         return soundbiteDao.getSoundbitesOldestCachedAt()
     }

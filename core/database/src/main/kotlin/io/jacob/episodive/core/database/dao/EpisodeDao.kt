@@ -87,6 +87,9 @@ interface EpisodeDao {
     @Query("SELECT * FROM episode_with_extras WHERE id IN (:ids)")
     fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeWithExtrasView>>
 
+    @Query("SELECT * FROM episode_with_extras WHERE id IN (:ids)")
+    suspend fun getEpisodesByIdsOneShot(ids: List<Long>): List<EpisodeWithExtrasView>
+
     @Query(
         """
         SELECT * FROM episode_with_extras

@@ -12,5 +12,6 @@ interface SoundbiteLocalDataSource {
     suspend fun replaceSoundbites(soundbites: List<SoundbiteEntity>)
     fun getSoundbites(limit: Int): Flow<List<SoundbiteEntity>>
     fun getSoundbitesPaging(): PagingSource<Int, SoundbiteEntity>
+    suspend fun getSoundbitesPagingList(offset: Int, limit: Int): List<SoundbiteEntity>
     suspend fun getSoundbitesOldestCachedAt(): Instant?
 }

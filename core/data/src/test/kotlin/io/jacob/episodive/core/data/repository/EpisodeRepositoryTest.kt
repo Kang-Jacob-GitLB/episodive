@@ -6,12 +6,14 @@ import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
+import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeEntity
 import io.jacob.episodive.core.database.mapper.toEpisodeWithExtrasViews
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
+import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.model.EpisodeResponse
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
@@ -39,12 +41,16 @@ class EpisodeRepositoryTest {
     private val localDataSource = mockk<EpisodeLocalDataSource>(relaxed = true)
     private val remoteDataSource = mockk<EpisodeRemoteDataSource>(relaxed = true)
     private val chapterRemoteDataSource = mockk<ChapterRemoteDataSource>(relaxed = true)
+    private val soundbiteLocalDataSource = mockk<SoundbiteLocalDataSource>(relaxed = true)
+    private val soundbiteRemoteDataSource = mockk<SoundbiteRemoteDataSource>(relaxed = true)
     private val remoteUpdater = mockk<EpisodeRemoteUpdater.Factory>(relaxed = true)
 
     private val repository: EpisodeRepository = EpisodeRepositoryImpl(
         localDataSource = localDataSource,
         remoteDataSource = remoteDataSource,
         chapterRemoteDataSource = chapterRemoteDataSource,
+        soundbiteLocalDataSource = soundbiteLocalDataSource,
+        soundbiteRemoteDataSource = soundbiteRemoteDataSource,
         remoteUpdater = remoteUpdater,
     )
 
@@ -56,7 +62,9 @@ class EpisodeRepositoryTest {
             localDataSource,
             remoteDataSource,
             remoteUpdater,
-            chapterRemoteDataSource
+            chapterRemoteDataSource,
+            soundbiteLocalDataSource,
+            soundbiteRemoteDataSource
         )
     }
 

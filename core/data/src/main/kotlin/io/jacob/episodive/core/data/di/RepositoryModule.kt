@@ -17,6 +17,7 @@ import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.datasource.RecentSearchLocalDataSource
+import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.datastore.datasource.UserPreferencesDataSource
 import io.jacob.episodive.core.domain.repository.ChannelRepository
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
@@ -28,6 +29,7 @@ import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
+import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import javax.inject.Singleton
 
@@ -64,12 +66,16 @@ object RepositoryModule {
         episodeLocalDataSource: EpisodeLocalDataSource,
         episodeRemoteDataSource: EpisodeRemoteDataSource,
         chapterRemoteDataSource: ChapterRemoteDataSource,
+        soundbiteLocalDataSource: SoundbiteLocalDataSource,
+        soundbiteRemoteDataSource: SoundbiteRemoteDataSource,
         episodeRemoteUpdater: EpisodeRemoteUpdater.Factory,
     ): EpisodeRepository {
         return EpisodeRepositoryImpl(
             localDataSource = episodeLocalDataSource,
             remoteDataSource = episodeRemoteDataSource,
             chapterRemoteDataSource = chapterRemoteDataSource,
+            soundbiteLocalDataSource = soundbiteLocalDataSource,
+            soundbiteRemoteDataSource = soundbiteRemoteDataSource,
             remoteUpdater = episodeRemoteUpdater,
         )
     }

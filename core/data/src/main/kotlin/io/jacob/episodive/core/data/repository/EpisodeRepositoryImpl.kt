@@ -4,9 +4,11 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import io.jacob.episodive.core.data.util.paging.SoundbiteEpisodePagingSource
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
+import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisode
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
 import io.jacob.episodive.core.database.mapper.toEpisodeEntity
@@ -18,6 +20,7 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
+import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toEpisodes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -30,6 +33,8 @@ class EpisodeRepositoryImpl @Inject constructor(
     private val localDataSource: EpisodeLocalDataSource,
     private val remoteDataSource: EpisodeRemoteDataSource,
     private val chapterRemoteDataSource: ChapterRemoteDataSource,
+    private val soundbiteLocalDataSource: SoundbiteLocalDataSource,
+    private val soundbiteRemoteDataSource: SoundbiteRemoteDataSource,
     private val remoteUpdater: EpisodeRemoteUpdater.Factory,
 ) : EpisodeRepository {
     private val config = PagingConfig(
@@ -169,13 +174,25 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun getSoundbiteEpisodesPaging(max: Int): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Soundbite(max)
-
-        return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toEpisode() }
+        return Pager(
+            config = PagingConfig(
+                pageSize = 5,
+                prefetchDistance = 5,
+                initialLoadSize = 10,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                SoundbiteEpisodePagingSource(
+                    episodeLocal = localDataSource,
+                    episodeRemote = remoteDataSource,
+                    soundbiteLocal = soundbiteLocalDataSource,
+                    soundbiteRemote = soundbiteRemoteDataSource,
+                    maxSoundbites = max
+                )
             }
+        ).flow.map { pagingData ->
+            pagingData.map { it.toEpisode() }
+        }
     }
 
     override fun getEpisodeById(id: Long): Flow<Episode?> {
