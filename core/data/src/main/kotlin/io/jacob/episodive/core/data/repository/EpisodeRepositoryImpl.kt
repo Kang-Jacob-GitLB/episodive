@@ -165,14 +165,6 @@ class EpisodeRepositoryImpl @Inject constructor(
             .map { it.toEpisodes() }
     }
 
-    override fun getSoundbiteEpisodes(max: Int): Flow<List<Episode>> {
-        val query = EpisodeQuery.Soundbite(max)
-
-        return remoteUpdater.create(query)
-            .getFlowList(max)
-            .map { it.toEpisodes() }
-    }
-
     override fun getSoundbiteEpisodesPaging(max: Int): Flow<PagingData<Episode>> {
         return Pager(
             config = PagingConfig(

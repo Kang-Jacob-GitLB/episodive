@@ -8,7 +8,6 @@ import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.model.EpisodeResponse
-import io.jacob.episodive.core.network.model.SoundbiteResponse
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -501,105 +500,6 @@ class EpisodeRemoteUpdaterTest {
                 episodeLocal.getOldestCreatedAtByGroupKey(any())
                 episodeRemote.getRecentEpisodes(max = max)
                 episodeLocal.replaceEpisodes(any(), any())
-            }
-        }
-
-//    @Test
-//    fun `Given dependencies, When recent query paging, Then call dataSource's functions`() =
-//        runTest {
-//            // Given
-//            val query = EpisodeQuery.Recent
-//            val updater = EpisodeRemoteUpdater(
-//                episodeLocal = episodeLocal,
-//                episodeRemote = episodeRemote,
-//                soundbiteLocal = soundbiteLocal,
-//                soundbiteRemote = soundbiteRemote,
-//                query = query,
-//            )
-//            coEvery {
-//                episodeLocal.getEpisodesByGroupKeyPaging(any())
-//            } returns mockk(relaxed = true)
-//            coEvery {
-//                episodeLocal.getOldestCreatedAtByGroupKey(any())
-//            } returns null
-//            coEvery {
-//                episodeRemote.getRecentEpisodes(any())
-//            } returns listOf(mockk<EpisodeResponse>(relaxed = true))
-//            coEvery {
-//                episodeLocal.replaceEpisodes(any(), any())
-//            } just Runs
-//
-//            // When
-//            updater.getPagingData(
-//                pagingConfig = PagingConfig(
-//                    pageSize = 10,
-//                    initialLoadSize = 10,
-//                    prefetchDistance = 5,
-//                )
-//            ).test {
-//                cancelAndIgnoreRemainingEvents()
-//            }
-//
-//            // Then
-//            coVerifySequence {
-//                episodeLocal.getOldestCreatedAtByGroupKey(any())
-//                episodeRemote.getRecentEpisodes(max = 6)
-//                episodeLocal.replaceEpisodes(any(), any())
-//                episodeLocal.getEpisodesByGroupKeyPaging(any())
-//            }
-//        }
-
-    @Test
-    fun `Given dependencies, When soundbite query paging, Then call dataSource's functions`() =
-        runTest {
-            // Given
-            val max = 100
-            val query = EpisodeQuery.Soundbite(max = max)
-            val updater = EpisodeRemoteUpdater(
-                episodeLocal = episodeLocal,
-                episodeRemote = episodeRemote,
-                soundbiteLocal = soundbiteLocal,
-                soundbiteRemote = soundbiteRemote,
-                query = query,
-            )
-            coEvery {
-                episodeLocal.getEpisodesByGroupKeyPaging(any())
-            } returns mockk(relaxed = true)
-            coEvery {
-                episodeLocal.getOldestCreatedAtByGroupKey(any())
-            } returns null
-            coEvery {
-                episodeRemote.getEpisodeById(any())
-            } returns mockk<EpisodeResponse>(relaxed = true)
-            coEvery {
-                episodeLocal.replaceEpisodes(any(), any())
-            } just Runs
-            coEvery {
-                soundbiteLocal.replaceSoundbites(any())
-            } just Runs
-            coEvery {
-                soundbiteRemote.getSoundbites(any())
-            } returns listOf(mockk<SoundbiteResponse>(relaxed = true))
-
-            // When
-            updater.getPagingData(
-                pagingConfig = PagingConfig(
-                    pageSize = 10,
-                    initialLoadSize = 10,
-                    prefetchDistance = 5,
-                )
-            ).test {
-                cancelAndIgnoreRemainingEvents()
-            }
-
-            // Then
-            coVerifySequence {
-                episodeLocal.getOldestCreatedAtByGroupKey(any())
-                soundbiteRemote.getSoundbites(max = max)
-                soundbiteLocal.replaceSoundbites(any())
-                episodeRemote.getEpisodeById(any())
-                episodeLocal.replaceEpisodes(any(), any())
-                episodeLocal.getEpisodesByGroupKeyPaging(any())
             }
         }
 }

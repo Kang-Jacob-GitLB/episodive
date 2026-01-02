@@ -60,8 +60,6 @@ interface EpisodeRepository {
         excludeString: String? = null,
     ): Flow<List<Episode>>
 
-    fun getSoundbiteEpisodes(max: Int): Flow<List<Episode>>
-
     fun getSoundbiteEpisodesPaging(max: Int): Flow<PagingData<Episode>>
 
     fun getEpisodeById(id: Long): Flow<Episode?>

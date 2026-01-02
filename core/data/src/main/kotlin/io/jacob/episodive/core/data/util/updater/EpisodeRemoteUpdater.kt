@@ -8,21 +8,14 @@ import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
-import io.jacob.episodive.core.database.mapper.toSoundbiteEntities
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.model.mapper.toCommaString
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toEpisodes
-import io.jacob.episodive.core.network.mapper.toSoundbites
 import io.jacob.episodive.core.network.model.EpisodeResponse
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flatMapMerge
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.toList
 import kotlin.time.Clock
 
 class EpisodeRemoteUpdater @AssistedInject constructor(
@@ -68,24 +61,6 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
             )
 
             is EpisodeQuery.Recent -> episodeRemote.getRecentEpisodes(max = query.max)
-            is EpisodeQuery.Soundbite -> {
-                val soundbites = soundbiteRemote.getSoundbites(max = query.max)
-                    .filterNot {
-                        val regex = Regex("\\p{InCJK_UNIFIED_IDEOGRAPHS}")
-
-                        it.title.contains(regex) ||
-                                it.episodeTitle.contains(regex) ||
-                                it.feedTitle.contains(regex)
-                    }
-                soundbiteLocal.replaceSoundbites(soundbites.toSoundbites().toSoundbiteEntities())
-
-                soundbites.asFlow()
-                    .flatMapMerge(concurrency = 10) { soundbite ->
-                        flow { emit(episodeRemote.getEpisodeById(soundbite.episodeId)) }
-                    }
-                    .filterNotNull()
-                    .toList()
-            }
         }
     }
 

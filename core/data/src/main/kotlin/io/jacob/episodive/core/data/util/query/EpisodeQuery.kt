@@ -53,9 +53,4 @@ sealed interface EpisodeQuery : CacheableQuery {
         override val key = GroupKey.RECENT.toString()
         override val timeToLive = 10.minutes
     }
-
-    data class Soundbite(val max: Int) : EpisodeQuery {
-        override val key = GroupKey.SOUNDBITE.toString()
-        override val timeToLive = 10.minutes
-    }
 }
