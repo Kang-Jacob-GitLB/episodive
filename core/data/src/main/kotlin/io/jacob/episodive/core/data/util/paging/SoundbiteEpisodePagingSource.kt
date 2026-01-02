@@ -61,7 +61,7 @@ class SoundbiteEpisodePagingSource(
 
             val episodeIds = soundbites.map { it.episodeId }
 
-            fetchMissingEpisodes(episodeIds)
+            fetchMissingEpisodes(episodeIds, concurrency = limit)
 
             val allEpisodes = episodeLocal.getEpisodesByIdsOneShot(episodeIds)
             val orderedEpisodes = episodeIds.mapNotNull { id ->
@@ -105,7 +105,7 @@ class SoundbiteEpisodePagingSource(
         }
     }
 
-    private suspend fun fetchMissingEpisodes(episodeIds: List<Long>) {
+    private suspend fun fetchMissingEpisodes(episodeIds: List<Long>, concurrency: Int) {
         val cachedEpisodes = episodeLocal.getEpisodesByIdsOneShot(episodeIds)
         val cachedEpisodeIds = cachedEpisodes.map { it.episode.id }.toSet()
         val missingEpisodeIds = episodeIds.filterNot { it in cachedEpisodeIds }
@@ -116,7 +116,7 @@ class SoundbiteEpisodePagingSource(
         val episodeEntities = missingEpisodeIds
             .withIndex()
             .asFlow()
-            .flatMapMerge(concurrency = 5) { (index, episodeId) ->
+            .flatMapMerge(concurrency = concurrency) { (index, episodeId) ->
                 flow {
                     try {
                         val episodeResponse = episodeRemote.getEpisodeById(episodeId)
@@ -126,7 +126,7 @@ class SoundbiteEpisodePagingSource(
                             emit(index to episodeEntity)
                         }
                     } catch (e: Exception) {
-                        // Continue with other episodes if one fails
+                        e.printStackTrace()
                     }
                 }
             }
