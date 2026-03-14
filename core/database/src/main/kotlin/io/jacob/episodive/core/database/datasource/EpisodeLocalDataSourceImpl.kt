@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.database.datasource
 
 import androidx.paging.PagingSource
+import androidx.room.RoomDatabase
 import io.jacob.episodive.core.database.dao.EpisodeDao
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
@@ -12,6 +13,7 @@ import kotlin.time.Duration
 import kotlin.time.Instant
 
 class EpisodeLocalDataSourceImpl @Inject constructor(
+    override val database: RoomDatabase,
     private val episodeDao: EpisodeDao,
 ) : EpisodeLocalDataSource {
     override suspend fun upsertEpisode(episode: EpisodeEntity) {

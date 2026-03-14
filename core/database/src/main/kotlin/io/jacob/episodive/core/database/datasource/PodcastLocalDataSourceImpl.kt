@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.database.datasource
 
 import androidx.paging.PagingSource
+import androidx.room.RoomDatabase
 import io.jacob.episodive.core.database.dao.PodcastDao
 import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.database.model.PodcastWithExtrasView
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 
 class PodcastLocalDataSourceImpl(
+    override val database: RoomDatabase,
     private val podcastDao: PodcastDao,
 ) : PodcastLocalDataSource {
     override suspend fun upsertPodcastsWithGroup(

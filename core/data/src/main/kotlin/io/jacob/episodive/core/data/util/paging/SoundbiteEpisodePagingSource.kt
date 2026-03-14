@@ -2,6 +2,8 @@ package io.jacob.episodive.core.data.util.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import androidx.room.InvalidationTracker
+import androidx.room.RoomDatabase
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeEntity
@@ -22,6 +24,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 class SoundbiteEpisodePagingSource(
+    private val database: RoomDatabase,
     private val episodeLocal: EpisodeLocalDataSource,
     private val episodeRemote: EpisodeRemoteDataSource,
     private val soundbiteLocal: SoundbiteLocalDataSource,
@@ -29,6 +32,19 @@ class SoundbiteEpisodePagingSource(
     private val maxSoundbites: Int = 1000,
     private val timeToLive: Duration = 10.minutes,
 ) : PagingSource<Int, EpisodeWithExtrasView>() {
+
+    private val observer = object : InvalidationTracker.Observer(arrayOf("liked_episodes")) {
+        override fun onInvalidated(tables: Set<String>) {
+            invalidate()
+        }
+    }
+
+    init {
+        database.invalidationTracker.addObserver(observer)
+        registerInvalidatedCallback {
+            database.invalidationTracker.removeObserver(observer)
+        }
+    }
 
     override fun getRefreshKey(state: PagingState<Int, EpisodeWithExtrasView>): Int? {
         return state.anchorPosition?.let { anchorPosition ->

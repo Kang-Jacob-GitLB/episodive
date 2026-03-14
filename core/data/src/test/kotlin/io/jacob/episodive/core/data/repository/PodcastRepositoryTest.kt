@@ -3,10 +3,12 @@ package io.jacob.episodive.core.data.repository
 import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
+import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.mapper.toPodcastWithExtrasViews
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.model.Channel
+import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.model.PodcastResponse
 import io.jacob.episodive.core.testing.model.podcastTestData
@@ -30,11 +32,15 @@ class PodcastRepositoryTest {
 
     private val localDataSource = mockk<PodcastLocalDataSource>(relaxed = true)
     private val remoteDataSource = mockk<PodcastRemoteDataSource>(relaxed = true)
+    private val feedLocalDataSource = mockk<FeedLocalDataSource>(relaxed = true)
+    private val feedRemoteDataSource = mockk<FeedRemoteDataSource>(relaxed = true)
     private val remoteUpdater = mockk<PodcastRemoteUpdater.Factory>(relaxed = true)
 
     private val repository: PodcastRepository = PodcastRepositoryImpl(
         podcastLocalDataSource = localDataSource,
         podcastRemoteDataSource = remoteDataSource,
+        feedLocalDataSource = feedLocalDataSource,
+        feedRemoteDataSource = feedRemoteDataSource,
         remoteUpdater = remoteUpdater,
     )
 
@@ -45,6 +51,8 @@ class PodcastRepositoryTest {
         confirmVerified(
             localDataSource,
             remoteDataSource,
+            feedLocalDataSource,
+            feedRemoteDataSource,
             remoteUpdater,
         )
     }

@@ -142,7 +142,7 @@ private fun PodcastScreen(
 
             items(
                 count = episodesPaging.itemCount,
-                key = { episodesPaging[it]?.id ?: it },
+                key = { episodesPaging.peek(it)?.id ?: it },
                 contentType = { "episode" }
             ) { index ->
                 episodesPaging[index]?.let { episode ->

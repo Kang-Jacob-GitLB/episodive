@@ -175,6 +175,7 @@ class EpisodeRepositoryImpl @Inject constructor(
             ),
             pagingSourceFactory = {
                 SoundbiteEpisodePagingSource(
+                    database = episodeLocalDataSource.database,
                     episodeLocal = episodeLocalDataSource,
                     episodeRemote = episodeRemoteDataSource,
                     soundbiteLocal = soundbiteLocalDataSource,

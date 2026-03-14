@@ -3,6 +3,7 @@ package io.jacob.episodive.feature.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.podcast.GetUserRecommendedPodcastsPagingUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
@@ -57,7 +58,7 @@ class OnboardingViewModel @Inject constructor(
             } else {
                 flowOf(PagingData.empty())
             }
-        }
+        }.cachedIn(viewModelScope)
 
     val state: StateFlow<OnboardingState> = _categories.map { categories ->
         OnboardingState.Success(

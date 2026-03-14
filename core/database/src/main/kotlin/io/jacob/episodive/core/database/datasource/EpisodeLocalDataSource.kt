@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.database.datasource
 
 import androidx.paging.PagingSource
+import androidx.room.RoomDatabase
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
@@ -9,6 +10,7 @@ import kotlin.time.Duration
 import kotlin.time.Instant
 
 interface EpisodeLocalDataSource {
+    val database: RoomDatabase
     suspend fun upsertEpisode(episode: EpisodeEntity)
     suspend fun upsertEpisodesWithGroup(episodes: List<EpisodeEntity>, groupKey: String)
     suspend fun updateEpisodeDuration(id: Long, duration: Duration)

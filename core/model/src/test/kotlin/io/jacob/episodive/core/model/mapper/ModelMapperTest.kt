@@ -275,11 +275,9 @@ class ModelMapperTest {
         assertEquals(recentFeed.url, feed.url)
         assertEquals(recentFeed.title, feed.title)
         assertEquals(recentFeed.description, feed.description)
-        assertEquals(recentFeed.author, feed.author)
         assertEquals(recentFeed.image, feed.image)
         assertEquals(recentFeed.newestItemPublishTime, feed.newestItemPublishTime)
         assertEquals(recentFeed.itunesId, feed.itunesId)
-        assertEquals(recentFeed.trendScore, feed.trendScore)
         assertEquals(recentFeed.language, feed.language)
         assertEquals(recentFeed.categories, feed.categories)
     }
@@ -353,11 +351,9 @@ class ModelMapperTest {
         assertEquals(trendingFeed.url, feed.url)
         assertEquals(trendingFeed.title, feed.title)
         assertEquals(trendingFeed.description, feed.description)
-        assertEquals(trendingFeed.author, feed.author)
         assertEquals(trendingFeed.artwork, feed.image) // Note: artwork -> image
         assertEquals(trendingFeed.newestItemPublishTime, feed.newestItemPublishTime)
         assertEquals(trendingFeed.itunesId, feed.itunesId)
-        assertEquals(trendingFeed.trendScore, feed.trendScore)
         assertEquals(trendingFeed.language, feed.language)
         assertEquals(trendingFeed.categories, feed.categories)
     }

@@ -1,12 +1,14 @@
 package io.jacob.episodive.core.database.datasource
 
 import androidx.paging.PagingSource
+import androidx.room.RoomDatabase
 import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.database.model.PodcastWithExtrasView
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 
 interface PodcastLocalDataSource {
+    val database: RoomDatabase
     suspend fun upsertPodcastsWithGroup(podcasts: List<PodcastEntity>, groupKey: String)
     fun getPodcastById(id: Long): Flow<PodcastWithExtrasView?>
     fun getPodcastsByIds(ids: List<Long>): Flow<List<PodcastWithExtrasView>>

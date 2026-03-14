@@ -27,9 +27,11 @@ object DataSourceModule {
     @Provides
     @Singleton
     fun providePodcastLocalDataSource(
+        database: io.jacob.episodive.core.database.EpisodiveDatabase,
         podcastDao: PodcastDao,
     ): PodcastLocalDataSource {
         return PodcastLocalDataSourceImpl(
+            database = database,
             podcastDao = podcastDao,
         )
     }
@@ -37,9 +39,11 @@ object DataSourceModule {
     @Provides
     @Singleton
     fun provideEpisodeLocalDataSource(
+        database: io.jacob.episodive.core.database.EpisodiveDatabase,
         episodeDao: EpisodeDao,
     ): EpisodeLocalDataSource {
         return EpisodeLocalDataSourceImpl(
+            database = database,
             episodeDao = episodeDao,
         )
     }
