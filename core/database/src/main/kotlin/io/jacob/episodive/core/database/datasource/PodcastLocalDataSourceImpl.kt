@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.database.datasource
 
 import androidx.paging.PagingSource
+import androidx.room.RoomDatabase
 import io.jacob.episodive.core.database.dao.PodcastDao
 import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.database.model.PodcastWithExtrasView
@@ -9,14 +10,29 @@ import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 
 class PodcastLocalDataSourceImpl(
+    override val database: RoomDatabase,
     private val podcastDao: PodcastDao,
 ) : PodcastLocalDataSource {
+    override suspend fun upsertPodcastsWithGroup(
+        podcasts: List<PodcastEntity>,
+        groupKey: String
+    ) {
+        podcastDao.upsertPodcastsWithGroup(
+            podcasts = podcasts,
+            groupKey = groupKey,
+        )
+    }
+
     override fun getPodcastById(id: Long): Flow<PodcastWithExtrasView?> {
         return podcastDao.getPodcastById(id)
     }
 
     override fun getPodcastsByIds(ids: List<Long>): Flow<List<PodcastWithExtrasView>> {
         return podcastDao.getPodcastsByIds(ids)
+    }
+
+    override suspend fun getPodcastsByIdsOnce(ids: List<Long>): List<PodcastWithExtrasView> {
+        return podcastDao.getPodcastsByIdsOnce(ids)
     }
 
     override fun getPodcasts(query: String?, limit: Int): Flow<List<PodcastWithExtrasView>> {

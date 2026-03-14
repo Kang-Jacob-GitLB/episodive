@@ -47,20 +47,6 @@ class SoundbiteLocalDataSourceTest {
         }
 
     @Test
-    fun `Given dependencies, When deleteSoundbite, Then call dao's method`() =
-        runTest {
-            // Given
-            val episodeId = 1L
-            coEvery { soundbiteDao.deleteSoundbite(any()) } just Runs
-
-            // When
-            dataSource.deleteSoundbite(episodeId)
-
-            // Then
-            coVerify { soundbiteDao.deleteSoundbite(episodeId) }
-        }
-
-    @Test
     fun `Given dependencies, When deleteSoundbites, Then call dao's method`() =
         runTest {
             // Given

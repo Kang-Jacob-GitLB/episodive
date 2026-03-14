@@ -31,7 +31,7 @@ class ClipViewModel @Inject constructor(
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase,
 ) : ViewModel() {
-    val episodes = getClipEpisodesPagingUseCase().cachedIn(viewModelScope)
+    val episodes = getClipEpisodesPagingUseCase(100).cachedIn(viewModelScope)
 
     val clipPlayerState: StateFlow<ClipPlayerState> = combine(
         playerRepository.playback,

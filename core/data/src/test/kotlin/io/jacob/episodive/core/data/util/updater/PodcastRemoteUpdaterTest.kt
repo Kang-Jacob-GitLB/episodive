@@ -482,7 +482,9 @@ class PodcastRemoteUpdaterTest {
     fun `Given dependencies, When trending query, Then call dataSources's functions`() =
         runTest {
             // Given
+            val max = 100
             val query = PodcastQuery.Trending(
+                max = max,
                 language = "ko",
                 categories = listOf(Category.BUSINESS, Category.POLITICS),
             )
@@ -509,16 +511,16 @@ class PodcastRemoteUpdaterTest {
             } returns mockk<PodcastResponse>(relaxed = true)
 
             // When
-            updater.getFlowList(count = 100).test {
+            updater.getFlowList(count = max).test {
                 cancelAndIgnoreRemainingEvents()
             }
 
             // Then
             coVerifySequence {
-                podcastLocal.getPodcastsByGroupKey("trending:ko:9,59", 100)
+                podcastLocal.getPodcastsByGroupKey("trending:ko:9,59", max)
                 podcastLocal.getOldestCreatedAtByGroupKey("trending:ko:9,59")
                 feedRemote.getTrendingFeeds(
-                    max = 100,
+                    max = max,
                     since = any(),
                     language = "ko",
                     includeCategories = "9,59",
@@ -533,7 +535,9 @@ class PodcastRemoteUpdaterTest {
     fun `Given dependencies, When trending query paging, Then call dataSources's functions`() =
         runTest {
             // Given
+            val max = 10
             val query = PodcastQuery.Trending(
+                max = max,
                 language = "ko",
                 categories = listOf(Category.BUSINESS, Category.POLITICS),
             )
@@ -574,7 +578,7 @@ class PodcastRemoteUpdaterTest {
             coVerifySequence {
                 podcastLocal.getOldestCreatedAtByGroupKey("trending:ko:9,59")
                 feedRemote.getTrendingFeeds(
-                    max = 100,
+                    max = max,
                     since = any(),
                     language = "ko",
                     includeCategories = "9,59",
@@ -590,7 +594,9 @@ class PodcastRemoteUpdaterTest {
     fun `Given dependencies, When recent query, Then call dataSources's functions`() =
         runTest {
             // Given
+            val max = 10
             val query = PodcastQuery.Recent(
+                max = max,
                 language = "ko",
                 categories = listOf(Category.BUSINESS, Category.POLITICS),
             )
@@ -617,16 +623,16 @@ class PodcastRemoteUpdaterTest {
             } returns mockk<PodcastResponse>(relaxed = true)
 
             // When
-            updater.getFlowList(count = 100).test {
+            updater.getFlowList(count = max).test {
                 cancelAndIgnoreRemainingEvents()
             }
 
             // Then
             coVerifySequence {
-                podcastLocal.getPodcastsByGroupKey("recent:ko:9,59", 100)
+                podcastLocal.getPodcastsByGroupKey("recent:ko:9,59", max)
                 podcastLocal.getOldestCreatedAtByGroupKey("recent:ko:9,59")
                 feedRemote.getRecentFeeds(
-                    max = 100,
+                    max = max,
                     since = any(),
                     language = "ko",
                     includeCategories = "9,59",
@@ -641,7 +647,9 @@ class PodcastRemoteUpdaterTest {
     fun `Given dependencies, When recent query paging, Then call dataSources's functions`() =
         runTest {
             // Given
+            val max = 10
             val query = PodcastQuery.Recent(
+                max = max,
                 language = "ko",
                 categories = listOf(Category.BUSINESS, Category.POLITICS),
             )
@@ -682,7 +690,7 @@ class PodcastRemoteUpdaterTest {
             coVerifySequence {
                 podcastLocal.getOldestCreatedAtByGroupKey("recent:ko:9,59")
                 feedRemote.getRecentFeeds(
-                    max = 100,
+                    max = max,
                     since = any(),
                     language = "ko",
                     includeCategories = "9,59",
@@ -698,7 +706,8 @@ class PodcastRemoteUpdaterTest {
     fun `Given dependencies, When recent new query, Then call dataSources's functions`() =
         runTest {
             // Given
-            val query = PodcastQuery.RecentNew
+            val max = 10
+            val query = PodcastQuery.RecentNew(max = max)
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
@@ -722,16 +731,16 @@ class PodcastRemoteUpdaterTest {
             } returns mockk<PodcastResponse>(relaxed = true)
 
             // When
-            updater.getFlowList(count = 100).test {
+            updater.getFlowList(count = max).test {
                 cancelAndIgnoreRemainingEvents()
             }
 
             // Then
             coVerifySequence {
-                podcastLocal.getPodcastsByGroupKey("recentNew", 100)
+                podcastLocal.getPodcastsByGroupKey("recentNew", max)
                 podcastLocal.getOldestCreatedAtByGroupKey("recentNew")
                 feedRemote.getRecentNewFeeds(
-                    max = 100,
+                    max = max,
                     since = any(),
                 )
                 podcastRemote.getPodcastByFeedId(any())
@@ -743,7 +752,8 @@ class PodcastRemoteUpdaterTest {
     fun `Given dependencies, When recent new query paging, Then call dataSources's functions`() =
         runTest {
             // Given
-            val query = PodcastQuery.RecentNew
+            val max = 10
+            val query = PodcastQuery.RecentNew(max = max)
             val updater = PodcastRemoteUpdater(
                 podcastLocal = podcastLocal,
                 podcastRemote = podcastRemote,
@@ -781,7 +791,7 @@ class PodcastRemoteUpdaterTest {
             coVerifySequence {
                 podcastLocal.getOldestCreatedAtByGroupKey("recentNew")
                 feedRemote.getRecentNewFeeds(
-                    max = 100,
+                    max = max,
                     since = any(),
                 )
                 podcastRemote.getPodcastByFeedId(any())

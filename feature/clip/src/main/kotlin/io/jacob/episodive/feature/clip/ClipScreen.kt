@@ -169,7 +169,7 @@ fun EpisodeClipPager(
     VerticalPager(
         state = pagerState,
         modifier = modifier.fillMaxSize(),
-        key = { episodesPaging[it]?.id ?: it },
+        key = { episodesPaging.peek(it)?.id ?: it },
         pageSpacing = 32.dp, // 이전/다음 컨텐츠가 보이는 간격
         contentPadding = PaddingValues(vertical = 80.dp, horizontal = 24.dp) // 상하 여백으로 이전/다음 미리보기
     ) { page ->

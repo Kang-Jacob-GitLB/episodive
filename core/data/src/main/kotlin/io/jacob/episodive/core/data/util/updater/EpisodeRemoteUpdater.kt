@@ -8,18 +8,13 @@ import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
-import io.jacob.episodive.core.database.mapper.toSoundbiteEntities
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.model.mapper.toCommaString
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toEpisodes
-import io.jacob.episodive.core.network.mapper.toSoundbites
 import io.jacob.episodive.core.network.model.EpisodeResponse
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Clock
 
@@ -58,33 +53,14 @@ class EpisodeRemoteUpdater @AssistedInject constructor(
                 max = fetchSize,
             )
 
-            is EpisodeQuery.Live -> episodeRemote.getLiveEpisodes(max = 6)
+            is EpisodeQuery.Live -> episodeRemote.getLiveEpisodes(max = query.max)
             is EpisodeQuery.Random -> episodeRemote.getRandomEpisodes(
-                max = 6,
+                max = query.max,
                 language = query.language,
                 includeCategories = query.categories.toCommaString(),
             )
 
-            is EpisodeQuery.Recent -> episodeRemote.getRecentEpisodes(max = 6)
-            is EpisodeQuery.Soundbite -> coroutineScope {
-                val soundbites = soundbiteRemote.getSoundbites(max = 100)
-                    .filterNot {
-                        val regex = Regex("\\p{InCJK_UNIFIED_IDEOGRAPHS}")
-
-                        it.title.contains(regex) ||
-                                it.episodeTitle.contains(regex) ||
-                                it.feedTitle.contains(regex)
-                    }
-                soundbiteLocal.replaceSoundbites(soundbites.toSoundbites().toSoundbiteEntities())
-
-                soundbites.chunked(20).flatMap { chunk ->
-                    chunk.map { soundbite ->
-                        async {
-                            episodeRemote.getEpisodeById(soundbite.episodeId)
-                        }
-                    }.awaitAll().filterNotNull()
-                }
-            }
+            is EpisodeQuery.Recent -> episodeRemote.getRecentEpisodes(max = query.max)
         }
     }
 

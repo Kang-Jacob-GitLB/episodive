@@ -82,9 +82,9 @@ internal fun HomeRoute(
             modifier = modifier
                 .fillMaxSize(),
             playingEpisodes = s.playingEpisodes,
-            myRecentPodcasts = s.myRecentPodcasts,
+            userRecentPodcasts = s.userRecentPodcasts,
             randomEpisodes = s.randomEpisodes,
-            myTrendingPodcasts = s.myTrendingPodcasts,
+            userTrendingPodcasts = s.userTrendingPodcasts,
             followedPodcasts = s.followedPodcasts,
             localTrendingPodcasts = s.localTrendingPodcasts,
             foreignTrendingPodcasts = s.foreignTrendingPodcasts,
@@ -105,9 +105,9 @@ internal fun HomeRoute(
 private fun HomeScreen(
     modifier: Modifier = Modifier,
     playingEpisodes: List<Episode>,
-    myRecentPodcasts: List<Podcast>,
+    userRecentPodcasts: List<Podcast>,
     randomEpisodes: List<Episode>,
-    myTrendingPodcasts: List<Podcast>,
+    userTrendingPodcasts: List<Podcast>,
     followedPodcasts: List<Podcast>,
     localTrendingPodcasts: List<Podcast>,
     foreignTrendingPodcasts: List<Podcast>,
@@ -186,7 +186,7 @@ private fun HomeScreen(
                         itemWithDivider {
                             PodcastsWithAuthorSection(
                                 title = stringResource(R.string.feature_home_section_my_recent_feeds),
-                                podcasts = myRecentPodcasts,
+                                podcasts = userRecentPodcasts,
                                 onPodcastClick = { feed ->
                                     onPodcastClick(feed.id)
                                 }
@@ -205,7 +205,7 @@ private fun HomeScreen(
                         itemWithDivider {
                             PodcastsWithAuthorSection(
                                 title = stringResource(R.string.feature_home_section_my_trending_feeds),
-                                podcasts = myTrendingPodcasts,
+                                podcasts = userTrendingPodcasts,
                                 onPodcastClick = { feed ->
                                     onPodcastClick(feed.id)
                                 }
@@ -289,9 +289,9 @@ private fun HomeScreenPreview() {
     EpisodiveTheme {
         HomeScreen(
             playingEpisodes = episodeTestDataList,
-            myRecentPodcasts = podcastTestDataList,
+            userRecentPodcasts = podcastTestDataList,
             randomEpisodes = episodeTestDataList,
-            myTrendingPodcasts = podcastTestDataList,
+            userTrendingPodcasts = podcastTestDataList,
             followedPodcasts = podcastTestDataList,
             localTrendingPodcasts = podcastTestDataList,
             foreignTrendingPodcasts = podcastTestDataList,

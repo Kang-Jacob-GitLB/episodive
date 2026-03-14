@@ -26,7 +26,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -53,6 +52,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
 import io.jacob.episodive.core.designsystem.component.EpisodiveButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.LoadingWheel
@@ -69,7 +70,9 @@ import io.jacob.episodive.core.model.SelectableCategory
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.ui.CategoryButton
 import io.jacob.episodive.core.ui.PodcastDetailItem
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 @Composable
@@ -99,7 +102,7 @@ fun OnboardingRoute(
             modifier = modifier,
             pagerState = pagerState,
             categories = s.categories,
-            podcasts = s.podcasts,
+            podcasts = viewModel.recommendedPodcasts,
             onChooseCategory = { viewModel.sendAction(OnboardingAction.ChooseCategory(it)) },
             onChoosePodcast = { viewModel.sendAction(OnboardingAction.ChoosePodcast(it)) },
             onNextPage = { viewModel.sendAction(OnboardingAction.NextPage) },
@@ -114,7 +117,7 @@ private fun OnboardingScreen(
     modifier: Modifier = Modifier,
     pagerState: PagerState,
     categories: List<SelectableCategory>,
-    podcasts: List<Podcast>,
+    podcasts: Flow<PagingData<Podcast>>,
     onChooseCategory: (Category) -> Unit,
     onChoosePodcast: (Podcast) -> Unit,
     onNextPage: () -> Unit,
@@ -312,9 +315,10 @@ private fun CategorySelectionScreen(
 @Composable
 private fun PodcastSelectionScreen(
     modifier: Modifier = Modifier,
-    podcasts: List<Podcast>,
+    podcasts: Flow<PagingData<Podcast>>,
     onToggleFollowedPodcast: (Podcast) -> Unit,
 ) {
+    val podcastsPaging = podcasts.collectAsLazyPagingItems()
     val lazyListState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
     val scope = rememberCoroutineScope()
@@ -323,10 +327,13 @@ private fun PodcastSelectionScreen(
         modifier = modifier
             .fillMaxSize(),
     ) {
-        if (podcasts.isEmpty()) {
+        val podcastsSize = podcastsPaging.itemCount
+
+        if (podcastsSize == 0) {
             LoadingWheel(
                 modifier = Modifier.align(Alignment.Center),
             )
+            return
         }
 
         LazyColumn(
@@ -362,9 +369,11 @@ private fun PodcastSelectionScreen(
             }
 
             items(
-                items = podcasts,
-                key = { it.id },
-            ) { podcast ->
+                count = podcastsPaging.itemCount,
+                key = { podcastsPaging.peek(it)?.id ?: it },
+            ) { index ->
+                val podcast = podcastsPaging[index] ?: return@items
+
                 PodcastDetailItem(
                     podcast = podcast,
                     onClick = { onToggleFollowedPodcast(podcast) },
@@ -377,12 +386,12 @@ private fun PodcastSelectionScreen(
                 .fillMaxHeight()
                 .padding(vertical = 12.dp)
                 .align(Alignment.TopEnd),
-            state = lazyListState.scrollbarState(itemsAvailable = podcasts.size),
+            state = lazyListState.scrollbarState(itemsAvailable = podcastsSize),
             orientation = Orientation.Vertical,
             onThumbMoved = { thumbPosition ->
                 scope.launch {
-                    val itemIndex = (thumbPosition * podcasts.size).toInt()
-                        .coerceIn(0, podcasts.size - 1)
+                    val itemIndex = (thumbPosition * podcastsSize).toInt()
+                        .coerceIn(0, podcastsSize - 1)
                     lazyListState.scrollToItem(itemIndex)
                 }
             }
@@ -489,7 +498,7 @@ private fun CategorySelectionScreenPreview() {
 private fun PodcastSelectionScreenPreview() {
     EpisodiveTheme {
         PodcastSelectionScreen(
-            podcasts = podcastTestDataList,
+            podcasts = flowOf(PagingData.from(podcastTestDataList)),
             onToggleFollowedPodcast = {},
         )
     }

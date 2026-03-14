@@ -35,32 +35,44 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     private val toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase,
     private val updatePlayedEpisodeUseCase: UpdatePlayedEpisodeUseCase,
-    private val getPodcastUseCase: GetPodcastUseCase,
+    getPodcastUseCase: GetPodcastUseCase,
     @param:Player(EpisodivePlayers.Main) private val playerRepository: PlayerRepository,
     getNowPlayingUseCase: GetNowPlayingUseCase,
     getPlaylistUseCase: GetPlaylistUseCase,
     private val setSpeedUseCase: SetSpeedUseCase,
-    private val getUserDataUseCase: GetUserDataUseCase,
-    private val getChaptersUseCase: GetChaptersUseCase,
+    getUserDataUseCase: GetUserDataUseCase,
+    getChaptersUseCase: GetChaptersUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
 ) : ViewModel() {
+    private val nowPlaying = getNowPlayingUseCase()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
     private val playingEpisode = combine(
-        getNowPlayingUseCase(),
+        nowPlaying,
         playerRepository.progress,
     ) { episode, progress ->
         episode?.id to progress
     }
 
-    private val podcast = getNowPlayingUseCase().mapNotNull { it?.feedId }
+    private val podcast = nowPlaying
+        .mapNotNull { it?.feedId }
+        .distinctUntilChanged()
         .flatMapLatest { feedId -> getPodcastUseCase(feedId) }
 
-    private val chapters = getNowPlayingUseCase().map { it?.chaptersUrl }
+    private val chapters = nowPlaying
+        .map { it?.chaptersUrl }
+        .distinctUntilChanged()
         .flatMapLatest { chaptersUrl ->
             val chapters = chaptersUrl?.let { getChaptersUseCase(it) } ?: emptyList()
             flowOf(chapters)
@@ -69,7 +81,7 @@ class PlayerViewModel @Inject constructor(
 
     val state: StateFlow<PlayerState> = combine(
         podcast,
-        getNowPlayingUseCase(),
+        nowPlaying,
         getPlaylistUseCase(),
         playerRepository.indexOfList,
         playerRepository.progress,
@@ -78,6 +90,7 @@ class PlayerViewModel @Inject constructor(
         chapters,
         playerRepository.cue,
     ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, chapters, cue ->
+        Timber.w("progress: $progress")
         if (podcast != null && nowPlaying != null) {
             PlayerState.Success(
                 podcast = podcast,

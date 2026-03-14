@@ -7,6 +7,7 @@ import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
+import androidx.room.RoomDatabase
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.mockk
@@ -22,8 +23,10 @@ class EpisodeLocalDataSourceTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val dao = mockk<EpisodeDao>(relaxed = true)
+    private val database = mockk<RoomDatabase>(relaxed = true)
 
     private val dataSource: EpisodeLocalDataSource = EpisodeLocalDataSourceImpl(
+        database = database,
         episodeDao = dao,
     )
 

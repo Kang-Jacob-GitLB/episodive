@@ -2,6 +2,7 @@ package io.jacob.episodive.core.network.datasource
 
 import io.jacob.episodive.core.network.api.EpisodeApi
 import io.jacob.episodive.core.network.model.EpisodeResponse
+import timber.log.Timber
 import javax.inject.Inject
 
 class EpisodeRemoteDataSourceImpl @Inject constructor(
@@ -11,6 +12,7 @@ class EpisodeRemoteDataSourceImpl @Inject constructor(
         person: String,
         max: Int?,
     ): List<EpisodeResponse> {
+        Timber.i("searchEpisodesByPerson person: $person")
         return episodeApi.searchEpisodesByPerson(
             person = person,
             max = max,
@@ -22,6 +24,7 @@ class EpisodeRemoteDataSourceImpl @Inject constructor(
         max: Int?,
         since: Long?,
     ): List<EpisodeResponse> {
+        Timber.i("getEpisodesByFeedId feedId: $feedId")
         val response = episodeApi.getEpisodesByFeedId(
             feedId = feedId,
             max = max,
@@ -35,6 +38,7 @@ class EpisodeRemoteDataSourceImpl @Inject constructor(
         max: Int?,
         since: Long?,
     ): List<EpisodeResponse> {
+        Timber.i("getEpisodesByFeedUrl feedUrl: $feedUrl")
         return episodeApi.getEpisodesByFeedUrl(
             feedUrl = feedUrl,
             max = max,
@@ -47,6 +51,7 @@ class EpisodeRemoteDataSourceImpl @Inject constructor(
         max: Int?,
         since: Long?,
     ): List<EpisodeResponse> {
+        Timber.i("getEpisodesByPodcastGuid guid: $guid")
         return episodeApi.getEpisodesByPodcastGuid(
             guid = guid,
             max = max,
@@ -55,10 +60,12 @@ class EpisodeRemoteDataSourceImpl @Inject constructor(
     }
 
     override suspend fun getEpisodeById(id: Long): EpisodeResponse? {
+        Timber.i("getEpisodeById: $id")
         return episodeApi.getEpisodeById(id = id).data
     }
 
     override suspend fun getLiveEpisodes(max: Int?): List<EpisodeResponse> {
+        Timber.i("getLiveEpisodes max: $max")
         return episodeApi.getLiveEpisodes(max = max).dataList
     }
 
@@ -68,6 +75,7 @@ class EpisodeRemoteDataSourceImpl @Inject constructor(
         includeCategories: String?,
         excludeCategories: String?,
     ): List<EpisodeResponse> {
+        Timber.i("getRandomEpisodes max: $max")
         return episodeApi.getRandomEpisodes(
             max = max,
             language = language,
@@ -80,6 +88,7 @@ class EpisodeRemoteDataSourceImpl @Inject constructor(
         max: Int?,
         excludeString: String?,
     ): List<EpisodeResponse> {
+        Timber.i("getRecentEpisodes max: $max")
         return episodeApi.getRecentEpisodes(
             max = max,
             excludeString = excludeString,

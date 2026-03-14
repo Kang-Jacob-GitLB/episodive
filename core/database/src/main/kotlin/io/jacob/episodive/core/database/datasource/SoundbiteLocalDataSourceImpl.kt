@@ -14,10 +14,6 @@ class SoundbiteLocalDataSourceImpl @Inject constructor(
         soundbiteDao.upsertSoundbites(soundbites)
     }
 
-    override suspend fun deleteSoundbite(episodeId: Long) {
-        soundbiteDao.deleteSoundbite(episodeId)
-    }
-
     override suspend fun deleteSoundbites() {
         soundbiteDao.deleteSoundbites()
     }
@@ -32,6 +28,10 @@ class SoundbiteLocalDataSourceImpl @Inject constructor(
 
     override fun getSoundbitesPaging(): PagingSource<Int, SoundbiteEntity> {
         return soundbiteDao.getSoundbitesPaging()
+    }
+
+    override suspend fun getSoundbitesPagingList(offset: Int, limit: Int): List<SoundbiteEntity> {
+        return soundbiteDao.getSoundbitesPagingList(offset, limit)
     }
 
     override suspend fun getSoundbitesOldestCachedAt(): Instant? {

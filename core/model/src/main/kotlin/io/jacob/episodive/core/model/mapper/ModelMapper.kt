@@ -179,10 +179,8 @@ fun RecentFeed.toFeedFromRecent(): Feed =
         title = title,
         newestItemPublishTime = newestItemPublishTime,
         description = description,
-        author = author,
         image = image,
         itunesId = itunesId,
-        trendScore = trendScore,
         language = language,
         categories = categories,
     )
@@ -196,10 +194,8 @@ fun TrendingFeed.toFeedFromTrending(): Feed =
         title = title,
         newestItemPublishTime = newestItemPublishTime,
         description = description,
-        author = author,
         image = artwork,
         itunesId = itunesId,
-        trendScore = trendScore,
         language = language,
         categories = categories,
     )

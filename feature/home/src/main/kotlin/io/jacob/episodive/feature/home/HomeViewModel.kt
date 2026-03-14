@@ -14,8 +14,8 @@ import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetFollowedPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetForeignTrendingPodcastsUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetLocalTrendingPodcastsUseCase
-import io.jacob.episodive.core.domain.usecase.podcast.GetMyRecentPodcastsUseCase
-import io.jacob.episodive.core.domain.usecase.podcast.GetMyTrendingPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetUserRecentPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetUserTrendingPodcastsUseCase
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
@@ -32,9 +32,9 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     getPlayingEpisodesUseCase: GetPlayingEpisodesUseCase,
-    getMyRecentPodcastsUseCase: GetMyRecentPodcastsUseCase,
+    getUserRecentPodcastsUseCase: GetUserRecentPodcastsUseCase,
     getMyRandomEpisodesUseCase: GetMyRandomEpisodesUseCase,
-    getMyTrendingPodcastsUseCase: GetMyTrendingPodcastsUseCase,
+    getUserTrendingPodcastsUseCase: GetUserTrendingPodcastsUseCase,
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
     getLocalTrendingPodcastsUseCase: GetLocalTrendingPodcastsUseCase,
     getForeignTrendingPodcastsUseCase: GetForeignTrendingPodcastsUseCase,
@@ -47,9 +47,9 @@ class HomeViewModel @Inject constructor(
 
     val state: StateFlow<HomeState> = combine(
         getPlayingEpisodesUseCase(max = 10),
-        getMyRecentPodcastsUseCase(max = 10),
+        getUserRecentPodcastsUseCase(max = 10),
         getMyRandomEpisodesUseCase(max = 6),
-        getMyTrendingPodcastsUseCase(max = 10),
+        getUserTrendingPodcastsUseCase(max = 10),
         getFollowedPodcastsUseCase(max = 10),
         getLocalTrendingPodcastsUseCase(max = 10),
         getForeignTrendingPodcastsUseCase(max = 10),
@@ -57,9 +57,9 @@ class HomeViewModel @Inject constructor(
         getChannelsUseCase(),
     ) {
             playingEpisodes,
-            myRecentPodcasts,
+            userRecentPodcasts,
             randomEpisodes,
-            myTrendingPodcasts,
+            userTrendingPodcasts,
             followedPodcasts,
             localTrendingPodcasts,
             foreignTrendingPodcasts,
@@ -69,9 +69,9 @@ class HomeViewModel @Inject constructor(
 
         HomeState.Success(
             playingEpisodes = playingEpisodes,
-            myRecentPodcasts = myRecentPodcasts,
+            userRecentPodcasts = userRecentPodcasts,
             randomEpisodes = randomEpisodes,
-            myTrendingPodcasts = myTrendingPodcasts,
+            userTrendingPodcasts = userTrendingPodcasts,
             followedPodcasts = followedPodcasts,
             localTrendingPodcasts = localTrendingPodcasts,
             foreignTrendingPodcasts = foreignTrendingPodcasts,
@@ -141,9 +141,9 @@ sealed interface HomeState {
     data object Loading : HomeState
     data class Success(
         val playingEpisodes: List<Episode>,
-        val myRecentPodcasts: List<Podcast>,
+        val userRecentPodcasts: List<Podcast>,
         val randomEpisodes: List<Episode>,
-        val myTrendingPodcasts: List<Podcast>,
+        val userTrendingPodcasts: List<Podcast>,
         val followedPodcasts: List<Podcast>,
         val localTrendingPodcasts: List<Podcast>,
         val foreignTrendingPodcasts: List<Podcast>,

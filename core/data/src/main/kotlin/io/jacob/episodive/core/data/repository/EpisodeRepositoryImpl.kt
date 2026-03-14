@@ -4,9 +4,11 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import io.jacob.episodive.core.data.util.paging.SoundbiteEpisodePagingSource
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
+import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.database.mapper.toEpisode
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
 import io.jacob.episodive.core.database.mapper.toEpisodeEntity
@@ -18,6 +20,7 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
+import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toEpisodes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -27,9 +30,11 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 
 class EpisodeRepositoryImpl @Inject constructor(
-    private val localDataSource: EpisodeLocalDataSource,
-    private val remoteDataSource: EpisodeRemoteDataSource,
+    private val episodeLocalDataSource: EpisodeLocalDataSource,
+    private val episodeRemoteDataSource: EpisodeRemoteDataSource,
     private val chapterRemoteDataSource: ChapterRemoteDataSource,
+    private val soundbiteLocalDataSource: SoundbiteLocalDataSource,
+    private val soundbiteRemoteDataSource: SoundbiteRemoteDataSource,
     private val remoteUpdater: EpisodeRemoteUpdater.Factory,
 ) : EpisodeRepository {
     private val config = PagingConfig(
@@ -39,7 +44,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     )
 
     override suspend fun upsertEpisode(episode: Episode) {
-        localDataSource.upsertEpisode(episode.toEpisodeEntity())
+        episodeLocalDataSource.upsertEpisode(episode.toEpisodeEntity())
     }
 
     override fun searchEpisodesByPerson(
@@ -69,7 +74,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         feedId: Long,
         max: Int,
     ): Flow<List<Episode>> = flow {
-        remoteDataSource.getEpisodesByFeedId(
+        episodeRemoteDataSource.getEpisodesByFeedId(
             feedId = feedId,
             max = max,
         ).toEpisodes()
@@ -129,21 +134,11 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun getLiveEpisodes(max: Int): Flow<List<Episode>> {
-        val query = EpisodeQuery.Live
+        val query = EpisodeQuery.Live(max = max)
 
         return remoteUpdater.create(query)
             .getFlowList(max)
             .map { it.toEpisodes() }
-    }
-
-    override fun getLiveEpisodesPaging(): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Live
-
-        return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toEpisode() }
-            }
     }
 
     override fun getRandomEpisodes(
@@ -152,78 +147,59 @@ class EpisodeRepositoryImpl @Inject constructor(
         includeCategories: List<Category>,
         excludeCategories: List<Category>,
     ): Flow<List<Episode>> {
-        val query = EpisodeQuery.Random(language, includeCategories)
+        val query = EpisodeQuery.Random(max, language, includeCategories)
 
         return remoteUpdater.create(query)
             .getFlowList(max)
             .map { it.toEpisodes() }
-    }
-
-    override fun getRandomEpisodesPaging(
-        language: String?,
-        includeCategories: List<Category>,
-        excludeCategories: List<Category>,
-    ): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Random(language, includeCategories)
-
-        return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toEpisode() }
-            }
     }
 
     override fun getRecentEpisodes(
         max: Int,
         excludeString: String?,
     ): Flow<List<Episode>> {
-        val query = EpisodeQuery.Recent
+        val query = EpisodeQuery.Recent(max)
 
         return remoteUpdater.create(query)
             .getFlowList(max)
             .map { it.toEpisodes() }
     }
 
-    override fun getRecentEpisodesPaging(): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Recent
-
-        return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toEpisode() }
+    override fun getSoundbiteEpisodesPaging(max: Int): Flow<PagingData<Episode>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 5,
+                prefetchDistance = 5,
+                initialLoadSize = 10,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                SoundbiteEpisodePagingSource(
+                    database = episodeLocalDataSource.database,
+                    episodeLocal = episodeLocalDataSource,
+                    episodeRemote = episodeRemoteDataSource,
+                    soundbiteLocal = soundbiteLocalDataSource,
+                    soundbiteRemote = soundbiteRemoteDataSource,
+                    maxSoundbites = max
+                )
             }
-    }
-
-    override fun getSoundbiteEpisodes(max: Int): Flow<List<Episode>> {
-        val query = EpisodeQuery.Soundbite
-
-        return remoteUpdater.create(query)
-            .getFlowList(max)
-            .map { it.toEpisodes() }
-    }
-
-    override fun getSoundbiteEpisodesPaging(): Flow<PagingData<Episode>> {
-        val query = EpisodeQuery.Soundbite
-
-        return remoteUpdater.create(query)
-            .getPagingData(config)
-            .map { pagingData ->
-                pagingData.map { it.toEpisode() }
-            }
+        ).flow.map { pagingData ->
+            pagingData.map { it.toEpisode() }
+        }
     }
 
     override fun getEpisodeById(id: Long): Flow<Episode?> {
-        return localDataSource.getEpisodeById(id)
+        return episodeLocalDataSource.getEpisodeById(id)
             .map { it?.toEpisode() }
     }
 
     override fun getEpisodesByIds(ids: List<Long>): Flow<List<Episode>> {
-        return localDataSource.getEpisodesByIds(ids)
+        return episodeLocalDataSource.getEpisodesByIds(ids)
             .map { it.toEpisodes() }
     }
 
     override fun getLikedEpisodes(query: String?, max: Int): Flow<List<Episode>> {
-        return localDataSource.getLikedEpisodes(
+        return episodeLocalDataSource.getLikedEpisodes(
             query = query,
             limit = max,
         ).map { it.toEpisodes() }
@@ -232,7 +208,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     override fun getLikedEpisodesPaging(query: String?): Flow<PagingData<Episode>> {
         return Pager(
             config = config,
-            pagingSourceFactory = { localDataSource.getLikedEpisodesPaging(query) }
+            pagingSourceFactory = { episodeLocalDataSource.getLikedEpisodesPaging(query) }
         ).flow.map { pagingData ->
             pagingData.map { it.toEpisode() }
         }
@@ -243,7 +219,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         query: String?,
         max: Int,
     ): Flow<List<Episode>> {
-        return localDataSource.getPlayedEpisodes(
+        return episodeLocalDataSource.getPlayedEpisodes(
             isCompleted = isCompleted,
             query = query,
             limit = max,
@@ -257,7 +233,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         return Pager(
             config = config,
             pagingSourceFactory = {
-                localDataSource.getPlayedEpisodesPaging(
+                episodeLocalDataSource.getPlayedEpisodesPaging(
                     isCompleted = isCompleted,
                     query = query,
                 )
@@ -268,11 +244,11 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override fun isLikedEpisode(episode: Episode): Flow<Boolean> {
-        return localDataSource.isLikedEpisode(episode.toEpisodeEntity())
+        return episodeLocalDataSource.isLikedEpisode(episode.toEpisodeEntity())
     }
 
     override suspend fun toggleLikedEpisode(episode: Episode): Boolean {
-        return localDataSource.toggleLikedEpisode(episode.toEpisodeEntity())
+        return episodeLocalDataSource.toggleLikedEpisode(episode.toEpisodeEntity())
     }
 
     override suspend fun updatePlayed(
@@ -280,7 +256,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         position: Duration,
         isCompleted: Boolean,
     ) {
-        localDataSource.updatePlayedEpisode(
+        episodeLocalDataSource.updatePlayedEpisode(
             PlayedEpisodeEntity(
                 id = id,
                 playedAt = Clock.System.now(),
@@ -291,11 +267,11 @@ class EpisodeRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateEpisodeDuration(id: Long, duration: Duration) {
-        localDataSource.updateEpisodeDuration(id, duration)
+        episodeLocalDataSource.updateEpisodeDuration(id, duration)
     }
 
     override suspend fun replaceEpisodes(episodes: List<Episode>, groupKey: String) {
-        localDataSource.replaceEpisodes(episodes.toEpisodeEntities(), groupKey)
+        episodeLocalDataSource.replaceEpisodes(episodes.toEpisodeEntities(), groupKey)
     }
 
     override suspend fun fetchChapters(url: String): List<Chapter> {

@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.database.datasource
 
 import androidx.paging.PagingSource
+import androidx.room.RoomDatabase
 import io.jacob.episodive.core.database.dao.EpisodeDao
 import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
@@ -12,10 +13,15 @@ import kotlin.time.Duration
 import kotlin.time.Instant
 
 class EpisodeLocalDataSourceImpl @Inject constructor(
+    override val database: RoomDatabase,
     private val episodeDao: EpisodeDao,
 ) : EpisodeLocalDataSource {
     override suspend fun upsertEpisode(episode: EpisodeEntity) {
         episodeDao.upsertEpisode(episode)
+    }
+
+    override suspend fun upsertEpisodesWithGroup(episodes: List<EpisodeEntity>, groupKey: String) {
+        episodeDao.upsertEpisodesWithGroup(episodes, groupKey)
     }
 
     override suspend fun updateEpisodeDuration(id: Long, duration: Duration) {
@@ -31,6 +37,10 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
 
     override fun getEpisodesByIds(ids: List<Long>): Flow<List<EpisodeWithExtrasView>> {
         return episodeDao.getEpisodesByIds(ids)
+    }
+
+    override suspend fun getEpisodesByIdsOnce(ids: List<Long>): List<EpisodeWithExtrasView> {
+        return episodeDao.getEpisodesByIdsOnce(ids)
     }
 
     override fun getEpisodes(query: String?, limit: Int): Flow<List<EpisodeWithExtrasView>> {

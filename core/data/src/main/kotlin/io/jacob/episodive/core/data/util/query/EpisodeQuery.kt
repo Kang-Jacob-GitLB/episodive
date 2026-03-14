@@ -35,12 +35,13 @@ sealed interface EpisodeQuery : CacheableQuery {
         override val timeToLive = 1.days
     }
 
-    data object Live : EpisodeQuery {
+    data class Live(val max: Int) : EpisodeQuery {
         override val key = GroupKey.LIVE.toString()
         override val timeToLive = 10.minutes
     }
 
     data class Random(
+        val max: Int,
         val language: String? = null,
         val categories: List<Category> = emptyList(),
     ) : EpisodeQuery {
@@ -48,13 +49,8 @@ sealed interface EpisodeQuery : CacheableQuery {
         override val timeToLive = 10.minutes
     }
 
-    data object Recent : EpisodeQuery {
+    data class Recent(val max: Int) : EpisodeQuery {
         override val key = GroupKey.RECENT.toString()
-        override val timeToLive = 10.minutes
-    }
-
-    data object Soundbite : EpisodeQuery {
-        override val key = GroupKey.SOUNDBITE.toString()
         override val timeToLive = 10.minutes
     }
 }

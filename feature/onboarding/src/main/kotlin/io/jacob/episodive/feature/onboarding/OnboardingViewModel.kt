@@ -2,8 +2,10 @@ package io.jacob.episodive.feature.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.jacob.episodive.core.domain.usecase.podcast.GetRecommendedPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.GetUserRecommendedPodcastsPagingUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetPreferredCategoriesUseCase
 import io.jacob.episodive.core.domain.usecase.user.SetFirstLaunchOffUseCase
@@ -20,10 +22,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -35,7 +37,7 @@ class OnboardingViewModel @Inject constructor(
     private val toggleCategoryUseCase: ToggleCategoryUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
     private val getPreferredCategoriesUseCase: GetPreferredCategoriesUseCase,
-    getRecommendedPodcastsUseCase: GetRecommendedPodcastsUseCase,
+    getUserRecommendedPodcastsPagingUseCase: GetUserRecommendedPodcastsPagingUseCase,
 ) : ViewModel() {
 
     private val _page = MutableStateFlow(OnboardingPage.Welcome)
@@ -49,22 +51,18 @@ class OnboardingViewModel @Inject constructor(
                 )
             }.let { flowOf(it) }
         }
-    private val _recommendedPodcasts: Flow<List<Podcast>> = _page
+    val recommendedPodcasts: Flow<PagingData<Podcast>> = _page
         .flatMapLatest { page ->
             if (page == OnboardingPage.PodcastSelection) {
-                getRecommendedPodcastsUseCase()
+                getUserRecommendedPodcastsPagingUseCase(max = 50)
             } else {
-                flowOf(emptyList())
+                flowOf(PagingData.empty())
             }
-        }
+        }.cachedIn(viewModelScope)
 
-    val state: StateFlow<OnboardingState> = combine(
-        _categories,
-        _recommendedPodcasts,
-    ) { categories, podcasts ->
+    val state: StateFlow<OnboardingState> = _categories.map { categories ->
         OnboardingState.Success(
             categories = categories,
-            podcasts = podcasts
         ) as OnboardingState
     }.catch { e ->
         emit(OnboardingState.Error(e.message ?: "An unknown error occurred"))
@@ -150,7 +148,6 @@ sealed interface OnboardingState {
     data object Loading : OnboardingState
     data class Success(
         val categories: List<SelectableCategory>,
-        val podcasts: List<Podcast>,
     ) : OnboardingState
 
     data class Error(val message: String) : OnboardingState

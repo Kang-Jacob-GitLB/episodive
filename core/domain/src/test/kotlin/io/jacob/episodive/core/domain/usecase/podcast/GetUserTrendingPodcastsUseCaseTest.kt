@@ -15,21 +15,21 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
-class GetMyRecentPodcastsUseCaseTest {
+class GetUserTrendingPodcastsUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     private val userRepository = mockk<UserRepository>(relaxed = true)
-    private val getRecentPodcastsUseCase = mockk<GetRecentPodcastsUseCase>(relaxed = true)
+    private val getTrendingPodcastsUseCase = mockk<GetTrendingPodcastsUseCase>(relaxed = true)
 
-    private val useCase = GetMyRecentPodcastsUseCase(
+    private val useCase = GetUserTrendingPodcastsUseCase(
         userRepository = userRepository,
-        getRecentPodcastsUseCase = getRecentPodcastsUseCase,
+        getTrendingPodcastsUseCase = getTrendingPodcastsUseCase,
     )
 
     @After
     fun teardown() {
-        confirmVerified(userRepository, getRecentPodcastsUseCase)
+        confirmVerified(userRepository, getTrendingPodcastsUseCase)
     }
 
     @Test
@@ -45,7 +45,7 @@ class GetMyRecentPodcastsUseCaseTest {
                 )
             )
             coEvery {
-                getRecentPodcastsUseCase(any(), any(), any())
+                getTrendingPodcastsUseCase(any(), any(), any())
             } returns mockk(relaxed = true)
 
             // When
@@ -56,7 +56,7 @@ class GetMyRecentPodcastsUseCaseTest {
             // Then
             coVerifySequence {
                 userRepository.getUserData()
-                getRecentPodcastsUseCase(10, any(), any())
+                getTrendingPodcastsUseCase(10, any(), any())
             }
         }
 }

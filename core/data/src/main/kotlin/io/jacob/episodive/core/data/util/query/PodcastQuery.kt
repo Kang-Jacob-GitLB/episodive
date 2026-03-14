@@ -36,6 +36,7 @@ sealed interface PodcastQuery : CacheableQuery {
     }
 
     data class Trending(
+        val max: Int,
         val language: String? = null,
         val categories: List<Category> = emptyList(),
     ) : PodcastQuery {
@@ -45,6 +46,7 @@ sealed interface PodcastQuery : CacheableQuery {
     }
 
     data class Recent(
+        val max: Int,
         val language: String? = null,
         val categories: List<Category> = emptyList(),
     ) : PodcastQuery {
@@ -53,8 +55,18 @@ sealed interface PodcastQuery : CacheableQuery {
         override val timeToLive: Duration = 1.hours
     }
 
-    data object RecentNew : PodcastQuery {
+    data class RecentNew(val max: Int) : PodcastQuery {
         override val key: String = GroupKey.RECENT_NEW.toString()
+        override val timeToLive: Duration = 1.hours
+    }
+
+    data class Recommended(
+        val max: Int,
+        val language: String? = null,
+        val categories: List<Category> = emptyList(),
+    ) : PodcastQuery {
+        override val key: String =
+            "${GroupKey.RECOMMENDED}:${language ?: "all"}:${categories.toCommaString()}"
         override val timeToLive: Duration = 1.hours
     }
 }
