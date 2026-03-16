@@ -92,4 +92,6 @@ interface EpisodeRepository {
     suspend fun replaceEpisodes(episodes: List<Episode>, groupKey: String)
 
     suspend fun fetchChapters(url: String): List<Chapter>
+
+    suspend fun getEpisodesByGroupKey(groupKey: String): List<Episode>
 }

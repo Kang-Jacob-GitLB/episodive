@@ -18,6 +18,10 @@ class PlayerRepositoryImpl @Inject constructor(
         return playerDataSource.getPlayer()
     }
 
+    override fun prepare(episodes: List<Episode>, indexToPlay: Int, positionMs: Long) {
+        playerDataSource.prepare(episodes, indexToPlay, positionMs)
+    }
+
     override fun play(episode: Episode) {
         playerDataSource.play(episode)
     }
@@ -78,8 +82,16 @@ class PlayerRepositoryImpl @Inject constructor(
         playerDataSource.shuffle()
     }
 
+    override fun setShuffle(isShuffle: Boolean) {
+        playerDataSource.setShuffle(isShuffle)
+    }
+
     override fun changeRepeat() {
         playerDataSource.changeRepeat()
+    }
+
+    override fun setRepeat(repeat: Int) {
+        playerDataSource.setRepeat(repeat)
     }
 
     override fun setSpeed(speed: Float) {

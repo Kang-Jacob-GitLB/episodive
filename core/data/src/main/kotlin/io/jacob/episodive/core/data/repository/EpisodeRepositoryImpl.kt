@@ -23,6 +23,7 @@ import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.mapper.toEpisodes
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -276,5 +277,11 @@ class EpisodeRepositoryImpl @Inject constructor(
 
     override suspend fun fetchChapters(url: String): List<Chapter> {
         return chapterRemoteDataSource.fetchChapters(url)
+    }
+
+    override suspend fun getEpisodesByGroupKey(groupKey: String): List<Episode> {
+        return episodeLocalDataSource.getEpisodesByGroupKey(groupKey, Int.MAX_VALUE)
+            .first()
+            .toEpisodes()
     }
 }

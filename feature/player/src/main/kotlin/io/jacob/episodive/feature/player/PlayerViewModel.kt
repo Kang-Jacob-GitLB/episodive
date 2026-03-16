@@ -12,6 +12,8 @@ import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetPlaylistUseCase
+import io.jacob.episodive.core.domain.usecase.player.RestoreLastPlayStateUseCase
+import io.jacob.episodive.core.domain.usecase.player.SaveLastPlayStateUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
@@ -20,6 +22,8 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
+import io.jacob.episodive.core.model.Repeat
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,16 +32,20 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     private val toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase,
@@ -50,6 +58,8 @@ class PlayerViewModel @Inject constructor(
     getUserDataUseCase: GetUserDataUseCase,
     getChaptersUseCase: GetChaptersUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
+    private val saveLastPlayStateUseCase: SaveLastPlayStateUseCase,
+    private val restoreLastPlayStateUseCase: RestoreLastPlayStateUseCase,
 ) : ViewModel() {
     private val nowPlaying = getNowPlayingUseCase()
         .stateIn(
@@ -136,6 +146,42 @@ class PlayerViewModel @Inject constructor(
                 .first()
                 .let { speed ->
                     playerRepository.setSpeed(speed)
+                }
+        }
+        viewModelScope.launch {
+            val currentEpisode = playerRepository.nowPlaying.first()
+            if (currentEpisode == null) {
+                restoreLastPlayStateUseCase()
+            }
+        }
+        viewModelScope.launch {
+            io.jacob.episodive.core.common.combine(
+                playerRepository.nowPlaying,
+                playerRepository.indexOfList,
+                playerRepository.progress,
+                playerRepository.isShuffle,
+                playerRepository.repeat,
+            ) { nowPlaying: Episode?, index: Int, progress: Progress, shuffle: Boolean, repeat: Repeat ->
+                if (nowPlaying != null) {
+                    LastPlaySnapshot(
+                        episodeId = nowPlaying.id,
+                        index = index,
+                        positionMs = progress.position.inWholeMilliseconds,
+                        shuffle = shuffle,
+                        repeat = repeat.value,
+                    )
+                } else null
+            }
+                .filterNotNull()
+                .sample(5.seconds)
+                .collectLatest { snapshot ->
+                    saveLastPlayStateUseCase(
+                        episodeId = snapshot.episodeId,
+                        index = snapshot.index,
+                        positionMs = snapshot.positionMs,
+                        shuffle = snapshot.shuffle,
+                        repeat = snapshot.repeat,
+                    )
                 }
         }
     }
@@ -287,3 +333,11 @@ sealed interface PlayerEffect {
     data object ShowPlayerBottomSheet : PlayerEffect
     data object HidePlayerBottomSheet : PlayerEffect
 }
+
+private data class LastPlaySnapshot(
+    val episodeId: Long,
+    val index: Int,
+    val positionMs: Long,
+    val shuffle: Boolean,
+    val repeat: Int,
+)
