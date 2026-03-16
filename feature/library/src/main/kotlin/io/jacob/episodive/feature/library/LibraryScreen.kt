@@ -129,7 +129,7 @@ fun LibraryRoute(
 }
 
 @Composable
-private fun LibraryScreen(
+internal fun LibraryScreen(
     modifier: Modifier = Modifier,
     query: String,
     onQueryChange: (String) -> Unit,

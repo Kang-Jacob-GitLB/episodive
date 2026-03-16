@@ -83,7 +83,7 @@ internal fun ClipRoute(
 }
 
 @Composable
-private fun ClipScreen(
+internal fun ClipScreen(
     modifier: Modifier = Modifier,
     episodes: Flow<PagingData<Episode>>,
     playback: Playback,

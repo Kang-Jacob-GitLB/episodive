@@ -113,7 +113,7 @@ fun OnboardingRoute(
 }
 
 @Composable
-private fun OnboardingScreen(
+internal fun OnboardingScreen(
     modifier: Modifier = Modifier,
     pagerState: PagerState,
     categories: List<SelectableCategory>,

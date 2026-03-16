@@ -174,7 +174,7 @@ fun PlayerBottomSheet(
 
 
 @Composable
-private fun PlayerScreen(
+internal fun PlayerScreen(
     modifier: Modifier = Modifier,
     podcast: Podcast,
     nowPlaying: Episode,

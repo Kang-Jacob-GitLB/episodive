@@ -102,7 +102,7 @@ internal fun HomeRoute(
 }
 
 @Composable
-private fun HomeScreen(
+internal fun HomeScreen(
     modifier: Modifier = Modifier,
     playingEpisodes: List<Episode>,
     userRecentPodcasts: List<Podcast>,
