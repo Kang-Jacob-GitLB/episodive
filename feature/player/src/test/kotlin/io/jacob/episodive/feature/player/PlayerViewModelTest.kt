@@ -7,6 +7,8 @@ import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetPlaylistUseCase
+import io.jacob.episodive.core.domain.usecase.player.RestoreLastPlayStateUseCase
+import io.jacob.episodive.core.domain.usecase.player.SaveLastPlayStateUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
@@ -47,12 +49,17 @@ class PlayerViewModelTest {
     private val getUserDataUseCase = mockk<GetUserDataUseCase>(relaxed = true)
     private val getChaptersUseCase = mockk<GetChaptersUseCase>(relaxed = true)
     private val toggleFollowedUseCase = mockk<ToggleFollowedUseCase>(relaxed = true)
+    private val saveLastPlayStateUseCase = mockk<SaveLastPlayStateUseCase>(relaxed = true)
+    private val restoreLastPlayStateUseCase = mockk<RestoreLastPlayStateUseCase>(relaxed = true)
 
     private val progressFlow = MutableStateFlow(Progress(0.seconds, 0.seconds, 0.seconds))
     private val isPlayingFlow = MutableStateFlow(false)
     private val speedFlow = MutableStateFlow(1.0f)
     private val indexOfListFlow = MutableStateFlow(0)
     private val cueFlow = MutableStateFlow("")
+    private val isShuffleFlow = MutableStateFlow(false)
+    private val repeatFlow = MutableStateFlow(io.jacob.episodive.core.model.Repeat.OFF)
+    private val nowPlayingFlow = MutableStateFlow<io.jacob.episodive.core.model.Episode?>(null)
 
     private fun setupPlayerRepositoryMocks() {
         every { playerRepository.progress } returns progressFlow
@@ -61,6 +68,9 @@ class PlayerViewModelTest {
         every { playerRepository.indexOfList } returns indexOfListFlow
         every { playerRepository.cue } returns cueFlow
         every { playerRepository.playback } returns MutableStateFlow(io.jacob.episodive.core.model.Playback.IDLE)
+        every { playerRepository.isShuffle } returns isShuffleFlow
+        every { playerRepository.repeat } returns repeatFlow
+        every { playerRepository.nowPlaying } returns nowPlayingFlow
     }
 
     private fun setupDefaultMocks() {
@@ -82,6 +92,8 @@ class PlayerViewModelTest {
             getUserDataUseCase = getUserDataUseCase,
             getChaptersUseCase = getChaptersUseCase,
             toggleFollowedUseCase = toggleFollowedUseCase,
+            saveLastPlayStateUseCase = saveLastPlayStateUseCase,
+            restoreLastPlayStateUseCase = restoreLastPlayStateUseCase,
         )
     }
 

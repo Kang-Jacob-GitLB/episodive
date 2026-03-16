@@ -205,6 +205,12 @@ class PlayerDataSourceImpl @Inject constructor(
         return player
     }
 
+    override fun prepare(episodes: List<Episode>, indexToPlay: Int, positionMs: Long) {
+        val mediaItems = episodes.map { it.toMediaItem(isClip = false) }
+        player.setMediaItems(mediaItems, indexToPlay, positionMs)
+        player.prepare()
+    }
+
     override fun play(episode: Episode) {
         Timber.i("url: ${episode.enclosureUrl}")
         val mediaItem = episode.toMediaItem(isClip = false)
