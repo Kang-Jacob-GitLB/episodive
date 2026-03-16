@@ -98,7 +98,7 @@ fun SearchRoute(
 }
 
 @Composable
-private fun SearchScreen(
+internal fun SearchScreen(
     modifier: Modifier = Modifier,
     query: String,
     onQueryChange: (String) -> Unit,

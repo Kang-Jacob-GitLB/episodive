@@ -90,7 +90,7 @@ internal fun PodcastRoute(
 }
 
 @Composable
-private fun PodcastScreen(
+internal fun PodcastScreen(
     modifier: Modifier = Modifier,
     podcast: Podcast,
     episodes: Flow<PagingData<Episode>>,

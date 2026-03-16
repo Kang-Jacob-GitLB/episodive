@@ -92,7 +92,7 @@ internal fun ChannelRoute(
 }
 
 @Composable
-private fun ChannelScreen(
+internal fun ChannelScreen(
     modifier: Modifier = Modifier,
     channel: Channel,
     podcasts: List<Podcast>,
