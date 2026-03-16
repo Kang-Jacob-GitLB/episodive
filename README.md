@@ -56,7 +56,9 @@ Data Sources: Network (:core:network) | Database (:core:database) | DataStore (:
 | `:core:database`     | Room 기반 로컬 데이터베이스 (DAOs, Entities)                        |
 | `:core:datastore`    | DataStore 기반 사용자 설정 관리                                    |
 | `:core:player`       | ExoPlayer 기반 오디오 재생                                       |
+| `:core:common`       | 공유 유틸리티 및 Hilt Qualifier (Dispatcher, Player)              |
 | `:core:designsystem` | 공통 UI 컴포넌트 및 테마                                           |
+| `:core:ui`           | 도메인 특화 상위 레벨 UI 컴포넌트                                      |
 | `:core:testing`      | 테스트 유틸리티 및 테스트 데이터                                        |
 
 ## Feature Modules
@@ -70,6 +72,7 @@ Data Sources: Network (:core:network) | Database (:core:database) | DataStore (:
 | `:feature:podcast`    | 팟캐스트 상세 정보 및 에피소드 목록  |
 | `:feature:player`     | 오디오 플레이어 UI           |
 | `:feature:clip`       | 사운드바이트 및 클립           |
+| `:feature:channel`    | 채널/카테고리 탐색            |
 
 ## App Module
 
@@ -82,7 +85,7 @@ Data Sources: Network (:core:network) | Database (:core:database) | DataStore (:
 ## Android
 
 - **Minimum SDK**: 28 (Android 9.0 Pie)
-- **Target SDK**: 35 (Android 15)
+- **Target SDK**: 36 (Android 16)
 - **Language**: Kotlin
 - **UI Framework**: Jetpack Compose
 
