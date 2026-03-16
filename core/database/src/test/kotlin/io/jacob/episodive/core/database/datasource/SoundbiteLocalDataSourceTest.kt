@@ -110,4 +110,16 @@ class SoundbiteLocalDataSourceTest {
             // Then
             coVerify { soundbiteDao.getSoundbitesOldestCachedAt() }
         }
+
+    @Test
+    fun `Given offset and limit, When getSoundbitesPagingList, Then calls dao getSoundbitesPagingList`() = runTest {
+        // Given
+        coEvery { soundbiteDao.getSoundbitesPagingList(any(), any()) } returns emptyList()
+
+        // When
+        dataSource.getSoundbitesPagingList(offset = 0, limit = 10)
+
+        // Then
+        coVerify { soundbiteDao.getSoundbitesPagingList(0, 10) }
+    }
 }

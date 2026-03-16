@@ -416,4 +416,87 @@ class EpisodeRepositoryTest {
                 chapterRemoteDataSource.fetchChapters(url)
             }
         }
+
+    @Test
+    fun `When upsertEpisode, Then calls localDataSource upsertEpisode`() =
+        runTest {
+            // Given
+            val episode = episodeTestData
+            coEvery { localDataSource.upsertEpisode(any()) } returns Unit
+
+            // When
+            repository.upsertEpisode(episode)
+
+            // Then
+            coVerifySequence {
+                localDataSource.upsertEpisode(episode.toEpisodeEntity())
+            }
+        }
+
+    @Test
+    fun `When getEpisodeById, Then calls localDataSource getEpisodeById`() =
+        runTest {
+            // Given
+            val episodeId = episodeTestData.id
+            coEvery { localDataSource.getEpisodeById(episodeId) } returns flowOf(episodeDtos.first())
+
+            // When
+            repository.getEpisodeById(episodeId).test {
+                val result = awaitItem()
+                // Then
+                assertEquals(episodeTestDataList[0].id, result?.id)
+                awaitComplete()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getEpisodeById(episodeId)
+            }
+        }
+
+    @Test
+    fun `When isLikedEpisode, Then calls localDataSource isLikedEpisode`() =
+        runTest {
+            // Given
+            val episode = episodeTestData
+            coEvery { localDataSource.isLikedEpisode(any()) } returns flowOf(true)
+
+            // When
+            repository.isLikedEpisode(episode).test {
+                val result = awaitItem()
+                // Then
+                assertEquals(true, result)
+                awaitComplete()
+            }
+
+            coVerifySequence {
+                localDataSource.isLikedEpisode(episode.toEpisodeEntity())
+            }
+        }
+
+    @Test
+    fun `Given person, When searchEpisodesByPersonPaging, Then creates correct query and calls sourceFactory`() =
+        runTest {
+            // Given
+            val person = "Jane Doe"
+            val expectedQuery = EpisodeQuery.Person(person)
+
+            val mockUpdater = mockk<EpisodeRemoteUpdater>(relaxed = true)
+            coEvery {
+                mockUpdater.getPagingData(any())
+            } returns flowOf(PagingData.from(episodeDtos))
+            coEvery { remoteUpdater.create(expectedQuery) } returns mockUpdater
+
+            // When
+            val result = repository.searchEpisodesByPersonPaging(person).asSnapshot()
+
+            // Then
+            assertEquals(episodeTestDataList.size, result.size)
+            assertEquals(episodeTestDataList, result)
+
+            coVerifySequence {
+                remoteUpdater.create(expectedQuery)
+                mockUpdater.getPagingData(any())
+            }
+        }
 }

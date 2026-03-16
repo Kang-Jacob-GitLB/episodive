@@ -65,4 +65,37 @@ class ChannelScreenTest {
 
         composeTestRule.onNodeWithText("12programs", substring = true).assertIsDisplayed()
     }
+
+    @Test
+    fun emptyPodcastsList_channelTitleStillDisplayed() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                ChannelScreen(
+                    channel = channelTestData,
+                    podcasts = emptyList(),
+                    onBackClick = {},
+                    onPodcastClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(channelTestData.title).assertIsDisplayed()
+    }
+
+    @Test
+    fun multiplePodcastsAreDisplayed() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                ChannelScreen(
+                    channel = channelTestData,
+                    podcasts = podcastTestDataList.take(3),
+                    onBackClick = {},
+                    onPodcastClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(podcastTestDataList[0].title, substring = true)
+            .assertExists()
+    }
 }

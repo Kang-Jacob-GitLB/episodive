@@ -7,6 +7,7 @@ import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.mapper.toPodcastWithExtrasViews
 import io.jacob.episodive.core.domain.repository.PodcastRepository
+import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
@@ -253,6 +254,109 @@ class PodcastRepositoryTest {
             coVerifySequence {
                 remoteUpdater.create(query)
                 updater.getFlowList(100)
+            }
+        }
+
+    @Test
+    fun `Given trending params, When getTrendingPodcasts is called, Then calls methods of dataSources`() =
+        runTest {
+            // Given
+            val max = 10
+            val language = "en"
+            val categories = listOf(Category.BUSINESS)
+            val query = PodcastQuery.Trending(max, language, categories)
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(max) } returns flowOf(podcastDtos)
+            coEvery { remoteUpdater.create(query) } returns updater
+
+            // When
+            repository.getTrendingPodcasts(max, language, categories).test {
+                val result = awaitItem()
+                // Then
+                assertEquals(10, result.size)
+                assertEquals(podcastTestDataList, result)
+                awaitComplete()
+            }
+            coVerifySequence {
+                remoteUpdater.create(query)
+                updater.getFlowList(max)
+            }
+        }
+
+    @Test
+    fun `Given recent params, When getRecentPodcasts is called, Then calls methods of dataSources`() =
+        runTest {
+            // Given
+            val max = 10
+            val language = "en"
+            val categories = listOf(Category.COMEDY)
+            val query = PodcastQuery.Recent(max, language, categories)
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(max) } returns flowOf(podcastDtos)
+            coEvery { remoteUpdater.create(query) } returns updater
+
+            // When
+            repository.getRecentPodcasts(max, language, categories).test {
+                val result = awaitItem()
+                // Then
+                assertEquals(10, result.size)
+                awaitComplete()
+            }
+            coVerifySequence {
+                remoteUpdater.create(query)
+                updater.getFlowList(max)
+            }
+        }
+
+    @Test
+    fun `Given max, When getRecentNewPodcasts is called, Then calls methods of dataSources`() =
+        runTest {
+            // Given
+            val max = 10
+            val query = PodcastQuery.RecentNew(max)
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(max) } returns flowOf(podcastDtos)
+            coEvery { remoteUpdater.create(query) } returns updater
+
+            // When
+            repository.getRecentNewPodcasts(max).test {
+                val result = awaitItem()
+                // Then
+                assertEquals(10, result.size)
+                awaitComplete()
+            }
+            coVerifySequence {
+                remoteUpdater.create(query)
+                updater.getFlowList(max)
+            }
+        }
+
+    @Test
+    fun `Given recommended params, When getRecommendedPodcasts is called, Then calls methods of dataSources`() =
+        runTest {
+            // Given
+            val max = 10
+            val language = "en"
+            val categories = listOf(Category.EDUCATION)
+            val query = PodcastQuery.Recommended(max, language, categories)
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery { updater.getFlowList(max) } returns flowOf(podcastDtos)
+            coEvery { remoteUpdater.create(query) } returns updater
+
+            // When
+            repository.getRecommendedPodcasts(max, language, categories).test {
+                val result = awaitItem()
+                // Then
+                assertEquals(10, result.size)
+                awaitComplete()
+            }
+            coVerifySequence {
+                remoteUpdater.create(query)
+                updater.getFlowList(max)
             }
         }
 }

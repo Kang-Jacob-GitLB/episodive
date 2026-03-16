@@ -78,4 +78,131 @@ class SearchScreenTest {
         composeTestRule.onNodeWithText(podcastTestDataList.first().title, substring = true)
             .assertExists()
     }
+
+    @Test
+    fun expandedState_withSearchResults_showsPodcastsSection() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                SearchScreen(
+                    query = "test",
+                    onQueryChange = {},
+                    onSearch = {},
+                    recentSearches = emptyList(),
+                    searchResult = SearchResult(
+                        podcasts = podcastTestDataList.take(3),
+                        episodes = episodeTestDataList,
+                    ),
+                    podcasts = podcastTestDataList,
+                    episodes = episodeTestDataList,
+                    isExpanded = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Podcasts").assertIsDisplayed()
+    }
+
+    @Test
+    fun expandedState_withNoResults_showsRecentSearches() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                SearchScreen(
+                    query = "test",
+                    onQueryChange = {},
+                    onSearch = {},
+                    recentSearches = listOf("kotlin", "android"),
+                    searchResult = SearchResult(),
+                    podcasts = podcastTestDataList,
+                    episodes = episodeTestDataList,
+                    isExpanded = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Recent searches").assertIsDisplayed()
+        composeTestRule.onNodeWithText("kotlin").assertIsDisplayed()
+    }
+
+    @Test
+    fun collapsedState_withEmptyPodcasts_hidesGlobalTrendingSection() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                SearchScreen(
+                    query = "",
+                    onQueryChange = {},
+                    onSearch = {},
+                    recentSearches = emptyList(),
+                    searchResult = SearchResult(),
+                    podcasts = emptyList(),
+                    episodes = episodeTestDataList,
+                    isExpanded = false,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Global trending feeds").assertDoesNotExist()
+    }
+
+    @Test
+    fun collapsedState_withEmptyEpisodes_hidesRecentEpisodesSection() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                SearchScreen(
+                    query = "",
+                    onQueryChange = {},
+                    onSearch = {},
+                    recentSearches = emptyList(),
+                    searchResult = SearchResult(),
+                    podcasts = podcastTestDataList,
+                    episodes = emptyList(),
+                    isExpanded = false,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Global recent episodes").assertDoesNotExist()
+    }
+
+    @Test
+    fun expandedState_withSearchResults_showsEpisodesSection() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                SearchScreen(
+                    query = "test",
+                    onQueryChange = {},
+                    onSearch = {},
+                    recentSearches = emptyList(),
+                    searchResult = SearchResult(
+                        podcasts = emptyList(),
+                        episodes = episodeTestDataList,
+                    ),
+                    podcasts = podcastTestDataList,
+                    episodes = episodeTestDataList,
+                    isExpanded = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Episodes").assertIsDisplayed()
+    }
+
+    @Test
+    fun collapsedState_showsGlobalRecentEpisodesSection() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                SearchScreen(
+                    query = "",
+                    onQueryChange = {},
+                    onSearch = {},
+                    recentSearches = emptyList(),
+                    searchResult = SearchResult(),
+                    podcasts = emptyList(),
+                    episodes = episodeTestDataList,
+                    isExpanded = false,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Global recent episodes").assertIsDisplayed()
+    }
 }

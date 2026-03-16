@@ -126,4 +126,111 @@ class HomeScreenTest {
             .onFirst()
             .assertIsDisplayed()
     }
+
+    @Test
+    fun allEmptySections_showsMyRecentPublished() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                HomeScreen(
+                    playingEpisodes = emptyList(),
+                    userRecentPodcasts = emptyList(),
+                    randomEpisodes = emptyList(),
+                    userTrendingPodcasts = emptyList(),
+                    followedPodcasts = emptyList(),
+                    localTrendingPodcasts = emptyList(),
+                    foreignTrendingPodcasts = emptyList(),
+                    liveEpisodes = emptyList(),
+                    channels = emptyList(),
+                    onPlayEpisode = {},
+                    onResumeEpisode = {},
+                    onToggleLikedEpisode = {},
+                    onPodcastClick = {},
+                    onChannelClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("My recent published").assertIsDisplayed()
+    }
+
+    @Test
+    fun myRecentPublishedSectionShowsPodcastTitle() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                HomeScreen(
+                    playingEpisodes = emptyList(),
+                    userRecentPodcasts = podcastTestDataList.take(2),
+                    randomEpisodes = emptyList(),
+                    userTrendingPodcasts = emptyList(),
+                    followedPodcasts = emptyList(),
+                    localTrendingPodcasts = emptyList(),
+                    foreignTrendingPodcasts = emptyList(),
+                    liveEpisodes = emptyList(),
+                    channels = emptyList(),
+                    onPlayEpisode = {},
+                    onResumeEpisode = {},
+                    onToggleLikedEpisode = {},
+                    onPodcastClick = {},
+                    onChannelClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("My recent published").assertIsDisplayed()
+        composeTestRule.onNodeWithText(podcastTestDataList[0].title, substring = true).assertExists()
+    }
+
+    @Test
+    fun randomEpisodesSectionShowsEpisodeTitle() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                HomeScreen(
+                    playingEpisodes = emptyList(),
+                    userRecentPodcasts = emptyList(),
+                    randomEpisodes = episodeTestDataList.take(2),
+                    userTrendingPodcasts = emptyList(),
+                    followedPodcasts = emptyList(),
+                    localTrendingPodcasts = emptyList(),
+                    foreignTrendingPodcasts = emptyList(),
+                    liveEpisodes = emptyList(),
+                    channels = emptyList(),
+                    onPlayEpisode = {},
+                    onResumeEpisode = {},
+                    onToggleLikedEpisode = {},
+                    onPodcastClick = {},
+                    onChannelClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Random episodes").assertIsDisplayed()
+    }
+
+    @Test
+    fun playingEpisodesSection_whenNotEmpty_isDisplayed() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                HomeScreen(
+                    playingEpisodes = episodeTestDataList.take(2),
+                    userRecentPodcasts = emptyList(),
+                    randomEpisodes = emptyList(),
+                    userTrendingPodcasts = emptyList(),
+                    followedPodcasts = emptyList(),
+                    localTrendingPodcasts = emptyList(),
+                    foreignTrendingPodcasts = emptyList(),
+                    liveEpisodes = emptyList(),
+                    channels = emptyList(),
+                    onPlayEpisode = {},
+                    onResumeEpisode = {},
+                    onToggleLikedEpisode = {},
+                    onPodcastClick = {},
+                    onChannelClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithText(episodeTestDataList.first().title, substring = true)
+            .onFirst()
+            .assertExists()
+    }
 }

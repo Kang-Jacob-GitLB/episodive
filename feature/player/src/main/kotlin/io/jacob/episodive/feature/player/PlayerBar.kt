@@ -89,7 +89,7 @@ fun PlayerBar(
         ) {
             val s = state as? PlayerState.Success ?: return@AnimatedVisibility
 
-            PlayerBar(
+            PlayerBarContent(
                 modifier = modifier,
                 podcast = s.podcast,
                 nowPlaying = s.nowPlaying,
@@ -109,7 +109,7 @@ fun PlayerBar(
 }
 
 @Composable
-private fun PlayerBar(
+internal fun PlayerBarContent(
     modifier: Modifier = Modifier,
     podcast: Podcast,
     nowPlaying: Episode,
@@ -252,7 +252,7 @@ private fun PlayerBar(
 @Composable
 private fun PlayerBarPreview() {
     EpisodiveTheme {
-        PlayerBar(
+        PlayerBarContent(
             podcast = podcastTestData,
             nowPlaying = episodeTestData,
             progress = Progress(

@@ -75,4 +75,77 @@ class OnboardingScreenTest {
 
         composeTestRule.onNodeWithText("Choose your taste", substring = true).assertIsDisplayed()
     }
+
+    @Test
+    fun podcastSelectionPage_displaysTitle() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                OnboardingScreen(
+                    pagerState = rememberPagerState(initialPage = 2) { OnboardingPage.entries.size },
+                    categories = Category.entries.map { SelectableCategory(it, false) },
+                    podcasts = flowOf(PagingData.from(podcastTestDataList)),
+                    onChooseCategory = {},
+                    onChoosePodcast = {},
+                    onNextPage = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("You may interested", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun completionPage_displaysTitle() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                OnboardingScreen(
+                    pagerState = rememberPagerState(initialPage = 3) { OnboardingPage.entries.size },
+                    categories = Category.entries.map { SelectableCategory(it, false) },
+                    podcasts = flowOf(PagingData.from(podcastTestDataList)),
+                    onChooseCategory = {},
+                    onChoosePodcast = {},
+                    onNextPage = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Great picks!", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun categorySelectionPage_displaysCategoryItems() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                OnboardingScreen(
+                    pagerState = rememberPagerState(initialPage = 1) { OnboardingPage.entries.size },
+                    categories = Category.entries.map { SelectableCategory(it, false) },
+                    podcasts = flowOf(PagingData.from(podcastTestDataList)),
+                    onChooseCategory = {},
+                    onChoosePodcast = {},
+                    onNextPage = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Arts", substring = true).assertExists()
+    }
+
+    @Test
+    fun categorySelectionPage_displaysDescription() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                OnboardingScreen(
+                    pagerState = rememberPagerState(initialPage = 1) { OnboardingPage.entries.size },
+                    categories = Category.entries.map { SelectableCategory(it, false) },
+                    podcasts = flowOf(PagingData.from(podcastTestDataList)),
+                    onChooseCategory = {},
+                    onChoosePodcast = {},
+                    onNextPage = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Please select three or more podcast", substring = true)
+            .assertIsDisplayed()
+    }
 }

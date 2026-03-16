@@ -369,4 +369,52 @@ class LibraryViewModelTest {
             assertEquals(LibrarySection.Liked, (state as LibraryState.Success).section)
         }
     }
+
+    @Test
+    fun `Given SelectSection Followed, When sent, Then section updates to Followed`() = runTest {
+        setupDefaultMocks()
+        val viewModel = createViewModel()
+
+        viewModel.sendAction(LibraryAction.SelectSection(LibrarySection.Followed))
+
+        viewModel.state.test {
+            assertEquals(LibraryState.Loading, awaitItem())
+            mainDispatcherRule.testDispatcher.scheduler.advanceTimeBy(600)
+            val state = awaitItem()
+            assertTrue(state is LibraryState.Success)
+            assertEquals(LibrarySection.Followed, (state as LibraryState.Success).section)
+        }
+    }
+
+    @Test
+    fun `Given SelectSection RecentlyListened, When sent, Then section updates to RecentlyListened`() = runTest {
+        setupDefaultMocks()
+        val viewModel = createViewModel()
+
+        viewModel.sendAction(LibraryAction.SelectSection(LibrarySection.RecentlyListened))
+
+        viewModel.state.test {
+            assertEquals(LibraryState.Loading, awaitItem())
+            mainDispatcherRule.testDispatcher.scheduler.advanceTimeBy(600)
+            val state = awaitItem()
+            assertTrue(state is LibraryState.Success)
+            assertEquals(LibrarySection.RecentlyListened, (state as LibraryState.Success).section)
+        }
+    }
+
+    @Test
+    fun `Given SelectSection Preferred, When sent, Then section updates to Preferred`() = runTest {
+        setupDefaultMocks()
+        val viewModel = createViewModel()
+
+        viewModel.sendAction(LibraryAction.SelectSection(LibrarySection.Preferred))
+
+        viewModel.state.test {
+            assertEquals(LibraryState.Loading, awaitItem())
+            mainDispatcherRule.testDispatcher.scheduler.advanceTimeBy(600)
+            val state = awaitItem()
+            assertTrue(state is LibraryState.Success)
+            assertEquals(LibrarySection.Preferred, (state as LibraryState.Success).section)
+        }
+    }
 }

@@ -410,4 +410,43 @@ class EpisodeLocalDataSourceTest {
                 dao.getPlayedEpisodesPaging(isCompleted, null)
             }
         }
+
+    @Test
+    fun `Given episode, When upsertEpisode, Then calls dao upsertEpisode`() = runTest {
+        // When
+        dataSource.upsertEpisode(episodeEntity)
+
+        // Then
+        coVerify {
+            dao.upsertEpisode(episodeEntity)
+        }
+    }
+
+    @Test
+    fun `Given episodes, When upsertEpisodesWithGroup, Then calls dao upsertEpisodesWithGroup`() = runTest {
+        // Given
+        val groupKey = "feedId:123"
+
+        // When
+        dataSource.upsertEpisodesWithGroup(listOf(episodeEntity), groupKey)
+
+        // Then
+        coVerify {
+            dao.upsertEpisodesWithGroup(listOf(episodeEntity), groupKey)
+        }
+    }
+
+    @Test
+    fun `Given ids, When getEpisodesByIdsOnce, Then calls dao getEpisodesByIdsOnce`() = runTest {
+        // Given
+        val ids = listOf(1L, 2L, 3L)
+
+        // When
+        dataSource.getEpisodesByIdsOnce(ids)
+
+        // Then
+        coVerify {
+            dao.getEpisodesByIdsOnce(ids)
+        }
+    }
 }
