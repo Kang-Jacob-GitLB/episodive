@@ -107,7 +107,7 @@ def calculate_percentage(covered, total):
 def generate_markdown_report(modules_data, output_file):
     """Generate a markdown report from coverage data"""
 
-    with open(output_file, 'w') as f:
+    with open(output_file, 'w', encoding='utf-8') as f:
         # Header
         f.write("# Code Coverage Report\n\n")
         f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
@@ -275,7 +275,7 @@ def main():
     # Find all coverage reports
     project_root = Path(__file__).parent.parent
 
-    print("🔍 Searching for coverage reports...")
+    print("Searching for coverage reports...")
 
     modules_data = {}
 
@@ -283,24 +283,24 @@ def main():
     for module in ['database', 'network', 'datastore', 'data', 'domain', 'player', 'designsystem', 'testing']:
         xml_path = project_root / f'core/{module}/build/reports/jacoco/createDebugCombinedCoverageReport/createDebugCombinedCoverageReport.xml'
         if xml_path.exists():
-            print(f"  ✓ Found coverage for core:{module}")
+            print(f"  [OK] Found coverage for core:{module}")
             modules_data[f'core:{module}'] = parse_coverage(str(xml_path))
 
     # Feature modules
-    for module in ['home', 'search', 'library', 'podcast', 'player', 'clip', 'onboarding']:
+    for module in ['home', 'search', 'library', 'podcast', 'player', 'clip', 'onboarding', 'channel']:
         xml_path = project_root / f'feature/{module}/build/reports/jacoco/createDebugCombinedCoverageReport/createDebugCombinedCoverageReport.xml'
         if xml_path.exists():
-            print(f"  ✓ Found coverage for feature:{module}")
+            print(f"  [OK] Found coverage for feature:{module}")
             modules_data[f'feature:{module}'] = parse_coverage(str(xml_path))
 
     # App module
     app_xml_path = project_root / 'app/build/reports/jacoco/createDebugCombinedCoverageReport/createDebugCombinedCoverageReport.xml'
     if app_xml_path.exists():
-        print(f"  ✓ Found coverage for app")
+        print(f"  [OK] Found coverage for app")
         modules_data['app'] = parse_coverage(str(app_xml_path))
 
     if not modules_data:
-        print("❌ No coverage reports found!")
+        print("[ERROR] No coverage reports found!")
         print("   Run './gradlew createDebugCombinedCoverageReport' first")
         sys.exit(1)
 
@@ -308,10 +308,10 @@ def main():
     docs_dir = project_root / 'docs'
     docs_dir.mkdir(exist_ok=True)
     output_file = docs_dir / 'COVERAGE_REPORT.md'
-    print(f"\n📝 Generating report...")
+    print(f"\nGenerating report...")
     generate_markdown_report(modules_data, str(output_file))
 
-    print(f"✅ Coverage report generated: {output_file}")
+    print(f"[OK] Coverage report generated: {output_file}")
     print(f"\nYou can view it with: cat {output_file}")
 
 

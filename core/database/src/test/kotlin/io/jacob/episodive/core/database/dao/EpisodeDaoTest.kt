@@ -85,7 +85,7 @@ class EpisodeDaoTest {
             // Given
             dao.upsertEpisodes(episodeEntities)
             dao.upsertEpisodes(episodeEntities.toMutableList().apply {
-                removeFirst()
+                removeAt(0)
                 add(episodeEntity.copy(id = 100L, datePublished = Instant.fromEpochSeconds(1)))
             })
 

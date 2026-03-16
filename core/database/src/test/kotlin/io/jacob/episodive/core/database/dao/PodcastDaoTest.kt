@@ -83,7 +83,7 @@ class PodcastDaoTest {
             // Given
             dao.upsertPodcasts(podcastEntities)
             dao.upsertPodcasts(podcastEntities.toMutableList().apply {
-                removeFirst()
+                removeAt(0)
                 add(podcastEntity.copy(id = 100L, lastUpdateTime = Instant.fromEpochSeconds(1)))
             })
 
