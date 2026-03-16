@@ -159,4 +159,52 @@ class UserPreferencesStoreTest {
         assertEquals(Locale.getDefault().language, result.language)
         assertTrue(result.categories.isEmpty())
     }
+
+    @Test
+    @DisabledOnWindows
+    fun removeCategory_whenCategoryDoesNotExist_doesNotChangeCategories() = runTest {
+        userPreferencesStore.addCategories(listOf(Category.ARTS, Category.SCIENCE))
+
+        userPreferencesStore.removeCategory(Category.TECHNOLOGY)
+
+        val result = userPreferencesStore.getUserPreferences().first()
+        assertEquals(2, result.categories.size)
+        assertTrue(result.categories.contains(Category.ARTS))
+        assertTrue(result.categories.contains(Category.SCIENCE))
+    }
+
+    @Test
+    @DisabledOnWindows
+    fun setSpeed_withDifferentValues_updatesCorrectly() = runTest {
+        userPreferencesStore.setSpeed(0.5f)
+        var result = userPreferencesStore.getUserPreferences().first()
+        assertEquals(0.5f, result.speed)
+
+        userPreferencesStore.setSpeed(2.0f)
+        result = userPreferencesStore.getUserPreferences().first()
+        assertEquals(2.0f, result.speed)
+    }
+
+    @Test
+    @DisabledOnWindows
+    fun setFirstLaunch_toTrue_updatesCorrectly() = runTest {
+        userPreferencesStore.setFirstLaunch(false)
+        var result = userPreferencesStore.getUserPreferences().first()
+        assertFalse(result.isFirstLaunch)
+
+        userPreferencesStore.setFirstLaunch(true)
+        result = userPreferencesStore.getUserPreferences().first()
+        assertTrue(result.isFirstLaunch)
+    }
+
+    @Test
+    @DisabledOnWindows
+    fun addCategory_withDuplicateCategory_doesNotAddDuplicate() = runTest {
+        userPreferencesStore.addCategory(Category.ARTS)
+        userPreferencesStore.addCategory(Category.ARTS)
+
+        val result = userPreferencesStore.getUserPreferences().first()
+        assertEquals(1, result.categories.size)
+        assertEquals(Category.ARTS, result.categories.first())
+    }
 }

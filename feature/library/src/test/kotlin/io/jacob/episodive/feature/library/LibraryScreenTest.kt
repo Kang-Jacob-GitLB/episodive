@@ -65,4 +65,113 @@ class LibraryScreenTest {
 
         composeTestRule.onNodeWithText("Library").assertIsDisplayed()
     }
+
+    @Test
+    fun recentlyListenedSection_displaysData() {
+        setLibraryScreen(section = LibrarySection.RecentlyListened)
+
+        composeTestRule.onNodeWithText(episodeTestDataList.first().title, substring = true)
+            .assertExists()
+    }
+
+    @Test
+    fun likedSection_displaysData() {
+        setLibraryScreen(section = LibrarySection.Liked)
+
+        composeTestRule.onNodeWithText(episodeTestDataList.first().title, substring = true)
+            .assertExists()
+    }
+
+    @Test
+    fun followedSection_displaysData() {
+        setLibraryScreen(section = LibrarySection.Followed)
+
+        composeTestRule.onNodeWithText(podcastTestDataList.first().title, substring = true)
+            .assertExists()
+    }
+
+    @Test
+    fun preferredSection_displaysCategories() {
+        setLibraryScreen(section = LibrarySection.Preferred)
+
+        composeTestRule.onNodeWithText("Arts", substring = true).assertExists()
+    }
+
+    @Test
+    fun allSection_withEmptyData_showsNoResults() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                LibraryScreen(
+                    query = "",
+                    onQueryChange = {},
+                    onFind = {},
+                    section = LibrarySection.All,
+                    onSectionChange = {},
+                    playedEpisodes = emptyList(),
+                    likedEpisodes = emptyList(),
+                    followedPodcasts = emptyList(),
+                    preferredCategories = emptyList(),
+                    selectableCategories = emptyList(),
+                    playedEpisodesPaging = flowOf(PagingData.from(emptyList())),
+                    likedEpisodesPaging = flowOf(PagingData.from(emptyList())),
+                    followedPodcastsPaging = flowOf(PagingData.from(emptyList())),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("No results found.").assertIsDisplayed()
+    }
+
+    @Test
+    fun allSection_displaysLikedEpisodesSection() {
+        setLibraryScreen()
+
+        composeTestRule.onNodeWithText("Liked episodes").assertIsDisplayed()
+    }
+
+    @Test
+    fun allSection_displaysFollowedPodcastsSection() {
+        setLibraryScreen()
+
+        composeTestRule.onNodeWithText("Followed podcasts").assertExists()
+    }
+
+    @Test
+    fun allSection_displaysPreferredCategoriesSection() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                LibraryScreen(
+                    query = "",
+                    onQueryChange = {},
+                    onFind = {},
+                    section = LibrarySection.All,
+                    onSectionChange = {},
+                    playedEpisodes = emptyList(),
+                    likedEpisodes = emptyList(),
+                    followedPodcasts = emptyList(),
+                    preferredCategories = listOf(Category.BUSINESS),
+                    selectableCategories = emptyList(),
+                    playedEpisodesPaging = flowOf(PagingData.from(emptyList())),
+                    likedEpisodesPaging = flowOf(PagingData.from(emptyList())),
+                    followedPodcastsPaging = flowOf(PagingData.from(emptyList())),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Preferred categories").assertIsDisplayed()
+    }
+
+    @Test
+    fun recentlyListenedFilterChipIsDisplayed() {
+        setLibraryScreen()
+
+        composeTestRule.onNodeWithText("Recently listened").assertIsDisplayed()
+    }
+
+    @Test
+    fun preferredFilterChipIsDisplayed() {
+        setLibraryScreen()
+
+        composeTestRule.onNodeWithText("Preferred").assertIsDisplayed()
+    }
 }

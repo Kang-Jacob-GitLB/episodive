@@ -294,4 +294,32 @@ class PodcastLocalDataSourceTest {
                 dao.getFollowedPodcastsPaging(null)
             }
         }
+
+    @Test
+    fun `Given podcasts, When upsertPodcastsWithGroup, Then calls dao upsertPodcastsWithGroup`() = runTest {
+        // Given
+        val groupKey = "trending:en"
+
+        // When
+        dataSource.upsertPodcastsWithGroup(listOf(podcastEntity), groupKey)
+
+        // Then
+        coVerify {
+            dao.upsertPodcastsWithGroup(listOf(podcastEntity), groupKey)
+        }
+    }
+
+    @Test
+    fun `Given ids, When getPodcastsByIdsOnce, Then calls dao getPodcastsByIdsOnce`() = runTest {
+        // Given
+        val ids = listOf(1L, 2L, 3L)
+
+        // When
+        dataSource.getPodcastsByIdsOnce(ids)
+
+        // Then
+        coVerify {
+            dao.getPodcastsByIdsOnce(ids)
+        }
+    }
 }

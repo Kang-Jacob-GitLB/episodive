@@ -61,4 +61,76 @@ class ClipScreenTest {
         composeTestRule.onNodeWithText(episodeTestDataList.first().title, substring = true)
             .assertDoesNotExist()
     }
+
+    @Test
+    fun whenMultipleEpisodesExist_firstClipIsRendered() {
+        val clipEpisodes = episodeTestDataList.take(5).map {
+            it.copy(
+                clipStartTime = Instant.fromEpochMilliseconds(60_000L),
+                clipDuration = 1278.seconds,
+            )
+        }
+
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                ClipScreen(
+                    episodes = flowOf(PagingData.from(clipEpisodes)),
+                    playback = Playback.READY,
+                    progress = Progress(500.seconds, 1000.seconds, 1278.seconds),
+                    isPlaying = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(clipEpisodes.first().title, substring = true)
+            .assertExists()
+    }
+
+    @Test
+    fun whenPlaybackEnded_clipItemsStillShown() {
+        val clipEpisodes = episodeTestDataList.take(3).map {
+            it.copy(
+                clipStartTime = Instant.fromEpochMilliseconds(60_000L),
+                clipDuration = 1278.seconds,
+            )
+        }
+
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                ClipScreen(
+                    episodes = flowOf(PagingData.from(clipEpisodes)),
+                    playback = Playback.ENDED,
+                    progress = Progress(1278.seconds, 1278.seconds, 1278.seconds),
+                    isPlaying = false,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(clipEpisodes.first().title, substring = true)
+            .assertExists()
+    }
+
+    @Test
+    fun whenPlaybackIdle_clipItemsShown() {
+        val clipEpisodes = episodeTestDataList.take(3).map {
+            it.copy(
+                clipStartTime = Instant.fromEpochMilliseconds(60_000L),
+                clipDuration = 1278.seconds,
+            )
+        }
+
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                ClipScreen(
+                    episodes = flowOf(PagingData.from(clipEpisodes)),
+                    playback = Playback.IDLE,
+                    progress = Progress(0.seconds, 0.seconds, 0.seconds),
+                    isPlaying = false,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(clipEpisodes.first().title, substring = true)
+            .assertExists()
+    }
 }

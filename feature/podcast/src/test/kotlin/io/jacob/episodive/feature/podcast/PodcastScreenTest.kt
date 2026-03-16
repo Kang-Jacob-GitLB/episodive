@@ -81,4 +81,47 @@ class PodcastScreenTest {
         composeTestRule.onNodeWithText(podcastTestData.description, substring = true)
             .assertExists()
     }
+
+    @Test
+    fun emptyEpisodes_podcastHeaderStillDisplayed() {
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                PodcastScreen(
+                    podcast = podcastTestData,
+                    episodes = flowOf(PagingData.from(emptyList())),
+                    onFollowClick = {},
+                    onEpisodeClick = { _, _ -> },
+                    onToggleLikedEpisode = {},
+                    onBackClick = {},
+                    onShowSnackbar = { _, _ -> false },
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithText(podcastTestData.title, substring = true)
+            .onFirst()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun followedPodcast_showsUnfollowButton() {
+        val followedPodcast = podcastTestData.copy(
+            followedAt = kotlin.time.Instant.fromEpochSeconds(1000L),
+        )
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                PodcastScreen(
+                    podcast = followedPodcast,
+                    episodes = flowOf(PagingData.from(episodeTestDataList)),
+                    onFollowClick = {},
+                    onEpisodeClick = { _, _ -> },
+                    onToggleLikedEpisode = {},
+                    onBackClick = {},
+                    onShowSnackbar = { _, _ -> false },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Unfollow").assertIsDisplayed()
+    }
 }

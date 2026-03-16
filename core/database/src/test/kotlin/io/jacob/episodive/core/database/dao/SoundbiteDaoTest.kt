@@ -131,4 +131,16 @@ class SoundbiteDaoTest {
             val expectedOldest = soundbiteEntities.minByOrNull { it.cachedAt }?.cachedAt
             assertEquals(expectedOldest?.epochSeconds, oldestCachedAt?.epochSeconds)
         }
+
+    @Test
+    fun `Given soundbites, When getSoundbitesPagingList, Then returns correct list`() = runTest {
+        // Given
+        dao.upsertSoundbites(soundbiteEntities)
+
+        // When
+        val result = dao.getSoundbitesPagingList(offset = 0, limit = 5)
+
+        // Then
+        assertEquals(5, result.size)
+    }
 }

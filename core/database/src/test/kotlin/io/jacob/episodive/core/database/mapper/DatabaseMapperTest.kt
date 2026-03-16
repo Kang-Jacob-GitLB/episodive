@@ -1,11 +1,13 @@
 package io.jacob.episodive.core.database.mapper
 
+import io.jacob.episodive.core.model.mapper.toFeedFromTrending
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.model.soundbiteTestData
 import io.jacob.episodive.core.testing.model.soundbiteTestDataList
+import io.jacob.episodive.core.testing.model.trendingFeedTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -177,5 +179,37 @@ class DatabaseMapperTest {
         assertEquals(soundbiteTestDataList.size, soundbites.size)
         assertEquals(soundbiteTestDataList.first().enclosureUrl, soundbites.first().enclosureUrl)
         assertEquals(soundbiteTestDataList.last().enclosureUrl, soundbites.last().enclosureUrl)
+    }
+
+    @Test
+    fun `toFeedEntity converts Feed to FeedEntity correctly`() {
+        // Given
+        val feed = trendingFeedTestDataList.first().toFeedFromTrending()
+
+        // When
+        val entity = feed.toFeedEntity("trending:en", cachedAt)
+
+        // Then
+        assertEquals(feed.id, entity.id)
+        assertEquals(feed.title, entity.title)
+        assertEquals(feed.url, entity.url)
+        assertEquals("trending:en", entity.groupKey)
+        assertEquals(cachedAt, entity.cachedAt)
+    }
+
+    @Test
+    fun `toFeedEntities converts list of Feed to list of FeedEntity correctly`() {
+        // Given
+        val feeds = trendingFeedTestDataList.take(3).map { it.toFeedFromTrending() }
+
+        // When
+        val entities = feeds.toFeedEntities("trending:en", cachedAt)
+
+        // Then
+        assertEquals(3, entities.size)
+        entities.forEach { entity ->
+            assertEquals("trending:en", entity.groupKey)
+            assertEquals(cachedAt, entity.cachedAt)
+        }
     }
 }
