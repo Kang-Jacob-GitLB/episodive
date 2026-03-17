@@ -34,6 +34,8 @@ jobs:
               - '.github/workflows/**'
               - '*.gradle.kts'
               - 'gradle.properties'
+              - 'gradlew'
+              - 'gradlew.bat'
 
   build:
     needs: check-for-changes
@@ -56,7 +58,6 @@ jobs:
       - name: Build and test
         run: >-
           ./gradlew
-          assembleDebug
           createDebugCombinedCoverageReport
           --no-daemon --build-cache --parallel
           -Dorg.gradle.jvmargs="-Dfile.encoding=UTF-8 -XX:+UseG1GC -XX:SoftRefLRUPolicyMSPerMB=1 -XX:ReservedCodeCacheSize=256m -Xmx2g -Xms512m"
@@ -85,7 +86,7 @@ jobs:
           maxColorRange: 90
           valColorRange: ${{ steps.jacoco.outputs.coverage-overall }}
 
-  ci-result:
+  ci:
     needs: build
     if: always()
     runs-on: ubuntu-latest
@@ -93,9 +94,9 @@ jobs:
     steps:
       - name: Check CI result
         run: |
-          if [[ "${{ needs.build.result }}" == "failure" ]]; then
-            echo "CI failed"
-            exit 1
-          else
+          if [[ "${{ needs.build.result }}" == "success" || "${{ needs.build.result }}" == "skipped" ]]; then
             echo "CI passed (build result: ${{ needs.build.result }})"
+          else
+            echo "CI failed (build result: ${{ needs.build.result }})"
+            exit 1
           fi
