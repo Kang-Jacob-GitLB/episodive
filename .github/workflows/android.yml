@@ -56,7 +56,10 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build and test
-        run: ./gradlew createDebugCombinedCoverageReport
+        run: >-
+          ./gradlew createDebugCombinedCoverageReport
+          -Dorg.gradle.jvmargs="-Dfile.encoding=UTF-8 -XX:+UseG1GC -XX:SoftRefLRUPolicyMSPerMB=1 -XX:ReservedCodeCacheSize=256m -Xmx2g -Xms512m"
+          -Pkotlin.daemon.jvmargs="-Dfile.encoding=UTF-8 -XX:+UseG1GC -XX:ReservedCodeCacheSize=256m -Xmx2g -Xms512m"
 
       - name: Display local test coverage
         id: jacoco
