@@ -17,24 +17,25 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      source_changes: ${{ steps.check_changes.outputs.any_changed }}
+      source_changes: ${{ steps.check_changes.outputs.source }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Check for source changes
-        uses: tj-actions/changed-files@v42
+        uses: dorny/paths-filter@v3
         id: check_changes
         with:
-          files_ignore: |
-            **/*.md
-            .idea/**
-            .github/**
-            .claude/**
-            docs/**
+          filters: |
+            source:
+              - 'app/**'
+              - 'core/**'
+              - 'feature/**'
+              - 'build-logic/**'
+              - 'gradle/**'
+              - '.github/workflows/**'
+              - '*.gradle.kts'
+              - 'gradle.properties'
+              - 'gradlew'
+              - 'gradlew.bat'
 
   build:
     needs: check-for-changes
@@ -50,20 +51,17 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: gradle
 
-      - name: Setup Android SDK (for self-hosted)
-        if: runner.environment == 'self-hosted'
-        uses: android-actions/setup-android@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Build with Gradle
-        run: ./gradlew build
-
-      - name: Generate coverage reports for Debug variants
-        run: ./gradlew createDebugCombinedCoverageReport
+      - name: Build and test
+        run: >-
+          ./gradlew
+          createDebugCombinedCoverageReport
+          --no-daemon --build-cache --parallel
+          -Dorg.gradle.jvmargs="-Dfile.encoding=UTF-8 -XX:+UseG1GC -XX:SoftRefLRUPolicyMSPerMB=1 -XX:ReservedCodeCacheSize=256m -Xmx2g -Xms512m"
+          -Pkotlin.daemon.jvmargs="-Dfile.encoding=UTF-8 -XX:+UseG1GC -XX:ReservedCodeCacheSize=320m -Xmx2g -Xms512m"
 
       - name: Display local test coverage
         id: jacoco
@@ -87,3 +85,18 @@ jobs:
           minColorRange: 50
           maxColorRange: 90
           valColorRange: ${{ steps.jacoco.outputs.coverage-overall }}
+
+  ci:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check CI result
+        run: |
+          if [[ "${{ needs.build.result }}" == "success" || "${{ needs.build.result }}" == "skipped" ]]; then
+            echo "CI passed (build result: ${{ needs.build.result }})"
+          else
+            echo "CI failed (build result: ${{ needs.build.result }})"
+            exit 1
+          fi
