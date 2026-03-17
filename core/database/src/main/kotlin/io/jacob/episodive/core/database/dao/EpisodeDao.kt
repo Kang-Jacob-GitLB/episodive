@@ -46,6 +46,7 @@ interface EpisodeDao {
     @Query("SELECT COALESCE(MAX(`order`), -1) FROM episode_group WHERE groupKey = :groupKey")
     suspend fun getMaxOrderByGroupKey(groupKey: String): Int
 
+    @Transaction
     suspend fun upsertEpisodesWithGroup(episodes: List<EpisodeEntity>, groupKey: String) {
         if (episodes.isEmpty()) return
 
