@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import io.jacob.episodive.core.model.Category
+import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.testing.util.DisabledOnWindows
 import io.jacob.episodive.core.testing.util.DisabledOnWindowsRule
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -13,6 +14,8 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -206,5 +209,75 @@ class UserPreferencesStoreTest {
         val result = userPreferencesStore.getUserPreferences().first()
         assertEquals(1, result.categories.size)
         assertEquals(Category.ARTS, result.categories.first())
+    }
+
+    @Test
+    fun saveLastPlayState_storesAllFields() = runTest {
+        userPreferencesStore.saveLastPlayState(
+            episodeId = 123L,
+            index = 2,
+            positionMs = 5000L,
+            shuffle = true,
+            repeat = Repeat.ONE,
+        )
+
+        val result = userPreferencesStore.getLastPlayState()
+        assertNotNull(result)
+        assertEquals(123L, result!!.episodeId)
+        assertEquals(2, result.index)
+        assertEquals(5000L, result.positionMs)
+        assertTrue(result.shuffle)
+        assertEquals(Repeat.ONE, result.repeat)
+    }
+
+    @Test
+    fun getLastPlayState_withNoData_returnsNull() = runTest {
+        val result = userPreferencesStore.getLastPlayState()
+        assertNull(result)
+    }
+
+    @Test
+    @DisabledOnWindows
+    fun clearLastPlayState_removesAllFields() = runTest {
+        userPreferencesStore.saveLastPlayState(
+            episodeId = 123L,
+            index = 2,
+            positionMs = 5000L,
+            shuffle = true,
+            repeat = Repeat.ONE,
+        )
+        assertNotNull(userPreferencesStore.getLastPlayState())
+
+        userPreferencesStore.clearLastPlayState()
+
+        assertNull(userPreferencesStore.getLastPlayState())
+    }
+
+    @Test
+    @DisabledOnWindows
+    fun saveLastPlayState_overwritesPreviousState() = runTest {
+        userPreferencesStore.saveLastPlayState(
+            episodeId = 100L,
+            index = 0,
+            positionMs = 1000L,
+            shuffle = false,
+            repeat = Repeat.OFF,
+        )
+
+        userPreferencesStore.saveLastPlayState(
+            episodeId = 200L,
+            index = 3,
+            positionMs = 9000L,
+            shuffle = true,
+            repeat = Repeat.ALL,
+        )
+
+        val result = userPreferencesStore.getLastPlayState()
+        assertNotNull(result)
+        assertEquals(200L, result!!.episodeId)
+        assertEquals(3, result.index)
+        assertEquals(9000L, result.positionMs)
+        assertTrue(result.shuffle)
+        assertEquals(Repeat.ALL, result.repeat)
     }
 }

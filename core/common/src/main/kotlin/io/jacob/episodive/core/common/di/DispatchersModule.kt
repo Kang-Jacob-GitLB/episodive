@@ -6,6 +6,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.jacob.episodive.core.common.Dispatcher
 import io.jacob.episodive.core.common.EpisodiveDispatchers
+import io.jacob.episodive.core.common.SystemTimeProvider
+import io.jacob.episodive.core.common.TimeProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
@@ -19,4 +21,7 @@ object DispatchersModule {
     @Provides
     @Dispatcher(EpisodiveDispatchers.Default)
     fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+
+    @Provides
+    fun provideTimeProvider(): TimeProvider = SystemTimeProvider()
 }

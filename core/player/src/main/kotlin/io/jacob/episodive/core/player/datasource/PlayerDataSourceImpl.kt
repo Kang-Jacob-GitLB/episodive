@@ -205,6 +205,14 @@ class PlayerDataSourceImpl @Inject constructor(
         return player
     }
 
+    // Intentionally only calls prepare() without play() — restores the player in a paused state
+    // so the user can choose when to start playback after app restart.
+    override fun prepare(episodes: List<Episode>, indexToPlay: Int, positionMs: Long) {
+        val mediaItems = episodes.map { it.toMediaItem(isClip = false) }
+        player.setMediaItems(mediaItems, indexToPlay, positionMs)
+        player.prepare()
+    }
+
     override fun play(episode: Episode) {
         Timber.i("url: ${episode.enclosureUrl}")
         val mediaItem = episode.toMediaItem(isClip = false)

@@ -3,6 +3,8 @@ package io.jacob.episodive.core.datastore.datasource
 import io.jacob.episodive.core.datastore.model.UserPreferences
 import io.jacob.episodive.core.datastore.store.UserPreferencesStore
 import io.jacob.episodive.core.model.Category
+import io.jacob.episodive.core.model.LastPlayState
+import io.jacob.episodive.core.model.Repeat
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -35,5 +37,23 @@ class UserPreferencesDataSourceImpl @Inject constructor(
 
     override fun getUserPreferences(): Flow<UserPreferences> {
         return store.getUserPreferences()
+    }
+
+    override suspend fun saveLastPlayState(
+        episodeId: Long,
+        index: Int,
+        positionMs: Long,
+        shuffle: Boolean,
+        repeat: Repeat,
+    ) {
+        store.saveLastPlayState(episodeId, index, positionMs, shuffle, repeat)
+    }
+
+    override suspend fun getLastPlayState(): LastPlayState? {
+        return store.getLastPlayState()
+    }
+
+    override suspend fun clearLastPlayState() {
+        store.clearLastPlayState()
     }
 }

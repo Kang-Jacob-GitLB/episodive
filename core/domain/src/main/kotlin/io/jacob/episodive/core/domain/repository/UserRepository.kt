@@ -1,6 +1,8 @@
 package io.jacob.episodive.core.domain.repository
 
 import io.jacob.episodive.core.model.Category
+import io.jacob.episodive.core.model.LastPlayState
+import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.model.UserData
 import kotlinx.coroutines.flow.Flow
 
@@ -13,4 +15,7 @@ interface UserRepository {
     fun getCategories(): Flow<List<Category>>
     suspend fun setSpeed(speed: Float)
     fun getUserData(): Flow<UserData>
+    suspend fun saveLastPlayState(episodeId: Long, index: Int, positionMs: Long, shuffle: Boolean, repeat: Repeat)
+    suspend fun getLastPlayState(): LastPlayState?
+    suspend fun clearLastPlayState()
 }

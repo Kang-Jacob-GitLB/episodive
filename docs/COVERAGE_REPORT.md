@@ -1,6 +1,6 @@
 # Code Coverage Report
 
-Generated: 2026-03-16 16:09:52
+Generated: 2026-03-18 13:13:34
 
 ---
 
@@ -8,21 +8,21 @@ Generated: 2026-03-16 16:09:52
 
 | Module | Line Coverage | Branch Coverage | Total Lines | Covered | Missed |
 |--------|--------------|----------------|-------------|---------|--------|
-| core:data       |  78.9% |  45.0% |    778 |    614 |    164 |
-| core:database   |  79.3% |  49.9% |   6559 |   5202 |   1357 |
-| core:datastore  |  71.8% |  13.3% |     71 |     51 |     20 |
-| core:domain     |  86.4% |  45.3% |    287 |    248 |     39 |
+| core:data       |  78.6% |  45.0% |    793 |    623 |    170 |
+| core:database   |  79.3% |  49.9% |   6562 |   5205 |   1357 |
+| core:datastore  |  72.6% |  25.0% |    106 |     77 |     29 |
+| core:domain     |  87.2% |  52.5% |    305 |    266 |     39 |
 | core:network    |  87.2% |  58.1% |    477 |    416 |     61 |
-| feature:channel |  75.4% |  20.1% |    240 |    181 |     59 |
-| feature:clip    |  60.1% |  25.5% |    233 |    140 |     93 |
-| feature:home    |  60.3% |  25.8% |    307 |    185 |    122 |
-| feature:library |  69.9% |  33.2% |    745 |    521 |    224 |
-| feature:onboarding |  84.4% |  35.4% |    409 |    345 |     64 |
-| feature:player  |  64.9% |  31.0% |   1013 |    657 |    356 |
-| feature:podcast |  66.4% |  26.8% |    229 |    152 |     77 |
-| feature:search  |  73.0% |  33.7% |    437 |    319 |    118 |
+| feature:channel |  75.4% |  23.0% |    240 |    181 |     59 |
+| feature:clip    |  60.1% |  29.6% |    233 |    140 |     93 |
+| feature:home    |  60.3% |  31.4% |    307 |    185 |    122 |
+| feature:library |  69.9% |  35.9% |    745 |    521 |    224 |
+| feature:onboarding |  84.4% |  38.9% |    409 |    345 |     64 |
+| feature:player  |  65.6% |  31.5% |   1057 |    693 |    364 |
+| feature:podcast |  66.4% |  31.0% |    229 |    152 |     77 |
+| feature:search  |  73.0% |  38.1% |    437 |    319 |    118 |
 |--------|--------------|----------------|-------------|---------|--------|
-| **TOTAL** | ** 76.6%** | ** 37.9%** | ** 11785** | **  9031** | **  2754** |
+| **TOTAL** | ** 76.7%** | ** 40.1%** | ** 11900** | **  9123** | **  2777** |
 
 ---
 
@@ -51,30 +51,30 @@ Generated: 2026-03-16 16:09:52
 | feature:clip | io.jacob.episodive.feature.cli | ClipScreenKt.kt                |  58.7% | 54/92 | 38 |
 | feature:home | io.jacob.episodive.feature.hom | HomeScreenKt.kt                |  58.9% | 89/151 | 62 |
 | core:data  | io.jacob.episodive.core.data.r | PodcastRepositoryImpl.kt       |  61.2% | 52/85 | 33 |
-| core:data  | io.jacob.episodive.core.data.r | EpisodeRepositoryImpl.kt       |  64.3% | 74/115 | 41 |
+| core:data  | io.jacob.episodive.core.data.r | EpisodeRepositoryImpl.kt       |  65.5% | 78/119 | 41 |
 | feature:podcast | io.jacob.episodive.feature.pod | PodcastScreenKt.kt             |  66.4% | 89/134 | 45 |
 | feature:player | io.jacob.episodive.feature.pla | PlayerBarKt.kt                 |  68.9% | 82/119 | 37 |
-| core:datastore | io.jacob.episodive.core.datast | UserPreferencesStore.kt        |  70.8% | 17/24 | 7 |
+| core:datastore | io.jacob.episodive.core.datast | UserPreferencesStore.kt        |  73.0% | 27/37 | 10 |
 | core:domain | io.jacob.episodive.core.domain | GetLikedEpisodesUseCase.kt     |  75.0% | 3/4 | 1 |
 | feature:library | io.jacob.episodive.feature.lib | LibraryScreenKt.kt             |  76.2% | 374/491 | 117 |
-| core:database | io.jacob.episodive.core.databa | EpisodeDao_Impl.kt             |  79.7% | 1463/1835 | 372 |
+| core:database | io.jacob.episodive.core.databa | EpisodeDao_Impl.kt             |  79.7% | 1465/1837 | 372 |
 | core:database | io.jacob.episodive.core.databa | PodcastDao_Impl.kt             |  79.8% | 1120/1404 | 284 |
 
 ---
 
 ## Detailed Module Reports
 
-### core:data - 78.9% Coverage
+### core:data - 78.6% Coverage
 
-#### 📦 io.jacob.episodive.core.data.repository - 74.0%
+#### 📦 io.jacob.episodive.core.data.repository - 73.3%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
 | ❌ PodcastRepositoryImpl.kt                 |  61.2% | 52/85 | N/A |
-| ❌ EpisodeRepositoryImpl.kt                 |  64.3% | 74/115 | N/A |
-| ✅ UserRepositoryImpl.kt                    |  90.9% | 20/22 | 2/2 |
+| ❌ EpisodeRepositoryImpl.kt                 |  65.5% | 78/119 | N/A |
+| ⚠️ PlayerRepositoryImpl.kt                  |  89.6% | 60/67 | N/A |
 | ✅ RecentSearchRepositoryImpl.kt            |  92.3% | 12/13 | N/A |
-| ✅ PlayerRepositoryImpl.kt                  |  98.4% | 60/61 | N/A |
+| ✅ UserRepositoryImpl.kt                    |  92.6% | 25/27 | 2/2 |
 | ✅ ChannelRepositoryImpl.kt                 | 100.0% | 4/4 | N/A |
 
 #### 📦 io.jacob.episodive.core.data.util - 78.6%
@@ -101,11 +101,11 @@ Generated: 2026-03-16 16:09:52
 
 ### core:database - 79.3% Coverage
 
-#### 📦 io.jacob.episodive.core.database.dao - 81.3%
+#### 📦 io.jacob.episodive.core.database.dao - 81.4%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ EpisodeDao_Impl.kt                       |  79.7% | 1463/1835 | 251/496 |
+| ❌ EpisodeDao_Impl.kt                       |  79.7% | 1465/1837 | 251/496 |
 | ❌ PodcastDao_Impl.kt                       |  79.8% | 1120/1404 | 165/330 |
 | ⚠️ RecentSearchDao_Impl.kt                  |  83.3% | 45/54 | 4/6 |
 | ⚠️ FeedDao_Impl.kt                          |  88.8% | 175/197 | 21/36 |
@@ -159,19 +159,19 @@ Generated: 2026-03-16 16:09:52
 | ✅ AutoMigration2to3.kt                     | 100.0% | 1/1 | N/A |
 | ✅ AutoMigration5to6.kt                     | 100.0% | 1/1 | N/A |
 
-### core:datastore - 71.8% Coverage
+### core:datastore - 72.6% Coverage
 
-#### 📦 io.jacob.episodive.core.datastore.store - 70.8%
+#### 📦 io.jacob.episodive.core.datastore.store - 73.0%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ UserPreferencesStore.kt                  |  70.8% | 17/24 | N/A |
+| ❌ UserPreferencesStore.kt                  |  73.0% | 27/37 | 6/10 |
 
 #### 📦 io.jacob.episodive.core.datastore.datasource - 100.0%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ✅ UserPreferencesDataSourceImpl.kt         | 100.0% | 14/14 | N/A |
+| ✅ UserPreferencesDataSourceImpl.kt         | 100.0% | 19/19 | N/A |
 
 #### 📦 io.jacob.episodive.core.datastore.mapper - 100.0%
 
@@ -179,7 +179,7 @@ Generated: 2026-03-16 16:09:52
 |-------|----------|---------------------|------------------------|
 | ✅ DataStoreMapperKt.kt                     | 100.0% | 12/12 | N/A |
 
-### core:domain - 86.4% Coverage
+### core:domain - 87.2% Coverage
 
 #### 📦 io.jacob.episodive.core.domain.usecase.episode - 98.5%
 
@@ -243,10 +243,12 @@ Generated: 2026-03-16 16:09:52
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
+| ✅ SaveLastPlayStateUseCase.kt              | 100.0% | 4/4 | N/A |
 | ✅ GetNowPlayingUseCase.kt                  | 100.0% | 4/4 | N/A |
 | ✅ PlayEpisodeUseCase.kt                    | 100.0% | 19/19 | 10/10 |
 | ✅ ResumeEpisodeUseCase.kt                  | 100.0% | 5/5 | N/A |
 | ✅ GetPlaylistUseCase.kt                    | 100.0% | 4/4 | N/A |
+| ✅ RestoreLastPlayStateUseCase.kt           | 100.0% | 14/14 | 8/8 |
 
 #### 📦 io.jacob.episodive.core.domain.usecase.user - 100.0%
 
@@ -298,7 +300,7 @@ Generated: 2026-03-16 16:09:52
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ⚠️ ChannelScreenKt.kt                       |  81.3% | 113/139 | 24/138 |
+| ⚠️ ChannelScreenKt.kt                       |  81.3% | 113/139 | 24/118 |
 | ✅ ChannelViewModel.kt                      | 100.0% | 28/28 | N/A |
 
 ### feature:clip - 60.1% Coverage
@@ -315,7 +317,7 @@ Generated: 2026-03-16 16:09:52
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ ClipScreenKt.kt                          |  58.7% | 54/92 | 50/219 |
+| ❌ ClipScreenKt.kt                          |  58.7% | 54/92 | 50/181 |
 | ✅ ClipPlayerState.kt                       | 100.0% | 5/5 | N/A |
 | ✅ ClipViewModel.kt                         | 100.0% | 36/36 | N/A |
 
@@ -333,7 +335,7 @@ Generated: 2026-03-16 16:09:52
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ HomeScreenKt.kt                          |  58.9% | 89/151 | 42/160 |
+| ❌ HomeScreenKt.kt                          |  58.9% | 89/151 | 42/122 |
 | ✅ HomeViewModel.kt                         | 100.0% | 41/41 | N/A |
 
 ### feature:library - 69.9% Coverage
@@ -350,7 +352,7 @@ Generated: 2026-03-16 16:09:52
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ LibraryScreenKt.kt                       |  76.2% | 374/491 | 241/688 |
+| ❌ LibraryScreenKt.kt                       |  76.2% | 374/491 | 241/626 |
 | ⚠️ LibraryViewModel.kt                      |  81.5% | 66/81 | N/A |
 | ✅ LibrarySection.kt                        | 100.0% | 1/1 | N/A |
 
@@ -360,19 +362,20 @@ Generated: 2026-03-16 16:09:52
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ⚠️ OnboardingScreenKt.kt                    |  85.0% | 209/246 | 73/224 |
+| ⚠️ OnboardingScreenKt.kt                    |  85.0% | 209/246 | 72/198 |
 | ✅ OnboardingViewModel.kt                   |  92.2% | 47/51 | N/A |
 | ✅ OnboardingPage.kt                        | 100.0% | 4/4 | N/A |
 
-### feature:player - 64.9% Coverage
+### feature:player - 65.6% Coverage
 
-#### 📦 io.jacob.episodive.feature.player - 64.3%
+#### 📦 io.jacob.episodive.feature.player - 64.8%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
 | ❌ PlayerScreenKt.kt                        |  57.7% | 318/551 | 155/552 |
 | ❌ PlayerBarKt.kt                           |  68.9% | 82/119 | 19/88 |
-| ✅ PlayerViewModel.kt                       | 100.0% | 86/86 | N/A |
+| ✅ LastPlaySnapshot.kt                      | 100.0% | 6/6 | N/A |
+| ✅ PlayerViewModel.kt                       | 100.0% | 91/91 | N/A |
 
 ### feature:podcast - 66.4% Coverage
 
@@ -387,7 +390,7 @@ Generated: 2026-03-16 16:09:52
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ PodcastScreenKt.kt                       |  66.4% | 89/134 | 28/130 |
+| ❌ PodcastScreenKt.kt                       |  66.4% | 89/134 | 28/110 |
 | ✅ PodcastViewModel.kt                      | 100.0% | 33/33 | N/A |
 
 ### feature:search - 73.0% Coverage
@@ -404,7 +407,7 @@ Generated: 2026-03-16 16:09:52
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ⚠️ SearchScreenKt.kt                        |  83.8% | 191/228 | 139/420 |
+| ⚠️ SearchScreenKt.kt                        |  83.8% | 191/228 | 139/364 |
 | ✅ SearchViewModel.kt                       |  98.2% | 54/55 | N/A |
 
 ---

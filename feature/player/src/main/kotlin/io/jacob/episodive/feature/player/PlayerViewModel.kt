@@ -5,13 +5,16 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
-import io.jacob.episodive.core.common.combine
+import io.jacob.episodive.core.common.TimeProvider
+import io.jacob.episodive.core.common.combine as combineTyped
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetPlaylistUseCase
+import io.jacob.episodive.core.domain.usecase.player.RestoreLastPlayStateUseCase
+import io.jacob.episodive.core.domain.usecase.player.SaveLastPlayStateUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
@@ -20,6 +23,7 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
+import io.jacob.episodive.core.model.Repeat
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +32,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -50,6 +55,9 @@ class PlayerViewModel @Inject constructor(
     getUserDataUseCase: GetUserDataUseCase,
     getChaptersUseCase: GetChaptersUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
+    private val saveLastPlayStateUseCase: SaveLastPlayStateUseCase,
+    private val restoreLastPlayStateUseCase: RestoreLastPlayStateUseCase,
+    private val timeProvider: TimeProvider,
 ) : ViewModel() {
     private val nowPlaying = getNowPlayingUseCase()
         .stateIn(
@@ -79,7 +87,7 @@ class PlayerViewModel @Inject constructor(
         }
 
 
-    val state: StateFlow<PlayerState> = combine(
+    val state: StateFlow<PlayerState> = combineTyped(
         podcast,
         nowPlaying,
         getPlaylistUseCase(),
@@ -136,6 +144,46 @@ class PlayerViewModel @Inject constructor(
                 .first()
                 .let { speed ->
                     playerRepository.setSpeed(speed)
+                }
+        }
+        viewModelScope.launch {
+            val currentEpisode = playerRepository.nowPlaying.first()
+            if (currentEpisode == null) {
+                restoreLastPlayStateUseCase()
+            }
+        }
+        viewModelScope.launch {
+            var lastSavedTime = 0L
+            combineTyped(
+                playerRepository.nowPlaying,
+                playerRepository.indexOfList,
+                playerRepository.progress,
+                playerRepository.isShuffle,
+                playerRepository.repeat,
+            ) { nowPlaying: Episode?, index: Int, progress: Progress, shuffle: Boolean, repeat: Repeat ->
+                if (nowPlaying != null) {
+                    LastPlaySnapshot(
+                        episodeId = nowPlaying.id,
+                        index = index,
+                        positionMs = progress.position.inWholeMilliseconds,
+                        shuffle = shuffle,
+                        repeat = repeat,
+                    )
+                } else null
+            }
+                .filterNotNull()
+                .collectLatest { snapshot ->
+                    val now = timeProvider.currentTimeMillis()
+                    if (now - lastSavedTime >= 5_000) {
+                        saveLastPlayStateUseCase(
+                            episodeId = snapshot.episodeId,
+                            index = snapshot.index,
+                            positionMs = snapshot.positionMs,
+                            shuffle = snapshot.shuffle,
+                            repeat = snapshot.repeat,
+                        )
+                        lastSavedTime = now
+                    }
                 }
         }
     }
@@ -287,3 +335,11 @@ sealed interface PlayerEffect {
     data object ShowPlayerBottomSheet : PlayerEffect
     data object HidePlayerBottomSheet : PlayerEffect
 }
+
+private data class LastPlaySnapshot(
+    val episodeId: Long,
+    val index: Int,
+    val positionMs: Long,
+    val shuffle: Boolean,
+    val repeat: Repeat,
+)

@@ -9,6 +9,7 @@ interface PlayerDataSource {
     fun getPlayer(): Player
     fun play(episode: Episode)
     fun play(episodes: List<Episode>, indexToPlay: Int? = null)
+    fun prepare(episodes: List<Episode>, indexToPlay: Int, positionMs: Long)
     fun playClip(episode: Episode)
     fun playClips(episodes: List<Episode>, indexToPlay: Int? = null)
     fun playIndex(index: Int)
