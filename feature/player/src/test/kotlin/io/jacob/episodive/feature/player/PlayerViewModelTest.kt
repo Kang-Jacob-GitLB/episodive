@@ -24,6 +24,8 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -33,7 +35,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
-
 class PlayerViewModelTest {
 
     @get:Rule
@@ -80,6 +81,8 @@ class PlayerViewModelTest {
         every { getUserDataUseCase() } returns flowOf(UserData(speed = 1.0f))
     }
 
+    private var viewModelInstance: PlayerViewModel? = null
+
     private fun createViewModel(): PlayerViewModel {
         return PlayerViewModel(
             toggleLikedEpisodeUseCase = toggleLikedEpisodeUseCase,
@@ -94,11 +97,14 @@ class PlayerViewModelTest {
             toggleFollowedUseCase = toggleFollowedUseCase,
             saveLastPlayStateUseCase = saveLastPlayStateUseCase,
             restoreLastPlayStateUseCase = restoreLastPlayStateUseCase,
-        )
+        ).also { viewModelInstance = it }
     }
 
     @After
     fun teardown() {
+        viewModelInstance?.let {
+            it.viewModelScope.cancel()
+        }
         confirmVerified(
             toggleLikedEpisodeUseCase,
             setSpeedUseCase,

@@ -23,7 +23,6 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.Repeat
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,14 +37,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
-@OptIn(FlowPreview::class)
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     private val toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase,
@@ -155,6 +151,7 @@ class PlayerViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            var lastSavedTime = 0L
             io.jacob.episodive.core.common.combine(
                 playerRepository.nowPlaying,
                 playerRepository.indexOfList,
@@ -173,15 +170,18 @@ class PlayerViewModel @Inject constructor(
                 } else null
             }
                 .filterNotNull()
-                .sample(5.seconds)
                 .collectLatest { snapshot ->
-                    saveLastPlayStateUseCase(
-                        episodeId = snapshot.episodeId,
-                        index = snapshot.index,
-                        positionMs = snapshot.positionMs,
-                        shuffle = snapshot.shuffle,
-                        repeat = snapshot.repeat,
-                    )
+                    val now = System.currentTimeMillis()
+                    if (now - lastSavedTime >= 5_000) {
+                        saveLastPlayStateUseCase(
+                            episodeId = snapshot.episodeId,
+                            index = snapshot.index,
+                            positionMs = snapshot.positionMs,
+                            shuffle = snapshot.shuffle,
+                            repeat = snapshot.repeat,
+                        )
+                        lastSavedTime = now
+                    }
                 }
         }
     }
