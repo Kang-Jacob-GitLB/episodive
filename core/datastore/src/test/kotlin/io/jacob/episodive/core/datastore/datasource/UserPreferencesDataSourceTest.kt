@@ -2,6 +2,7 @@ package io.jacob.episodive.core.datastore.datasource
 
 import io.jacob.episodive.core.datastore.store.UserPreferencesStore
 import io.jacob.episodive.core.model.Category
+import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -118,5 +119,44 @@ class UserPreferencesDataSourceTest {
 
             // Then
             coVerify { store.getUserPreferences() }
+        }
+
+    @Test
+    fun `Given dependencies, When saveLastPlayState, Then call store's method`() =
+        runTest {
+            // Given
+            coEvery { store.saveLastPlayState(any(), any(), any(), any(), any()) } just Runs
+
+            // When
+            dataSource.saveLastPlayState(123L, 2, 5000L, true, Repeat.ONE)
+
+            // Then
+            coVerify { store.saveLastPlayState(123L, 2, 5000L, true, Repeat.ONE) }
+        }
+
+    @Test
+    fun `Given dependencies, When getLastPlayState, Then call store's method`() =
+        runTest {
+            // Given
+            coEvery { store.getLastPlayState() } returns null
+
+            // When
+            dataSource.getLastPlayState()
+
+            // Then
+            coVerify { store.getLastPlayState() }
+        }
+
+    @Test
+    fun `Given dependencies, When clearLastPlayState, Then call store's method`() =
+        runTest {
+            // Given
+            coEvery { store.clearLastPlayState() } just Runs
+
+            // When
+            dataSource.clearLastPlayState()
+
+            // Then
+            coVerify { store.clearLastPlayState() }
         }
 }

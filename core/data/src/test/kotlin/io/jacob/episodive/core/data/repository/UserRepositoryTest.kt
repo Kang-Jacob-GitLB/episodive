@@ -3,6 +3,7 @@ package io.jacob.episodive.core.data.repository
 import io.jacob.episodive.core.datastore.datasource.UserPreferencesDataSource
 import io.jacob.episodive.core.domain.repository.UserRepository
 import io.jacob.episodive.core.model.Category
+import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -146,5 +147,48 @@ class UserRepositoryTest {
 
             // Then
             coVerify { userPreferencesDataSource.getUserPreferences() }
+        }
+
+    @Test
+    fun `Given dependencies, When saveLastPlayState, Then call data source's method`() =
+        runTest {
+            // Given
+            coEvery {
+                userPreferencesDataSource.saveLastPlayState(any(), any(), any(), any(), any())
+            } just Runs
+
+            // When
+            repository.saveLastPlayState(123L, 2, 5000L, true, Repeat.ONE)
+
+            // Then
+            coVerify {
+                userPreferencesDataSource.saveLastPlayState(123L, 2, 5000L, true, Repeat.ONE)
+            }
+        }
+
+    @Test
+    fun `Given dependencies, When getLastPlayState, Then call data source's method`() =
+        runTest {
+            // Given
+            coEvery { userPreferencesDataSource.getLastPlayState() } returns null
+
+            // When
+            repository.getLastPlayState()
+
+            // Then
+            coVerify { userPreferencesDataSource.getLastPlayState() }
+        }
+
+    @Test
+    fun `Given dependencies, When clearLastPlayState, Then call data source's method`() =
+        runTest {
+            // Given
+            coEvery { userPreferencesDataSource.clearLastPlayState() } just Runs
+
+            // When
+            repository.clearLastPlayState()
+
+            // Then
+            coVerify { userPreferencesDataSource.clearLastPlayState() }
         }
 }

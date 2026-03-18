@@ -5,7 +5,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
-import io.jacob.episodive.core.common.combine
+import io.jacob.episodive.core.common.TimeProvider
+import io.jacob.episodive.core.common.combine as combineTyped
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
@@ -56,6 +57,7 @@ class PlayerViewModel @Inject constructor(
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
     private val saveLastPlayStateUseCase: SaveLastPlayStateUseCase,
     private val restoreLastPlayStateUseCase: RestoreLastPlayStateUseCase,
+    private val timeProvider: TimeProvider,
 ) : ViewModel() {
     private val nowPlaying = getNowPlayingUseCase()
         .stateIn(
@@ -85,7 +87,7 @@ class PlayerViewModel @Inject constructor(
         }
 
 
-    val state: StateFlow<PlayerState> = combine(
+    val state: StateFlow<PlayerState> = combineTyped(
         podcast,
         nowPlaying,
         getPlaylistUseCase(),
@@ -152,7 +154,7 @@ class PlayerViewModel @Inject constructor(
         }
         viewModelScope.launch {
             var lastSavedTime = 0L
-            io.jacob.episodive.core.common.combine(
+            combineTyped(
                 playerRepository.nowPlaying,
                 playerRepository.indexOfList,
                 playerRepository.progress,
@@ -165,13 +167,13 @@ class PlayerViewModel @Inject constructor(
                         index = index,
                         positionMs = progress.position.inWholeMilliseconds,
                         shuffle = shuffle,
-                        repeat = repeat.value,
+                        repeat = repeat,
                     )
                 } else null
             }
                 .filterNotNull()
                 .collectLatest { snapshot ->
-                    val now = System.currentTimeMillis()
+                    val now = timeProvider.currentTimeMillis()
                     if (now - lastSavedTime >= 5_000) {
                         saveLastPlayStateUseCase(
                             episodeId = snapshot.episodeId,
@@ -339,5 +341,5 @@ private data class LastPlaySnapshot(
     val index: Int,
     val positionMs: Long,
     val shuffle: Boolean,
-    val repeat: Int,
+    val repeat: Repeat,
 )

@@ -5,5 +5,5 @@ data class LastPlayState(
     val index: Int,
     val positionMs: Long,
     val shuffle: Boolean,
-    val repeat: Int,
+    val repeat: Repeat,
 )

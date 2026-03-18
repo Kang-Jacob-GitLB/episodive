@@ -1,6 +1,7 @@
 package io.jacob.episodive.feature.player
 
 import app.cash.turbine.test
+import io.jacob.episodive.core.common.TimeProvider
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
@@ -52,6 +53,7 @@ class PlayerViewModelTest {
     private val toggleFollowedUseCase = mockk<ToggleFollowedUseCase>(relaxed = true)
     private val saveLastPlayStateUseCase = mockk<SaveLastPlayStateUseCase>(relaxed = true)
     private val restoreLastPlayStateUseCase = mockk<RestoreLastPlayStateUseCase>(relaxed = true)
+    private val timeProvider = mockk<TimeProvider>(relaxed = true)
 
     private val progressFlow = MutableStateFlow(Progress(0.seconds, 0.seconds, 0.seconds))
     private val isPlayingFlow = MutableStateFlow(false)
@@ -97,6 +99,7 @@ class PlayerViewModelTest {
             toggleFollowedUseCase = toggleFollowedUseCase,
             saveLastPlayStateUseCase = saveLastPlayStateUseCase,
             restoreLastPlayStateUseCase = restoreLastPlayStateUseCase,
+            timeProvider = timeProvider,
         ).also { viewModelInstance = it }
     }
 
@@ -398,5 +401,35 @@ class PlayerViewModelTest {
             viewModel.sendAction(PlayerAction.ToggleLikedEpisode(episode))
 
             coVerify { toggleLikedEpisodeUseCase(episode) }
+        }
+
+    @Test
+    fun `Given no current episode, When ViewModel is created, Then restoreLastPlayState is called`() =
+        runTest {
+            setupPlayerRepositoryMocks()
+            nowPlayingFlow.value = null
+            every { getNowPlayingUseCase() } returns flowOf(null)
+            every { getPlaylistUseCase() } returns flowOf(emptyList())
+            every { getUserDataUseCase() } returns flowOf(UserData(speed = 1.0f))
+
+            createViewModel()
+
+            coVerify { restoreLastPlayStateUseCase() }
+        }
+
+    @Test
+    fun `Given current episode exists, When ViewModel is created, Then restoreLastPlayState is not called`() =
+        runTest {
+            setupPlayerRepositoryMocks()
+            val episode = episodeTestData
+            nowPlayingFlow.value = episode
+            every { getNowPlayingUseCase() } returns flowOf(episode)
+            every { getPodcastUseCase(episode.feedId) } returns flowOf(podcastTestData)
+            every { getPlaylistUseCase() } returns flowOf(episodeTestDataList.take(3))
+            every { getUserDataUseCase() } returns flowOf(UserData(speed = 1.0f))
+
+            createViewModel()
+
+            coVerify(exactly = 0) { restoreLastPlayStateUseCase() }
         }
 }

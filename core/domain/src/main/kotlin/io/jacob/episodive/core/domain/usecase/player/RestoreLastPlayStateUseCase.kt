@@ -18,10 +18,11 @@ class RestoreLastPlayStateUseCase @Inject constructor(
         val playlist = episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
         if (playlist.isEmpty()) return false
 
-        val index = lastState.index.coerceIn(0, playlist.size - 1)
+        val matchedIndex = playlist.indexOfFirst { it.id == lastState.episodeId }
+        val index = if (matchedIndex >= 0) matchedIndex else lastState.index.coerceIn(0, playlist.size - 1)
         playerRepository.prepare(playlist, index, lastState.positionMs)
         playerRepository.setShuffle(lastState.shuffle)
-        playerRepository.setRepeat(lastState.repeat)
+        playerRepository.setRepeat(lastState.repeat.value)
         return true
     }
 }

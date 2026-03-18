@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import io.jacob.episodive.core.datastore.model.UserPreferences
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.LastPlayState
+import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.model.mapper.toCategories
 import io.jacob.episodive.core.model.mapper.toCommaString
 import kotlinx.coroutines.flow.Flow
@@ -94,14 +95,14 @@ class UserPreferencesStore @Inject constructor(
         index: Int,
         positionMs: Long,
         shuffle: Boolean,
-        repeat: Int,
+        repeat: Repeat,
     ) {
         dataStore.edit { preferences ->
             preferences[UserPreferencesKeys.lastPlayingEpisodeId] = episodeId
             preferences[UserPreferencesKeys.lastPlayingIndex] = index
             preferences[UserPreferencesKeys.lastPlayingPositionMs] = positionMs
             preferences[UserPreferencesKeys.lastPlayingShuffle] = shuffle
-            preferences[UserPreferencesKeys.lastPlayingRepeat] = repeat
+            preferences[UserPreferencesKeys.lastPlayingRepeat] = repeat.value
         }
     }
 
@@ -113,7 +114,7 @@ class UserPreferencesStore @Inject constructor(
             index = preferences[UserPreferencesKeys.lastPlayingIndex] ?: 0,
             positionMs = preferences[UserPreferencesKeys.lastPlayingPositionMs] ?: 0L,
             shuffle = preferences[UserPreferencesKeys.lastPlayingShuffle] ?: false,
-            repeat = preferences[UserPreferencesKeys.lastPlayingRepeat] ?: 0,
+            repeat = Repeat.fromValue(preferences[UserPreferencesKeys.lastPlayingRepeat] ?: 0),
         )
     }
 

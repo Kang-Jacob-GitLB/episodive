@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.domain.usecase.player
 
 import io.jacob.episodive.core.domain.repository.UserRepository
+import io.jacob.episodive.core.model.Repeat
 import javax.inject.Inject
 
 class SaveLastPlayStateUseCase @Inject constructor(
@@ -11,7 +12,7 @@ class SaveLastPlayStateUseCase @Inject constructor(
         index: Int,
         positionMs: Long,
         shuffle: Boolean,
-        repeat: Int,
+        repeat: Repeat,
     ) {
         userRepository.saveLastPlayState(episodeId, index, positionMs, shuffle, repeat)
     }

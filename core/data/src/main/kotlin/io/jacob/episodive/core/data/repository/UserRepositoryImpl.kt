@@ -5,6 +5,7 @@ import io.jacob.episodive.core.datastore.mapper.toUserData
 import io.jacob.episodive.core.domain.repository.UserRepository
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.LastPlayState
+import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.model.UserData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -59,7 +60,7 @@ class UserRepositoryImpl @Inject constructor(
         index: Int,
         positionMs: Long,
         shuffle: Boolean,
-        repeat: Int,
+        repeat: Repeat,
     ) {
         userPreferencesDataSource.saveLastPlayState(episodeId, index, positionMs, shuffle, repeat)
     }

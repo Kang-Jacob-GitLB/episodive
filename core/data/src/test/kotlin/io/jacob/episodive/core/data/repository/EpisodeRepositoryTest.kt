@@ -475,6 +475,26 @@ class EpisodeRepositoryTest {
         }
 
     @Test
+    fun `When getEpisodesByGroupKey, Then calls localDataSource with groupKey and MAX_VALUE`() =
+        runTest {
+            // Given
+            val groupKey = "playlist"
+            coEvery {
+                localDataSource.getEpisodesByGroupKey(any(), any())
+            } returns flowOf(episodeDtos)
+
+            // When
+            val result = repository.getEpisodesByGroupKey(groupKey)
+
+            // Then
+            assertEquals(episodeTestDataList.size, result.size)
+            assertEquals(episodeTestDataList, result)
+            coVerifySequence {
+                localDataSource.getEpisodesByGroupKey(groupKey, Int.MAX_VALUE)
+            }
+        }
+
+    @Test
     fun `Given person, When searchEpisodesByPersonPaging, Then creates correct query and calls sourceFactory`() =
         runTest {
             // Given
