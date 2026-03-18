@@ -90,8 +90,8 @@ class PlayerRepositoryImpl @Inject constructor(
         playerDataSource.changeRepeat()
     }
 
-    override fun setRepeat(repeat: Int) {
-        playerDataSource.setRepeat(repeat)
+    override fun setRepeat(repeat: Repeat) {
+        playerDataSource.setRepeat(repeat.value)
     }
 
     override fun setSpeed(speed: Float) {

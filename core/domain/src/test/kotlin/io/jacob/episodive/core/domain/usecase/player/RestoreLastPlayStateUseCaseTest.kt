@@ -15,7 +15,6 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertFalse
@@ -114,7 +113,7 @@ class RestoreLastPlayStateUseCaseTest {
                 episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
                 playerRepository.prepare(playlist, 1, 5000L)
                 playerRepository.setShuffle(false)
-                playerRepository.setRepeat(0)
+                playerRepository.setRepeat(Repeat.OFF)
             }
         }
 
@@ -148,7 +147,7 @@ class RestoreLastPlayStateUseCaseTest {
                 episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
                 playerRepository.prepare(playlist, 2, 1000L)
                 playerRepository.setShuffle(false)
-                playerRepository.setRepeat(0)
+                playerRepository.setRepeat(Repeat.OFF)
             }
         }
 
@@ -181,7 +180,7 @@ class RestoreLastPlayStateUseCaseTest {
                 episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
                 playerRepository.prepare(playlist, 0, 0L)
                 playerRepository.setShuffle(true)
-                playerRepository.setRepeat(0)
+                playerRepository.setRepeat(Repeat.OFF)
             }
         }
 
@@ -214,7 +213,7 @@ class RestoreLastPlayStateUseCaseTest {
                 episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
                 playerRepository.prepare(playlist, 0, 0L)
                 playerRepository.setShuffle(false)
-                playerRepository.setRepeat(2)
+                playerRepository.setRepeat(Repeat.ALL)
             }
         }
 }

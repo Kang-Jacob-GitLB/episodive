@@ -14,7 +14,10 @@ import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.domain.usecase.user.GetUserDataUseCase
 import io.jacob.episodive.core.domain.usecase.user.SetSpeedUseCase
+import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.Playback
 import io.jacob.episodive.core.model.Progress
+import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.model.UserData
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
@@ -61,8 +64,8 @@ class PlayerViewModelTest {
     private val indexOfListFlow = MutableStateFlow(0)
     private val cueFlow = MutableStateFlow("")
     private val isShuffleFlow = MutableStateFlow(false)
-    private val repeatFlow = MutableStateFlow(io.jacob.episodive.core.model.Repeat.OFF)
-    private val nowPlayingFlow = MutableStateFlow<io.jacob.episodive.core.model.Episode?>(null)
+    private val repeatFlow = MutableStateFlow(Repeat.OFF)
+    private val nowPlayingFlow = MutableStateFlow<Episode?>(null)
 
     private fun setupPlayerRepositoryMocks() {
         every { playerRepository.progress } returns progressFlow
@@ -70,7 +73,7 @@ class PlayerViewModelTest {
         every { playerRepository.speed } returns speedFlow
         every { playerRepository.indexOfList } returns indexOfListFlow
         every { playerRepository.cue } returns cueFlow
-        every { playerRepository.playback } returns MutableStateFlow(io.jacob.episodive.core.model.Playback.IDLE)
+        every { playerRepository.playback } returns MutableStateFlow(Playback.IDLE)
         every { playerRepository.isShuffle } returns isShuffleFlow
         every { playerRepository.repeat } returns repeatFlow
         every { playerRepository.nowPlaying } returns nowPlayingFlow

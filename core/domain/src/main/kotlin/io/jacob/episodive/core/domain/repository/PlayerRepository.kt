@@ -27,7 +27,7 @@ interface PlayerRepository {
     fun shuffle()
     fun setShuffle(isShuffle: Boolean)
     fun changeRepeat()
-    fun setRepeat(repeat: Int)
+    fun setRepeat(repeat: Repeat)
     fun setSpeed(speed: Float)
     fun addTrack(episode: Episode, index: Int? = null)
     fun addTrack(episodes: List<Episode>, index: Int? = null)

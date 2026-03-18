@@ -22,7 +22,7 @@ class RestoreLastPlayStateUseCase @Inject constructor(
         val index = if (matchedIndex >= 0) matchedIndex else lastState.index.coerceIn(0, playlist.size - 1)
         playerRepository.prepare(playlist, index, lastState.positionMs)
         playerRepository.setShuffle(lastState.shuffle)
-        playerRepository.setRepeat(lastState.repeat.value)
+        playerRepository.setRepeat(lastState.repeat)
         return true
     }
 }
