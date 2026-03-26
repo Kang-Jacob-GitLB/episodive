@@ -1,0 +1,172 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Buttons</h1>
+    <p class="page-subtitle">Filled, Outlined, and Text button variants</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/Button.kt</span>
+
+<!-- EpisodiveButton -->
+<h2>EpisodiveButton</h2>
+<p>Primary filled button used for the most prominent actions. Uses <code>primary</code> background with <code>onPrimary</code> text color and full rounded corners.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="EpisodiveButton — Default" data-w="auto" data-h="40dp" data-padding="0 24dp" data-corner="20dp (CircleShape)" data-bg="primary" data-color="onPrimary" data-font="labelLarge 14sp/500">
+    <button class="eds-button">Subscribe</button>
+    <div class="showcase-item-label">Default</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveButton — With Icon" data-w="auto" data-h="40dp" data-padding="0 24dp, left 16dp" data-corner="20dp (CircleShape)" data-bg="primary" data-color="onPrimary" data-font="labelLarge 14sp/500">
+    <button class="eds-button with-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add to Library
+    </button>
+    <div class="showcase-item-label">With Icon</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveButton — Disabled" data-w="auto" data-h="40dp" data-padding="0 24dp" data-corner="20dp" data-opacity="0.38">
+    <button class="eds-button" disabled>Subscribe</button>
+    <div class="showcase-item-label">Disabled</div>
+  </div>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveButton(
+    onClick = { /* handle click */ },
+    modifier = Modifier,
+    enabled = true,
+    text = { Text("Subscribe") },
+    leadingIcon = null
+)</pre>
+
+<!-- EpisodiveOutlinedButton -->
+<h2>EpisodiveOutlinedButton</h2>
+<p>Outlined button for secondary actions. Transparent background with a 1dp border in <code>outline</code> color.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="EpisodiveOutlinedButton — Default" data-w="auto" data-h="40dp" data-padding="0 24dp" data-corner="20dp (CircleShape)" data-bg="transparent" data-color="onBackground" data-border="1dp outline">
+    <button class="eds-button-outlined">Following</button>
+    <div class="showcase-item-label">Default</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveOutlinedButton — Disabled" data-w="auto" data-h="40dp" data-padding="0 24dp" data-corner="20dp" data-opacity="0.38" data-border="1dp outline">
+    <button class="eds-button-outlined state-disabled">Following</button>
+    <div class="showcase-item-label">Disabled</div>
+  </div>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveOutlinedButton(
+    onClick = { /* handle click */ },
+    modifier = Modifier,
+    enabled = true,
+    text = { Text("Following") }
+)</pre>
+
+<!-- EpisodiveTextButton -->
+<h2>EpisodiveTextButton</h2>
+<p>Text-only button for tertiary or inline actions. No background, minimal horizontal padding.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="EpisodiveTextButton — Default" data-w="auto" data-h="40dp" data-padding="0 12dp" data-corner="20dp (CircleShape)" data-bg="transparent" data-color="onBackground" data-font="labelLarge 14sp/500">
+    <button class="eds-button-text">See All</button>
+    <div class="showcase-item-label">Default</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveTextButton — Disabled" data-w="auto" data-h="40dp" data-padding="0 12dp" data-corner="20dp" data-opacity="0.38">
+    <button class="eds-button-text state-disabled">See All</button>
+    <div class="showcase-item-label">Disabled</div>
+  </div>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveTextButton(
+    onClick = { /* handle click */ },
+    modifier = Modifier,
+    enabled = true,
+    text = { Text("See All") }
+)</pre>
+
+<!-- Properties Table -->
+<h2>Properties</h2>
+<table class="props-table">
+  <thead>
+    <tr>
+      <th>Param</th>
+      <th>Type</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>onClick</code></td>
+      <td><code>() -&gt; Unit</code></td>
+      <td>required</td>
+    </tr>
+    <tr>
+      <td><code>modifier</code></td>
+      <td><code>Modifier</code></td>
+      <td><code>Modifier</code></td>
+    </tr>
+    <tr>
+      <td><code>shape</code></td>
+      <td><code>Shape</code></td>
+      <td><code>CircleShape</code> (full rounded)</td>
+    </tr>
+    <tr>
+      <td><code>enabled</code></td>
+      <td><code>Boolean</code></td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>text</code> / <code>content</code></td>
+      <td><code>@Composable () -&gt; Unit</code></td>
+      <td>required</td>
+    </tr>
+    <tr>
+      <td><code>leadingIcon</code></td>
+      <td><code>@Composable (() -&gt; Unit)?</code></td>
+      <td><code>null</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- Design Specs -->
+<h2>Design Specs</h2>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 300px;">
+    <h3 style="margin-top: 0;">EpisodiveButton (Filled)</h3>
+    <p>
+      <span class="spec-badge">height: 40dp</span>
+      <span class="spec-badge">padding: 0 24dp</span>
+      <span class="spec-badge">with-icon padding-left: 16dp</span>
+      <span class="spec-badge">corner: 20dp (full)</span>
+      <span class="spec-badge">font: labelLarge (14sp/500)</span>
+      <span class="spec-badge">bg: primary</span>
+      <span class="spec-badge">color: onPrimary</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 300px;">
+    <h3 style="margin-top: 0;">EpisodiveOutlinedButton</h3>
+    <p>
+      <span class="spec-badge">height: 40dp</span>
+      <span class="spec-badge">padding: 0 24dp</span>
+      <span class="spec-badge">corner: 20dp (full)</span>
+      <span class="spec-badge">border: 1dp outline</span>
+      <span class="spec-badge">bg: transparent</span>
+      <span class="spec-badge">color: onBackground</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 300px;">
+    <h3 style="margin-top: 0;">EpisodiveTextButton</h3>
+    <p>
+      <span class="spec-badge">height: 40dp</span>
+      <span class="spec-badge">padding: 0 12dp</span>
+      <span class="spec-badge">corner: 20dp (full)</span>
+      <span class="spec-badge">bg: transparent</span>
+      <span class="spec-badge">color: onBackground</span>
+    </p>
+  </div>
+</div>
+</main>

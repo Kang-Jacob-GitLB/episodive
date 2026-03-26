@@ -1,0 +1,247 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Podcast Detail</h1>
+    <p class="page-subtitle">Podcast information with episode list and follow action</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">feature/podcast/src/main/kotlin/.../PodcastScreen.kt</span>
+
+<!-- Screen Overview -->
+<h2>Screen Overview</h2>
+<p>The Podcast Detail screen displays comprehensive podcast information with a scrollable episode list. It uses <code>FadeTopBarLayout</code> where the top bar title fades in as the user scrolls past the header area (offset=900). The screen requires a <code>podcastId</code> parameter via <code>AssistedViewModel</code> injection.</p>
+
+<!-- Phone Frame Mockup -->
+<h2>Screen Layout</h2>
+<div class="screen-comparison">
+  <div>
+    <div class="phone-frame" data-inspect="PodcastScreen" data-w="360dp" data-h="800dp">
+      <div class="phone-frame-notch"></div>
+      <div class="phone-frame-status-bar">
+        <span>9:41</span>
+        <span></span>
+      </div>
+      <div class="phone-frame-content" style="background: var(--md-background);">
+        <!-- FadeTopBar (initially transparent, fades in on scroll) -->
+        <div style="position: sticky; top: 0; z-index: 10;">
+          <div class="eds-top-app-bar" data-inspect="FadeTopBarLayout — TopBar" data-w="360dp" data-h="64dp" data-bg="transparent (fades to surface)" data-scroll-offset="900" style="background: transparent;">
+            <button class="eds-icon-button" data-inspect="Back Button" data-w="40dp" data-h="40dp">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
+            <span class="eds-top-app-bar-title" data-inspect="Title — appears on scroll" style="opacity: 0.3; font-size: 16px; color: var(--md-on-surface-variant);">Podcast Title (fades in)</span>
+          </div>
+        </div>
+
+        <!-- PodcastHeader -->
+        <div data-inspect="PodcastHeader" data-w="match_parent" data-padding="top 110dp, horizontal 16dp" style="text-align: center; padding: 60px 16px 16px;">
+          <!-- Gradient Background -->
+          <div data-inspect="EpisodiveGradientBackground" data-bg="dominantColor gradient" style="position: absolute; top: 0; left: 0; right: 0; height: 280px; background: linear-gradient(180deg, var(--md-primary-container) 0%, transparent 100%); opacity: 0.4; z-index: -1;"></div>
+
+          <!-- Podcast Image -->
+          <div class="eds-state-image" data-inspect="StateImage — Podcast Art" data-w="220dp" data-h="220dp" data-corner="extraExtraLarge" data-palette="DominantRegion.Top" style="width: 180px; height: 180px; margin: 0 auto 12px; border-radius: 28px; background: var(--md-secondary-container);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+
+          <!-- Author -->
+          <div data-inspect="Author Text" data-font="titleMedium" data-color="secondary" style="font-size: 16px; font-weight: 500; color: var(--md-secondary); margin-bottom: 4px;">Podcast Author</div>
+
+          <!-- Title -->
+          <div data-inspect="Podcast Title" data-font="headlineSmall" data-color="onSurface" style="font-size: 24px; font-weight: 700; color: var(--md-on-surface); margin-bottom: 12px;">The Daily Podcast</div>
+
+          <!-- Follow Button -->
+          <button class="eds-button" data-inspect="Follow Button" data-w="auto" data-h="40dp" data-corner="large (16dp)" data-bg="primary / primaryContainer (followed)" style="border-radius: 16px; margin-bottom: 12px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Follow
+          </button>
+
+          <!-- Description -->
+          <div data-inspect="HtmlTextContainer — Description" data-font="bodyMedium" data-color="onSurface" style="font-size: 14px; line-height: 1.6; color: var(--md-on-surface-variant); text-align: left; padding: 0 4px;">
+            A daily podcast covering the latest news, stories, and insights. Each episode brings you in-depth analysis from expert journalists...
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <hr data-inspect="HorizontalDivider" style="border: none; border-top: 1px solid var(--md-outline-variant); margin: 8px 16px;">
+
+        <!-- Episode Count Header -->
+        <div data-inspect="Episode Count" data-font="titleLarge" data-padding="horizontal 16dp" style="padding: 8px 16px; font-size: 22px; font-weight: 500; color: var(--md-on-surface);">All Episodes (142)</div>
+
+        <!-- Episode Items (paginated) -->
+        <div data-inspect="EpisodeItem [0]" data-component="EpisodeItem" style="padding: 8px 16px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div class="eds-state-image" style="width: 56px; height: 56px; min-width: 56px; border-radius: 8px; background: var(--md-secondary-container);"></div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 14px; font-weight: 500; color: var(--md-on-surface); margin-bottom: 2px;">Episode 142: Breaking News</div>
+              <div style="font-size: 12px; color: var(--md-on-surface-variant);">Mar 25, 2026 &middot; 45 min</div>
+            </div>
+            <button class="eds-icon-button" style="width: 32px; height: 32px; font-size: 16px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div data-inspect="EpisodeItem [1]" style="padding: 8px 16px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div class="eds-state-image" style="width: 56px; height: 56px; min-width: 56px; border-radius: 8px; background: var(--md-secondary-container);"></div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 14px; font-weight: 500; color: var(--md-on-surface);">Episode 141: Market Update</div>
+              <div style="font-size: 12px; color: var(--md-on-surface-variant);">Mar 24, 2026 &middot; 38 min</div>
+            </div>
+            <button class="eds-icon-button" style="width: 32px; height: 32px; font-size: 16px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div data-inspect="EpisodeItem [2]" style="padding: 8px 16px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div class="eds-state-image" style="width: 56px; height: 56px; min-width: 56px; border-radius: 8px; background: var(--md-secondary-container);"></div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 14px; font-weight: 500; color: var(--md-on-surface);">Episode 140: Tech Review</div>
+              <div style="font-size: 12px; color: var(--md-on-surface-variant);">Mar 23, 2026 &middot; 52 min</div>
+            </div>
+            <button class="eds-icon-button" style="width: 32px; height: 32px; font-size: 16px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- DraggableScrollbar indicator -->
+        <div data-inspect="DraggableScrollbar" data-w="4dp" style="position: absolute; right: 4px; top: 120px; bottom: 20px;">
+          <div class="eds-scrollbar-thumb" style="height: 60px;"></div>
+        </div>
+
+        <!-- Spacer for PlayerBar -->
+        <div data-inspect="Spacer — playerBarHeight" data-h="70dp" style="height: 70px;"></div>
+      </div>
+    </div>
+    <div class="screen-label">Podcast Detail Screen</div>
+  </div>
+</div>
+
+<!-- Screen Structure Breakdown -->
+<h2>Screen Structure</h2>
+<h3>Layout Hierarchy</h3>
+<pre class="code-block">FadeTopBarLayout(offset = 900)
+  +-- TopBar (fades in on scroll)
+  |     +-- Back IconButton
+  |     +-- Title Text (appears after scroll offset)
+  +-- LazyColumn(verticalArrangement = spacedBy(16.dp))
+  |     +-- PodcastHeader
+  |     |     +-- EpisodiveGradientBackground(dominantColor)
+  |     |     +-- StateImage(220.dp, extraExtraLarge shape)
+  |     |     +-- Author Text (titleMedium, secondary)
+  |     |     +-- Title Text (headlineSmall, onSurface)
+  |     |     +-- EpisodiveButton (Follow / Unfollow)
+  |     |     +-- HtmlTextContainer (description)
+  |     +-- HorizontalDivider
+  |     +-- Episode Count Text (titleLarge)
+  |     +-- EpisodeItem[] (paginated via Paging3)
+  |     +-- Spacer(playerBarHeight)
+  +-- DraggableScrollbar</pre>
+
+<h3>Key Components Used</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Component</th><th>Source</th><th>Purpose</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>FadeTopBarLayout</code></td><td>core:designsystem</td><td>Scrollable layout with fading top bar</td></tr>
+    <tr><td><code>StateImage</code></td><td>core:designsystem</td><td>Image with loading/error states and palette extraction</td></tr>
+    <tr><td><code>EpisodiveGradientBackground</code></td><td>core:designsystem</td><td>Gradient background using dominant color</td></tr>
+    <tr><td><code>EpisodiveButton</code></td><td>core:designsystem</td><td>Follow/unfollow action button</td></tr>
+    <tr><td><code>HtmlTextContainer</code></td><td>core:designsystem</td><td>Renders HTML description text</td></tr>
+    <tr><td><code>EpisodeItem</code></td><td>core:ui</td><td>Episode list item with like toggle</td></tr>
+    <tr><td><code>DraggableScrollbar</code></td><td>core:designsystem</td><td>Custom scrollbar with drag support</td></tr>
+  </tbody>
+</table>
+
+<!-- MVI Architecture -->
+<h2>MVI Architecture</h2>
+
+<div class="mvi-card" data-inspect="PodcastState">
+  <h4>State</h4>
+  <ul class="mvi-list">
+    <li>Loading</li>
+    <li>Success(podcast: Podcast)</li>
+    <li>Error(message: String)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="PodcastAction">
+  <h4>Action</h4>
+  <ul class="mvi-list">
+    <li>ToggleFollowed</li>
+    <li>PlayEpisode(episode: Episode, visibleEpisodes: List&lt;Episode&gt;)</li>
+    <li>ToggleLikedEpisode(episode: Episode)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="PodcastViewModel">
+  <h4>ViewModel</h4>
+  <p style="font-size: 13px; color: var(--md-on-surface-variant); margin: 0;">Uses <code>AssistedInject</code> with <code>@Assisted("id") val id: Long</code> parameter. Episodes are loaded via <code>getEpisodesByPodcastIdPagingUseCase</code> with Paging3, cached in <code>viewModelScope</code>.</p>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">@Composable
+internal fun PodcastRoute(
+    viewModel: PodcastViewModel = hiltViewModel(),
+    onBackClick: () -> Unit,
+    onShowSnackbar: suspend (String, String?) -> Boolean,
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    when (val s = state) {
+        is PodcastState.Loading -> LoadingScreen()
+        is PodcastState.Success -> PodcastScreen(
+            podcast = s.podcast,
+            episodes = viewModel.episodesPaging,
+            onFollowClick = { viewModel.sendAction(PodcastAction.ToggleFollowed) },
+            onEpisodeClick = { ep, list ->
+                viewModel.sendAction(PodcastAction.PlayEpisode(ep, list))
+            },
+            ...
+        )
+        is PodcastState.Error -> ErrorScreen(message = s.message)
+    }
+}</pre>
+
+<!-- Navigation -->
+<h2>Navigation</h2>
+
+<div class="nav-flow" data-inspect="Navigation Flow">
+  <span class="nav-flow-node">Home / Search / Library</span>
+  <span class="nav-flow-arrow">&rarr;</span>
+  <span class="nav-flow-node" style="background: var(--md-primary); color: var(--md-on-primary);">PodcastRoute(id: Long)</span>
+  <span class="nav-flow-arrow">&rarr;</span>
+  <span class="nav-flow-node">PlayerBar (play episode)</span>
+</div>
+
+<pre class="code-block">// Navigation route definition
+@Serializable
+data class PodcastRoute(val id: Long)
+
+// Navigate to podcast detail
+fun NavController.navigateToPodcast(
+    podcastId: Long,
+    navOptions: NavOptionsBuilder.() -> Unit = {}
+) = navigate(route = PodcastRoute(podcastId), navOptions)
+
+// Register in NavGraphBuilder
+fun NavGraphBuilder.podcastScreen(
+    onBackClick: () -> Unit,
+    onShowSnackbar: suspend (String, String?) -> Boolean,
+) {
+    composable&lt;PodcastRoute&gt; { entry ->
+        val id = entry.toRoute&lt;PodcastRoute&gt;().id
+        PodcastRoute(
+            viewModel = hiltViewModel&lt;PodcastViewModel, PodcastViewModel.Factory&gt;(
+                key = "podcast:$id"
+            ) { factory -> factory.create(id) },
+            onBackClick = onBackClick,
+            onShowSnackbar = onShowSnackbar
+        )
+    }
+}</pre>
+</main>

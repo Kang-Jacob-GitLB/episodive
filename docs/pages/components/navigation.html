@@ -1,0 +1,195 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Navigation</h1>
+    <p class="page-subtitle">Bottom navigation bar, navigation items, tabs, and tab rows</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+
+<!-- EpisodiveNavigationBar -->
+<h2>EpisodiveNavigationBar</h2>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/Navigation.kt</span>
+<p>Bottom navigation bar containing up to 5 navigation destinations. Uses <code>surface</code> background with zero elevation and a top border.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="width: 100%; min-width: 360px;" data-inspect="EpisodiveNavigationBar" data-w="match_parent" data-h="80dp" data-elevation="0dp" data-bg="surface" data-border-top="1dp outlineVariant">
+    <div class="eds-nav-bar">
+      <div class="eds-nav-item selected" data-inspect="EpisodiveNavigationBarItem — Selected" data-indicator-w="64dp" data-indicator-h="32dp" data-indicator-corner="16dp" data-indicator-bg="primaryContainer" data-label-size="12sp" data-label-spacing="0.5">
+        <div class="eds-nav-item-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <span class="eds-nav-item-label">Home</span>
+      </div>
+      <div class="eds-nav-item unselected" data-inspect="EpisodiveNavigationBarItem — Unselected" data-color="onSurfaceVariant @ 0.6">
+        <div class="eds-nav-item-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <span class="eds-nav-item-label">Search</span>
+      </div>
+      <div class="eds-nav-item unselected">
+        <div class="eds-nav-item-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <span class="eds-nav-item-label">Library</span>
+      </div>
+      <div class="eds-nav-item unselected">
+        <div class="eds-nav-item-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/></svg>
+        </div>
+        <span class="eds-nav-item-label">Clip</span>
+      </div>
+    </div>
+    <div class="showcase-item-label">Navigation Bar with 4 items (Home selected)</div>
+  </div>
+</div>
+
+<!-- EpisodiveNavigationBarItem -->
+<h2>EpisodiveNavigationBarItem</h2>
+<p>Individual navigation destination within the bar. Shows a pill-shaped indicator behind the icon when selected.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="NavigationBarItem — Selected" data-indicator-w="64dp" data-indicator-h="32dp" data-indicator-corner="16dp" data-indicator-bg="primaryContainer" data-icon-color="onPrimaryContainer" data-label-size="12sp" data-label-spacing="0.5sp">
+    <div class="eds-nav-item selected" style="padding: 8px 16px;">
+      <div class="eds-nav-item-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      </div>
+      <span class="eds-nav-item-label">Home</span>
+    </div>
+    <div class="showcase-item-label">Selected</div>
+  </div>
+  <div class="showcase-item" data-inspect="NavigationBarItem — Unselected" data-color="onSurfaceVariant" data-alpha="0.6">
+    <div class="eds-nav-item unselected" style="padding: 8px 16px;">
+      <div class="eds-nav-item-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <span class="eds-nav-item-label">Search</span>
+    </div>
+    <div class="showcase-item-label">Unselected</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>selected</code></td><td><code>Boolean</code></td><td>required</td></tr>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>icon</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>selectedIcon</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>label</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveNavigationBar {
+    destinations.forEach { dest -&gt;
+        EpisodiveNavigationBarItem(
+            selected = currentRoute == dest.route,
+            onClick = { onNavigate(dest.route) },
+            icon = { Icon(dest.icon, contentDescription = dest.label) },
+            selectedIcon = { Icon(dest.selectedIcon, contentDescription = dest.label) },
+            label = { Text(dest.label) }
+        )
+    }
+}
+
+// Default color values
+val navigationContentColor = onSurfaceVariant.copy(alpha = 0.6f)
+val navigationSelectedItemColor = onPrimaryContainer
+val navigationIndicatorColor = primaryContainer</pre>
+
+<!-- EpisodiveTabRow & EpisodiveTab -->
+<h2>EpisodiveTab &amp; EpisodiveTabRow</h2>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/Tab.kt</span>
+<p>Horizontal tab layout with an active indicator. <code>EpisodiveTabRow</code> provides the container with a bottom border, while <code>EpisodiveTab</code> renders individual tabs.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="width: 100%; min-width: 320px;" data-inspect="EpisodiveTabRow" data-border-bottom="1dp outlineVariant">
+    <div class="eds-tab-row" data-inspect="EpisodiveTabRow" data-border-bottom="1dp outlineVariant">
+      <button class="eds-tab selected" data-inspect="EpisodiveTab — Selected" data-padding-top="7dp" data-font="labelLarge 14sp/500" data-indicator="2dp height, onSurface color">Episodes</button>
+      <button class="eds-tab" data-inspect="EpisodiveTab — Unselected" data-color="onSurfaceVariant">Details</button>
+      <button class="eds-tab">Similar</button>
+    </div>
+    <div class="showcase-item-label">Tab Row with 3 tabs (first selected)</div>
+  </div>
+</div>
+
+<h3>Tab Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>selected</code></td><td><code>Boolean</code></td><td>required</td></tr>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>enabled</code></td><td><code>Boolean</code></td><td><code>true</code></td></tr>
+    <tr><td><code>text</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>TabRow Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>selectedTabIndex</code></td><td><code>Int</code></td><td>required</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>tabs</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveTabRow(selectedTabIndex = selectedTab) {
+    tabs.forEachIndexed { index, title -&gt;
+        EpisodiveTab(
+            selected = selectedTab == index,
+            onClick = { selectedTab = index },
+            text = { Text(title) }
+        )
+    }
+}</pre>
+
+<!-- Design Specs -->
+<h2>Design Specs</h2>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">NavigationBar</h3>
+    <p>
+      <span class="spec-badge">height: 80dp</span>
+      <span class="spec-badge">elevation: 0dp</span>
+      <span class="spec-badge">bg: surface</span>
+      <span class="spec-badge">border-top: 1dp outlineVariant</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">NavigationBarItem</h3>
+    <p>
+      <span class="spec-badge">indicator: 64x32dp</span>
+      <span class="spec-badge">indicator-corner: 16dp</span>
+      <span class="spec-badge">label: 12sp / 0.5 spacing</span>
+      <span class="spec-badge">content: onSurfaceVariant @ 0.6</span>
+      <span class="spec-badge">selected: onPrimaryContainer</span>
+      <span class="spec-badge">indicator-bg: primaryContainer</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">Tab &amp; TabRow</h3>
+    <p>
+      <span class="spec-badge">padding-top: 7dp</span>
+      <span class="spec-badge">font: labelLarge 14sp/500</span>
+      <span class="spec-badge">indicator: 2dp height</span>
+      <span class="spec-badge">indicator-color: onSurface</span>
+      <span class="spec-badge">border-bottom: 1dp outlineVariant</span>
+    </p>
+  </div>
+</div>
+</main>

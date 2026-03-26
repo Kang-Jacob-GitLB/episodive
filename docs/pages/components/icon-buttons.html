@@ -1,0 +1,184 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Icon Buttons</h1>
+    <p class="page-subtitle">Standard, Toggle, and Progress icon button variants</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/IconButton.kt</span>
+
+<!-- EpisodiveIconButton -->
+<h2>EpisodiveIconButton</h2>
+<p>A circular icon-only button with transparent background. Used for toolbar actions and inline controls.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="EpisodiveIconButton — Default" data-w="40dp" data-h="40dp" data-corner="50% (circular)" data-bg="transparent" data-color="onBackground">
+    <button class="eds-icon-button">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="showcase-item-label">Default</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveIconButton — Hover" data-w="40dp" data-h="40dp" data-corner="50%" data-bg="surfaceContainerHigh" data-color="onBackground">
+    <button class="eds-icon-button" style="background: var(--md-surface-container-high);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="showcase-item-label">Hover</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>enabled</code></td><td><code>Boolean</code></td><td><code>true</code></td></tr>
+    <tr><td><code>icon</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>contentDescription</code></td><td><code>String?</code></td><td><code>null</code></td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveIconButton(
+    onClick = { onNavigateBack() },
+    icon = {
+        Icon(
+            imageVector = TablerIcons.ArrowLeft,
+            contentDescription = "Back"
+        )
+    }
+)</pre>
+
+<!-- EpisodiveIconToggleButton -->
+<h2>EpisodiveIconToggleButton</h2>
+<p>A toggleable icon button that switches between unchecked (transparent) and checked (filled primary) states. Used for like/follow interactions.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="EpisodiveIconToggleButton — Unchecked" data-w="40dp" data-h="40dp" data-corner="50%" data-bg="transparent" data-color="onBackground">
+    <button class="eds-icon-toggle unchecked">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    </button>
+    <div class="showcase-item-label">Unchecked</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveIconToggleButton — Checked" data-w="40dp" data-h="40dp" data-corner="50%" data-bg="primary" data-color="onPrimary">
+    <button class="eds-icon-toggle checked">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    </button>
+    <div class="showcase-item-label">Checked</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>checked</code></td><td><code>Boolean</code></td><td>required</td></tr>
+    <tr><td><code>onCheckedChange</code></td><td><code>(Boolean) -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>enabled</code></td><td><code>Boolean</code></td><td><code>true</code></td></tr>
+    <tr><td><code>icon</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>checkedIcon</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveIconToggleButton(
+    checked = isLiked,
+    onCheckedChange = { onToggleLike(episodeId) },
+    icon = {
+        Icon(TablerIcons.Heart, contentDescription = "Like")
+    },
+    checkedIcon = {
+        Icon(TablerIcons.HeartFilled, contentDescription = "Unlike")
+    }
+)</pre>
+
+<!-- EpisodiveIconProgressButton -->
+<h2>EpisodiveIconProgressButton</h2>
+<p>A larger circular button that shows a circular progress indicator when loading. Used for play/pause controls.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="EpisodiveIconProgressButton — Default" data-w="48dp" data-h="48dp" data-corner="50%" data-bg="primary" data-color="onPrimary">
+    <button class="eds-icon-progress">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+    </button>
+    <div class="showcase-item-label">Default</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveIconProgressButton — Loading" data-w="48dp" data-h="48dp" data-corner="50%" data-bg="primary" data-color="onPrimary">
+    <button class="eds-icon-progress" style="position: relative;">
+      <div class="eds-loading-wheel" style="width: 48px; height: 48px; position: absolute; top: 0; left: 0; border-color: var(--md-on-primary); border-top-color: transparent; opacity: 0.6;"></div>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+    </button>
+    <div class="showcase-item-label">Loading</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>isLoading</code></td><td><code>Boolean</code></td><td><code>false</code></td></tr>
+    <tr><td><code>enabled</code></td><td><code>Boolean</code></td><td><code>true</code></td></tr>
+    <tr><td><code>icon</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveIconProgressButton(
+    onClick = { onPlayPause() },
+    isLoading = isBuffering,
+    icon = {
+        Icon(
+            imageVector = if (isPlaying) TablerIcons.Pause else TablerIcons.Play,
+            contentDescription = "Play/Pause"
+        )
+    }
+)</pre>
+
+<!-- Design Specs -->
+<h2>Design Specs</h2>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 250px;">
+    <h3 style="margin-top: 0;">IconButton</h3>
+    <p>
+      <span class="spec-badge">size: 40x40dp</span>
+      <span class="spec-badge">corner: circular</span>
+      <span class="spec-badge">bg: transparent</span>
+      <span class="spec-badge">color: onBackground</span>
+      <span class="spec-badge">hover-bg: surfaceContainerHigh</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 250px;">
+    <h3 style="margin-top: 0;">IconToggleButton</h3>
+    <p>
+      <span class="spec-badge">size: 40x40dp</span>
+      <span class="spec-badge">corner: circular</span>
+      <span class="spec-badge">unchecked-bg: transparent</span>
+      <span class="spec-badge">checked-bg: primary</span>
+      <span class="spec-badge">checked-color: onPrimary</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 250px;">
+    <h3 style="margin-top: 0;">IconProgressButton</h3>
+    <p>
+      <span class="spec-badge">size: 48x48dp</span>
+      <span class="spec-badge">corner: circular</span>
+      <span class="spec-badge">bg: primary</span>
+      <span class="spec-badge">color: onPrimary</span>
+      <span class="spec-badge">progress: CircularProgressIndicator</span>
+    </p>
+  </div>
+</div>
+</main>

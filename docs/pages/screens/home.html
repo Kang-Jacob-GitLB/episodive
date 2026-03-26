@@ -1,0 +1,225 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Home</h1>
+    <p class="page-subtitle">Main feed with curated podcast and episode sections</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">feature/home/src/main/kotlin/io/jacob/episodive/feature/home/HomeScreen.kt</span>
+
+<!-- Screen Structure -->
+<h2>Screen Structure</h2>
+<p>The home screen uses a <code>BottomSheetScaffold</code> with a collapsible bottom sheet (mini player). The main content is a vertical scroll hosting 9 distinct sections of horizontal and vertical lists.</p>
+
+<!-- Phone Frame: GIF + Annotated -->
+<h3>Phone Frame</h3>
+<div class="screen-comparison">
+  <!-- GIF side -->
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <div class="phone-frame" data-inspect="HomeScreen — GIF Preview" data-w="360dp" data-h="800dp">
+      <img class="phone-frame-gif" src="../../gifs/home.gif" alt="Home screen recording">
+    </div>
+    <div class="screen-label">Live Recording</div>
+  </div>
+
+  <!-- Annotated structure side -->
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <div class="phone-frame" data-inspect="HomeScreen — Structure" data-w="360dp" data-h="800dp">
+      <div class="phone-frame-notch"></div>
+      <div class="phone-frame-status-bar">
+        <span>9:41</span>
+        <span></span>
+      </div>
+      <div class="phone-frame-content" style="display: flex; flex-direction: column;">
+
+        <!-- Top Bar -->
+        <div class="eds-top-app-bar" data-inspect="TopAppBar" data-h="64dp">
+          <div class="eds-top-app-bar-title" style="font-size: 18px;">Episodive</div>
+          <div class="eds-icon-button" data-inspect="Settings IconButton">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          </div>
+        </div>
+
+        <!-- Scrollable content -->
+        <div style="flex: 1; overflow-y: auto; padding-bottom: 80px;">
+
+          <!-- Playing Episodes Section -->
+          <div data-inspect="PlayingEpisodesSection" data-component="Horizontal Scroll" style="padding: 0 0 8px;">
+            <div class="eds-section-header" data-inspect="SectionHeader">
+              <span class="eds-section-header-title">Now Playing</span>
+            </div>
+            <div style="display: flex; gap: 12px; padding: 0 16px; overflow-x: hidden;">
+              <div class="eds-state-image" style="width: 140px; height: 140px; flex-shrink: 0; border-radius: 12px;" data-inspect="PlayingEpisodeItem">
+                <span style="font-size: 11px; opacity: 0.6;">Episode Art</span>
+              </div>
+              <div class="eds-state-image" style="width: 140px; height: 140px; flex-shrink: 0; border-radius: 12px;">
+                <span style="font-size: 11px; opacity: 0.6;">Episode Art</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Recent Podcasts -->
+          <div data-inspect="PodcastsWithAuthorSection — User Recent" data-component="Horizontal Scroll" style="padding: 0 0 8px;">
+            <div class="eds-section-header"><span class="eds-section-header-title">User Recent</span></div>
+            <div style="display: flex; gap: 12px; padding: 0 16px; overflow-x: hidden;">
+              <div style="width: 120px; flex-shrink: 0;" data-inspect="PodcastWithAuthorItem">
+                <div class="eds-state-image" style="width: 120px; height: 120px; border-radius: 12px; margin-bottom: 6px;"><span style="font-size: 10px; opacity: 0.5;">Art</span></div>
+                <div style="font-size: 12px; font-weight: 500; color: var(--md-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Podcast Title</div>
+                <div style="font-size: 11px; color: var(--md-on-surface-variant);">Author</div>
+              </div>
+              <div style="width: 120px; flex-shrink: 0;">
+                <div class="eds-state-image" style="width: 120px; height: 120px; border-radius: 12px; margin-bottom: 6px;"><span style="font-size: 10px; opacity: 0.5;">Art</span></div>
+                <div style="font-size: 12px; font-weight: 500; color: var(--md-on-surface);">Podcast Title</div>
+                <div style="font-size: 11px; color: var(--md-on-surface-variant);">Author</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Random Episodes -->
+          <div data-inspect="EpisodesSection — Random Episodes" data-component="Vertical List" style="padding: 0 0 8px;">
+            <div class="eds-section-header"><span class="eds-section-header-title">Random Episodes</span></div>
+            <div style="padding: 0 16px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; gap: 12px; align-items: center; padding: 8px 0;" data-inspect="EpisodeItem">
+                <div class="eds-state-image" style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 8px;"><span style="font-size: 9px; opacity: 0.5;">Art</span></div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 13px; font-weight: 500; color: var(--md-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Episode Title</div>
+                  <div style="font-size: 11px; color: var(--md-on-surface-variant);">Podcast Name - 42min</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: center; padding: 8px 0;">
+                <div class="eds-state-image" style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 8px;"><span style="font-size: 9px; opacity: 0.5;">Art</span></div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 13px; font-weight: 500; color: var(--md-on-surface);">Episode Title</div>
+                  <div style="font-size: 11px; color: var(--md-on-surface-variant);">Podcast Name - 28min</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- More sections indicator -->
+          <div style="padding: 8px 16px; text-align: center; font-size: 11px; color: var(--md-on-surface-variant); opacity: 0.6;" data-inspect="Additional Sections Below">
+            + Trending / Followed / Local / Foreign / Live / Channels
+          </div>
+
+        </div>
+
+        <!-- Bottom Navigation Bar -->
+        <div class="phone-frame-nav-bar">
+          <div class="eds-nav-bar" data-inspect="BottomNavigationBar">
+            <div class="eds-nav-item selected" data-inspect="NavItem — Home">
+              <div class="eds-nav-item-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              </div>
+              <span class="eds-nav-item-label">Home</span>
+            </div>
+            <div class="eds-nav-item unselected">
+              <div class="eds-nav-item-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5z"/></svg>
+              </div>
+              <span class="eds-nav-item-label">Search</span>
+            </div>
+            <div class="eds-nav-item unselected">
+              <div class="eds-nav-item-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+              </div>
+              <span class="eds-nav-item-label">Library</span>
+            </div>
+            <div class="eds-nav-item unselected">
+              <div class="eds-nav-item-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+              </div>
+              <span class="eds-nav-item-label">Clip</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="screen-label">Annotated Structure</div>
+  </div>
+</div>
+
+<!-- Content Sections Breakdown -->
+<h2>Content Sections</h2>
+<table class="props-table">
+  <thead><tr><th>#</th><th>Section</th><th>Component</th><th>Scroll</th><th>Data Source</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Now Playing</td><td><code>PlayingEpisodesSection</code></td><td>Horizontal</td><td><code>GetPlayingEpisodesUseCase(max=10)</code></td></tr>
+    <tr><td>2</td><td>User Recent</td><td><code>PodcastsWithAuthorSection</code></td><td>Horizontal</td><td><code>GetUserRecentPodcastsUseCase(max=10)</code></td></tr>
+    <tr><td>3</td><td>Random Episodes</td><td><code>EpisodesSection</code></td><td>Vertical</td><td><code>GetMyRandomEpisodesUseCase(max=6)</code></td></tr>
+    <tr><td>4</td><td>User Trending</td><td><code>PodcastsSection</code></td><td>Horizontal</td><td><code>GetUserTrendingPodcastsUseCase(max=10)</code></td></tr>
+    <tr><td>5</td><td>Followed</td><td><code>PodcastsSection</code></td><td>Horizontal</td><td><code>GetFollowedPodcastsUseCase(max=10)</code></td></tr>
+    <tr><td>6</td><td>Local Trending</td><td><code>PodcastsSection</code></td><td>Horizontal</td><td><code>GetLocalTrendingPodcastsUseCase(max=10)</code></td></tr>
+    <tr><td>7</td><td>Foreign Trending</td><td><code>PodcastsSection</code></td><td>Horizontal</td><td><code>GetForeignTrendingPodcastsUseCase(max=10)</code></td></tr>
+    <tr><td>8</td><td>Live Episodes</td><td><code>EpisodesSection</code></td><td>Vertical</td><td><code>GetLiveEpisodesUseCase(max=6)</code></td></tr>
+    <tr><td>9</td><td>Channels</td><td><code>ChannelSection</code></td><td>Horizontal</td><td><code>GetChannelsUseCase()</code></td></tr>
+  </tbody>
+</table>
+
+<!-- MVI Architecture -->
+<h2>MVI Architecture</h2>
+
+<div class="mvi-card" data-inspect="HomeState">
+  <h4>HomeState</h4>
+  <ul class="mvi-list">
+    <li>Loading</li>
+    <li>Success(playingEpisodes, userRecentPodcasts, randomEpisodes, userTrendingPodcasts, followedPodcasts, localTrendingPodcasts, foreignTrendingPodcasts, liveEpisodes, channels)</li>
+    <li>Error(message: String)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="HomeAction">
+  <h4>HomeAction</h4>
+  <ul class="mvi-list">
+    <li>PlayEpisode(episode: Episode)</li>
+    <li>ResumeEpisode(playedEpisode: Episode)</li>
+    <li>ToggleLikedEpisode(episode: Episode)</li>
+    <li>ClickPodcast(podcastId: Long)</li>
+    <li>ClickChannel(channelId: Long)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="HomeEffect">
+  <h4>HomeEffect</h4>
+  <ul class="mvi-list">
+    <li>NavigateToPodcast(podcastId: Long)</li>
+    <li>NavigateToChannel(channelId: Long)</li>
+  </ul>
+</div>
+
+<h3>State Data Types</h3>
+<table class="props-table">
+  <thead><tr><th>Field</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td><code>playingEpisodes</code></td><td><code>List&lt;Episode&gt;</code></td></tr>
+    <tr><td><code>userRecentPodcasts</code></td><td><code>List&lt;Podcast&gt;</code></td></tr>
+    <tr><td><code>randomEpisodes</code></td><td><code>List&lt;Episode&gt;</code></td></tr>
+    <tr><td><code>userTrendingPodcasts</code></td><td><code>List&lt;Podcast&gt;</code></td></tr>
+    <tr><td><code>followedPodcasts</code></td><td><code>List&lt;Podcast&gt;</code></td></tr>
+    <tr><td><code>localTrendingPodcasts</code></td><td><code>List&lt;Podcast&gt;</code></td></tr>
+    <tr><td><code>foreignTrendingPodcasts</code></td><td><code>List&lt;Podcast&gt;</code></td></tr>
+    <tr><td><code>liveEpisodes</code></td><td><code>List&lt;Episode&gt;</code></td></tr>
+    <tr><td><code>channels</code></td><td><code>List&lt;Channel&gt;</code></td></tr>
+  </tbody>
+</table>
+
+<!-- Navigation Flow -->
+<h2>Navigation Flow</h2>
+<div class="nav-flow" data-inspect="HomeNavigation">
+  <div class="nav-flow-node" style="background: var(--md-primary); color: var(--md-on-primary);">Home</div>
+  <div class="nav-flow-arrow">&#8594;</div>
+  <div class="nav-flow-node">ClickPodcast</div>
+  <div class="nav-flow-arrow">&#8594;</div>
+  <div class="nav-flow-node">Podcast Detail</div>
+</div>
+<div class="nav-flow" data-inspect="HomeNavigation — Channel">
+  <div class="nav-flow-node" style="background: var(--md-primary); color: var(--md-on-primary);">Home</div>
+  <div class="nav-flow-arrow">&#8594;</div>
+  <div class="nav-flow-node">ClickChannel</div>
+  <div class="nav-flow-arrow">&#8594;</div>
+  <div class="nav-flow-node">Channel Detail</div>
+</div>
+<p>The Home screen is one of the 4 bottom navigation destinations. Clicking a podcast navigates to Podcast Detail; clicking a channel navigates to Channel Detail. Playing/resuming episodes triggers the player via use cases without navigation.</p>
+
+</main>

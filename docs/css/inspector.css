@@ -1,0 +1,247 @@
+/* ==========================================================================
+   Episodive Design System — Figma-like Inspector Overlay
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Highlight overlay (blue border on hover / selection)
+   -------------------------------------------------------------------------- */
+.inspector-highlight {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  border: 2px solid #0D99FF;
+  background: rgba(13, 153, 255, 0.04);
+  transition: opacity 0.1s ease;
+}
+
+/* --------------------------------------------------------------------------
+   Dimension label (width x height badge above element)
+   -------------------------------------------------------------------------- */
+.inspector-dimension {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  background: #0D99FF;
+  color: white;
+  font-size: 11px;
+  font-family: monospace;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Padding overlay (green)
+   -------------------------------------------------------------------------- */
+.inspector-padding {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px dashed rgba(76, 175, 80, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   Margin overlay (orange)
+   -------------------------------------------------------------------------- */
+.inspector-margin {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9997;
+  background: rgba(255, 152, 0, 0.15);
+  border: 1px dashed rgba(255, 152, 0, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   Spacing ruler between elements (red)
+   -------------------------------------------------------------------------- */
+.inspector-spacing-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 10001;
+}
+
+.inspector-spacing {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10001;
+}
+
+.inspector-spacing-line {
+  background: #FF5252;
+}
+
+.inspector-spacing-line-h {
+  height: 1px;
+}
+
+.inspector-spacing-line-v {
+  width: 1px;
+}
+
+.inspector-spacing-cap {
+  position: absolute;
+  background: #FF5252;
+}
+
+.inspector-spacing-cap-h {
+  width: 1px;
+  height: 7px;
+}
+
+.inspector-spacing-cap-v {
+  height: 1px;
+  width: 7px;
+}
+
+.inspector-spacing-label {
+  position: absolute;
+  background: #FF5252;
+  color: white;
+  font-size: 10px;
+  font-family: monospace;
+  padding: 1px 4px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Property panel (right sidebar)
+   -------------------------------------------------------------------------- */
+.inspector-panel {
+  position: fixed;
+  right: 16px;
+  top: 80px;
+  width: 280px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  background: var(--md-surface-container-low);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: 12px;
+  padding: 16px;
+  z-index: 10002;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--md-on-surface);
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.inspector-panel.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.inspector-panel h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--md-primary);
+}
+
+.inspector-panel-section {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.inspector-panel-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.inspector-panel-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--md-on-surface-variant);
+  margin-bottom: 6px;
+}
+
+.inspector-panel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.inspector-panel-row:last-child {
+  border-bottom: none;
+}
+
+.inspector-panel-key {
+  color: var(--md-on-surface-variant);
+  font-size: 12px;
+}
+
+.inspector-panel-value {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.inspector-panel .color-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--md-outline);
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Inspector toggle button
+   -------------------------------------------------------------------------- */
+.inspector-toggle {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10003;
+  background: #0D99FF;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.15s ease;
+  user-select: none;
+}
+
+.inspector-toggle:hover {
+  background: #0B86E0;
+}
+
+.inspector-toggle.active {
+  background: #FF5252;
+}
+
+.inspector-toggle.active:hover {
+  background: #E04848;
+}
+
+/* --------------------------------------------------------------------------
+   Cursor override when inspector is active
+   -------------------------------------------------------------------------- */
+body.inspector-active [data-inspect] {
+  cursor: crosshair !important;
+}
+
+body.inspector-active [data-inspect]:hover {
+  outline: 1px dashed rgba(13, 153, 255, 0.3);
+}

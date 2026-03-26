@@ -1,0 +1,157 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Top App Bar</h1>
+    <p class="page-subtitle">Standard and center-aligned top app bar variants</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/TopAppBar.kt</span>
+
+<!-- EpisodiveTopAppBar -->
+<h2>EpisodiveTopAppBar</h2>
+<p>Standard top app bar with left-aligned title. Supports a navigation icon on the left and optional action icons on the right.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="width: 100%; min-width: 360px;" data-inspect="EpisodiveTopAppBar — Nav + Title" data-w="match_parent" data-h="64dp" data-icon-padding="4dp" data-icon-color="onSurface" data-title-size="22sp" data-title-weight="500" data-bg="surface">
+    <div class="eds-scaffold">
+      <div class="eds-top-app-bar">
+        <button class="eds-icon-button" data-inspect="navigationIcon" data-padding="4dp" data-color="onSurface">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="eds-top-app-bar-title" data-inspect="title" data-size="22sp" data-weight="500" data-color="onSurface">Podcast Detail</span>
+      </div>
+    </div>
+    <div class="showcase-item-label">Navigation + Title</div>
+  </div>
+
+  <div class="showcase-item" style="width: 100%; min-width: 360px;" data-inspect="EpisodiveTopAppBar — Nav + Title + Action" data-w="match_parent" data-h="64dp" data-bg="surface">
+    <div class="eds-scaffold">
+      <div class="eds-top-app-bar">
+        <button class="eds-icon-button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="eds-top-app-bar-title">Now Playing</span>
+        <button class="eds-icon-button" data-inspect="actionIcon" data-padding="4dp" data-color="onSurface">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="showcase-item-label">Navigation + Title + Action Icon</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>title</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>navigationIcon</code></td><td><code>@Composable (() -&gt; Unit)?</code></td><td><code>null</code></td></tr>
+    <tr><td><code>actions</code></td><td><code>@Composable RowScope.() -&gt; Unit</code></td><td><code>{}</code></td></tr>
+    <tr><td><code>colors</code></td><td><code>TopAppBarColors</code></td><td>M3 defaults</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveTopAppBar(
+    title = { Text("Podcast Detail") },
+    navigationIcon = {
+        EpisodiveIconButton(
+            onClick = onNavigateBack,
+            icon = {
+                Icon(TablerIcons.ArrowLeft, contentDescription = "Back")
+            }
+        )
+    },
+    actions = {
+        EpisodiveIconButton(
+            onClick = onShowMenu,
+            icon = {
+                Icon(TablerIcons.DotsVertical, contentDescription = "More")
+            }
+        )
+    }
+)</pre>
+
+<!-- EpisodiveCenterTopAppBar -->
+<h2>EpisodiveCenterTopAppBar</h2>
+<p>Center-aligned top app bar variant. Title is centered between the navigation and action areas. Used for screens with a focused, symmetrical header.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="width: 100%; min-width: 360px;" data-inspect="EpisodiveCenterTopAppBar" data-w="match_parent" data-h="64dp" data-title-align="center" data-icon-padding="4dp" data-icon-color="onSurface" data-title-size="22sp" data-title-weight="500" data-bg="surface">
+    <div class="eds-scaffold">
+      <div class="eds-top-app-bar eds-top-app-bar-center">
+        <button class="eds-icon-button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="eds-top-app-bar-title">Library</span>
+        <button class="eds-icon-button" style="visibility: hidden;">
+          <svg width="20" height="20" viewBox="0 0 24 24"></svg>
+        </button>
+      </div>
+    </div>
+    <div class="showcase-item-label">Center-aligned Title with Navigation Icon</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>title</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>navigationIcon</code></td><td><code>@Composable (() -&gt; Unit)?</code></td><td><code>null</code></td></tr>
+    <tr><td><code>actions</code></td><td><code>@Composable RowScope.() -&gt; Unit</code></td><td><code>{}</code></td></tr>
+    <tr><td><code>colors</code></td><td><code>TopAppBarColors</code></td><td>M3 defaults</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveCenterTopAppBar(
+    title = { Text("Library") },
+    navigationIcon = {
+        EpisodiveIconButton(
+            onClick = onNavigateBack,
+            icon = {
+                Icon(TablerIcons.ArrowLeft, contentDescription = "Back")
+            }
+        )
+    }
+)</pre>
+
+<!-- Design Specs -->
+<h2>Design Specs</h2>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 300px;">
+    <h3 style="margin-top: 0;">EpisodiveTopAppBar</h3>
+    <p>
+      <span class="spec-badge">height: 64dp</span>
+      <span class="spec-badge">icon padding: 4dp</span>
+      <span class="spec-badge">icon color: onSurface</span>
+      <span class="spec-badge">title: 22sp / weight 500</span>
+      <span class="spec-badge">title padding: 0 16dp</span>
+      <span class="spec-badge">title color: onSurface</span>
+      <span class="spec-badge">bg: surface</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 300px;">
+    <h3 style="margin-top: 0;">EpisodiveCenterTopAppBar</h3>
+    <p>
+      <span class="spec-badge">height: 64dp</span>
+      <span class="spec-badge">icon padding: 4dp</span>
+      <span class="spec-badge">icon color: onSurface</span>
+      <span class="spec-badge">title: 22sp / weight 500</span>
+      <span class="spec-badge">title align: center</span>
+      <span class="spec-badge">title color: onSurface</span>
+      <span class="spec-badge">bg: surface</span>
+    </p>
+  </div>
+</div>
+</main>

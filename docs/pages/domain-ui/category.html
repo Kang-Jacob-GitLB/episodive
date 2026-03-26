@@ -1,0 +1,261 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Category</h1>
+    <p class="page-subtitle">Interactive category selectors and cards for browsing podcast categories</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">core/ui/src/main/kotlin/io/jacob/episodive/core/ui/Category.kt</span>
+
+<!-- CategoryButton -->
+<h2>CategoryButton</h2>
+<p>Interactive category selector used in the onboarding flow. 140dp square <code>Surface</code> with <code>extraLarge</code> shape (28dp corners). Features an animated background image with blur effect when selected, a vertical gradient overlay (transparent to 0.8 surface alpha), animated text size (16sp to 22sp), animated Y offset (45dp to 0dp), and a toggle icon (add/check) in the top-right corner. When selected, a 2dp <code>primary</code> border is applied.</p>
+
+<h3>Showcase</h3>
+<div class="showcase" style="flex-wrap:wrap;">
+  <!-- Selected state -->
+  <div class="showcase-item" data-inspect="CategoryButton — Selected" data-w="140dp" data-h="140dp" data-corner="extraLarge (28dp)" data-border="2dp primary (selected)" data-blur="8dp (selected)" data-gradient="vertical: transparent -> surface 0.3 -> surface 0.8" data-text-size="22sp (selected)" data-text-offset="0dp (selected)" data-icon="Check (selected)" data-animation="tween 300ms for blur, gradient, text size, offset">
+    <div style="width:140px;height:140px;border-radius:28px;border:2px solid var(--md-primary);overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#e74c3c,#c0392b);filter:blur(8px);transform:scale(1.1);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:flex-end;">
+          <div style="width:24px;height:24px;border-radius:50%;background:var(--md-primary);display:flex;align-items:center;justify-content:center;color:var(--md-on-primary);font-size:14px;">&#10003;</div>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:22px;font-weight:700;color:var(--md-on-surface);">Business</span>
+        </div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Selected</div>
+  </div>
+  <!-- Unselected state -->
+  <div class="showcase-item" data-inspect="CategoryButton — Unselected" data-w="140dp" data-h="140dp" data-corner="extraLarge (28dp)" data-border="none" data-blur="0dp (unselected)" data-gradient-alpha="1.0 (visible)" data-text-size="16sp (unselected)" data-text-offset="45dp (unselected)" data-icon="Add (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#3498db,#2980b9);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:flex-end;">
+          <div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div>
+        </div>
+        <div style="flex:1;"></div>
+        <span style="font-size:16px;font-weight:700;color:var(--md-on-surface);padding-bottom:4px;">Comedy</span>
+      </div>
+    </div>
+    <div class="showcase-item-label">Unselected</div>
+  </div>
+</div>
+
+<h3>Category Grid</h3>
+<p>All available category values shown as a mix of selected and unselected buttons:</p>
+<div class="showcase" style="flex-wrap:wrap;gap:12px;">
+  <!-- Selected examples -->
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Business (selected)">
+    <div style="width:140px;height:140px;border-radius:28px;border:2px solid var(--md-primary);overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#2c3e50,#34495e);filter:blur(8px);transform:scale(1.1);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-primary);display:flex;align-items:center;justify-content:center;color:var(--md-on-primary);font-size:14px;">&#10003;</div></div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;font-weight:700;color:var(--md-on-surface);">Business</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Comedy (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#f39c12,#e67e22);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">Comedy</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Education (selected)">
+    <div style="width:140px;height:140px;border-radius:28px;border:2px solid var(--md-primary);overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#27ae60,#2ecc71);filter:blur(8px);transform:scale(1.1);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-primary);display:flex;align-items:center;justify-content:center;color:var(--md-on-primary);font-size:14px;">&#10003;</div></div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;font-weight:700;color:var(--md-on-surface);">Education</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Fiction (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#8e44ad,#9b59b6);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">Fiction</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Government (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#7f8c8d,#95a5a6);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">Government</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — History (selected)">
+    <div style="width:140px;height:140px;border-radius:28px;border:2px solid var(--md-primary);overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#d35400,#e67e22);filter:blur(8px);transform:scale(1.1);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-primary);display:flex;align-items:center;justify-content:center;color:var(--md-on-primary);font-size:14px;">&#10003;</div></div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;font-weight:700;color:var(--md-on-surface);">History</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Health (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#1abc9c,#16a085);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">Health</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Kids (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#e74c3c,#ff6b6b);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">Kids</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Leisure (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#3498db,#5dade2);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">Leisure</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Music (selected)">
+    <div style="width:140px;height:140px;border-radius:28px;border:2px solid var(--md-primary);overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#2c3e50,#4a69bd);filter:blur(8px);transform:scale(1.1);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-primary);display:flex;align-items:center;justify-content:center;color:var(--md-on-primary);font-size:14px;">&#10003;</div></div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;font-weight:700;color:var(--md-on-surface);">Music</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — News (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#c0392b,#e74c3c);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">News</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Religion (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#6c5ce7,#a29bfe);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">Religion</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Science (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#00b894,#55efc4);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">Science</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Society (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#636e72,#b2bec3);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">Society</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Sports (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#e17055,#fab1a0);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">Sports</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — Technology (selected)">
+    <div style="width:140px;height:140px;border-radius:28px;border:2px solid var(--md-primary);overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0984e3,#74b9ff);filter:blur(8px);transform:scale(1.1);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-primary);display:flex;align-items:center;justify-content:center;color:var(--md-on-primary);font-size:14px;">&#10003;</div></div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;font-weight:700;color:var(--md-on-surface);">Technology</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — True Crime (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#2d3436,#636e72);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">True Crime</span></div>
+    </div>
+  </div>
+  <div class="showcase-item" style="padding:0;min-width:auto;border:none;background:none;" data-inspect="CategoryButton — TV & Film (unselected)">
+    <div style="width:140px;height:140px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#fdcb6e,#f39c12);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,rgba(255,251,255,0.3) 50%,rgba(255,251,255,0.8) 100%);"></div>
+      <div style="position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;"><div style="display:flex;justify-content:flex-end;"><div style="width:24px;height:24px;border-radius:50%;background:var(--md-surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--md-on-surface);font-size:16px;">+</div></div><div style="flex:1;"></div><span style="font-size:16px;font-weight:700;color:var(--md-on-surface);">TV &amp; Film</span></div>
+    </div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Param</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>category</code></td><td><code>Category</code></td><td>required</td></tr>
+    <tr><td><code>isSelected</code></td><td><code>Boolean</code></td><td>required</td></tr>
+    <tr><td><code>onClick</code></td><td><code>(Category) -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">CategoryButton(
+    category = Category.TECHNOLOGY,
+    isSelected = true,
+    onClick = { category -> /* toggle selection */ }
+)</pre>
+
+<!-- CategoryItem -->
+<h2>CategoryItem</h2>
+<p>Simple category card for browsing views. Column layout with a 140dp square image (<code>largeIncreased</code> shape, 16dp corners) and a text label below with 8dp spacing. Uses <code>bodyMedium</code> typography, 1-line max with ellipsis.</p>
+
+<h3>Showcase</h3>
+<div class="showcase" style="flex-wrap:wrap;">
+  <div class="showcase-item" data-inspect="CategoryItem" data-w="140dp" data-image="140dp square" data-image-corner="largeIncreased (16dp)" data-gap="8dp" data-font="bodyMedium" data-color="onSurface" data-lines="1 max, ellipsis">
+    <div style="width:140px;cursor:pointer;">
+      <div style="width:140px;height:140px;border-radius:16px;background:linear-gradient(135deg,#0984e3,#74b9ff);display:flex;align-items:center;justify-content:center;color:white;font-size:36px;">&#128187;</div>
+      <div style="margin-top:8px;font-size:14px;color:var(--md-on-surface);">Technology</div>
+    </div>
+    <div class="showcase-item-label">Default</div>
+  </div>
+  <div class="showcase-item" data-inspect="CategoryItem — Comedy">
+    <div style="width:140px;cursor:pointer;">
+      <div style="width:140px;height:140px;border-radius:16px;background:linear-gradient(135deg,#f39c12,#e67e22);display:flex;align-items:center;justify-content:center;color:white;font-size:36px;">&#128514;</div>
+      <div style="margin-top:8px;font-size:14px;color:var(--md-on-surface);">Comedy</div>
+    </div>
+    <div class="showcase-item-label">Comedy</div>
+  </div>
+  <div class="showcase-item" data-inspect="CategoryItem — Science">
+    <div style="width:140px;cursor:pointer;">
+      <div style="width:140px;height:140px;border-radius:16px;background:linear-gradient(135deg,#00b894,#55efc4);display:flex;align-items:center;justify-content:center;color:white;font-size:36px;">&#128300;</div>
+      <div style="margin-top:8px;font-size:14px;color:var(--md-on-surface);">Science</div>
+    </div>
+    <div class="showcase-item-label">Science</div>
+  </div>
+  <div class="showcase-item" data-inspect="CategoryItem — Music">
+    <div style="width:140px;cursor:pointer;">
+      <div style="width:140px;height:140px;border-radius:16px;background:linear-gradient(135deg,#2c3e50,#4a69bd);display:flex;align-items:center;justify-content:center;color:white;font-size:36px;">&#127925;</div>
+      <div style="margin-top:8px;font-size:14px;color:var(--md-on-surface);">Music</div>
+    </div>
+    <div class="showcase-item-label">Music</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Param</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>category</code></td><td><code>Category</code></td><td>required</td></tr>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">CategoryItem(
+    category = Category.TECHNOLOGY,
+    onClick = { /* navigate to category */ }
+)</pre>
+
+</main>

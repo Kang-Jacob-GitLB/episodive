@@ -1,0 +1,358 @@
+<main>
+  <style>
+    .spacing-row { display: flex; align-items: center; gap: 16px; margin: 8px 0; padding: 8px 0; }
+    .spacing-bar { height: 24px; background: var(--md-primary); border-radius: 4px; opacity: 0.7; transition: opacity 0.15s; }
+    .spacing-bar:hover { opacity: 1; }
+    .spacing-label { font-size: 13px; font-weight: 600; color: var(--md-on-surface); min-width: 40px; }
+    .spacing-value { font-size: 12px; font-family: 'Roboto Mono', monospace; color: var(--md-on-surface-variant); min-width: 50px; text-align: right; }
+    .spacing-var { font-size: 11px; font-family: 'Roboto Mono', monospace; color: var(--md-primary); }
+
+    .dim-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    .dim-table th { text-align: left; font-size: 12px; font-weight: 600; color: var(--md-on-surface-variant); padding: 10px 12px; border-bottom: 2px solid var(--md-outline-variant); text-transform: uppercase; letter-spacing: 0.5px; }
+    .dim-table td { font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--md-outline-variant); color: var(--md-on-surface); }
+    .dim-table tr:hover td { background: var(--md-surface-container-low); }
+    .dim-table .mono { font-family: 'Roboto Mono', monospace; font-size: 12px; color: var(--md-primary); font-weight: 500; }
+    .dim-table .component-name { font-weight: 500; }
+
+    .shape-grid { display: flex; gap: 24px; flex-wrap: wrap; margin: 16px 0; }
+    .shape-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .shape-sample { width: 80px; height: 80px; background: var(--md-primary-container); border: 2px solid var(--md-primary); transition: transform 0.15s; }
+    .shape-sample:hover { transform: scale(1.05); }
+    .shape-label { font-size: 12px; font-weight: 600; text-align: center; color: var(--md-on-surface); }
+    .shape-value { font-size: 11px; font-family: 'Roboto Mono', monospace; text-align: center; color: var(--md-on-surface-variant); }
+
+    .elevation-grid { display: flex; gap: 24px; flex-wrap: wrap; margin: 16px 0; }
+    .elevation-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .elevation-sample { width: 80px; height: 80px; background: var(--md-surface); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--md-on-surface); transition: transform 0.15s; }
+    .elevation-sample:hover { transform: translateY(-2px); }
+    .elevation-label { font-size: 12px; font-weight: 600; text-align: center; color: var(--md-on-surface); }
+    .elevation-value { font-size: 11px; font-family: 'Roboto Mono', monospace; text-align: center; color: var(--md-on-surface-variant); }
+
+    .section-note { font-size: 13px; color: var(--md-on-surface-variant); line-height: 1.6; margin: 4px 0 16px; }
+  </style>
+
+  <div class="content-header">
+    <div>
+      <h1>Spacing & Dimensions</h1>
+      <p class="page-subtitle">간격, 크기, 모서리, 고도 토큰</p>
+    </div>
+    <button class="theme-toggle-btn">🌙 Dark Mode</button>
+  </div>
+  <span class="source-path">core/designsystem/src/main/kotlin/.../theme/Dimension.kt</span>
+
+  <!-- ===== Spacing Scale ===== -->
+  <h2>Spacing Scale</h2>
+  <p class="section-note">컴포넌트 간 간격과 패딩에 사용되는 표준 간격 값입니다. 4dp를 기본 단위로 하는 배수 체계를 따릅니다.</p>
+
+  <div style="margin: 16px 0;">
+    <div class="spacing-row" data-inspect="Spacing/xs" data-w="4dp">
+      <span class="spacing-label">xs</span>
+      <div class="spacing-bar" style="width: 16px;"></div>
+      <span class="spacing-value">4dp</span>
+      <span class="spacing-var">EpisodiveDimension.xs</span>
+    </div>
+
+    <div class="spacing-row" data-inspect="Spacing/sm" data-w="8dp">
+      <span class="spacing-label">sm</span>
+      <div class="spacing-bar" style="width: 32px;"></div>
+      <span class="spacing-value">8dp</span>
+      <span class="spacing-var">EpisodiveDimension.sm</span>
+    </div>
+
+    <div class="spacing-row" data-inspect="Spacing/md" data-w="12dp">
+      <span class="spacing-label">md</span>
+      <div class="spacing-bar" style="width: 48px;"></div>
+      <span class="spacing-value">12dp</span>
+      <span class="spacing-var">EpisodiveDimension.md</span>
+    </div>
+
+    <div class="spacing-row" data-inspect="Spacing/lg" data-w="16dp">
+      <span class="spacing-label">lg</span>
+      <div class="spacing-bar" style="width: 64px;"></div>
+      <span class="spacing-value">16dp</span>
+      <span class="spacing-var">EpisodiveDimension.lg</span>
+    </div>
+
+    <div class="spacing-row" data-inspect="Spacing/xl" data-w="24dp">
+      <span class="spacing-label">xl</span>
+      <div class="spacing-bar" style="width: 96px;"></div>
+      <span class="spacing-value">24dp</span>
+      <span class="spacing-var">EpisodiveDimension.xl</span>
+    </div>
+
+    <div class="spacing-row" data-inspect="Spacing/2xl" data-w="32dp">
+      <span class="spacing-label">2xl</span>
+      <div class="spacing-bar" style="width: 128px;"></div>
+      <span class="spacing-value">32dp</span>
+      <span class="spacing-var">EpisodiveDimension.xxl</span>
+    </div>
+
+    <div class="spacing-row" data-inspect="Spacing/3xl" data-w="48dp">
+      <span class="spacing-label">3xl</span>
+      <div class="spacing-bar" style="width: 192px;"></div>
+      <span class="spacing-value">48dp</span>
+      <span class="spacing-var">EpisodiveDimension.xxxl</span>
+    </div>
+  </div>
+
+  <!-- ===== Component Dimensions ===== -->
+  <h2>Component Dimensions</h2>
+  <p class="section-note">주요 컴포넌트의 고정 크기입니다. 이 값들은 Material3 가이드라인과 앱의 디자인 시스템에 의해 결정됩니다.</p>
+
+  <table class="dim-table" data-inspect="DimensionTable">
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Property</th>
+        <th>Value</th>
+        <th>Reference</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="component-name">PlayerBar</td>
+        <td>height</td>
+        <td class="mono">70dp</td>
+        <td class="mono">PlayerBarHeight</td>
+      </tr>
+      <tr>
+        <td class="component-name">Button</td>
+        <td>height</td>
+        <td class="mono">40dp</td>
+        <td class="mono">ButtonDefaults.MinHeight</td>
+      </tr>
+      <tr>
+        <td class="component-name">IconButton</td>
+        <td>size</td>
+        <td class="mono">40dp</td>
+        <td class="mono">IconButtonDefaults.Size</td>
+      </tr>
+      <tr>
+        <td class="component-name">FilterChip</td>
+        <td>height</td>
+        <td class="mono">32dp</td>
+        <td class="mono">FilterChipDefaults.Height</td>
+      </tr>
+      <tr>
+        <td class="component-name">TopAppBar</td>
+        <td>height</td>
+        <td class="mono">64dp</td>
+        <td class="mono">TopAppBarDefaults.Height</td>
+      </tr>
+      <tr>
+        <td class="component-name">SearchBar</td>
+        <td>height</td>
+        <td class="mono">56dp</td>
+        <td class="mono">SearchBarDefaults.Height</td>
+      </tr>
+      <tr>
+        <td class="component-name">NavigationBar</td>
+        <td>height</td>
+        <td class="mono">80dp</td>
+        <td class="mono">NavigationBarDefaults.Height</td>
+      </tr>
+      <tr>
+        <td class="component-name">Tab</td>
+        <td>padding-top</td>
+        <td class="mono">7dp</td>
+        <td class="mono">TabPaddingTop</td>
+      </tr>
+      <tr>
+        <td class="component-name">Seeker Thumb</td>
+        <td>radius (normal)</td>
+        <td class="mono">6dp</td>
+        <td class="mono">ThumbRadius</td>
+      </tr>
+      <tr>
+        <td class="component-name">Seeker Thumb</td>
+        <td>radius (dragging)</td>
+        <td class="mono">10dp</td>
+        <td class="mono">ThumbRadius (active)</td>
+      </tr>
+      <tr>
+        <td class="component-name">Seeker Track</td>
+        <td>height</td>
+        <td class="mono">4dp</td>
+        <td class="mono">TrackHeight</td>
+      </tr>
+      <tr>
+        <td class="component-name">DragHandle</td>
+        <td>size</td>
+        <td class="mono">40 x 4dp</td>
+        <td class="mono">DragHandleSize</td>
+      </tr>
+      <tr>
+        <td class="component-name">Dial</td>
+        <td>height</td>
+        <td class="mono">80dp</td>
+        <td class="mono">DialHeight</td>
+      </tr>
+      <tr>
+        <td class="component-name">WaveBar</td>
+        <td>width</td>
+        <td class="mono">2dp</td>
+        <td class="mono">WaveBarWidth</td>
+      </tr>
+      <tr>
+        <td class="component-name">WaveBar</td>
+        <td>maxHeight</td>
+        <td class="mono">16dp</td>
+        <td class="mono">WaveBarMaxHeight</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===== Shape (Corner Radius) ===== -->
+  <h2>Shape (Corner Radius)</h2>
+  <p class="section-note">Material3 Shape 시스템입니다. 컴포넌트의 모서리 둥글기를 결정하며, 작은 요소에는 작은 radius를, 카드나 시트에는 큰 radius를 사용합니다.</p>
+
+  <div class="shape-grid">
+    <div class="shape-item" data-inspect="Shape/None" data-w="80dp" data-h="80dp">
+      <div class="shape-sample" style="border-radius: 0;"></div>
+      <div class="shape-label">None</div>
+      <div class="shape-value">0dp</div>
+    </div>
+
+    <div class="shape-item" data-inspect="Shape/ExtraSmall" data-w="80dp" data-h="80dp">
+      <div class="shape-sample" style="border-radius: 4px;"></div>
+      <div class="shape-label">Extra Small</div>
+      <div class="shape-value">4dp</div>
+    </div>
+
+    <div class="shape-item" data-inspect="Shape/Small" data-w="80dp" data-h="80dp">
+      <div class="shape-sample" style="border-radius: 8px;"></div>
+      <div class="shape-label">Small</div>
+      <div class="shape-value">8dp</div>
+    </div>
+
+    <div class="shape-item" data-inspect="Shape/Medium" data-w="80dp" data-h="80dp">
+      <div class="shape-sample" style="border-radius: 12px;"></div>
+      <div class="shape-label">Medium</div>
+      <div class="shape-value">12dp</div>
+    </div>
+
+    <div class="shape-item" data-inspect="Shape/Large" data-w="80dp" data-h="80dp">
+      <div class="shape-sample" style="border-radius: 16px;"></div>
+      <div class="shape-label">Large</div>
+      <div class="shape-value">16dp</div>
+    </div>
+
+    <div class="shape-item" data-inspect="Shape/ExtraLarge" data-w="80dp" data-h="80dp">
+      <div class="shape-sample" style="border-radius: 28px;"></div>
+      <div class="shape-label">Extra Large</div>
+      <div class="shape-value">28dp</div>
+    </div>
+
+    <div class="shape-item" data-inspect="Shape/Full" data-w="80dp" data-h="80dp">
+      <div class="shape-sample" style="border-radius: 9999px;"></div>
+      <div class="shape-label">Full</div>
+      <div class="shape-value">9999dp</div>
+    </div>
+  </div>
+
+  <!-- Shape Usage Note -->
+  <div style="margin: 16px 0; padding: 16px; border-radius: 12px; background: var(--md-surface-container-low); border: 1px solid var(--md-outline-variant);">
+    <div style="font-weight: 600; margin-bottom: 8px; color: var(--md-on-surface);">Shape Usage</div>
+    <table class="dim-table" style="margin: 0;">
+      <thead>
+        <tr><th>Shape Token</th><th>Used In</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">Extra Small (4dp)</td><td>Chips, small badges</td></tr>
+        <tr><td class="mono">Small (8dp)</td><td>Cards, list items</td></tr>
+        <tr><td class="mono">Medium (12dp)</td><td>Dialogs, menus</td></tr>
+        <tr><td class="mono">Large (16dp)</td><td>FABs, navigation drawers</td></tr>
+        <tr><td class="mono">Extra Large (28dp)</td><td>Bottom sheets, expanded cards</td></tr>
+        <tr><td class="mono">Full (circle)</td><td>Avatar images, circular buttons</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== Elevation ===== -->
+  <h2>Elevation</h2>
+  <p class="section-note">Material3 Elevation 시스템입니다. 높은 레벨일수록 더 뚜렷한 그림자가 적용되어 요소의 계층 관계를 나타냅니다.</p>
+
+  <div class="elevation-grid">
+    <div class="elevation-item" data-inspect="Elevation/Level0" data-w="80dp" data-h="80dp">
+      <div class="elevation-sample" style="box-shadow: none; border: 1px solid var(--md-outline-variant);">
+        Level 0
+      </div>
+      <div class="elevation-label">Level 0</div>
+      <div class="elevation-value">0dp</div>
+    </div>
+
+    <div class="elevation-item" data-inspect="Elevation/Level1" data-w="80dp" data-h="80dp">
+      <div class="elevation-sample" style="box-shadow: 0 1px 2px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1);">
+        Level 1
+      </div>
+      <div class="elevation-label">Level 1</div>
+      <div class="elevation-value">1dp</div>
+    </div>
+
+    <div class="elevation-item" data-inspect="Elevation/Level2" data-w="80dp" data-h="80dp">
+      <div class="elevation-sample" style="box-shadow: 0 2px 4px rgba(0,0,0,0.15), 0 1px 6px rgba(0,0,0,0.1);">
+        Level 2
+      </div>
+      <div class="elevation-label">Level 2</div>
+      <div class="elevation-value">3dp</div>
+    </div>
+
+    <div class="elevation-item" data-inspect="Elevation/Level3" data-w="80dp" data-h="80dp">
+      <div class="elevation-sample" style="box-shadow: 0 4px 8px rgba(0,0,0,0.15), 0 2px 12px rgba(0,0,0,0.1);">
+        Level 3
+      </div>
+      <div class="elevation-label">Level 3</div>
+      <div class="elevation-value">6dp</div>
+    </div>
+
+    <div class="elevation-item" data-inspect="Elevation/Level4" data-w="80dp" data-h="80dp">
+      <div class="elevation-sample" style="box-shadow: 0 6px 12px rgba(0,0,0,0.15), 0 3px 16px rgba(0,0,0,0.1);">
+        Level 4
+      </div>
+      <div class="elevation-label">Level 4</div>
+      <div class="elevation-value">8dp</div>
+    </div>
+
+    <div class="elevation-item" data-inspect="Elevation/Level5" data-w="80dp" data-h="80dp">
+      <div class="elevation-sample" style="box-shadow: 0 8px 16px rgba(0,0,0,0.15), 0 4px 24px rgba(0,0,0,0.1);">
+        Level 5
+      </div>
+      <div class="elevation-label">Level 5</div>
+      <div class="elevation-value">12dp</div>
+    </div>
+  </div>
+
+  <!-- Elevation Usage Note -->
+  <div style="margin: 16px 0; padding: 16px; border-radius: 12px; background: var(--md-surface-container-low); border: 1px solid var(--md-outline-variant);">
+    <div style="font-weight: 600; margin-bottom: 8px; color: var(--md-on-surface);">Elevation in Dark Theme</div>
+    <p style="font-size: 13px; color: var(--md-on-surface-variant); margin: 0; line-height: 1.5;">
+      Material3의 Dark Theme에서는 그림자 대신 surface tint overlay를 사용하여 고도를 표현합니다.
+      높은 고도의 surface일수록 Primary 색상의 tint가 더 많이 적용되어 밝아집니다.
+      이는 어두운 배경에서 그림자가 잘 보이지 않기 때문입니다.
+    </p>
+  </div>
+
+  <!-- Code Example -->
+  <h2>Code Example</h2>
+  <pre style="background: var(--md-surface-container); border: 1px solid var(--md-outline-variant); border-radius: 12px; padding: 16px; font-size: 13px; overflow-x: auto; color: var(--md-on-surface);"><code>// Spacing usage
+Spacer(modifier = Modifier.height(EpisodiveDimension.lg)) // 16dp
+
+Column(
+    verticalArrangement = Arrangement.spacedBy(EpisodiveDimension.sm) // 8dp
+) { /* ... */ }
+
+Row(
+    modifier = Modifier.padding(horizontal = EpisodiveDimension.lg) // 16dp
+) { /* ... */ }
+
+// Shape usage
+Card(
+    shape = MaterialTheme.shapes.medium // 12dp corner
+) { /* ... */ }
+
+// Elevation usage
+Surface(
+    tonalElevation = 3.dp // Level 2
+) { /* ... */ }</code></pre>
+
+</main>

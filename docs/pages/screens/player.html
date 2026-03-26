@@ -1,0 +1,434 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Player</h1>
+    <p class="page-subtitle">Full-screen audio player with dual-mode (bar + bottom sheet)</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">feature/player/src/main/kotlin/.../PlayerScreen.kt</span>
+
+<!-- Screen Overview -->
+<h2>Screen Overview</h2>
+<p>The Player is the most complex screen in the app, operating in two modes: a minimized <strong>PlayerBar</strong> (70dp tall, persistent at the bottom) and an expanded <strong>PlayerBottomSheet</strong> (full-screen modal). The expanded view features a gradient background derived from album art, transport controls, chapter navigation, a speed dial, and a playlist sheet.</p>
+
+<!-- GIF + Annotated Side by Side -->
+<h2>Screen Layout</h2>
+<div class="screen-comparison">
+  <!-- GIF Phone Frame -->
+  <div>
+    <div class="phone-frame">
+      <img class="phone-frame-gif" src="../../gifs/player.gif" alt="Player screen recording">
+    </div>
+    <div class="screen-label">Live Recording</div>
+  </div>
+
+  <!-- Annotated Phone Frame: PlayerBar -->
+  <div>
+    <div class="phone-frame" data-inspect="PlayerBar (minimized)" data-w="360dp" data-h="800dp">
+      <div class="phone-frame-notch"></div>
+      <div class="phone-frame-status-bar">
+        <span>9:41</span>
+        <span></span>
+      </div>
+      <div class="phone-frame-content" style="background: var(--md-background); display: flex; flex-direction: column;">
+        <!-- Main content area placeholder -->
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--md-on-surface-variant); font-size: 14px; opacity: 0.5;">
+          Screen Content (Home / Search / etc.)
+        </div>
+
+        <!-- PlayerBar -->
+        <div data-inspect="PlayerBar" data-w="match_parent" data-h="70dp" data-bg="surfaceContainerHigh" style="height: 70px; background: var(--md-surface-container-high); border-radius: 16px 16px 0 0; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px;">
+          <!-- Seeker progress at top -->
+          <div data-inspect="EpisodiveSeeker (mini)" data-h="2dp" style="height: 2px; background: var(--md-outline); border-radius: 1px; position: relative;">
+            <div style="height: 100%; width: 35%; background: var(--md-primary); border-radius: 1px;"></div>
+          </div>
+          <!-- Content row -->
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+            <div class="eds-state-image" data-inspect="Album Art" data-w="48dp" data-h="48dp" data-corner="12dp" style="width: 48px; height: 48px; min-width: 48px; border-radius: 12px; background: var(--md-secondary-container);"></div>
+            <div style="flex: 1; min-width: 0;">
+              <div data-inspect="Episode Title — FadingEdgeText" style="font-size: 14px; font-weight: 500; color: var(--md-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Episode 142: Breaking News</div>
+              <div data-inspect="Podcast Title — FadingEdgeText" style="font-size: 12px; color: var(--md-on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">The Daily Podcast</div>
+            </div>
+            <div class="eds-icon-toggle checked" data-inspect="Play/Pause Toggle" data-w="40dp" data-h="40dp" style="width: 40px; height: 40px; font-size: 18px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nav Bar -->
+        <div class="eds-nav-bar" data-inspect="NavigationBar">
+          <div class="eds-nav-item selected">
+            <div class="eds-nav-item-icon">H</div>
+            <span class="eds-nav-item-label">Home</span>
+          </div>
+          <div class="eds-nav-item unselected">
+            <div class="eds-nav-item-icon">S</div>
+            <span class="eds-nav-item-label">Search</span>
+          </div>
+          <div class="eds-nav-item unselected">
+            <div class="eds-nav-item-icon">L</div>
+            <span class="eds-nav-item-label">Library</span>
+          </div>
+          <div class="eds-nav-item unselected">
+            <div class="eds-nav-item-icon">C</div>
+            <span class="eds-nav-item-label">Clip</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">PlayerBar (Minimized)</div>
+  </div>
+</div>
+
+<!-- Expanded Player Annotated -->
+<h3>PlayerBottomSheet (Expanded)</h3>
+<div class="screen-comparison">
+  <div>
+    <div class="phone-frame" data-inspect="PlayerBottomSheet (expanded)" data-w="360dp" data-h="800dp">
+      <div class="phone-frame-notch"></div>
+      <div class="phone-frame-status-bar">
+        <span>9:41</span>
+        <span></span>
+      </div>
+      <div class="phone-frame-content" style="background: linear-gradient(180deg, #5a3a38 0%, var(--md-background) 60%);">
+        <!-- Top App Bar -->
+        <div class="eds-top-app-bar eds-top-app-bar-center" data-inspect="CenterTopAppBar" data-bg="transparent" style="background: transparent;">
+          <button class="eds-icon-button" data-inspect="Collapse (CaretDown)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <span class="eds-top-app-bar-title" style="font-size: 14px;"></span>
+          <button class="eds-icon-button" data-inspect="Like Toggle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          </button>
+        </div>
+
+        <!-- Album Art -->
+        <div style="padding: 8px 24px; text-align: center;">
+          <div class="eds-state-image" data-inspect="StateImage — Large Album Art" data-w="match_parent" data-aspect="1:1" data-corner="extraExtraLarge" data-palette="DominantRegion.Top" style="width: 100%; aspect-ratio: 1; border-radius: 28px; background: var(--md-secondary-container); position: relative;">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+            <!-- PushUpCue overlay -->
+            <div data-inspect="PushUpCue" data-animation="fadeIn/slideUp" style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, var(--md-surface)); border-radius: 0 0 28px 28px; padding: 24px 12px 12px; text-align: center;">
+              <span style="font-size: 12px; font-weight: 500; color: var(--md-on-surface-variant);">we start again after a rejection</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Episode / Podcast Info -->
+        <div data-inspect="Track Info" data-padding="horizontal 24dp" style="text-align: center; padding: 8px 24px;">
+          <div data-inspect="Podcast Title — FadingEdgeText" data-font="bodyLarge" data-color="onSurfaceVariant" style="font-size: 16px; color: var(--md-on-surface-variant); margin-bottom: 4px;">The Daily Podcast</div>
+          <div data-inspect="Episode Title — FadingEdgeText" data-font="titleLarge" data-color="onSurface" style="font-size: 22px; font-weight: 500; color: var(--md-on-surface);">Episode 142: Breaking News</div>
+        </div>
+
+        <!-- ControlPanelProgress -->
+        <div data-inspect="ControlPanelProgress" data-padding="horizontal 24dp" style="padding: 8px 24px;">
+          <div class="eds-seeker" data-inspect="EpisodiveSeeker" data-chapters="supported">
+            <div class="eds-seeker-track">
+              <div class="eds-seeker-buffered" style="width: 65%;"></div>
+              <div class="eds-seeker-progress" style="width: 40%;"></div>
+              <div class="eds-seeker-thumb" style="left: 40%;"></div>
+            </div>
+          </div>
+          <div data-inspect="Time Labels" style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; color: var(--md-on-surface-variant); margin-top: 4px;">
+            <span data-inspect="Current Position" data-w="55dp">16:40</span>
+            <span data-inspect="Chapter Name" style="flex: 1; text-align: center; color: var(--md-on-surface); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Chapter 2: Deep Dive</span>
+            <span data-inspect="Duration" data-w="55dp" style="text-align: right;">45:00</span>
+          </div>
+        </div>
+
+        <!-- ControlPanelBottom -->
+        <div data-inspect="ControlPanelBottom" data-padding="horizontal 24dp" style="padding: 8px 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <button class="eds-icon-button" data-inspect="Replay15" data-w="48dp" data-h="48dp">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color: var(--md-on-surface);"><text x="4" y="17" font-size="11" font-weight="600">-15</text></svg>
+            </button>
+            <button class="eds-icon-button" data-inspect="SkipPrevious" data-w="48dp" data-h="48dp">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" style="color: var(--md-on-surface);"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <div class="eds-icon-toggle checked" data-inspect="Play/Pause (large)" data-w="68dp" data-h="68dp" data-bg="onBackground" data-color="background" style="width: 68px; height: 68px; font-size: 28px;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            </div>
+            <button class="eds-icon-button" data-inspect="SkipNext" data-w="48dp" data-h="48dp">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" style="color: var(--md-on-surface);"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+            <button class="eds-icon-button" data-inspect="Forward30" data-w="48dp" data-h="48dp">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color: var(--md-on-surface);"><text x="3" y="17" font-size="11" font-weight="600">+30</text></svg>
+            </button>
+          </div>
+          <div data-inspect="Speed + Playlist Row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+            <button class="eds-button-text" data-inspect="Speed Button" data-font="titleLarge" style="font-size: 22px; font-weight: 500; color: var(--md-on-surface);">1x</button>
+            <button class="eds-icon-button" data-inspect="Playlist Button" data-w="32dp" data-h="32dp" style="width: 32px; height: 32px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">PlayerBottomSheet (Expanded)</div>
+  </div>
+
+  <!-- Scrollable sections below the fold -->
+  <div>
+    <div class="phone-frame" data-inspect="Scrollable Sections" data-w="360dp" data-h="800dp">
+      <div class="phone-frame-notch"></div>
+      <div class="phone-frame-status-bar">
+        <span>9:41</span>
+        <span></span>
+      </div>
+      <div class="phone-frame-content" style="background: var(--md-background); padding: 8px 0;">
+        <!-- Episode Info Section (Card) -->
+        <div data-inspect="EpisodeInfoSection — CardSection" data-corner="extraLarge" style="margin: 16px; background: var(--md-surface-container); border-radius: 28px; padding: 16px 24px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span data-inspect="Title" style="font-size: 22px; font-weight: 700; color: var(--md-on-surface);">Episode Info</span>
+            <div class="eds-view-toggle-icon" data-inspect="ViewToggleButton">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+          <div style="font-size: 14px; color: var(--md-on-surface-variant); margin-bottom: 8px;">Mar 25, 2026</div>
+          <div data-inspect="HtmlTextContainer — Description" style="font-size: 14px; color: var(--md-on-surface-variant); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+            Today we explore the latest developments in technology and how they affect our daily lives. Our expert panel discusses the implications of recent policy changes and what they mean for consumers and businesses alike...
+          </div>
+        </div>
+
+        <!-- Chapter Section (Card) -->
+        <div data-inspect="ChapterSection — CardSection" data-corner="extraLarge" style="margin: 16px; background: var(--md-surface-container); border-radius: 28px; padding: 16px 24px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span style="font-size: 22px; font-weight: 700; color: var(--md-on-surface);">Chapters</span>
+            <div class="eds-view-toggle-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+          <div data-inspect="ChapterItem (selected)" style="padding: 8px 0; display: flex; gap: 8px; align-items: center; color: var(--md-primary);">
+            <span style="font-size: 12px; font-weight: 600; min-width: 36px;">00:00</span>
+            <span style="font-size: 14px; font-weight: 600;">Chapter 1: Introduction</span>
+          </div>
+          <div data-inspect="ChapterItem" style="padding: 8px 0; display: flex; gap: 8px; align-items: center; color: var(--md-on-surface-variant);">
+            <span style="font-size: 12px; min-width: 36px;">08:20</span>
+            <span style="font-size: 14px;">Chapter 2: Deep Dive</span>
+          </div>
+          <div data-inspect="ChapterItem" style="padding: 8px 0; display: flex; gap: 8px; align-items: center; color: var(--md-on-surface-variant);">
+            <span style="font-size: 12px; min-width: 36px;">25:00</span>
+            <span style="font-size: 14px;">Chapter 3: Conclusion</span>
+          </div>
+          <div style="padding-top: 8px; font-size: 14px; font-weight: 700; color: var(--md-on-surface);">Show more</div>
+        </div>
+
+        <!-- Podcast Info Section (Card) -->
+        <div data-inspect="PodcastInfoSection — CardSection" data-corner="extraLarge" style="margin: 16px; background: var(--md-surface-container); border-radius: 28px; padding: 16px 24px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 22px; font-weight: 700; color: var(--md-on-surface);">Podcast Info</span>
+            <div class="eds-view-toggle-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+          <div style="font-size: 14px; color: var(--md-on-surface-variant); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 12px;">
+            The Daily Podcast brings you in-depth coverage of the most important stories every day...
+          </div>
+          <!-- PodcastSimpleItem -->
+          <div data-inspect="PodcastSimpleItem" style="display: flex; gap: 12px; align-items: center; padding: 8px 0;">
+            <div class="eds-state-image" style="width: 48px; height: 48px; min-width: 48px; border-radius: 12px; background: var(--md-secondary-container);"></div>
+            <div style="flex: 1;">
+              <div style="font-size: 14px; font-weight: 500; color: var(--md-on-surface);">The Daily Podcast</div>
+              <div style="font-size: 12px; color: var(--md-on-surface-variant);">Daily News Network</div>
+            </div>
+            <button class="eds-button" data-inspect="Follow Toggle" style="font-size: 12px; height: 32px; padding: 0 16px;">Follow</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Scrollable Sections (below fold)</div>
+  </div>
+</div>
+
+<!-- Modal Sheets -->
+<h2>Modal Sheets</h2>
+<div class="screen-comparison">
+  <!-- Speed Sheet -->
+  <div>
+    <div class="phone-frame" data-inspect="SpeedSheet" data-w="360dp" data-h="800dp" style="height: 400px;">
+      <div class="phone-frame-content" style="background: var(--md-surface); display: flex; flex-direction: column; align-items: center; padding-top: 8px;">
+        <div class="eds-drag-handle" data-inspect="DragHandle"></div>
+        <div data-inspect="Speed Display" data-font="headlineMedium" style="font-size: 28px; font-weight: 700; color: var(--md-primary); margin: 12px 0;">1.5x Speed</div>
+        <div class="eds-dial" data-inspect="EpisodiveDial" data-value="speed" style="width: calc(100% - 32px); margin: 8px 0;">
+          <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 12px;"></div></div>
+          <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 18px;"></div></div>
+          <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 24px;"></div></div>
+          <div class="eds-dial-step"><div class="eds-dial-tick active" style="height: 40px;"></div></div>
+          <div class="eds-dial-step"><div class="eds-dial-tick active" style="height: 32px;"></div></div>
+          <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 20px;"></div></div>
+          <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 14px;"></div></div>
+          <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 10px;"></div></div>
+        </div>
+        <div data-inspect="Preset Speed Buttons" style="display: flex; gap: 8px; margin-top: 16px;">
+          <div data-inspect="Speed Preset" style="width: 48px; height: 48px; border-radius: 50%; background: var(--md-surface-variant); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 500; color: var(--md-on-surface-variant);">0.5</div>
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--md-surface-variant); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 500; color: var(--md-on-surface-variant);">1</div>
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--md-primary-container); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 500; color: var(--md-on-primary-container);">1.5</div>
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--md-surface-variant); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 500; color: var(--md-on-surface-variant);">2</div>
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--md-surface-variant); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 500; color: var(--md-on-surface-variant);">3.5</div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">SpeedSheet</div>
+  </div>
+
+  <!-- Playlist Sheet -->
+  <div>
+    <div class="phone-frame" data-inspect="PlaylistSheet" data-w="360dp" data-h="800dp" style="height: 400px;">
+      <div class="phone-frame-content" style="background: var(--md-surface); padding: 0 16px;">
+        <div class="eds-drag-handle" data-inspect="DragHandle"></div>
+        <div data-inspect="Episode [playing]" style="display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; opacity: 1;">
+          <div class="eds-state-image" style="width: 56px; height: 56px; min-width: 56px; border-radius: 8px; background: var(--md-primary-container);">
+            <div class="eds-wave" style="margin: auto;">
+              <div class="eds-wave-bar" style="height: 8px;"></div>
+              <div class="eds-wave-bar" style="height: 14px;"></div>
+              <div class="eds-wave-bar" style="height: 10px;"></div>
+              <div class="eds-wave-bar" style="height: 16px;"></div>
+            </div>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 600; color: var(--md-primary);">Episode 142: Breaking News</div>
+            <div style="font-size: 12px; color: var(--md-on-surface-variant);">45 min</div>
+          </div>
+        </div>
+        <div data-inspect="Episode [queued]" style="display: flex; gap: 12px; align-items: flex-start; padding: 8px 0;">
+          <div class="eds-state-image" style="width: 56px; height: 56px; min-width: 56px; border-radius: 8px; background: var(--md-secondary-container);"></div>
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 500; color: var(--md-on-surface);">Episode 141: Market Update</div>
+            <div style="font-size: 12px; color: var(--md-on-surface-variant);">38 min</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: flex-start; padding: 8px 0;">
+          <div class="eds-state-image" style="width: 56px; height: 56px; min-width: 56px; border-radius: 8px; background: var(--md-secondary-container);"></div>
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 500; color: var(--md-on-surface);">Episode 140: Tech Review</div>
+            <div style="font-size: 12px; color: var(--md-on-surface-variant);">52 min</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">PlaylistSheet</div>
+  </div>
+</div>
+
+<!-- Screen Structure Breakdown -->
+<h2>Screen Structure</h2>
+<h3>PlayerBar (Minimized)</h3>
+<pre class="code-block">AnimatedVisibility(visible = state is Success)
+  +-- Card(height = playerBarHeight, onClick = ExpandPlayer)
+  |     +-- EpisodiveSeeker (mini progress bar, readOnly)
+  |     +-- Row
+  |     |     +-- StateImage(48.dp, corner = 12.dp)
+  |     |     +-- Column
+  |     |     |     +-- FadingEdgeText (episode title)
+  |     |     |     +-- FadingEdgeText (podcast title)
+  |     |     +-- EpisodiveIconToggleButton (play/pause)
+  +-- PlayerBottomSheet (shown when expanded)</pre>
+
+<h3>PlayerBottomSheet (Expanded)</h3>
+<pre class="code-block">ModalBottomSheet(skipPartiallyExpanded = true, dragHandle = null)
+  +-- LazyColumn
+  |     +-- [0] EpisodiveGradientBackground(dominantColor)
+  |     |     +-- EpisodiveCenterTopAppBar(CaretDown, Like toggle)
+  |     |     +-- StateImage (full album art, 1:1 aspect)
+  |     |     +-- PushUpCue (animated text overlay)
+  |     |     +-- FadingEdgeText (podcast name)
+  |     |     +-- FadingEdgeText (episode title)
+  |     |     +-- ControlPanelProgress
+  |     |     |     +-- EpisodiveSeeker (with chapters)
+  |     |     |     +-- Row: position | chapterName | duration
+  |     |     +-- ControlPanelBottom
+  |     |           +-- Row: Replay15, Previous, Play/Pause(68dp), Next, Forward30
+  |     |           +-- Row: Speed button | Playlist button
+  |     +-- [1] EpisodeInfoSection (expandable CardSection)
+  |     +-- [2] ChapterSection (expandable, paginated)
+  |     +-- [3] PodcastInfoSection (expandable + PodcastSimpleItem)
+  +-- SpeedSheet (ModalBottomSheet)
+  |     +-- DragHandle + speed display
+  |     +-- EpisodiveDial(value, onValueChange)
+  |     +-- Row of preset speed buttons (0.5, 1, 1.5, 2, 3.5)
+  +-- PlaylistSheet (ModalBottomSheet)
+        +-- DragHandle
+        +-- LazyColumn of EpisodeItems (with playing indicator)</pre>
+
+<h3>Key Components Used</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Component</th><th>Source</th><th>Purpose</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>EpisodiveSeeker</code></td><td>core:designsystem</td><td>Seekable progress bar with chapter support</td></tr>
+    <tr><td><code>EpisodiveDial</code></td><td>core:designsystem</td><td>Rotary speed selector</td></tr>
+    <tr><td><code>EpisodiveGradientBackground</code></td><td>core:designsystem</td><td>Dominant color gradient backdrop</td></tr>
+    <tr><td><code>FadingEdgeText</code></td><td>core:designsystem</td><td>Single-line text with fading edges</td></tr>
+    <tr><td><code>EpisodiveIconToggleButton</code></td><td>core:designsystem</td><td>Play/pause toggle (68dp large variant)</td></tr>
+    <tr><td><code>EpisodiveViewToggleButton</code></td><td>core:designsystem</td><td>Expand/collapse toggle for card sections</td></tr>
+    <tr><td><code>PushUpCue</code></td><td>feature:player</td><td>Animated text overlay on album art</td></tr>
+    <tr><td><code>ChapterItem</code></td><td>core:ui</td><td>Chapter list entry with timestamp</td></tr>
+    <tr><td><code>PodcastSimpleItem</code></td><td>core:ui</td><td>Compact podcast row with follow button</td></tr>
+  </tbody>
+</table>
+
+<!-- MVI Architecture -->
+<h2>MVI Architecture</h2>
+
+<div class="mvi-card" data-inspect="PlayerState">
+  <h4>State</h4>
+  <ul class="mvi-list">
+    <li>Loading</li>
+    <li>Success(podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, chapters, cue)</li>
+    <li>Error(message: String)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="PlayerAction">
+  <h4>Action</h4>
+  <ul class="mvi-list">
+    <li>PlayOrPause</li>
+    <li>Next</li>
+    <li>Previous</li>
+    <li>Shuffle</li>
+    <li>Repeat</li>
+    <li>PlayIndex(index: Int)</li>
+    <li>SeekTo(position: Long)</li>
+    <li>SeekBackward</li>
+    <li>SeekForward</li>
+    <li>Speed(speed: Float)</li>
+    <li>ClickPodcast(podcast: Podcast)</li>
+    <li>ClickEpisode(episode: Episode)</li>
+    <li>ToggleLike</li>
+    <li>ToggleLikedEpisode(episode: Episode)</li>
+    <li>ToggleFollowedPodcast(podcast: Podcast)</li>
+    <li>ExpandPlayer</li>
+    <li>CollapsePlayer</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="PlayerEffect">
+  <h4>Effect</h4>
+  <ul class="mvi-list">
+    <li>NavigateToPodcast(podcast: Podcast)</li>
+    <li>ShowPlayerBottomSheet</li>
+    <li>HidePlayerBottomSheet</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="PlayerViewModel Notes">
+  <h4>ViewModel Notes</h4>
+  <p style="font-size: 13px; color: var(--md-on-surface-variant); margin: 0;">Uses <code>@Player(EpisodivePlayers.Main)</code> qualified <code>PlayerRepository</code>. State is composed from multiple reactive flows: <code>getNowPlayingUseCase</code>, <code>playerRepository.progress</code>, <code>playerRepository.isPlaying</code>, <code>getPlaylistUseCase</code>, <code>getUserDataUseCase</code> (for speed), and <code>getChaptersUseCase</code>. Supports background playback via <code>MediaNotificationService</code>.</p>
+</div>
+
+<!-- Navigation -->
+<h2>Navigation</h2>
+
+<div class="nav-flow" data-inspect="Navigation Flow">
+  <span class="nav-flow-node">Any Screen</span>
+  <span class="nav-flow-arrow">&rarr;</span>
+  <span class="nav-flow-node" style="background: var(--md-primary); color: var(--md-on-primary);">PlayerBar (persistent)</span>
+  <span class="nav-flow-arrow">&rarr;</span>
+  <span class="nav-flow-node">PlayerBottomSheet (tap bar)</span>
+  <span class="nav-flow-arrow">&rarr;</span>
+  <span class="nav-flow-node">PodcastRoute (tap podcast)</span>
+</div>
+
+<p>The PlayerBar is a persistent overlay rendered in the main app scaffold, above the bottom navigation bar. It is visible on all screens when playback is active. Tapping the bar expands it into a full-screen <code>ModalBottomSheet</code>. The player uses the <code>@Player(EpisodivePlayers.Main)</code> ExoPlayer instance for full episode playback.</p>
+</main>

@@ -1,0 +1,230 @@
+<main>
+<style>
+.dial-demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.dial-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.dial-label {
+  font-size: 12px;
+  color: var(--md-on-surface-variant);
+}
+.eds-dial-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 8px;
+  background: var(--md-primary);
+  border-radius: 1px;
+}
+</style>
+
+<div class="content-header">
+  <div>
+    <h1>Dial</h1>
+    <p class="page-subtitle">EpisodiveDial -- Rotary speed control with velocity-based fling and spring animation</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">Toggle Theme</button>
+</div>
+<span class="source-path">core/designsystem/src/.../component/Dial.kt</span>
+
+<!-- ===== Visual Showcase ===== -->
+<h2>Showcase</h2>
+<div class="showcase">
+
+  <!-- 1.0x Speed -->
+  <div class="showcase-item" style="min-width: 320px;"
+       data-inspect="EpisodiveDial (1.0x)"
+       data-w="match_parent" data-h="80dp"
+       data-stepW="30dp" data-range="0.5f..3.5f" data-steps="30"
+       data-value="1.0" data-anim="fling decay + spring">
+    <div class="dial-demo">
+      <div class="dial-value">1.0x</div>
+      <div class="eds-dial" style="width: 280px; position: relative;">
+        <div class="eds-dial-indicator" style="top: 4px;"></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 24px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick active" style="height: 32px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 24px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+      </div>
+      <div class="dial-label">Normal speed</div>
+    </div>
+    <div class="showcase-item-label">1.0x (default playback speed)</div>
+  </div>
+
+  <!-- 1.5x Speed -->
+  <div class="showcase-item" style="min-width: 320px;"
+       data-inspect="EpisodiveDial (1.5x)"
+       data-w="match_parent" data-h="80dp"
+       data-value="1.5">
+    <div class="dial-demo">
+      <div class="dial-value">1.5x</div>
+      <div class="eds-dial" style="width: 280px; position: relative;">
+        <div class="eds-dial-indicator" style="top: 4px;"></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 24px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick active" style="height: 32px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 24px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+      </div>
+      <div class="dial-label">Faster playback</div>
+    </div>
+    <div class="showcase-item-label">1.5x speed</div>
+  </div>
+
+  <!-- 2.0x Speed -->
+  <div class="showcase-item" style="min-width: 320px;"
+       data-inspect="EpisodiveDial (2.0x)"
+       data-w="match_parent" data-h="80dp"
+       data-value="2.0">
+    <div class="dial-demo">
+      <div class="dial-value">2.0x</div>
+      <div class="eds-dial" style="width: 280px; position: relative;">
+        <div class="eds-dial-indicator" style="top: 4px;"></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 24px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick active" style="height: 32px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 24px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+        <div class="eds-dial-step"><div class="eds-dial-tick inactive" style="height: 16px;"></div></div>
+      </div>
+      <div class="dial-label">Double speed</div>
+    </div>
+    <div class="showcase-item-label">2.0x speed</div>
+  </div>
+
+  <!-- Range Visualization -->
+  <div class="showcase-item" style="min-width: 320px;"
+       data-inspect="EpisodiveDial (Range)"
+       data-range="0.5f..3.5f" data-steps="30"
+       data-stepW="30dp">
+    <div class="dial-demo">
+      <div style="display: flex; justify-content: space-between; width: 280px; font-size: 11px; color: var(--md-on-surface-variant); font-family: monospace;">
+        <span>0.5x</span>
+        <span>1.0x</span>
+        <span>1.5x</span>
+        <span>2.0x</span>
+        <span>2.5x</span>
+        <span>3.0x</span>
+        <span>3.5x</span>
+      </div>
+      <div style="width: 280px; height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--md-outline), var(--md-primary), var(--md-outline)); margin: 8px 0;"></div>
+      <div class="dial-label">Full range: 0.5x to 3.5x in 30 steps (0.1 increments)</div>
+    </div>
+    <div class="showcase-item-label">Range visualization</div>
+  </div>
+
+</div>
+
+<!-- ===== Properties Table ===== -->
+<h2>Properties</h2>
+<table class="props-table">
+  <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>value</code></td>
+      <td><code>Float</code></td>
+      <td>required</td>
+      <td>Current dial value (e.g., playback speed)</td>
+    </tr>
+    <tr>
+      <td><code>onValueChange</code></td>
+      <td><code>(Float) -&gt; Unit</code></td>
+      <td>required</td>
+      <td>Callback when value changes via dragging or fling</td>
+    </tr>
+    <tr>
+      <td><code>range</code></td>
+      <td><code>ClosedFloatingPointRange&lt;Float&gt;</code></td>
+      <td><code>0.5f..3.5f</code></td>
+      <td>Valid range of values</td>
+    </tr>
+    <tr>
+      <td><code>steps</code></td>
+      <td><code>Int</code></td>
+      <td><code>30</code></td>
+      <td>Number of discrete steps within the range</td>
+    </tr>
+    <tr>
+      <td><code>selectedColor</code></td>
+      <td><code>Color</code></td>
+      <td><code>primary</code></td>
+      <td>Color for the active/selected tick mark</td>
+    </tr>
+    <tr>
+      <td><code>unselectedColor</code></td>
+      <td><code>Color</code></td>
+      <td><code>outline</code></td>
+      <td>Color for inactive tick marks</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ===== Code Example ===== -->
+<h2>Usage</h2>
+<pre class="code-block"><code>@Composable
+fun PlaybackSpeedControl(
+    currentSpeed: Float,
+    onSpeedChange: (Float) -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "${String.format("%.1f", currentSpeed)}x",
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+        EpisodiveDial(
+            value = currentSpeed,
+            onValueChange = onSpeedChange,
+            range = 0.5f..3.5f,
+            steps = 30,
+            selectedColor = MaterialTheme.colorScheme.primary,
+            unselectedColor = MaterialTheme.colorScheme.outline
+        )
+    }
+}
+
+// Features:
+// - VelocityTracker for momentum-based fling
+// - splineBasedDecay for natural deceleration
+// - spring animation for snapping to nearest step
+// - Horizontal drag gesture with pointer input</code></pre>
+
+<!-- ===== Design Specs ===== -->
+<h2>Design Specs</h2>
+<div class="showcase" style="gap: 12px;">
+  <span class="spec-badge" data-inspect="Spec: Height" data-h="80dp">height: 80dp</span>
+  <span class="spec-badge" data-inspect="Spec: Step Width" data-w="30dp">step width: 30dp</span>
+  <span class="spec-badge" data-inspect="Spec: Range">range: 0.5f..3.5f</span>
+  <span class="spec-badge" data-inspect="Spec: Steps">steps: 30 (0.1 increments)</span>
+  <span class="spec-badge" data-inspect="Spec: Active Tick">active tick: primary</span>
+  <span class="spec-badge" data-inspect="Spec: Inactive Tick">inactive tick: outline</span>
+  <span class="spec-badge" data-inspect="Spec: Tick Width">tick width: 2dp</span>
+  <span class="spec-badge" data-inspect="Spec: Container BG">bg: surfaceContainer</span>
+  <span class="spec-badge" data-inspect="Spec: Container Corner">corner: 12dp</span>
+  <span class="spec-badge" data-inspect="Spec: Fling">fling: splineBasedDecay + spring snap</span>
+  <span class="spec-badge" data-inspect="Spec: Gesture">gesture: VelocityTracker + horizontalDrag</span>
+</div>
+
+</main>

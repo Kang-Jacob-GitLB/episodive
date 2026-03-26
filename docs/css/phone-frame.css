@@ -1,0 +1,149 @@
+/* Phone Frame Mockup */
+.phone-frame {
+  width: 360px;
+  height: 800px;
+  border: 3px solid var(--md-outline);
+  border-radius: 40px;
+  overflow: hidden;
+  background: var(--md-background);
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  margin: 0 auto;
+}
+
+.phone-frame-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 28px;
+  background: var(--md-scrim);
+  border-radius: 0 0 20px 20px;
+  z-index: 10;
+}
+
+.phone-frame-status-bar {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+
+.phone-frame-content {
+  height: calc(100% - 44px);
+  overflow-y: auto;
+  position: relative;
+}
+
+.phone-frame-nav-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+/* Phone frame with GIF */
+.phone-frame-gif {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 37px;
+}
+
+/* Side by side layout: GIF + annotated */
+.screen-comparison {
+  display: flex;
+  gap: 48px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.screen-label {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--md-on-surface-variant);
+  margin-top: 12px;
+}
+
+/* Annotation overlay for screen structure */
+.screen-annotation {
+  position: absolute;
+  border: 2px dashed var(--md-primary);
+  background: rgba(245, 51, 44, 0.05);
+  border-radius: 4px;
+  z-index: 5;
+}
+.screen-annotation-label {
+  position: absolute;
+  top: -20px;
+  left: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--md-primary);
+  background: var(--md-surface);
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* MVI info card */
+.mvi-card {
+  background: var(--md-surface-container);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 0;
+}
+.mvi-card h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--md-primary);
+  margin-bottom: 8px;
+}
+.mvi-list {
+  list-style: none;
+  padding: 0;
+}
+.mvi-list li {
+  font-size: 13px;
+  font-family: monospace;
+  padding: 3px 0;
+  color: var(--md-on-surface-variant);
+}
+.mvi-list li::before {
+  content: '▸ ';
+  color: var(--md-primary);
+}
+
+/* Navigation flow */
+.nav-flow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--md-surface-container);
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+.nav-flow-node {
+  padding: 8px 16px;
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.nav-flow-arrow {
+  color: var(--md-on-surface-variant);
+  font-size: 18px;
+}

@@ -1,0 +1,473 @@
+/* ==========================================================================
+   Episodive Design System — Design Tokens
+   Extracted from Compose source: Color.kt, Type.kt, Dimension.kt
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+/* --------------------------------------------------------------------------
+   Color Tokens — Light Theme
+   -------------------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  /* Primary */
+  --md-primary: #F5332C;
+  --md-on-primary: #FFFFFF;
+  --md-primary-container: #FFDAD6;
+  --md-on-primary-container: #410002;
+
+  /* Secondary */
+  --md-secondary: #D63C2F;
+  --md-on-secondary: #FFFFFF;
+  --md-secondary-container: #FFE0DE;
+  --md-on-secondary-container: #370B09;
+
+  /* Tertiary */
+  --md-tertiary: #E65100;
+  --md-on-tertiary: #FFFFFF;
+  --md-tertiary-container: #FFDBCC;
+  --md-on-tertiary-container: #2D0900;
+
+  /* Error */
+  --md-error: #BA1A1A;
+  --md-on-error: #FFFFFF;
+  --md-error-container: #FFDAD6;
+  --md-on-error-container: #410002;
+
+  /* Background */
+  --md-background: #FFFBFF;
+  --md-on-background: #201A1A;
+
+  /* Surface */
+  --md-surface: #FFFBFF;
+  --md-on-surface: #201A1A;
+  --md-surface-variant: #F5DDDA;
+  --md-on-surface-variant: #534341;
+
+  /* Outline */
+  --md-outline: #857370;
+  --md-outline-variant: #D8C2BE;
+
+  /* Misc */
+  --md-scrim: #000000;
+  --md-inverse-surface: #362F2F;
+  --md-inverse-on-surface: #FBEEEE;
+  --md-inverse-primary: #FFB3A6;
+
+  /* Surface tonal */
+  --md-surface-dim: #E8D6D5;
+  --md-surface-bright: #FFFBFF;
+  --md-surface-container-lowest: #FFFFFF;
+  --md-surface-container-low: #FFF0EF;
+  --md-surface-container: #F9EAEA;
+  --md-surface-container-high: #F3E4E4;
+  --md-surface-container-highest: #EDDEDE;
+}
+
+/* --------------------------------------------------------------------------
+   Color Tokens — Dark Theme
+   -------------------------------------------------------------------------- */
+[data-theme="dark"] {
+  /* Primary */
+  --md-primary: #F5332C;
+  --md-on-primary: #FFFFFF;
+  --md-primary-container: #8B1E1A;
+  --md-on-primary-container: #FFDAD6;
+
+  /* Secondary */
+  --md-secondary: #FF5449;
+  --md-on-secondary: #000000;
+  --md-secondary-container: #9C2B23;
+  --md-on-secondary-container: #FFE0DE;
+
+  /* Tertiary */
+  --md-tertiary: #FF7043;
+  --md-on-tertiary: #2D0900;
+  --md-tertiary-container: #5C1A00;
+  --md-on-tertiary-container: #FFDBCC;
+
+  /* Error */
+  --md-error: #FF6B6B;
+  --md-on-error: #370001;
+  --md-error-container: #5F1213;
+  --md-on-error-container: #FFDAD6;
+
+  /* Background */
+  --md-background: #1C1B1B;
+  --md-on-background: #ECE0DF;
+
+  /* Surface */
+  --md-surface: #1C1B1B;
+  --md-on-surface: #ECE0DF;
+  --md-surface-variant: #534341;
+  --md-on-surface-variant: #D8C2BE;
+
+  /* Outline */
+  --md-outline: #9F8C89;
+  --md-outline-variant: #534341;
+
+  /* Misc */
+  --md-scrim: #000000;
+  --md-inverse-surface: #ECE0DF;
+  --md-inverse-on-surface: #362F2F;
+  --md-inverse-primary: #FFB3A6;
+
+  /* Surface tonal */
+  --md-surface-dim: #1C1B1B;
+  --md-surface-bright: #433B3A;
+  --md-surface-container-lowest: #171515;
+  --md-surface-container-low: #252323;
+  --md-surface-container: #292727;
+  --md-surface-container-high: #343131;
+  --md-surface-container-highest: #3F3C3C;
+}
+
+/* --------------------------------------------------------------------------
+   Typography Tokens
+   Font family: Pretendard (via Noto Sans KR fallback on Google Fonts)
+   -------------------------------------------------------------------------- */
+:root {
+  --md-font-family: 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+
+  /* Display */
+  --md-display-large-size: 57px;
+  --md-display-large-line-height: 64px;
+  --md-display-large-weight: 700;
+  --md-display-large-tracking: 0;
+
+  --md-display-medium-size: 45px;
+  --md-display-medium-line-height: 52px;
+  --md-display-medium-weight: 700;
+  --md-display-medium-tracking: 0;
+
+  --md-display-small-size: 36px;
+  --md-display-small-line-height: 44px;
+  --md-display-small-weight: 700;
+  --md-display-small-tracking: 0;
+
+  /* Headline */
+  --md-headline-large-size: 32px;
+  --md-headline-large-line-height: 40px;
+  --md-headline-large-weight: 700;
+  --md-headline-large-tracking: 0;
+
+  --md-headline-medium-size: 28px;
+  --md-headline-medium-line-height: 36px;
+  --md-headline-medium-weight: 700;
+  --md-headline-medium-tracking: 0;
+
+  --md-headline-small-size: 24px;
+  --md-headline-small-line-height: 32px;
+  --md-headline-small-weight: 700;
+  --md-headline-small-tracking: 0;
+
+  /* Title */
+  --md-title-large-size: 22px;
+  --md-title-large-line-height: 28px;
+  --md-title-large-weight: 500;
+  --md-title-large-tracking: 0;
+
+  --md-title-medium-size: 16px;
+  --md-title-medium-line-height: 24px;
+  --md-title-medium-weight: 500;
+  --md-title-medium-tracking: 0.15px;
+
+  --md-title-small-size: 14px;
+  --md-title-small-line-height: 20px;
+  --md-title-small-weight: 500;
+  --md-title-small-tracking: 0.1px;
+
+  /* Body */
+  --md-body-large-size: 16px;
+  --md-body-large-line-height: 24px;
+  --md-body-large-weight: 400;
+  --md-body-large-tracking: 0.5px;
+
+  --md-body-medium-size: 14px;
+  --md-body-medium-line-height: 20px;
+  --md-body-medium-weight: 400;
+  --md-body-medium-tracking: 0.25px;
+
+  --md-body-small-size: 12px;
+  --md-body-small-line-height: 16px;
+  --md-body-small-weight: 400;
+  --md-body-small-tracking: 0.4px;
+
+  /* Label */
+  --md-label-large-size: 14px;
+  --md-label-large-line-height: 20px;
+  --md-label-large-weight: 500;
+  --md-label-large-tracking: 0.1px;
+
+  --md-label-medium-size: 12px;
+  --md-label-medium-line-height: 16px;
+  --md-label-medium-weight: 500;
+  --md-label-medium-tracking: 0.5px;
+
+  --md-label-small-size: 11px;
+  --md-label-small-line-height: 16px;
+  --md-label-small-weight: 500;
+  --md-label-small-tracking: 0.5px;
+
+  /* --------------------------------------------------------------------------
+     Spacing Tokens
+     -------------------------------------------------------------------------- */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 48px;
+
+  /* --------------------------------------------------------------------------
+     Shape Tokens (Material3)
+     -------------------------------------------------------------------------- */
+  --shape-none: 0;
+  --shape-extra-small: 4px;
+  --shape-small: 8px;
+  --shape-medium: 12px;
+  --shape-large: 16px;
+  --shape-extra-large: 28px;
+  --shape-full: 9999px;
+
+  /* --------------------------------------------------------------------------
+     Elevation Tokens
+     -------------------------------------------------------------------------- */
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --elevation-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --elevation-3: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --elevation-4: 0 6px 10px 4px rgba(0, 0, 0, 0.15), 0 2px 3px rgba(0, 0, 0, 0.3);
+  --elevation-5: 0 8px 12px 6px rgba(0, 0, 0, 0.15), 0 4px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+   Typography Utility Classes
+   ========================================================================== */
+
+.text-display-large {
+  font-family: var(--md-font-family);
+  font-size: var(--md-display-large-size);
+  line-height: var(--md-display-large-line-height);
+  font-weight: var(--md-display-large-weight);
+  letter-spacing: var(--md-display-large-tracking);
+}
+
+.text-display-medium {
+  font-family: var(--md-font-family);
+  font-size: var(--md-display-medium-size);
+  line-height: var(--md-display-medium-line-height);
+  font-weight: var(--md-display-medium-weight);
+  letter-spacing: var(--md-display-medium-tracking);
+}
+
+.text-display-small {
+  font-family: var(--md-font-family);
+  font-size: var(--md-display-small-size);
+  line-height: var(--md-display-small-line-height);
+  font-weight: var(--md-display-small-weight);
+  letter-spacing: var(--md-display-small-tracking);
+}
+
+.text-headline-large {
+  font-family: var(--md-font-family);
+  font-size: var(--md-headline-large-size);
+  line-height: var(--md-headline-large-line-height);
+  font-weight: var(--md-headline-large-weight);
+  letter-spacing: var(--md-headline-large-tracking);
+}
+
+.text-headline-medium {
+  font-family: var(--md-font-family);
+  font-size: var(--md-headline-medium-size);
+  line-height: var(--md-headline-medium-line-height);
+  font-weight: var(--md-headline-medium-weight);
+  letter-spacing: var(--md-headline-medium-tracking);
+}
+
+.text-headline-small {
+  font-family: var(--md-font-family);
+  font-size: var(--md-headline-small-size);
+  line-height: var(--md-headline-small-line-height);
+  font-weight: var(--md-headline-small-weight);
+  letter-spacing: var(--md-headline-small-tracking);
+}
+
+.text-title-large {
+  font-family: var(--md-font-family);
+  font-size: var(--md-title-large-size);
+  line-height: var(--md-title-large-line-height);
+  font-weight: var(--md-title-large-weight);
+  letter-spacing: var(--md-title-large-tracking);
+}
+
+.text-title-medium {
+  font-family: var(--md-font-family);
+  font-size: var(--md-title-medium-size);
+  line-height: var(--md-title-medium-line-height);
+  font-weight: var(--md-title-medium-weight);
+  letter-spacing: var(--md-title-medium-tracking);
+}
+
+.text-title-small {
+  font-family: var(--md-font-family);
+  font-size: var(--md-title-small-size);
+  line-height: var(--md-title-small-line-height);
+  font-weight: var(--md-title-small-weight);
+  letter-spacing: var(--md-title-small-tracking);
+}
+
+.text-body-large {
+  font-family: var(--md-font-family);
+  font-size: var(--md-body-large-size);
+  line-height: var(--md-body-large-line-height);
+  font-weight: var(--md-body-large-weight);
+  letter-spacing: var(--md-body-large-tracking);
+}
+
+.text-body-medium {
+  font-family: var(--md-font-family);
+  font-size: var(--md-body-medium-size);
+  line-height: var(--md-body-medium-line-height);
+  font-weight: var(--md-body-medium-weight);
+  letter-spacing: var(--md-body-medium-tracking);
+}
+
+.text-body-small {
+  font-family: var(--md-font-family);
+  font-size: var(--md-body-small-size);
+  line-height: var(--md-body-small-line-height);
+  font-weight: var(--md-body-small-weight);
+  letter-spacing: var(--md-body-small-tracking);
+}
+
+.text-label-large {
+  font-family: var(--md-font-family);
+  font-size: var(--md-label-large-size);
+  line-height: var(--md-label-large-line-height);
+  font-weight: var(--md-label-large-weight);
+  letter-spacing: var(--md-label-large-tracking);
+}
+
+.text-label-medium {
+  font-family: var(--md-font-family);
+  font-size: var(--md-label-medium-size);
+  line-height: var(--md-label-medium-line-height);
+  font-weight: var(--md-label-medium-weight);
+  letter-spacing: var(--md-label-medium-tracking);
+}
+
+.text-label-small {
+  font-family: var(--md-font-family);
+  font-size: var(--md-label-small-size);
+  line-height: var(--md-label-small-line-height);
+  font-weight: var(--md-label-small-weight);
+  letter-spacing: var(--md-label-small-tracking);
+}
+
+/* ==========================================================================
+   Color Utility Classes — Backgrounds
+   ========================================================================== */
+
+.bg-primary                  { background-color: var(--md-primary); }
+.bg-on-primary               { background-color: var(--md-on-primary); }
+.bg-primary-container        { background-color: var(--md-primary-container); }
+.bg-on-primary-container     { background-color: var(--md-on-primary-container); }
+
+.bg-secondary                { background-color: var(--md-secondary); }
+.bg-on-secondary             { background-color: var(--md-on-secondary); }
+.bg-secondary-container      { background-color: var(--md-secondary-container); }
+.bg-on-secondary-container   { background-color: var(--md-on-secondary-container); }
+
+.bg-tertiary                 { background-color: var(--md-tertiary); }
+.bg-on-tertiary              { background-color: var(--md-on-tertiary); }
+.bg-tertiary-container       { background-color: var(--md-tertiary-container); }
+.bg-on-tertiary-container    { background-color: var(--md-on-tertiary-container); }
+
+.bg-error                    { background-color: var(--md-error); }
+.bg-on-error                 { background-color: var(--md-on-error); }
+.bg-error-container          { background-color: var(--md-error-container); }
+.bg-on-error-container       { background-color: var(--md-on-error-container); }
+
+.bg-background               { background-color: var(--md-background); }
+.bg-on-background            { background-color: var(--md-on-background); }
+.bg-surface                  { background-color: var(--md-surface); }
+.bg-on-surface               { background-color: var(--md-on-surface); }
+.bg-surface-variant          { background-color: var(--md-surface-variant); }
+.bg-on-surface-variant       { background-color: var(--md-on-surface-variant); }
+
+.bg-outline                  { background-color: var(--md-outline); }
+.bg-outline-variant          { background-color: var(--md-outline-variant); }
+.bg-scrim                    { background-color: var(--md-scrim); }
+.bg-inverse-surface          { background-color: var(--md-inverse-surface); }
+.bg-inverse-on-surface       { background-color: var(--md-inverse-on-surface); }
+.bg-inverse-primary          { background-color: var(--md-inverse-primary); }
+
+.bg-surface-dim              { background-color: var(--md-surface-dim); }
+.bg-surface-bright           { background-color: var(--md-surface-bright); }
+.bg-surface-container-lowest { background-color: var(--md-surface-container-lowest); }
+.bg-surface-container-low    { background-color: var(--md-surface-container-low); }
+.bg-surface-container        { background-color: var(--md-surface-container); }
+.bg-surface-container-high   { background-color: var(--md-surface-container-high); }
+.bg-surface-container-highest{ background-color: var(--md-surface-container-highest); }
+
+/* ==========================================================================
+   Color Utility Classes — Text
+   ========================================================================== */
+
+.text-primary                  { color: var(--md-primary); }
+.text-on-primary               { color: var(--md-on-primary); }
+.text-primary-container        { color: var(--md-primary-container); }
+.text-on-primary-container     { color: var(--md-on-primary-container); }
+
+.text-secondary                { color: var(--md-secondary); }
+.text-on-secondary             { color: var(--md-on-secondary); }
+.text-secondary-container      { color: var(--md-secondary-container); }
+.text-on-secondary-container   { color: var(--md-on-secondary-container); }
+
+.text-tertiary                 { color: var(--md-tertiary); }
+.text-on-tertiary              { color: var(--md-on-tertiary); }
+.text-tertiary-container       { color: var(--md-tertiary-container); }
+.text-on-tertiary-container    { color: var(--md-on-tertiary-container); }
+
+.text-error                    { color: var(--md-error); }
+.text-on-error                 { color: var(--md-on-error); }
+.text-error-container          { color: var(--md-error-container); }
+.text-on-error-container       { color: var(--md-on-error-container); }
+
+.text-background               { color: var(--md-background); }
+.text-on-background            { color: var(--md-on-background); }
+.text-surface                  { color: var(--md-surface); }
+.text-on-surface               { color: var(--md-on-surface); }
+.text-surface-variant          { color: var(--md-surface-variant); }
+.text-on-surface-variant       { color: var(--md-on-surface-variant); }
+
+.text-outline                  { color: var(--md-outline); }
+.text-outline-variant          { color: var(--md-outline-variant); }
+.text-inverse-surface          { color: var(--md-inverse-surface); }
+.text-inverse-on-surface       { color: var(--md-inverse-on-surface); }
+.text-inverse-primary          { color: var(--md-inverse-primary); }
+
+/* ==========================================================================
+   Elevation Utility Classes
+   ========================================================================== */
+
+.elevation-0 { box-shadow: var(--elevation-0); }
+.elevation-1 { box-shadow: var(--elevation-1); }
+.elevation-2 { box-shadow: var(--elevation-2); }
+.elevation-3 { box-shadow: var(--elevation-3); }
+.elevation-4 { box-shadow: var(--elevation-4); }
+.elevation-5 { box-shadow: var(--elevation-5); }
+
+/* ==========================================================================
+   Shape Utility Classes
+   ========================================================================== */
+
+.shape-none        { border-radius: var(--shape-none); }
+.shape-extra-small { border-radius: var(--shape-extra-small); }
+.shape-small       { border-radius: var(--shape-small); }
+.shape-medium      { border-radius: var(--shape-medium); }
+.shape-large       { border-radius: var(--shape-large); }
+.shape-extra-large { border-radius: var(--shape-extra-large); }
+.shape-full        { border-radius: var(--shape-full); }

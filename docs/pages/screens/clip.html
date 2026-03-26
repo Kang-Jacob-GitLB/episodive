@@ -1,0 +1,196 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Clip</h1>
+    <p class="page-subtitle">TikTok-style vertical pager for soundbite clips</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">feature/clip/src/main/kotlin/.../ClipScreen.kt</span>
+
+<!-- Screen Overview -->
+<h2>Screen Overview</h2>
+<p>The Clip screen presents podcast soundbites in a TikTok-style vertical swipe interface using <code>VerticalPager</code>. Each page displays an <code>EpisodeClipItem</code> with a blurred background, album art, episode information, and playback controls. It uses the <code>@Player(EpisodivePlayers.Clip)</code> ExoPlayer instance, separate from the main player. The screen is lifecycle-aware: it pauses on background and resumes on foreground. Clips auto-play on entry and auto-advance when complete.</p>
+
+<!-- GIF + Annotated Side by Side -->
+<h2>Screen Layout</h2>
+<div class="screen-comparison">
+  <!-- GIF Phone Frame -->
+  <div>
+    <div class="phone-frame">
+      <img class="phone-frame-gif" src="../../gifs/clip.gif" alt="Clip screen recording">
+    </div>
+    <div class="screen-label">Live Recording</div>
+  </div>
+
+  <!-- Annotated Phone Frame -->
+  <div>
+    <div class="phone-frame" data-inspect="ClipScreen" data-w="360dp" data-h="800dp">
+      <div class="phone-frame-notch"></div>
+      <div class="phone-frame-status-bar">
+        <span>9:41</span>
+        <span></span>
+      </div>
+      <div class="phone-frame-content" style="background: var(--md-scrim); position: relative; overflow: hidden;">
+
+        <!-- Previous clip (peeking from top) -->
+        <div data-inspect="Previous Clip (peek)" data-padding="vertical 80dp" style="position: absolute; top: -12px; left: 24px; right: 24px; height: 60px; background: var(--md-surface-container); border-radius: 16px; opacity: 0.3;"></div>
+
+        <!-- Current Clip Page -->
+        <div data-inspect="EpisodeClipItem (current)" data-w="match_parent" data-h="match_parent" data-padding="vertical 80dp, horizontal 24dp" style="position: absolute; top: 80px; left: 24px; right: 24px; bottom: 80px; background: var(--md-surface-container); border-radius: 24px; display: flex; flex-direction: column; align-items: center; overflow: hidden;">
+          <!-- Blurred background -->
+          <div data-inspect="Blurred Background Image" style="position: absolute; inset: 0; background: linear-gradient(135deg, var(--md-primary-container) 0%, var(--md-surface-container) 100%); opacity: 0.3; border-radius: 24px;"></div>
+
+          <!-- Content -->
+          <div style="position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; flex: 1; justify-content: center; gap: 12px; width: 100%;">
+            <!-- Album Art -->
+            <div class="eds-state-image" data-inspect="Album Art" data-w="200dp" data-corner="extraLarge" style="width: 180px; height: 180px; border-radius: 28px; background: var(--md-secondary-container); margin-bottom: 8px;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+
+            <!-- Episode Title -->
+            <div data-inspect="Episode Title" data-font="titleLarge" data-color="onSurface" style="font-size: 20px; font-weight: 600; color: var(--md-on-surface); text-align: center; width: 100%;">
+              Episode 42: The Sound of Innovation
+            </div>
+
+            <!-- Podcast Name -->
+            <div data-inspect="Podcast Name" data-font="bodyMedium" data-color="onSurfaceVariant" style="font-size: 14px; color: var(--md-on-surface-variant); text-align: center;">
+              Tech Talk Daily
+            </div>
+
+            <!-- Description -->
+            <div data-inspect="Description" data-font="bodySmall" style="font-size: 12px; color: var(--md-on-surface-variant); text-align: center; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%;">
+              A fascinating exploration of how sound design shapes our tech experiences...
+            </div>
+
+            <!-- Controls Row -->
+            <div data-inspect="Controls" style="display: flex; align-items: center; gap: 24px; margin-top: 12px;">
+              <!-- Play/Pause -->
+              <div class="eds-icon-toggle checked" data-inspect="Play/Pause" data-w="56dp" data-h="56dp" style="width: 56px; height: 56px; font-size: 24px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              </div>
+
+              <!-- Like -->
+              <button class="eds-icon-button" data-inspect="Like Button" data-w="40dp" style="color: var(--md-on-surface);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+              </button>
+            </div>
+
+            <!-- Remaining Time -->
+            <div data-inspect="Remaining Time" data-font="labelSmall" style="font-size: 11px; color: var(--md-on-surface-variant); margin-top: 4px;">
+              18:32 remaining
+            </div>
+          </div>
+        </div>
+
+        <!-- Next clip (peeking from bottom) -->
+        <div data-inspect="Next Clip (peek)" style="position: absolute; bottom: -12px; left: 24px; right: 24px; height: 60px; background: var(--md-surface-container); border-radius: 16px; opacity: 0.3;"></div>
+
+        <!-- Vertical swipe indicator -->
+        <div data-inspect="Swipe Direction" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: 0.3;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--md-on-surface)" stroke-width="2"><path d="M12 5l-7 7h14z"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--md-on-surface)" stroke-width="2"><path d="M12 19l-7-7h14z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Annotated Structure</div>
+  </div>
+</div>
+
+<!-- Screen Structure Breakdown -->
+<h2>Screen Structure</h2>
+<h3>Layout Hierarchy</h3>
+<pre class="code-block">ClipScreen
+  +-- EpisodeClipPager
+        +-- VerticalPager(
+        |       pageSpacing = 32.dp,
+        |       contentPadding = PaddingValues(vertical = 80.dp, horizontal = 24.dp)
+        |   )
+        +-- [page N] EpisodeClipItem
+              +-- Blurred background image (full-size)
+              +-- Centered card layout:
+              |     +-- Album art image
+              |     +-- Episode title
+              |     +-- Podcast name
+              |     +-- Description text (clamped)
+              |     +-- Play/Pause button
+              |     +-- Like button
+              |     +-- Remaining time indicator
+              +-- Auto-play on page settle
+              +-- Auto-advance on Playback.ENDED</pre>
+
+<h3>Lifecycle Behavior</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Event</th><th>Action</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ON_START</code></td><td><code>ClipAction.Resume</code></td><td>Resume clip playback when app foregrounds</td></tr>
+    <tr><td><code>ON_STOP</code></td><td><code>ClipAction.Pause</code></td><td>Pause clip playback when app backgrounds</td></tr>
+    <tr><td>First load</td><td><code>PlayClip(first)</code></td><td>Auto-play first clip once paging data loads</td></tr>
+    <tr><td>Page settle</td><td><code>PlayClip(current)</code></td><td>Play new clip when page settles after swipe</td></tr>
+    <tr><td><code>Playback.ENDED</code></td><td><code>animateScrollToPage</code></td><td>Auto-scroll to next clip when current finishes</td></tr>
+  </tbody>
+</table>
+
+<h3>Key Components Used</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Component</th><th>Source</th><th>Purpose</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>VerticalPager</code></td><td>Compose Foundation</td><td>TikTok-style vertical swipe container</td></tr>
+    <tr><td><code>EpisodeClipItem</code></td><td>core:ui</td><td>Full-page clip card with controls</td></tr>
+    <tr><td><code>LoadingScreen</code></td><td>core:designsystem</td><td>Shown while clips are loading</td></tr>
+  </tbody>
+</table>
+
+<!-- MVI Architecture -->
+<h2>MVI Architecture</h2>
+
+<div class="mvi-card" data-inspect="ClipPlayerState">
+  <h4>State (ClipPlayerState)</h4>
+  <ul class="mvi-list">
+    <li>playback: Playback (IDLE | READY | ENDED)</li>
+    <li>progress: Progress (position, buffered, duration)</li>
+    <li>isPlaying: Boolean</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="ClipAction">
+  <h4>Action</h4>
+  <ul class="mvi-list">
+    <li>PlayClip(episode: Episode)</li>
+    <li>ClickEpisode(episode: Episode)</li>
+    <li>ToggleLikedEpisode(episode: Episode)</li>
+    <li>ClickPodcast(podcastId: Long)</li>
+    <li>Resume</li>
+    <li>Pause</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="ClipEffect">
+  <h4>Effect</h4>
+  <ul class="mvi-list">
+    <li>NavigateToPodcast(podcastId: Long)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="Dual Player Note">
+  <h4>Dual Player System</h4>
+  <p style="font-size: 13px; color: var(--md-on-surface-variant); margin: 0;">The Clip screen uses <code>@Player(EpisodivePlayers.Clip)</code> qualified <code>PlayerRepository</code>, a separate ExoPlayer instance from the main player. This allows clips to play independently without interfering with the main episode playback. The <code>ClipPlayerState</code> is composed from <code>playerRepository.playback</code>, <code>.progress</code>, and <code>.isPlaying</code> flows.</p>
+</div>
+
+<!-- Navigation -->
+<h2>Navigation</h2>
+
+<div class="nav-flow" data-inspect="Navigation Flow">
+  <span class="nav-flow-node">Bottom Nav: Clip tab</span>
+  <span class="nav-flow-arrow">&rarr;</span>
+  <span class="nav-flow-node" style="background: var(--md-primary); color: var(--md-on-primary);">ClipScreen</span>
+  <span class="nav-flow-arrow">&rarr;</span>
+  <span class="nav-flow-node">PodcastRoute (tap podcast name)</span>
+</div>
+
+<p>The Clip screen is one of the four main bottom navigation tabs. It is accessible directly from the navigation bar. Tapping a podcast name within a clip navigates to the Podcast Detail screen via <code>ClipEffect.NavigateToPodcast</code>. Tapping the clip itself triggers <code>ClickEpisode</code> which plays the episode in the main player.</p>
+</main>

@@ -1,0 +1,136 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Chips &amp; Tags</h1>
+    <p class="page-subtitle">Filter chips for selection and topic tags for categorization</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+
+<!-- EpisodiveFilterChip -->
+<h2>EpisodiveFilterChip</h2>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/Chip.kt</span>
+<p>A selectable chip used for filtering content. Toggles between <code>surfaceVariant</code> (unselected) and <code>primaryContainer</code> (selected) backgrounds.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="EpisodiveFilterChip — Unselected" data-w="auto" data-h="32dp" data-padding="0 16dp" data-corner="8dp" data-bg="surfaceVariant" data-color="onSurfaceVariant" data-font="labelLarge 14sp/500">
+    <button class="eds-filter-chip unselected">Comedy</button>
+    <div class="showcase-item-label">Unselected</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveFilterChip — Selected" data-w="auto" data-h="32dp" data-padding="0 16dp" data-corner="8dp" data-bg="primaryContainer" data-color="onPrimaryContainer">
+    <button class="eds-filter-chip selected">Technology</button>
+    <div class="showcase-item-label">Selected</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveFilterChip — Disabled" data-w="auto" data-h="32dp" data-padding="0 16dp" data-corner="8dp" data-container-alpha="0.12" data-content-alpha="0.38">
+    <button class="eds-filter-chip unselected state-disabled">Business</button>
+    <div class="showcase-item-label">Disabled</div>
+  </div>
+</div>
+
+<h3>Constants</h3>
+<pre class="code-block">private const val DISABLED_CHIP_CONTAINER_ALPHA = 0.12f
+private const val DISABLED_CHIP_CONTENT_ALPHA = 0.38f</pre>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>selected</code></td><td><code>Boolean</code></td><td>required</td></tr>
+    <tr><td><code>onSelectedChange</code></td><td><code>(Boolean) -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>enabled</code></td><td><code>Boolean</code></td><td><code>true</code></td></tr>
+    <tr><td><code>label</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>leadingIcon</code></td><td><code>@Composable (() -&gt; Unit)?</code></td><td><code>null</code></td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveFilterChip(
+    selected = isSelected,
+    onSelectedChange = { onCategoryToggle(category) },
+    label = { Text(category.value) }
+)</pre>
+
+<!-- EpisodiveTopicTag -->
+<h2>EpisodiveTopicTag</h2>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/Tag.kt</span>
+<p>A tag component for topic/category representation. Displays follow state with different background opacities.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="EpisodiveTopicTag — Followed" data-w="auto" data-h="32dp" data-padding="0 16dp" data-corner="8dp" data-bg="primaryContainer" data-color="onPrimaryContainer">
+    <button class="eds-topic-tag followed">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"/></svg>
+      Technology
+    </button>
+    <div class="showcase-item-label">Followed</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveTopicTag — Unfollowed" data-w="auto" data-h="32dp" data-padding="0 16dp" data-corner="8dp" data-bg="surfaceVariant" data-container-alpha="0.5" data-color="onSurfaceVariant">
+    <button class="eds-topic-tag unfollowed">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M12 5v14M5 12h14"/></svg>
+      Comedy
+    </button>
+    <div class="showcase-item-label">Unfollowed</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveTopicTag — Disabled" data-w="auto" data-h="32dp" data-padding="0 16dp" data-corner="8dp" data-container-alpha="0.12" data-content-alpha="0.38">
+    <button class="eds-topic-tag unfollowed state-disabled">Education</button>
+    <div class="showcase-item-label">Disabled</div>
+  </div>
+</div>
+
+<h3>Constants</h3>
+<pre class="code-block">private const val UNFOLLOWED_TOPIC_TAG_CONTAINER_ALPHA = 0.5f
+private const val DISABLED_TOPIC_TAG_CONTAINER_ALPHA = 0.12f</pre>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>followed</code></td><td><code>Boolean</code></td><td>required</td></tr>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>enabled</code></td><td><code>Boolean</code></td><td><code>true</code></td></tr>
+    <tr><td><code>text</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveTopicTag(
+    followed = topic.isFollowed,
+    onClick = { onToggleFollow(topic) },
+    text = { Text(topic.name) }
+)</pre>
+
+<!-- Design Specs -->
+<h2>Design Specs</h2>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 300px;">
+    <h3 style="margin-top: 0;">EpisodiveFilterChip</h3>
+    <p>
+      <span class="spec-badge">height: 32dp</span>
+      <span class="spec-badge">padding: 0 16dp</span>
+      <span class="spec-badge">corner: 8dp</span>
+      <span class="spec-badge">unselected-bg: surfaceVariant</span>
+      <span class="spec-badge">selected-bg: primaryContainer</span>
+      <span class="spec-badge">disabled-container: 0.12 alpha</span>
+      <span class="spec-badge">disabled-content: 0.38 alpha</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 300px;">
+    <h3 style="margin-top: 0;">EpisodiveTopicTag</h3>
+    <p>
+      <span class="spec-badge">height: 32dp</span>
+      <span class="spec-badge">padding: 0 16dp</span>
+      <span class="spec-badge">corner: 8dp</span>
+      <span class="spec-badge">followed-bg: primaryContainer</span>
+      <span class="spec-badge">unfollowed-bg: surfaceVariant @ 0.5</span>
+      <span class="spec-badge">disabled-container: 0.12 alpha</span>
+    </p>
+  </div>
+</div>
+</main>

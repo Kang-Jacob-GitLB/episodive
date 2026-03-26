@@ -1,0 +1,202 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Animation &amp; Icon Text</h1>
+    <p class="page-subtitle">Wave animation bars, icon-text combos, and clip indicators</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/AnimationIcon.kt, IconText.kt</span>
+
+<!-- WaveAnimationIcon -->
+<h2>WaveAnimationIcon</h2>
+<p>An animated audio visualizer made of vertical bars that oscillate at different offsets. Default configuration uses 5 bars, each 2dp wide with 2dp spacing. Maximum bar height is 16dp. Animation uses infinite <code>tween</code> (300-500ms) with reverse repeat mode, each bar offset for a staggered effect.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="WaveAnimationIcon — Animating" data-w="auto" data-h="16dp" data-bar-count="5" data-bar-width="2dp" data-bar-max-height="16dp" data-bar-spacing="2dp" data-color="onSurface" data-animation="infinite tween 300-500ms, reverseRepeat, offset per bar">
+    <div class="eds-wave">
+      <div class="eds-wave-bar" style="height: 10px;"></div>
+      <div class="eds-wave-bar" style="height: 14px;"></div>
+      <div class="eds-wave-bar" style="height: 6px;"></div>
+      <div class="eds-wave-bar" style="height: 16px;"></div>
+      <div class="eds-wave-bar" style="height: 8px;"></div>
+    </div>
+    <div class="showcase-item-label">Animating (isAnimating = true)</div>
+  </div>
+  <div class="showcase-item" data-inspect="WaveAnimationIcon — Static" data-w="auto" data-h="16dp" data-bar-count="5" data-bar-width="2dp" data-animation="none (isAnimating=false)">
+    <div class="eds-wave" style="height: 16px;">
+      <div class="eds-wave-bar" style="height: 4px; animation: none;"></div>
+      <div class="eds-wave-bar" style="height: 4px; animation: none;"></div>
+      <div class="eds-wave-bar" style="height: 4px; animation: none;"></div>
+      <div class="eds-wave-bar" style="height: 4px; animation: none;"></div>
+      <div class="eds-wave-bar" style="height: 4px; animation: none;"></div>
+    </div>
+    <div class="showcase-item-label">Static (isAnimating = false)</div>
+  </div>
+  <div class="showcase-item" data-inspect="WaveAnimationIcon — Custom Color" data-color="primary" data-bar-count="5">
+    <div class="eds-wave">
+      <div class="eds-wave-bar" style="height: 10px; background: var(--md-primary);"></div>
+      <div class="eds-wave-bar" style="height: 14px; background: var(--md-primary);"></div>
+      <div class="eds-wave-bar" style="height: 6px; background: var(--md-primary);"></div>
+      <div class="eds-wave-bar" style="height: 16px; background: var(--md-primary);"></div>
+      <div class="eds-wave-bar" style="height: 8px; background: var(--md-primary);"></div>
+    </div>
+    <div class="showcase-item-label">Custom color (primary)</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>barCount</code></td><td><code>Int</code></td><td><code>5</code></td></tr>
+    <tr><td><code>color</code></td><td><code>Color</code></td><td><code>MaterialTheme.colorScheme.onSurface</code></td></tr>
+    <tr><td><code>isAnimating</code></td><td><code>Boolean</code></td><td><code>true</code></td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">WaveAnimationIcon(
+    barCount = 5,
+    color = MaterialTheme.colorScheme.onSurface,
+    isAnimating = isPlaying
+)</pre>
+
+<!-- EpisodiveIconText -->
+<h2>EpisodiveIconText</h2>
+<p>A compact inline layout pairing an icon with text, separated by a 6dp gap. Commonly used for metadata display like episode counts, durations, and categories.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="EpisodiveIconText — Leading Icon" data-w="auto" data-h="auto" data-gap="6dp" data-color="onSurfaceVariant" data-font="bodyMedium 14sp/400">
+    <div class="eds-icon-text">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>45 min</span>
+    </div>
+    <div class="showcase-item-label">Icon leading + text</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveIconText — Trailing Icon" data-w="auto" data-h="auto" data-gap="6dp" data-color="onSurfaceVariant">
+    <div class="eds-icon-text">
+      <span>12 episodes</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </div>
+    <div class="showcase-item-label">Text + icon trailing</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveIconText — Category" data-gap="6dp">
+    <div class="eds-icon-text">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span>Education</span>
+    </div>
+    <div class="showcase-item-label">Category usage</div>
+  </div>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveIconText(
+    icon = TablerIcons.Clock,
+    text = "45 min"
+)
+
+EpisodiveIconText(
+    text = "12 episodes",
+    trailingIcon = TablerIcons.ArrowRight
+)</pre>
+
+<!-- ClipAnimationIconText -->
+<h2>ClipAnimationIconText</h2>
+<p>A pill-shaped indicator combining the wave animation with text. Used as a "Now Playing" overlay on clip/soundbite cards. Has a <code>CircleShape</code> container with semi-transparent surface background (0.3 alpha), 8dp vertical and 16dp horizontal padding, and 8dp gap between animation and text.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="ClipAnimationIconText — Playing" data-w="auto" data-h="auto" data-padding="8dp 16dp" data-gap="8dp" data-container="CircleShape" data-bg="surface alpha=0.3" data-color="onSurface">
+    <div class="eds-clip-animation">
+      <div class="eds-wave" style="height: 14px;">
+        <div class="eds-wave-bar" style="height: 8px;"></div>
+        <div class="eds-wave-bar" style="height: 12px;"></div>
+        <div class="eds-wave-bar" style="height: 6px;"></div>
+        <div class="eds-wave-bar" style="height: 14px;"></div>
+        <div class="eds-wave-bar" style="height: 10px;"></div>
+      </div>
+      <span style="font-size: 13px; font-weight: 500; color: var(--md-on-surface);">Now Playing</span>
+    </div>
+    <div class="showcase-item-label">Now Playing state</div>
+  </div>
+  <div class="showcase-item" data-inspect="ClipAnimationIconText — Paused" data-bg="surface alpha=0.3" data-animation="none">
+    <div class="eds-clip-animation">
+      <div class="eds-wave" style="height: 14px;">
+        <div class="eds-wave-bar" style="height: 4px; animation: none;"></div>
+        <div class="eds-wave-bar" style="height: 4px; animation: none;"></div>
+        <div class="eds-wave-bar" style="height: 4px; animation: none;"></div>
+        <div class="eds-wave-bar" style="height: 4px; animation: none;"></div>
+        <div class="eds-wave-bar" style="height: 4px; animation: none;"></div>
+      </div>
+      <span style="font-size: 13px; font-weight: 500; color: var(--md-on-surface);">Paused</span>
+    </div>
+    <div class="showcase-item-label">Paused state</div>
+  </div>
+  <div class="showcase-item" style="min-width: 280px; background: linear-gradient(135deg, var(--md-primary-container), var(--md-secondary-container)); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 140px;" data-inspect="ClipAnimationIconText — On Image" data-overlay="true">
+    <div style="font-size: 12px; color: var(--md-on-surface-variant); margin-bottom: 12px;">Simulated image background</div>
+    <div class="eds-clip-animation">
+      <div class="eds-wave" style="height: 14px;">
+        <div class="eds-wave-bar" style="height: 10px;"></div>
+        <div class="eds-wave-bar" style="height: 14px;"></div>
+        <div class="eds-wave-bar" style="height: 6px;"></div>
+        <div class="eds-wave-bar" style="height: 12px;"></div>
+        <div class="eds-wave-bar" style="height: 8px;"></div>
+      </div>
+      <span style="font-size: 13px; font-weight: 500; color: var(--md-on-surface);">Now Playing</span>
+    </div>
+    <div class="showcase-item-label">Overlaid on image</div>
+  </div>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">ClipAnimationIconText(
+    isAnimating = isPlaying,
+    text = if (isPlaying) "Now Playing" else "Paused"
+)</pre>
+
+<!-- Design Specs -->
+<h2>Design Specs</h2>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">WaveAnimationIcon</h3>
+    <p>
+      <span class="spec-badge">bar count: 5 (default)</span>
+      <span class="spec-badge">bar width: 2dp</span>
+      <span class="spec-badge">bar max height: 16dp</span>
+      <span class="spec-badge">bar min height: 4dp</span>
+      <span class="spec-badge">spacing: 2dp</span>
+      <span class="spec-badge">color: onSurface</span>
+      <span class="spec-badge">corner: 1dp radius</span>
+      <span class="spec-badge">animation: tween 300-500ms</span>
+      <span class="spec-badge">repeat: infinite reverseRepeat</span>
+      <span class="spec-badge">offset: staggered per bar index</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">EpisodiveIconText</h3>
+    <p>
+      <span class="spec-badge">gap: 6dp</span>
+      <span class="spec-badge">font: bodyMedium (14sp/400)</span>
+      <span class="spec-badge">color: onSurfaceVariant</span>
+      <span class="spec-badge">icon size: 16dp</span>
+      <span class="spec-badge">layout: Row, verticalAlignment center</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">ClipAnimationIconText</h3>
+    <p>
+      <span class="spec-badge">container: CircleShape</span>
+      <span class="spec-badge">bg: surface, alpha 0.3</span>
+      <span class="spec-badge">padding: 8dp vertical, 16dp horizontal</span>
+      <span class="spec-badge">gap: 8dp</span>
+      <span class="spec-badge">text font: labelMedium (12sp/500)</span>
+      <span class="spec-badge">color: onSurface</span>
+    </p>
+  </div>
+</div>
+</main>

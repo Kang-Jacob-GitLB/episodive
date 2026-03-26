@@ -1,0 +1,238 @@
+/* Reset */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Import Pretendard font from CDN */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css');
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: var(--md-background);
+  color: var(--md-on-background);
+  display: flex;
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  background: var(--md-surface-container-low);
+  border-right: 1px solid var(--md-outline-variant);
+  padding: 20px 0;
+  z-index: 100;
+}
+
+.sidebar-header {
+  padding: 0 20px 16px;
+  border-bottom: 1px solid var(--md-outline-variant);
+  margin-bottom: 8px;
+}
+
+.sidebar-logo {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--md-primary);
+  letter-spacing: -0.5px;
+}
+
+.sidebar-subtitle {
+  font-size: 12px;
+  color: var(--md-on-surface-variant);
+  margin-top: 2px;
+}
+
+.sidebar-section {
+  padding: 12px 20px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--md-on-surface-variant);
+}
+
+.sidebar-link {
+  display: block;
+  padding: 8px 20px 8px 28px;
+  font-size: 14px;
+  color: var(--md-on-surface-variant);
+  text-decoration: none;
+  border-radius: 0 24px 24px 0;
+  margin-right: 12px;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.sidebar-link:hover {
+  background: var(--md-surface-container);
+  color: var(--md-on-surface);
+}
+.sidebar-link.active {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  font-weight: 500;
+}
+
+/* Content area */
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 32px 48px;
+  max-width: 1200px;
+}
+
+.content h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  margin-bottom: 8px;
+}
+
+.content h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  margin: 40px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  margin: 24px 0 12px;
+}
+
+.content p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--md-on-surface-variant);
+  margin-bottom: 16px;
+}
+
+.page-subtitle {
+  font-size: 15px;
+  color: var(--md-on-surface-variant);
+  margin-bottom: 32px;
+}
+
+/* Header bar at top of content */
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+/* Theme toggle */
+.theme-toggle-btn {
+  background: var(--md-surface-container-high);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: var(--md-on-surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.theme-toggle-btn:hover {
+  background: var(--md-surface-container-highest);
+}
+
+/* Component showcase grid */
+.showcase {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 16px 0 32px;
+}
+
+.showcase-item {
+  background: var(--md-surface-container);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: 16px;
+  padding: 24px;
+  min-width: 200px;
+}
+
+.showcase-item-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--md-on-surface-variant);
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* Properties table */
+.props-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 12px 0 24px;
+}
+.props-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--md-surface-container);
+  color: var(--md-on-surface);
+  font-weight: 600;
+  border-bottom: 2px solid var(--md-outline-variant);
+}
+.props-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--md-outline-variant);
+  color: var(--md-on-surface-variant);
+}
+.props-table code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  background: var(--md-surface-container-high);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--md-primary);
+}
+
+/* Code block */
+.code-block {
+  background: var(--md-surface-container-highest);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: 12px;
+  padding: 16px;
+  overflow-x: auto;
+  margin: 12px 0 24px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--md-on-surface);
+}
+
+/* Source file path */
+.source-path {
+  font-size: 12px;
+  font-family: monospace;
+  color: var(--md-on-surface-variant);
+  background: var(--md-surface-container);
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+/* Spec badge */
+.spec-badge {
+  display: inline-block;
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface-variant);
+  font-size: 11px;
+  font-family: monospace;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px;
+}

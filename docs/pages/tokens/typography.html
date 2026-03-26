@@ -1,0 +1,273 @@
+<main>
+<style>
+.type-sample { padding: 24px; margin: 8px 0; border-radius: 12px; background: var(--md-surface-container); border: 1px solid var(--md-outline-variant); }
+.type-sample-text { color: var(--md-on-surface); margin-bottom: 12px; }
+.type-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.type-style-name { font-size: 14px; font-weight: 600; color: var(--md-on-surface); }
+.type-compose-name { font-size: 12px; font-family: monospace; color: var(--md-primary); }
+.type-specs { display: flex; gap: 16px; flex-wrap: wrap; }
+.type-spec { font-size: 12px; font-family: monospace; color: var(--md-on-surface-variant); background: var(--md-surface-container-high); padding: 3px 8px; border-radius: 4px; }
+.font-weight-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin: 16px 0 32px; }
+.font-weight-card { padding: 20px; border-radius: 12px; background: var(--md-surface-container); border: 1px solid var(--md-outline-variant); }
+.font-weight-sample { font-size: 24px; color: var(--md-on-surface); margin-bottom: 8px; }
+.font-weight-label { font-size: 12px; font-family: monospace; color: var(--md-on-surface-variant); }
+</style>
+
+<div class="content-header">
+  <div>
+    <h1>Typography</h1>
+    <p class="page-subtitle">Material3 Type Scale — Pretendard 폰트 기반</p>
+  </div>
+  <button class="theme-toggle-btn">🌙 Dark Mode</button>
+</div>
+<span class="source-path">core/designsystem/src/main/kotlin/.../theme/Type.kt</span>
+
+<h2>Font Family</h2>
+<p>Pretendard — Light (300), Regular (400), Medium (500), Bold (700)</p>
+
+<div class="font-weight-grid">
+  <div class="font-weight-card" data-inspect="Font Weight" data-weight="300">
+    <div class="font-weight-sample" style="font-weight: 300;">Pretendard Light</div>
+    <div class="font-weight-label">Weight 300 — Light</div>
+  </div>
+  <div class="font-weight-card" data-inspect="Font Weight" data-weight="400">
+    <div class="font-weight-sample" style="font-weight: 400;">Pretendard Regular</div>
+    <div class="font-weight-label">Weight 400 — Regular</div>
+  </div>
+  <div class="font-weight-card" data-inspect="Font Weight" data-weight="500">
+    <div class="font-weight-sample" style="font-weight: 500;">Pretendard Medium</div>
+    <div class="font-weight-label">Weight 500 — Medium</div>
+  </div>
+  <div class="font-weight-card" data-inspect="Font Weight" data-weight="700">
+    <div class="font-weight-sample" style="font-weight: 700;">Pretendard Bold</div>
+    <div class="font-weight-label">Weight 700 — Bold</div>
+  </div>
+</div>
+
+<h2>Type Scale</h2>
+
+<!-- Display Large -->
+<div class="type-sample" data-inspect="Display Large" data-font-size="57sp" data-line-height="64sp" data-weight="Bold" data-tracking="-0.25sp">
+  <div class="type-meta">
+    <span class="type-style-name">Display Large</span>
+    <span class="type-compose-name">MaterialTheme.typography.displayLarge</span>
+  </div>
+  <div class="type-sample-text text-display-large">The quick brown fox</div>
+  <div class="type-specs">
+    <span class="type-spec">57px</span>
+    <span class="type-spec">line-height: 64px</span>
+    <span class="type-spec">weight: 700 (Bold)</span>
+    <span class="type-spec">tracking: -0.25px</span>
+  </div>
+</div>
+
+<!-- Display Medium -->
+<div class="type-sample" data-inspect="Display Medium" data-font-size="45sp" data-line-height="52sp" data-weight="Bold" data-tracking="0">
+  <div class="type-meta">
+    <span class="type-style-name">Display Medium</span>
+    <span class="type-compose-name">MaterialTheme.typography.displayMedium</span>
+  </div>
+  <div class="type-sample-text text-display-medium">The quick brown fox</div>
+  <div class="type-specs">
+    <span class="type-spec">45px</span>
+    <span class="type-spec">line-height: 52px</span>
+    <span class="type-spec">weight: 700 (Bold)</span>
+    <span class="type-spec">tracking: 0</span>
+  </div>
+</div>
+
+<!-- Display Small -->
+<div class="type-sample" data-inspect="Display Small" data-font-size="36sp" data-line-height="44sp" data-weight="Bold" data-tracking="0">
+  <div class="type-meta">
+    <span class="type-style-name">Display Small</span>
+    <span class="type-compose-name">MaterialTheme.typography.displaySmall</span>
+  </div>
+  <div class="type-sample-text text-display-small">The quick brown fox</div>
+  <div class="type-specs">
+    <span class="type-spec">36px</span>
+    <span class="type-spec">line-height: 44px</span>
+    <span class="type-spec">weight: 700 (Bold)</span>
+    <span class="type-spec">tracking: 0</span>
+  </div>
+</div>
+
+<!-- Headline Large -->
+<div class="type-sample" data-inspect="Headline Large" data-font-size="32sp" data-line-height="40sp" data-weight="Bold" data-tracking="0">
+  <div class="type-meta">
+    <span class="type-style-name">Headline Large</span>
+    <span class="type-compose-name">MaterialTheme.typography.headlineLarge</span>
+  </div>
+  <div class="type-sample-text text-headline-large">The quick brown fox jumps over</div>
+  <div class="type-specs">
+    <span class="type-spec">32px</span>
+    <span class="type-spec">line-height: 40px</span>
+    <span class="type-spec">weight: 700 (Bold)</span>
+    <span class="type-spec">tracking: 0</span>
+  </div>
+</div>
+
+<!-- Headline Medium -->
+<div class="type-sample" data-inspect="Headline Medium" data-font-size="28sp" data-line-height="36sp" data-weight="Bold" data-tracking="0">
+  <div class="type-meta">
+    <span class="type-style-name">Headline Medium</span>
+    <span class="type-compose-name">MaterialTheme.typography.headlineMedium</span>
+  </div>
+  <div class="type-sample-text text-headline-medium">The quick brown fox jumps over the lazy dog</div>
+  <div class="type-specs">
+    <span class="type-spec">28px</span>
+    <span class="type-spec">line-height: 36px</span>
+    <span class="type-spec">weight: 700 (Bold)</span>
+    <span class="type-spec">tracking: 0</span>
+  </div>
+</div>
+
+<!-- Headline Small -->
+<div class="type-sample" data-inspect="Headline Small" data-font-size="24sp" data-line-height="32sp" data-weight="Bold" data-tracking="0">
+  <div class="type-meta">
+    <span class="type-style-name">Headline Small</span>
+    <span class="type-compose-name">MaterialTheme.typography.headlineSmall</span>
+  </div>
+  <div class="type-sample-text text-headline-small">The quick brown fox jumps over the lazy dog</div>
+  <div class="type-specs">
+    <span class="type-spec">24px</span>
+    <span class="type-spec">line-height: 32px</span>
+    <span class="type-spec">weight: 700 (Bold)</span>
+    <span class="type-spec">tracking: 0</span>
+  </div>
+</div>
+
+<!-- Title Large -->
+<div class="type-sample" data-inspect="Title Large" data-font-size="22sp" data-line-height="28sp" data-weight="Medium" data-tracking="0">
+  <div class="type-meta">
+    <span class="type-style-name">Title Large</span>
+    <span class="type-compose-name">MaterialTheme.typography.titleLarge</span>
+  </div>
+  <div class="type-sample-text text-title-large">The quick brown fox jumps over the lazy dog</div>
+  <div class="type-specs">
+    <span class="type-spec">22px</span>
+    <span class="type-spec">line-height: 28px</span>
+    <span class="type-spec">weight: 500 (Medium)</span>
+    <span class="type-spec">tracking: 0</span>
+  </div>
+</div>
+
+<!-- Title Medium -->
+<div class="type-sample" data-inspect="Title Medium" data-font-size="16sp" data-line-height="24sp" data-weight="Medium" data-tracking="0.15sp">
+  <div class="type-meta">
+    <span class="type-style-name">Title Medium</span>
+    <span class="type-compose-name">MaterialTheme.typography.titleMedium</span>
+  </div>
+  <div class="type-sample-text text-title-medium">The quick brown fox jumps over the lazy dog</div>
+  <div class="type-specs">
+    <span class="type-spec">16px</span>
+    <span class="type-spec">line-height: 24px</span>
+    <span class="type-spec">weight: 500 (Medium)</span>
+    <span class="type-spec">tracking: 0.15px</span>
+  </div>
+</div>
+
+<!-- Title Small -->
+<div class="type-sample" data-inspect="Title Small" data-font-size="14sp" data-line-height="20sp" data-weight="Medium" data-tracking="0.1sp">
+  <div class="type-meta">
+    <span class="type-style-name">Title Small</span>
+    <span class="type-compose-name">MaterialTheme.typography.titleSmall</span>
+  </div>
+  <div class="type-sample-text text-title-small">The quick brown fox jumps over the lazy dog</div>
+  <div class="type-specs">
+    <span class="type-spec">14px</span>
+    <span class="type-spec">line-height: 20px</span>
+    <span class="type-spec">weight: 500 (Medium)</span>
+    <span class="type-spec">tracking: 0.1px</span>
+  </div>
+</div>
+
+<!-- Body Large -->
+<div class="type-sample" data-inspect="Body Large" data-font-size="16sp" data-line-height="24sp" data-weight="Regular" data-tracking="0.5sp">
+  <div class="type-meta">
+    <span class="type-style-name">Body Large</span>
+    <span class="type-compose-name">MaterialTheme.typography.bodyLarge</span>
+  </div>
+  <div class="type-sample-text text-body-large">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</div>
+  <div class="type-specs">
+    <span class="type-spec">16px</span>
+    <span class="type-spec">line-height: 24px</span>
+    <span class="type-spec">weight: 400 (Regular)</span>
+    <span class="type-spec">tracking: 0.5px</span>
+  </div>
+</div>
+
+<!-- Body Medium -->
+<div class="type-sample" data-inspect="Body Medium" data-font-size="14sp" data-line-height="20sp" data-weight="Regular" data-tracking="0.25sp">
+  <div class="type-meta">
+    <span class="type-style-name">Body Medium</span>
+    <span class="type-compose-name">MaterialTheme.typography.bodyMedium</span>
+  </div>
+  <div class="type-sample-text text-body-medium">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</div>
+  <div class="type-specs">
+    <span class="type-spec">14px</span>
+    <span class="type-spec">line-height: 20px</span>
+    <span class="type-spec">weight: 400 (Regular)</span>
+    <span class="type-spec">tracking: 0.25px</span>
+  </div>
+</div>
+
+<!-- Body Small -->
+<div class="type-sample" data-inspect="Body Small" data-font-size="12sp" data-line-height="16sp" data-weight="Regular" data-tracking="0.4sp">
+  <div class="type-meta">
+    <span class="type-style-name">Body Small</span>
+    <span class="type-compose-name">MaterialTheme.typography.bodySmall</span>
+  </div>
+  <div class="type-sample-text text-body-small">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</div>
+  <div class="type-specs">
+    <span class="type-spec">12px</span>
+    <span class="type-spec">line-height: 16px</span>
+    <span class="type-spec">weight: 400 (Regular)</span>
+    <span class="type-spec">tracking: 0.4px</span>
+  </div>
+</div>
+
+<!-- Label Large -->
+<div class="type-sample" data-inspect="Label Large" data-font-size="14sp" data-line-height="20sp" data-weight="Medium" data-tracking="0.1sp">
+  <div class="type-meta">
+    <span class="type-style-name">Label Large</span>
+    <span class="type-compose-name">MaterialTheme.typography.labelLarge</span>
+  </div>
+  <div class="type-sample-text text-label-large">The quick brown fox jumps over the lazy dog</div>
+  <div class="type-specs">
+    <span class="type-spec">14px</span>
+    <span class="type-spec">line-height: 20px</span>
+    <span class="type-spec">weight: 500 (Medium)</span>
+    <span class="type-spec">tracking: 0.1px</span>
+  </div>
+</div>
+
+<!-- Label Medium -->
+<div class="type-sample" data-inspect="Label Medium" data-font-size="12sp" data-line-height="16sp" data-weight="Medium" data-tracking="0.5sp">
+  <div class="type-meta">
+    <span class="type-style-name">Label Medium</span>
+    <span class="type-compose-name">MaterialTheme.typography.labelMedium</span>
+  </div>
+  <div class="type-sample-text text-label-medium">The quick brown fox jumps over the lazy dog</div>
+  <div class="type-specs">
+    <span class="type-spec">12px</span>
+    <span class="type-spec">line-height: 16px</span>
+    <span class="type-spec">weight: 500 (Medium)</span>
+    <span class="type-spec">tracking: 0.5px</span>
+  </div>
+</div>
+
+<!-- Label Small -->
+<div class="type-sample" data-inspect="Label Small" data-font-size="11sp" data-line-height="16sp" data-weight="Medium" data-tracking="0.5sp">
+  <div class="type-meta">
+    <span class="type-style-name">Label Small</span>
+    <span class="type-compose-name">MaterialTheme.typography.labelSmall</span>
+  </div>
+  <div class="type-sample-text text-label-small">The quick brown fox jumps over the lazy dog</div>
+  <div class="type-specs">
+    <span class="type-spec">11px</span>
+    <span class="type-spec">line-height: 16px</span>
+    <span class="type-spec">weight: 500 (Medium)</span>
+    <span class="type-spec">tracking: 0.5px</span>
+  </div>
+</div>
+</main>

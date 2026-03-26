@@ -1,0 +1,288 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Layout</h1>
+    <p class="page-subtitle">Scaffold, section headers, and fade-in top bar patterns</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/Layout.kt</span>
+
+<!-- EpisodiveScaffold -->
+<h2>EpisodiveScaffold</h2>
+<p>Top-level layout container combining a <code>TopAppBar</code> with a <code>Scaffold</code>. Provides consistent screen structure with a title, optional navigation and action icons, and a scrollable content area.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="EpisodiveScaffold" data-w="match_parent" data-h="match_parent" data-structure="Scaffold(topBar=TopAppBar) + content" data-bg="background" data-topbar-h="64dp" data-topbar-bg="surface">
+    <div class="eds-scaffold" style="width: 100%;">
+      <div class="eds-top-app-bar">
+        <button class="eds-icon-button" style="margin-left: 4px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="eds-top-app-bar-title">Podcast Details</span>
+        <button class="eds-icon-button" style="margin-right: 4px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+      <div style="padding: 24px; color: var(--md-on-surface-variant); font-size: 14px; min-height: 120px; display: flex; align-items: center; justify-content: center; background: var(--md-surface-container-low); border-top: 1px solid var(--md-outline-variant);">
+        Content Area
+      </div>
+    </div>
+    <div class="showcase-item-label">With nav + action icons</div>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="EpisodiveScaffold — Title Only" data-w="match_parent" data-h="match_parent" data-topbar-h="64dp">
+    <div class="eds-scaffold" style="width: 100%;">
+      <div class="eds-top-app-bar">
+        <span class="eds-top-app-bar-title">Home</span>
+      </div>
+      <div style="padding: 24px; color: var(--md-on-surface-variant); font-size: 14px; min-height: 120px; display: flex; align-items: center; justify-content: center; background: var(--md-surface-container-low); border-top: 1px solid var(--md-outline-variant);">
+        Content Area
+      </div>
+    </div>
+    <div class="showcase-item-label">Title only</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>title</code></td><td><code>String</code></td><td>required</td></tr>
+    <tr><td><code>subTitle</code></td><td><code>String?</code></td><td><code>null</code></td></tr>
+    <tr><td><code>navigationIcon</code></td><td><code>ImageVector?</code></td><td><code>null</code></td></tr>
+    <tr><td><code>actionIcon</code></td><td><code>ImageVector?</code></td><td><code>null</code></td></tr>
+    <tr><td><code>onNavigationClick</code></td><td><code>() -&gt; Unit</code></td><td><code>{}</code></td></tr>
+    <tr><td><code>onActionClick</code></td><td><code>() -&gt; Unit</code></td><td><code>{}</code></td></tr>
+    <tr><td><code>scrollBehavior</code></td><td><code>TopAppBarScrollBehavior?</code></td><td><code>null</code></td></tr>
+    <tr><td><code>content</code></td><td><code>@Composable (PaddingValues) -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveScaffold(
+    title = "Podcast Details",
+    navigationIcon = TablerIcons.ArrowLeft,
+    actionIcon = TablerIcons.DotsVertical,
+    onNavigationClick = { navController.popBackStack() },
+    onActionClick = { showMenu = true },
+    scrollBehavior = scrollBehavior
+) { paddingValues -&gt;
+    LazyColumn(contentPadding = paddingValues) {
+        // content
+    }
+}</pre>
+
+<!-- SectionHeader -->
+<h2>SectionHeader</h2>
+<p>A horizontal header row for content sections. Displays a title with optional trailing action icon. Uses <code>headlineSmall</code> typography by default with 16dp padding.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="SectionHeader" data-w="match_parent" data-h="wrap_content" data-padding="16dp" data-font="headlineSmall 24sp/700" data-color="onSurface" data-action-icon="optional">
+    <div class="eds-section-header" style="padding: 16px; width: 100%;">
+      <span class="eds-section-header-title" style="font-size: 24px; font-weight: 700;">Trending Podcasts</span>
+      <button class="eds-icon-button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+    <div class="showcase-item-label">With action icon (arrow-right)</div>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="SectionHeader — No Action" data-w="match_parent" data-h="wrap_content" data-padding="16dp" data-font="headlineSmall 24sp/700">
+    <div class="eds-section-header" style="padding: 16px; width: 100%;">
+      <span class="eds-section-header-title" style="font-size: 24px; font-weight: 700;">Recent Episodes</span>
+    </div>
+    <div class="showcase-item-label">Without action icon</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>title</code></td><td><code>String</code></td><td>required</td></tr>
+    <tr><td><code>titleStyle</code></td><td><code>TextStyle</code></td><td><code>MaterialTheme.typography.headlineSmall</code></td></tr>
+    <tr><td><code>actionIcon</code></td><td><code>ImageVector?</code></td><td><code>null</code></td></tr>
+    <tr><td><code>actionIconContentDescription</code></td><td><code>String?</code></td><td><code>null</code></td></tr>
+    <tr><td><code>onActionClick</code></td><td><code>() -&gt; Unit</code></td><td><code>{}</code></td></tr>
+    <tr><td><code>contentPadding</code></td><td><code>PaddingValues</code></td><td><code>PaddingValues(16.dp)</code></td></tr>
+    <tr><td><code>content</code></td><td><code>@Composable RowScope.() -&gt; Unit</code></td><td><code>{}</code></td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">SectionHeader(
+    title = "Trending Podcasts",
+    actionIcon = TablerIcons.ArrowRight,
+    onActionClick = { navigateToTrending() }
+)</pre>
+
+<!-- SubSectionHeader -->
+<h2>SubSectionHeader</h2>
+<p>A smaller sub-header for nested content groups. Uses <code>titleSmall</code> typography with <code>onSurfaceVariant</code> color for a subdued appearance.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 280px; padding: 0;" data-inspect="SubSectionHeader" data-w="match_parent" data-h="wrap_content" data-padding="16dp" data-font="titleSmall 14sp/500" data-color="onSurfaceVariant">
+    <div style="padding: 16px; width: 100%;">
+      <span style="font-size: 14px; font-weight: 500; color: var(--md-on-surface-variant); letter-spacing: 0.1px;">최근 에피소드</span>
+    </div>
+    <div class="showcase-item-label">Subtitle text</div>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 280px; padding: 0;" data-inspect="SubSectionHeader — English" data-font="titleSmall 14sp/500" data-color="onSurfaceVariant">
+    <div style="padding: 16px; width: 100%;">
+      <span style="font-size: 14px; font-weight: 500; color: var(--md-on-surface-variant); letter-spacing: 0.1px;">Latest from your library</span>
+    </div>
+    <div class="showcase-item-label">English variant</div>
+  </div>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">SubSectionHeader(
+    title = "최근 에피소드"
+)</pre>
+
+<!-- FadeTopBarLayout -->
+<h2>FadeTopBarLayout</h2>
+<p>A layout that fades in a top bar as the user scrolls down. The top bar starts fully transparent and becomes opaque after scrolling past a configurable offset (default 700). Supports both <code>LazyListState</code> and <code>LazyGridState</code> scroll tracking.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="FadeTopBarLayout — Transparent" data-w="match_parent" data-h="match_parent" data-offset="700 (default)" data-animation="alpha 0.0..1.0 based on scroll" data-scroll-source="LazyListState | LazyGridState">
+    <div class="eds-scaffold" style="width: 100%; position: relative;">
+      <div class="eds-top-app-bar" style="opacity: 0.15; position: relative;">
+        <button class="eds-icon-button" style="margin-left: 4px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="eds-top-app-bar-title">Podcast Title</span>
+      </div>
+      <div style="padding: 16px; color: var(--md-on-surface-variant); font-size: 13px; min-height: 100px; background: var(--md-surface-container-low); border-top: 1px solid var(--md-outline-variant); display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          scroll position: 0 (top)
+        </div>
+        <div>Top bar alpha: <strong>0.0</strong></div>
+      </div>
+    </div>
+    <div class="showcase-item-label">At top (alpha = 0)</div>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="FadeTopBarLayout — Partially Visible" data-offset="700" data-animation="alpha ~0.5 at offset/2">
+    <div class="eds-scaffold" style="width: 100%; position: relative;">
+      <div class="eds-top-app-bar" style="opacity: 0.5; position: relative;">
+        <button class="eds-icon-button" style="margin-left: 4px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="eds-top-app-bar-title">Podcast Title</span>
+      </div>
+      <div style="padding: 16px; color: var(--md-on-surface-variant); font-size: 13px; min-height: 100px; background: var(--md-surface-container-low); border-top: 1px solid var(--md-outline-variant); display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          scroll position: ~350
+        </div>
+        <div>Top bar alpha: <strong>0.5</strong></div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Mid-scroll (alpha = 0.5)</div>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="FadeTopBarLayout — Fully Visible" data-offset="700" data-animation="alpha 1.0 past offset">
+    <div class="eds-scaffold" style="width: 100%; position: relative;">
+      <div class="eds-top-app-bar" style="opacity: 1.0; position: relative;">
+        <button class="eds-icon-button" style="margin-left: 4px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="eds-top-app-bar-title">Podcast Title</span>
+      </div>
+      <div style="padding: 16px; color: var(--md-on-surface-variant); font-size: 13px; min-height: 100px; background: var(--md-surface-container-low); border-top: 1px solid var(--md-outline-variant); display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          scroll position: 700+
+        </div>
+        <div>Top bar alpha: <strong>1.0</strong></div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Past offset (alpha = 1.0)</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>offset</code></td><td><code>Int</code></td><td><code>700</code></td></tr>
+    <tr><td><code>listState</code></td><td><code>LazyListState</code></td><td>variant 1</td></tr>
+    <tr><td><code>gridState</code></td><td><code>LazyGridState</code></td><td>variant 2</td></tr>
+    <tr><td><code>topBar</code></td><td><code>@Composable (alpha: Float) -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>content</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">val listState = rememberLazyListState()
+
+FadeTopBarLayout(
+    offset = 700,
+    listState = listState,
+    topBar = { alpha -&gt;
+        EpisodiveScaffold(
+            title = "Podcast Title",
+            modifier = Modifier.alpha(alpha)
+        )
+    }
+) {
+    LazyColumn(state = listState) {
+        // scrollable content
+    }
+}</pre>
+
+<!-- Design Specs -->
+<h2>Design Specs</h2>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 260px;">
+    <h3 style="margin-top: 0;">EpisodiveScaffold</h3>
+    <p>
+      <span class="spec-badge">topBar height: 64dp</span>
+      <span class="spec-badge">topBar bg: surface</span>
+      <span class="spec-badge">topBar padding: 0 4dp</span>
+      <span class="spec-badge">title font: titleLarge (22sp/500)</span>
+      <span class="spec-badge">title padding: 0 16dp</span>
+      <span class="spec-badge">icon size: 40dp circle</span>
+      <span class="spec-badge">bg: background</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 260px;">
+    <h3 style="margin-top: 0;">SectionHeader</h3>
+    <p>
+      <span class="spec-badge">padding: 16dp</span>
+      <span class="spec-badge">title font: headlineSmall (24sp/700)</span>
+      <span class="spec-badge">title color: onSurface</span>
+      <span class="spec-badge">layout: Row spaceBetween</span>
+      <span class="spec-badge">action icon: 40dp tap target</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 260px;">
+    <h3 style="margin-top: 0;">SubSectionHeader</h3>
+    <p>
+      <span class="spec-badge">padding: 16dp</span>
+      <span class="spec-badge">font: titleSmall (14sp/500)</span>
+      <span class="spec-badge">color: onSurfaceVariant</span>
+      <span class="spec-badge">tracking: 0.1sp</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 260px;">
+    <h3 style="margin-top: 0;">FadeTopBarLayout</h3>
+    <p>
+      <span class="spec-badge">offset: 700 (default)</span>
+      <span class="spec-badge">alpha: 0.0 .. 1.0</span>
+      <span class="spec-badge">scroll source: LazyListState</span>
+      <span class="spec-badge">scroll source: LazyGridState</span>
+      <span class="spec-badge">calculation: min(offset, scrollOffset) / offset</span>
+    </p>
+  </div>
+</div>
+</main>

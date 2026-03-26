@@ -1,0 +1,258 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Channel Detail</h1>
+    <p class="page-subtitle">Channel page with podcast grid and description</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">feature/channel/src/main/kotlin/.../ChannelScreen.kt</span>
+
+<!-- Screen Overview -->
+<h2>Screen Overview</h2>
+<p>The Channel Detail screen displays a channel (category) with its associated podcasts in a two-column grid. It uses <code>FadeTopBarLayout</code> with a parallax-style header image that fades and scales on scroll (offset=300). The channel header overlays the image with a gradient fade, and the footer contains a channel description and website link. The screen requires a <code>channelId</code> parameter via <code>AssistedViewModel</code>.</p>
+
+<!-- Phone Frame Mockup -->
+<h2>Screen Layout</h2>
+<div class="screen-comparison">
+  <div>
+    <div class="phone-frame" data-inspect="ChannelScreen" data-w="360dp" data-h="800dp">
+      <div class="phone-frame-notch"></div>
+      <div class="phone-frame-status-bar">
+        <span>9:41</span>
+        <span></span>
+      </div>
+      <div class="phone-frame-content" style="background: var(--md-background);">
+        <!-- FadeTopBar -->
+        <div style="position: sticky; top: 0; z-index: 10;">
+          <div class="eds-top-app-bar" data-inspect="FadeTopBarLayout — TopBar" data-w="360dp" data-h="64dp" data-bg="transparent (fades to surface)" data-scroll-offset="300" style="background: transparent;">
+            <button class="eds-icon-button" data-inspect="Back Button" data-w="40dp" data-h="40dp">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
+            <span class="eds-top-app-bar-title" data-inspect="Title — appears on scroll" style="opacity: 0.3; font-size: 16px; color: var(--md-on-surface-variant);">Channel Title (fades in)</span>
+          </div>
+        </div>
+
+        <!-- Channel Header Image (behind content, parallax) -->
+        <div data-inspect="StateImage — Channel Banner" data-w="match_parent" data-aspect="1.5:1" data-parallax="alpha + scale on scroll" style="width: 100%; height: 200px; background: linear-gradient(135deg, var(--md-primary-container) 0%, var(--md-tertiary-container) 100%); position: relative;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--md-on-secondary-container)" stroke-width="1" opacity="0.3" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+
+        <!-- ChannelHeader (overlapping image with gradient) -->
+        <div data-inspect="ChannelHeader" data-w="match_parent" data-aspect="1.5:1" style="margin-top: -200px; height: 200px; background: linear-gradient(0deg, var(--md-surface) 0%, transparent 60%); display: flex; flex-direction: column; justify-content: flex-end; padding: 16px;">
+          <div data-inspect="Channel Title" data-font="headlineSmall" data-color="onSurface" style="font-size: 24px; font-weight: 700; color: var(--md-on-surface); margin-bottom: 4px;">
+            Technology
+          </div>
+          <div data-inspect="Podcast Count" data-font="bodyMedium" data-color="onSurface" style="font-size: 14px; color: var(--md-on-surface);">
+            24 podcasts
+          </div>
+        </div>
+
+        <!-- LazyVerticalGrid (2 columns) -->
+        <div data-inspect="LazyVerticalGrid — columns: Fixed(2)" style="display: grid; grid-template-columns: 1fr 1fr; background: var(--md-surface);">
+          <!-- Podcast Items -->
+          <div data-inspect="PodcastItem [0]" style="padding: 16px; text-align: center;">
+            <div class="eds-state-image" data-inspect="Podcast Art" style="width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--md-secondary-container); margin-bottom: 8px;"></div>
+            <div style="font-size: 13px; font-weight: 500; color: var(--md-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Tech Talk Daily</div>
+            <div style="font-size: 11px; color: var(--md-on-surface-variant);">John Smith</div>
+          </div>
+          <div data-inspect="PodcastItem [1]" style="padding: 16px; text-align: center;">
+            <div class="eds-state-image" style="width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--md-secondary-container); margin-bottom: 8px;"></div>
+            <div style="font-size: 13px; font-weight: 500; color: var(--md-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Code Review</div>
+            <div style="font-size: 11px; color: var(--md-on-surface-variant);">Jane Doe</div>
+          </div>
+          <div data-inspect="PodcastItem [2]" style="padding: 16px; text-align: center;">
+            <div class="eds-state-image" style="width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--md-secondary-container); margin-bottom: 8px;"></div>
+            <div style="font-size: 13px; font-weight: 500; color: var(--md-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Dev Insights</div>
+            <div style="font-size: 11px; color: var(--md-on-surface-variant);">Alex Kim</div>
+          </div>
+          <div data-inspect="PodcastItem [3]" style="padding: 16px; text-align: center;">
+            <div class="eds-state-image" style="width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--md-secondary-container); margin-bottom: 8px;"></div>
+            <div style="font-size: 13px; font-weight: 500; color: var(--md-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">AI Weekly</div>
+            <div style="font-size: 11px; color: var(--md-on-surface-variant);">Sarah Lee</div>
+          </div>
+        </div>
+
+        <!-- ChannelFooter -->
+        <div data-inspect="ChannelFooter" style="background: var(--md-surface); padding: 0 16px 16px;">
+          <div class="eds-section-header" data-inspect="SectionHeader — Introduction" style="padding: 16px 0;">
+            <span class="eds-section-header-title">Introduction</span>
+          </div>
+          <div data-inspect="Channel Description" data-font="bodyMedium" data-color="onSurfaceVariant" style="font-size: 14px; color: var(--md-on-surface-variant); line-height: 1.6; margin-bottom: 16px;">
+            The best technology podcasts covering software development, AI, startups, and the future of tech. Updated weekly with new content from top creators.
+          </div>
+          <hr data-inspect="HorizontalDivider" style="border: none; border-top: 1px solid var(--md-outline-variant); margin-bottom: 16px;">
+          <div data-inspect="EpisodiveIconText — Website Link" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--md-primary)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            <span style="font-size: 16px; color: var(--md-primary);">Website</span>
+          </div>
+        </div>
+
+        <!-- Spacer for PlayerBar -->
+        <div data-inspect="Spacer — playerBarHeight" data-h="70dp" style="height: 70px;"></div>
+      </div>
+    </div>
+    <div class="screen-label">Channel Detail Screen</div>
+  </div>
+</div>
+
+<!-- Screen Structure Breakdown -->
+<h2>Screen Structure</h2>
+<h3>Layout Hierarchy</h3>
+<pre class="code-block">FadeTopBarLayout(offset = 300)
+  +-- TopBar (fades in on scroll)
+  |     +-- Back IconButton
+  |     +-- Title Text (appears after scroll offset)
+  +-- StateImage (banner, parallax: alpha + scale based on scrollProgress)
+  +-- LazyVerticalGrid(columns = Fixed(2))
+        +-- [span 2] ChannelHeader
+        |     +-- EpisodiveGradientBackground(bottom = surface)
+        |     +-- Channel Title (headlineSmall)
+        |     +-- Podcast Count (bodyMedium)
+        +-- PodcastItem[] (grid items)
+        |     +-- PodcastItem (podcast art, title, author)
+        +-- [span 2] ChannelFooter
+        |     +-- SectionHeader ("Introduction")
+        |     +-- Description Text
+        |     +-- HorizontalDivider
+        |     +-- EpisodiveIconText (website link, opens URI)
+        +-- [span 2] Spacer(playerBarHeight)</pre>
+
+<h3>Parallax Scroll Effect</h3>
+<p>The channel banner image uses a custom scroll-driven parallax effect. As the user scrolls down:</p>
+<table class="props-table">
+  <thead>
+    <tr><th>Property</th><th>Formula</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>alpha</code></td><td><code>1f - (scrollOffset / 600f).coerceIn(0f, 1f)</code></td><td>Image fades out as user scrolls</td></tr>
+    <tr><td><code>scale</code></td><td><code>1f + (1f - scrollProgress) * 0.1f</code></td><td>Subtle zoom-out effect (max 10%)</td></tr>
+  </tbody>
+</table>
+
+<h3>Key Components Used</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Component</th><th>Source</th><th>Purpose</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>FadeTopBarLayout</code></td><td>core:designsystem</td><td>Scrollable layout with fading top bar</td></tr>
+    <tr><td><code>StateImage</code></td><td>core:designsystem</td><td>Channel banner image</td></tr>
+    <tr><td><code>EpisodiveGradientBackground</code></td><td>core:designsystem</td><td>Gradient overlay on channel header</td></tr>
+    <tr><td><code>SectionHeader</code></td><td>core:designsystem</td><td>Section title component</td></tr>
+    <tr><td><code>EpisodiveIconText</code></td><td>core:designsystem</td><td>Icon + text row for website link</td></tr>
+    <tr><td><code>PodcastItem</code></td><td>core:ui</td><td>Podcast card for grid display</td></tr>
+    <tr><td><code>LazyVerticalGrid</code></td><td>Compose Foundation</td><td>Two-column grid with full-span headers/footers</td></tr>
+  </tbody>
+</table>
+
+<!-- MVI Architecture -->
+<h2>MVI Architecture</h2>
+
+<div class="mvi-card" data-inspect="ChannelState">
+  <h4>State</h4>
+  <ul class="mvi-list">
+    <li>Loading</li>
+    <li>Success(channel: Channel, podcasts: List&lt;Podcast&gt;)</li>
+    <li>Error(message: String)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="ChannelAction">
+  <h4>Action</h4>
+  <ul class="mvi-list">
+    <li>ClickBack</li>
+    <li>ClickPodcast(podcastId: Long)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="ChannelEffect">
+  <h4>Effect</h4>
+  <ul class="mvi-list">
+    <li>NavigateBack</li>
+    <li>NavigateToPodcast(podcastId: Long)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="ChannelViewModel">
+  <h4>ViewModel</h4>
+  <p style="font-size: 13px; color: var(--md-on-surface-variant); margin: 0;">Uses <code>AssistedInject</code> with <code>@Assisted("id") val id: Long</code>. State is composed by combining <code>getChannelByIdUseCase(id)</code> and <code>getPodcastsByChannelUseCase(channel)</code> flows. Podcasts are fetched reactively via <code>flatMapLatest</code> once the channel data is available.</p>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">@Composable
+internal fun ChannelRoute(
+    viewModel: ChannelViewModel = hiltViewModel(),
+    onBackClick: () -> Unit,
+    onPodcastClick: (Long) -> Unit,
+    onShowSnackbar: suspend (String, String?) -> Boolean,
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collectLatest { effect ->
+            when (effect) {
+                is ChannelEffect.NavigateBack -> onBackClick()
+                is ChannelEffect.NavigateToPodcast -> onPodcastClick(effect.podcastId)
+            }
+        }
+    }
+
+    when (val s = state) {
+        is ChannelState.Loading -> LoadingScreen()
+        is ChannelState.Success -> ChannelScreen(
+            channel = s.channel,
+            podcasts = s.podcasts,
+            onBackClick = { viewModel.sendAction(ChannelAction.ClickBack) },
+            onPodcastClick = { viewModel.sendAction(ChannelAction.ClickPodcast(it)) },
+        )
+        is ChannelState.Error -> ErrorScreen(message = s.message)
+    }
+}</pre>
+
+<!-- Navigation -->
+<h2>Navigation</h2>
+
+<div class="nav-flow" data-inspect="Navigation Flow">
+  <span class="nav-flow-node">Home / Search</span>
+  <span class="nav-flow-arrow">&rarr;</span>
+  <span class="nav-flow-node" style="background: var(--md-primary); color: var(--md-on-primary);">ChannelRoute(id: Long)</span>
+  <span class="nav-flow-arrow">&rarr;</span>
+  <span class="nav-flow-node">PodcastRoute (tap podcast)</span>
+</div>
+
+<div class="nav-flow" data-inspect="Back Navigation">
+  <span class="nav-flow-node" style="background: var(--md-primary); color: var(--md-on-primary);">ChannelRoute</span>
+  <span class="nav-flow-arrow">&rarr;</span>
+  <span class="nav-flow-node">NavigateBack (back button / ClickBack)</span>
+</div>
+
+<pre class="code-block">// Navigation route definition
+@Serializable
+data class ChannelRoute(val id: Long)
+
+// Navigate to channel detail
+fun NavController.navigateToChannel(
+    channelId: Long,
+    navOptions: NavOptionsBuilder.() -> Unit = {},
+) = navigate(route = ChannelRoute(channelId), navOptions)
+
+// Register in NavGraphBuilder
+fun NavGraphBuilder.channelScreen(
+    onBackClick: () -> Unit,
+    onPodcastClick: (Long) -> Unit,
+    onShowSnackbar: suspend (String, String?) -> Boolean,
+) {
+    composable&lt;ChannelRoute&gt; { entry ->
+        val id = entry.toRoute&lt;ChannelRoute&gt;().id
+        ChannelRoute(
+            viewModel = hiltViewModel&lt;ChannelViewModel, ChannelViewModel.Factory&gt;(
+                key = "channel:$id"
+            ) { factory -> factory.create(id) },
+            onBackClick = onBackClick,
+            onPodcastClick = onPodcastClick,
+            onShowSnackbar = onShowSnackbar
+        )
+    }
+}</pre>
+</main>

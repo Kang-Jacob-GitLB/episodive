@@ -1,0 +1,249 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Scrollbar</h1>
+    <p class="page-subtitle">Draggable and decorative scrollbar components with state management</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/scrollbar/Scrollbar.kt</span>
+
+<!-- DraggableScrollbar -->
+<h2>DraggableScrollbar</h2>
+<p>An interactive scrollbar that users can drag to navigate content quickly. Supports both vertical and horizontal orientations. The thumb has a minimum size of 40dp (default) and responds to drag gestures. Long-press triggers continuous scrolling with a 10ms delay and 2% delta per press event.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="DraggableScrollbar — Vertical" data-w="4dp (thumb)" data-h="varies" data-min-thumb="40dp" data-orientation="vertical" data-interactive="true" data-drag="scroll to position" data-long-press-delay="10ms" data-long-press-delta="2%">
+    <div style="display: flex; width: 100%; min-height: 240px; position: relative; background: var(--md-surface-container-low); border-radius: 16px; overflow: hidden;">
+      <div style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="height: 32px; background: var(--md-surface-container-high); border-radius: 8px; width: 90%;"></div>
+        <div style="height: 32px; background: var(--md-surface-container-high); border-radius: 8px; width: 85%;"></div>
+        <div style="height: 32px; background: var(--md-surface-container-high); border-radius: 8px; width: 92%;"></div>
+        <div style="height: 32px; background: var(--md-surface-container-high); border-radius: 8px; width: 78%;"></div>
+        <div style="height: 32px; background: var(--md-surface-container-high); border-radius: 8px; width: 88%;"></div>
+        <div style="height: 32px; background: var(--md-surface-container); border-radius: 8px; width: 82%; opacity: 0.5;"></div>
+      </div>
+      <div style="width: 12px; display: flex; justify-content: center; padding: 4px 0;">
+        <div class="eds-scrollbar-thumb" style="height: 60px; cursor: grab; position: relative; top: 20px;"></div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Vertical scrollbar with content</div>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="DraggableScrollbar — Horizontal" data-orientation="horizontal" data-min-thumb="40dp" data-interactive="true">
+    <div style="display: flex; flex-direction: column; width: 100%; min-height: 160px; position: relative; background: var(--md-surface-container-low); border-radius: 16px; overflow: hidden;">
+      <div style="flex: 1; padding: 16px; display: flex; gap: 12px; overflow: hidden;">
+        <div style="min-width: 100px; height: 80px; background: var(--md-surface-container-high); border-radius: 12px; flex-shrink: 0;"></div>
+        <div style="min-width: 100px; height: 80px; background: var(--md-surface-container-high); border-radius: 12px; flex-shrink: 0;"></div>
+        <div style="min-width: 100px; height: 80px; background: var(--md-surface-container-high); border-radius: 12px; flex-shrink: 0;"></div>
+        <div style="min-width: 100px; height: 80px; background: var(--md-surface-container); border-radius: 12px; flex-shrink: 0; opacity: 0.4;"></div>
+      </div>
+      <div style="height: 12px; display: flex; align-items: center; padding: 0 4px;">
+        <div style="width: 80px; height: 4px; border-radius: 2px; background: var(--md-on-surface); opacity: 0.5; cursor: grab; margin-left: 30px;"></div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Horizontal scrollbar with content</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>state</code></td><td><code>ScrollbarState</code></td><td>required</td></tr>
+    <tr><td><code>orientation</code></td><td><code>Orientation</code></td><td>required</td></tr>
+    <tr><td><code>onThumbMoved</code></td><td><code>(Float) -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>minThumbSize</code></td><td><code>Dp</code></td><td><code>40.dp</code></td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">val listState = rememberLazyListState()
+val scrollbarState = rememberScrollbarState(listState)
+
+Box {
+    LazyColumn(state = listState) {
+        items(100) { index -&gt;
+            ListItem(text = "Item $index")
+        }
+    }
+
+    DraggableScrollbar(
+        state = scrollbarState,
+        orientation = Orientation.Vertical,
+        onThumbMoved = { percent -&gt;
+            coroutineScope.launch {
+                listState.scrollToItem((percent * 100).toInt())
+            }
+        },
+        modifier = Modifier.align(Alignment.CenterEnd)
+    )
+}</pre>
+
+<!-- DecorativeScrollbar -->
+<h2>DecorativeScrollbar</h2>
+<p>A non-interactive, thin scrollbar indicator for visual feedback only. 2dp wide (vertical) or 2dp tall (horizontal). Does not respond to touch input -- purely decorative to show scroll position.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="DecorativeScrollbar — Vertical" data-w="2dp" data-interactive="false" data-orientation="vertical" data-color="onSurface" data-opacity="0.5">
+    <div style="display: flex; width: 100%; min-height: 200px; position: relative; background: var(--md-surface-container-low); border-radius: 16px; overflow: hidden;">
+      <div style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="height: 28px; background: var(--md-surface-container-high); border-radius: 6px; width: 90%;"></div>
+        <div style="height: 28px; background: var(--md-surface-container-high); border-radius: 6px; width: 80%;"></div>
+        <div style="height: 28px; background: var(--md-surface-container-high); border-radius: 6px; width: 88%;"></div>
+        <div style="height: 28px; background: var(--md-surface-container-high); border-radius: 6px; width: 75%;"></div>
+        <div style="height: 28px; background: var(--md-surface-container); border-radius: 6px; width: 82%; opacity: 0.4;"></div>
+      </div>
+      <div style="width: 6px; display: flex; justify-content: center; padding: 4px 0;">
+        <div style="width: 2px; height: 50px; border-radius: 1px; background: var(--md-on-surface); opacity: 0.3; position: relative; top: 10px;"></div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Thin decorative indicator</div>
+  </div>
+  <div class="showcase-item" style="min-width: 200px; display: flex; flex-direction: column; align-items: center; gap: 16px;" data-inspect="DecorativeScrollbar — Comparison" data-sizes="4dp draggable vs 2dp decorative">
+    <div style="display: flex; gap: 24px; align-items: center;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <div style="width: 4px; height: 60px; border-radius: 2px; background: var(--md-on-surface); opacity: 0.5;"></div>
+        <span style="font-size: 11px; color: var(--md-on-surface-variant);">Draggable (4dp)</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <div style="width: 2px; height: 60px; border-radius: 1px; background: var(--md-on-surface); opacity: 0.3;"></div>
+        <span style="font-size: 11px; color: var(--md-on-surface-variant);">Decorative (2dp)</span>
+      </div>
+    </div>
+    <div class="showcase-item-label">Width comparison</div>
+  </div>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">val listState = rememberLazyListState()
+val scrollbarState = rememberScrollbarState(listState)
+
+Box {
+    LazyColumn(state = listState) {
+        items(50) { index -&gt;
+            ListItem(text = "Item $index")
+        }
+    }
+
+    DecorativeScrollbar(
+        state = scrollbarState,
+        orientation = Orientation.Vertical,
+        modifier = Modifier.align(Alignment.CenterEnd)
+    )
+}</pre>
+
+<!-- ScrollbarState -->
+<h2>ScrollbarState</h2>
+<p>Holds the state for scrollbar positioning. Tracks the thumb size relative to the track, the thumb position, and the visible track percentage. Used by both <code>DraggableScrollbar</code> and <code>DecorativeScrollbar</code>.</p>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>thumbSizePercent</code></td><td><code>Float</code></td><td>Size of the thumb as a fraction of the track (0.0 to 1.0). Smaller values indicate more content.</td></tr>
+    <tr><td><code>thumbMovedPercent</code></td><td><code>Float</code></td><td>Position of the thumb along the track (0.0 = start, 1.0 = end).</td></tr>
+    <tr><td><code>thumbTrackSizePercent</code></td><td><code>Float</code></td><td>Percentage of the total content that is currently visible in the viewport.</td></tr>
+  </tbody>
+</table>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="min-width: 200px;" data-inspect="ScrollbarState — Top" data-thumbSizePercent="0.3" data-thumbMovedPercent="0.0">
+    <div style="display: flex; gap: 16px; align-items: flex-start;">
+      <div style="width: 4px; height: 120px; background: var(--md-outline-variant); border-radius: 2px; position: relative;">
+        <div style="width: 4px; height: 36px; border-radius: 2px; background: var(--md-on-surface); opacity: 0.5; position: absolute; top: 0;"></div>
+      </div>
+      <div style="font-size: 12px; color: var(--md-on-surface-variant); line-height: 1.6;">
+        <div>thumbSize: <strong>0.3</strong></div>
+        <div>thumbMoved: <strong>0.0</strong></div>
+        <div>position: top</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">At top</div>
+  </div>
+  <div class="showcase-item" style="min-width: 200px;" data-inspect="ScrollbarState — Middle" data-thumbSizePercent="0.3" data-thumbMovedPercent="0.5">
+    <div style="display: flex; gap: 16px; align-items: flex-start;">
+      <div style="width: 4px; height: 120px; background: var(--md-outline-variant); border-radius: 2px; position: relative;">
+        <div style="width: 4px; height: 36px; border-radius: 2px; background: var(--md-on-surface); opacity: 0.5; position: absolute; top: 42px;"></div>
+      </div>
+      <div style="font-size: 12px; color: var(--md-on-surface-variant); line-height: 1.6;">
+        <div>thumbSize: <strong>0.3</strong></div>
+        <div>thumbMoved: <strong>0.5</strong></div>
+        <div>position: middle</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">At middle</div>
+  </div>
+  <div class="showcase-item" style="min-width: 200px;" data-inspect="ScrollbarState — Bottom" data-thumbSizePercent="0.3" data-thumbMovedPercent="1.0">
+    <div style="display: flex; gap: 16px; align-items: flex-start;">
+      <div style="width: 4px; height: 120px; background: var(--md-outline-variant); border-radius: 2px; position: relative;">
+        <div style="width: 4px; height: 36px; border-radius: 2px; background: var(--md-on-surface); opacity: 0.5; position: absolute; bottom: 0;"></div>
+      </div>
+      <div style="font-size: 12px; color: var(--md-on-surface-variant); line-height: 1.6;">
+        <div>thumbSize: <strong>0.3</strong></div>
+        <div>thumbMoved: <strong>1.0</strong></div>
+        <div>position: bottom</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">At bottom</div>
+  </div>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">val scrollbarState = ScrollbarState(
+    thumbSizePercent = 0.3f,
+    thumbMovedPercent = 0.5f,
+    thumbTrackSizePercent = 0.3f
+)
+
+// Or use the remember helper:
+val listState = rememberLazyListState()
+val scrollbarState = rememberScrollbarState(listState)</pre>
+
+<!-- Design Specs -->
+<h2>Design Specs</h2>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">DraggableScrollbar</h3>
+    <p>
+      <span class="spec-badge">thumb width: 4dp (vertical)</span>
+      <span class="spec-badge">thumb height: 4dp (horizontal)</span>
+      <span class="spec-badge">min thumb size: 40dp</span>
+      <span class="spec-badge">color: onSurface</span>
+      <span class="spec-badge">opacity: 0.5</span>
+      <span class="spec-badge">corner: 2dp</span>
+      <span class="spec-badge">interactive: drag to scroll</span>
+      <span class="spec-badge">long-press delay: 10ms</span>
+      <span class="spec-badge">long-press delta: 2% per event</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">DecorativeScrollbar</h3>
+    <p>
+      <span class="spec-badge">width: 2dp (vertical)</span>
+      <span class="spec-badge">height: 2dp (horizontal)</span>
+      <span class="spec-badge">color: onSurface</span>
+      <span class="spec-badge">opacity: 0.3</span>
+      <span class="spec-badge">corner: 1dp</span>
+      <span class="spec-badge">interactive: none</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">ScrollbarState</h3>
+    <p>
+      <span class="spec-badge">thumbSizePercent: 0.0..1.0</span>
+      <span class="spec-badge">thumbMovedPercent: 0.0..1.0</span>
+      <span class="spec-badge">thumbTrackSizePercent: 0.0..1.0</span>
+      <span class="spec-badge">supports: LazyListState</span>
+      <span class="spec-badge">supports: LazyGridState</span>
+    </p>
+  </div>
+</div>
+</main>

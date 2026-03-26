@@ -1,0 +1,155 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Loading &amp; Error</h1>
+    <p class="page-subtitle">Loading indicators, full-screen loading states, and error displays</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/LoadingWheel.kt, LoadingScreen.kt, ErrorScreen.kt</span>
+
+<!-- LoadingWheel -->
+<h2>LoadingWheel</h2>
+<p>A spinning loading indicator using Material3 <code>ContainedLoadingIndicator</code>. Provides visual feedback during asynchronous operations. Compact size suitable for inline or overlay usage.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="display: flex; align-items: center; justify-content: center; min-height: 100px;" data-inspect="LoadingWheel" data-w="48dp" data-h="48dp" data-type="ContainedLoadingIndicator" data-color="primary" data-track="outlineVariant" data-animation="infinite spin 0.8s linear">
+    <div class="eds-loading-wheel"></div>
+    <div class="showcase-item-label">Spinning indicator</div>
+  </div>
+  <div class="showcase-item" style="display: flex; align-items: center; justify-content: center; min-height: 100px; background: var(--md-surface-container-highest);" data-inspect="LoadingWheel — On Dark Surface" data-bg="surfaceContainerHighest">
+    <div class="eds-loading-wheel"></div>
+    <div class="showcase-item-label">On dark surface</div>
+  </div>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">LoadingWheel(
+    modifier = Modifier.size(48.dp)
+)</pre>
+
+<!-- LoadingScreen -->
+<h2>LoadingScreen</h2>
+<p>A full-screen centered wrapper around <code>LoadingWheel</code>. Fills all available space with the loading indicator centered both horizontally and vertically. Used as the primary loading state for feature screens.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="LoadingScreen" data-w="match_parent" data-h="match_parent" data-alignment="center" data-content="LoadingWheel centered" data-bg="background">
+    <div class="eds-scaffold" style="width: 100%;">
+      <div class="eds-top-app-bar">
+        <span class="eds-top-app-bar-title" style="opacity: 0.5;">Screen Title</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; min-height: 200px; background: var(--md-background); border-top: 1px solid var(--md-outline-variant);">
+        <div class="eds-loading-wheel"></div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Full-screen loading state</div>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="LoadingScreen — In Card" data-w="match_parent" data-h="wrap_content">
+    <div style="display: flex; align-items: center; justify-content: center; min-height: 160px; background: var(--md-surface-container-low); border-radius: 16px;">
+      <div class="eds-loading-wheel"></div>
+    </div>
+    <div class="showcase-item-label">Loading within a container</div>
+  </div>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">// Typically used in MVI state handling:
+when (state) {
+    is MyFeatureState.Loading -&gt; LoadingScreen()
+    is MyFeatureState.Success -&gt; SuccessContent(state.data)
+    is MyFeatureState.Error -&gt; ErrorScreen(state.message)
+}</pre>
+
+<!-- ErrorScreen -->
+<h2>ErrorScreen</h2>
+<p>A centered error message display. Shows the error text in <code>error</code> color, centered within the available space. Used as the error state in the MVI pattern across all feature screens.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 320px; padding: 0;" data-inspect="ErrorScreen" data-w="match_parent" data-h="match_parent" data-alignment="center" data-color="error" data-font="bodyLarge 16sp/400" data-padding="48dp">
+    <div class="eds-scaffold" style="width: 100%;">
+      <div class="eds-top-app-bar">
+        <button class="eds-icon-button" style="margin-left: 4px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="eds-top-app-bar-title">Podcasts</span>
+      </div>
+      <div class="eds-error" style="min-height: 180px; border-top: 1px solid var(--md-outline-variant);">
+        Failed to load podcasts. Please check your connection.
+      </div>
+    </div>
+    <div class="showcase-item-label">Error state with message</div>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 280px;" data-inspect="ErrorScreen — Short Message" data-color="error" data-padding="48dp">
+    <div class="eds-error" style="min-height: 120px;">
+      Network error
+    </div>
+    <div class="showcase-item-label">Short error message</div>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 280px;" data-inspect="ErrorScreen — Long Message" data-color="error" data-padding="48dp">
+    <div class="eds-error" style="min-height: 120px; text-align: center; line-height: 1.5;">
+      Unable to fetch episode data from the Podcast Index API. The server may be temporarily unavailable.
+    </div>
+    <div class="showcase-item-label">Long error message</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>message</code></td><td><code>String</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">ErrorScreen(
+    message = "Failed to load podcasts. Please check your connection."
+)
+
+// In MVI pattern:
+sealed interface HomeState {
+    data object Loading : HomeState
+    data class Success(val podcasts: List&lt;Podcast&gt;) : HomeState
+    data class Error(val message: String) : HomeState
+}</pre>
+
+<!-- Design Specs -->
+<h2>Design Specs</h2>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">LoadingWheel</h3>
+    <p>
+      <span class="spec-badge">size: 48dp</span>
+      <span class="spec-badge">type: ContainedLoadingIndicator</span>
+      <span class="spec-badge">track width: 3dp</span>
+      <span class="spec-badge">indicator color: primary</span>
+      <span class="spec-badge">track color: outlineVariant</span>
+      <span class="spec-badge">animation: infinite spin 0.8s linear</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">LoadingScreen</h3>
+    <p>
+      <span class="spec-badge">size: fillMaxSize</span>
+      <span class="spec-badge">alignment: Center</span>
+      <span class="spec-badge">content: LoadingWheel</span>
+      <span class="spec-badge">bg: background (inherited)</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 280px;">
+    <h3 style="margin-top: 0;">ErrorScreen</h3>
+    <p>
+      <span class="spec-badge">size: fillMaxSize</span>
+      <span class="spec-badge">alignment: Center</span>
+      <span class="spec-badge">padding: 48dp</span>
+      <span class="spec-badge">text color: error</span>
+      <span class="spec-badge">font: bodyLarge (16sp/400)</span>
+    </p>
+  </div>
+</div>
+</main>

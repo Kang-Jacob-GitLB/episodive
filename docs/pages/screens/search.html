@@ -1,0 +1,219 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Search</h1>
+    <p class="page-subtitle">Expandable search with trending, recent, and full-text search results</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">feature/search/src/main/kotlin/io/jacob/episodive/feature/search/SearchScreen.kt</span>
+
+<!-- Screen Structure -->
+<h2>Screen Structure</h2>
+<p>The search screen uses an <code>EpisodiveSearchBar</code> that expands on tap. The collapsed state shows trending podcasts and recent episodes. The expanded state shows recent search history and live search results with a 500ms debounce.</p>
+
+<!-- Phone Frame: GIF + Annotated -->
+<h3>Phone Frame</h3>
+<div class="screen-comparison">
+  <!-- GIF side -->
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <div class="phone-frame" data-inspect="SearchScreen — GIF Preview" data-w="360dp" data-h="800dp">
+      <img class="phone-frame-gif" src="../../gifs/search.gif" alt="Search screen recording">
+    </div>
+    <div class="screen-label">Live Recording</div>
+  </div>
+
+  <!-- Annotated structure side -->
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <div class="phone-frame" data-inspect="SearchScreen — Structure" data-w="360dp" data-h="800dp">
+      <div class="phone-frame-notch"></div>
+      <div class="phone-frame-status-bar">
+        <span>9:41</span>
+        <span></span>
+      </div>
+      <div class="phone-frame-content" style="display: flex; flex-direction: column;">
+
+        <!-- Search Bar (collapsed) -->
+        <div style="padding: 8px 16px;" data-inspect="EpisodiveSearchBar — Collapsed">
+          <div class="eds-search-bar eds-search-bar-collapsed" data-inspect="SearchBar" data-h="48dp" data-corner="24dp" data-bg="surfaceContainerHigh">
+            <span class="eds-search-bar-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5z"/></svg>
+            </span>
+            <span class="eds-search-bar-placeholder">Search podcasts...</span>
+          </div>
+        </div>
+
+        <!-- Scrollable collapsed content -->
+        <div style="flex: 1; overflow-y: auto; padding-bottom: 80px;">
+
+          <!-- Trending Podcasts -->
+          <div data-inspect="Trending Podcasts Section" data-component="Horizontal Scroll" style="padding: 0 0 8px;">
+            <div class="eds-section-header"><span class="eds-section-header-title">Trending Podcasts</span></div>
+            <div style="display: flex; gap: 12px; padding: 0 16px; overflow-x: hidden;">
+              <div style="width: 110px; flex-shrink: 0;" data-inspect="PodcastItem">
+                <div class="eds-state-image" style="width: 110px; height: 110px; border-radius: 12px; margin-bottom: 6px;"><span style="font-size: 10px; opacity: 0.5;">Art</span></div>
+                <div style="font-size: 12px; font-weight: 500; color: var(--md-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Trending Show</div>
+              </div>
+              <div style="width: 110px; flex-shrink: 0;">
+                <div class="eds-state-image" style="width: 110px; height: 110px; border-radius: 12px; margin-bottom: 6px;"><span style="font-size: 10px; opacity: 0.5;">Art</span></div>
+                <div style="font-size: 12px; font-weight: 500; color: var(--md-on-surface);">Top Podcast</div>
+              </div>
+              <div style="width: 110px; flex-shrink: 0;">
+                <div class="eds-state-image" style="width: 110px; height: 110px; border-radius: 12px; margin-bottom: 6px;"><span style="font-size: 10px; opacity: 0.5;">Art</span></div>
+                <div style="font-size: 12px; font-weight: 500; color: var(--md-on-surface);">Popular Show</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Episodes -->
+          <div data-inspect="Recent Episodes Section" data-component="Vertical List" style="padding: 0 0 8px;">
+            <div class="eds-section-header"><span class="eds-section-header-title">Recent Episodes</span></div>
+            <div style="padding: 0 16px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; gap: 12px; align-items: center; padding: 8px 0;" data-inspect="EpisodeItem">
+                <div class="eds-state-image" style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 8px;"><span style="font-size: 9px; opacity: 0.5;">Art</span></div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 13px; font-weight: 500; color: var(--md-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Recent Episode Title</div>
+                  <div style="font-size: 11px; color: var(--md-on-surface-variant);">Show Name - 35min</div>
+                </div>
+                <div class="eds-icon-button" style="width: 32px; height: 32px; font-size: 16px;" data-inspect="LikeToggle">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: center; padding: 8px 0;">
+                <div class="eds-state-image" style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 8px;"><span style="font-size: 9px; opacity: 0.5;">Art</span></div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 13px; font-weight: 500; color: var(--md-on-surface);">Another Episode</div>
+                  <div style="font-size: 11px; color: var(--md-on-surface-variant);">Podcast - 22min</div>
+                </div>
+                <div class="eds-icon-button" style="width: 32px; height: 32px; font-size: 16px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom Navigation Bar -->
+        <div class="phone-frame-nav-bar">
+          <div class="eds-nav-bar" data-inspect="BottomNavigationBar">
+            <div class="eds-nav-item unselected">
+              <div class="eds-nav-item-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              </div>
+              <span class="eds-nav-item-label">Home</span>
+            </div>
+            <div class="eds-nav-item selected" data-inspect="NavItem — Search">
+              <div class="eds-nav-item-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5z"/></svg>
+              </div>
+              <span class="eds-nav-item-label">Search</span>
+            </div>
+            <div class="eds-nav-item unselected">
+              <div class="eds-nav-item-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+              </div>
+              <span class="eds-nav-item-label">Library</span>
+            </div>
+            <div class="eds-nav-item unselected">
+              <div class="eds-nav-item-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+              </div>
+              <span class="eds-nav-item-label">Clip</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="screen-label">Collapsed State (Annotated)</div>
+  </div>
+</div>
+
+<!-- Expanded State Description -->
+<h2>Search States</h2>
+
+<h3>Collapsed (Default)</h3>
+<p>The search bar is compact. Below it, two browse sections are visible:</p>
+<ul style="font-size: 14px; color: var(--md-on-surface-variant); padding-left: 20px; margin-bottom: 16px;">
+  <li><strong>Trending Podcasts</strong> — horizontal <code>PodcastItem</code> list from <code>GetTrendingPodcastsUseCase(max=10)</code></li>
+  <li><strong>Recent Episodes</strong> — vertical <code>EpisodeItem</code> list from <code>GetRecentEpisodesUseCase(max=6)</code></li>
+</ul>
+
+<h3>Expanded (Search Active)</h3>
+<p>When the search bar is tapped, it expands to full width. The content switches to:</p>
+<ul style="font-size: 14px; color: var(--md-on-surface-variant); padding-left: 20px; margin-bottom: 16px;">
+  <li><strong>Recent Searches</strong> — list of past queries with history icon and delete button per item, plus a "Clear All" option</li>
+  <li><strong>Search Results</strong> — live results as <code>PodcastSimpleItem</code> rows, driven by <code>SearchUseCase</code> with 500ms debounce</li>
+</ul>
+
+<!-- MVI Architecture -->
+<h2>MVI Architecture</h2>
+
+<div class="mvi-card" data-inspect="SearchState">
+  <h4>SearchState</h4>
+  <ul class="mvi-list">
+    <li>Loading</li>
+    <li>Success(searchQuery, searchHistory, searchResult, recentSearches, categories, recentEpisodes, trendingPodcasts)</li>
+    <li>Error(message: String)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="SearchAction">
+  <h4>SearchAction</h4>
+  <ul class="mvi-list">
+    <li>QueryChanged(query: String)</li>
+    <li>ClickSearch(query: String)</li>
+    <li>ClearQuery</li>
+    <li>ClickRecentSearch(query: String)</li>
+    <li>RemoveRecentSearch(query: String)</li>
+    <li>ClearRecentSearches</li>
+    <li>ClickCategory(category: Category)</li>
+    <li>ClickPodcast(podcast: Podcast)</li>
+    <li>ClickEpisode(episode: Episode)</li>
+    <li>ToggleLikedEpisode(episode: Episode)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="SearchEffect">
+  <h4>SearchEffect</h4>
+  <ul class="mvi-list">
+    <li>NavigateToCategory(category: Category)</li>
+    <li>NavigateToPodcast(podcastId: Long)</li>
+    <li>NavigateToEpisode(episode: Episode)</li>
+  </ul>
+</div>
+
+<h3>State Data Types</h3>
+<table class="props-table">
+  <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>searchQuery</code></td><td><code>String</code></td><td>Current text in the search bar</td></tr>
+    <tr><td><code>searchHistory</code></td><td><code>List&lt;String&gt;</code></td><td>Reserved for future search history</td></tr>
+    <tr><td><code>searchResult</code></td><td><code>SearchResult</code></td><td>Combined podcast + episode results from FTS</td></tr>
+    <tr><td><code>recentSearches</code></td><td><code>List&lt;String&gt;</code></td><td>Recently searched queries (max 100)</td></tr>
+    <tr><td><code>categories</code></td><td><code>List&lt;Category&gt;</code></td><td>All category entries for quick browse</td></tr>
+    <tr><td><code>recentEpisodes</code></td><td><code>List&lt;Episode&gt;</code></td><td>Recent episodes for collapsed view</td></tr>
+    <tr><td><code>trendingPodcasts</code></td><td><code>List&lt;Podcast&gt;</code></td><td>Trending podcasts for collapsed view</td></tr>
+  </tbody>
+</table>
+
+<!-- Navigation Flow -->
+<h2>Navigation Flow</h2>
+<div class="nav-flow" data-inspect="SearchNavigation — Podcast">
+  <div class="nav-flow-node" style="background: var(--md-primary); color: var(--md-on-primary);">Search</div>
+  <div class="nav-flow-arrow">&#8594;</div>
+  <div class="nav-flow-node">ClickPodcast</div>
+  <div class="nav-flow-arrow">&#8594;</div>
+  <div class="nav-flow-node">Podcast Detail</div>
+</div>
+<div class="nav-flow" data-inspect="SearchNavigation — Category">
+  <div class="nav-flow-node" style="background: var(--md-primary); color: var(--md-on-primary);">Search</div>
+  <div class="nav-flow-arrow">&#8594;</div>
+  <div class="nav-flow-node">ClickCategory</div>
+  <div class="nav-flow-arrow">&#8594;</div>
+  <div class="nav-flow-node">Channel Detail</div>
+</div>
+<p>The Search screen is one of the 4 bottom navigation destinations. Clicking a podcast navigates to Podcast Detail. Clicking a category navigates to Channel Detail. Clicking an episode plays it directly via <code>PlayEpisodeUseCase</code> without navigation.</p>
+
+</main>

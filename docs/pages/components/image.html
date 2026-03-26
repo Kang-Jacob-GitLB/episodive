@@ -1,0 +1,203 @@
+<main>
+<style>
+.image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 24px; margin: 16px 0; }
+.image-placeholder-icon { font-size: 48px; opacity: 0.5; }
+.dominant-region-grid { display: grid; grid-template-columns: repeat(3, 80px); grid-template-rows: repeat(3, 80px); gap: 4px; margin: 8px 0; }
+.dominant-cell {
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--md-on-surface-variant);
+  background: var(--md-surface-container);
+  border: 1px solid var(--md-outline-variant);
+}
+.dominant-cell.active {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  border-color: var(--md-primary);
+}
+</style>
+
+<div class="content-header">
+  <div>
+    <h1>Image</h1>
+    <p class="page-subtitle">StateImage -- Async image loading with state handling and dominant color extraction</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">Toggle Theme</button>
+</div>
+<span class="source-path">core/designsystem/src/.../component/Image.kt</span>
+
+<!-- ===== Visual Showcase ===== -->
+<h2>Showcase</h2>
+<div class="showcase">
+
+  <!-- Loading State -->
+  <div class="showcase-item" style="min-width: 200px;"
+       data-inspect="StateImage (Loading)"
+       data-w="300px" data-h="300px" data-corner="12dp"
+       data-bg="secondaryContainer"
+       data-anim="pulse 1.5s ease-in-out infinite">
+    <div class="eds-state-image loading" style="width: 160px; height: 160px;">
+      <div class="image-placeholder-icon" style="color: var(--md-on-secondary-container);">&#x1F3B5;</div>
+    </div>
+    <div class="showcase-item-label">Loading</div>
+  </div>
+
+  <!-- Success State -->
+  <div class="showcase-item" style="min-width: 200px;"
+       data-inspect="StateImage (Success)"
+       data-w="300px" data-h="300px" data-corner="12dp"
+       data-feature="Palette dominant color extraction">
+    <div class="eds-state-image" style="width: 160px; height: 160px; background: linear-gradient(135deg, var(--md-primary-container), var(--md-tertiary-container));">
+      <span style="font-size: 64px;">&#x1F3A7;</span>
+    </div>
+    <div class="showcase-item-label">Success (image loaded)</div>
+  </div>
+
+  <!-- Error State -->
+  <div class="showcase-item" style="min-width: 200px;"
+       data-inspect="StateImage (Error)"
+       data-w="300px" data-h="300px" data-corner="12dp"
+       data-bg="secondaryContainer" data-fallback="Error icon">
+    <div class="eds-state-image" style="width: 160px; height: 160px;">
+      <span style="font-size: 48px; opacity: 0.4;">&#x26A0;</span>
+    </div>
+    <div class="showcase-item-label">Error (fallback icon)</div>
+  </div>
+
+  <!-- Custom Size -->
+  <div class="showcase-item" style="min-width: 140px;"
+       data-inspect="StateImage (Custom Size)"
+       data-w="100px" data-h="100px" data-corner="12dp">
+    <div class="eds-state-image" style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--md-secondary-container), var(--md-primary-container));">
+      <span style="font-size: 32px;">&#x1F3A4;</span>
+    </div>
+    <div class="showcase-item-label">Small (100px)</div>
+  </div>
+
+</div>
+
+<!-- ===== DominantRegion ===== -->
+<h2>DominantRegion</h2>
+<p>The Palette API extracts dominant colors from a specific region of the image. The <code>dominantRegion</code> parameter controls which area is sampled.</p>
+
+<div class="showcase">
+  <div class="showcase-item" style="min-width: 280px;"
+       data-inspect="DominantRegion enum"
+       data-values="Top, Bottom, Left, Right, Center, Full">
+    <div class="dominant-region-grid">
+      <div class="dominant-cell">Top-L</div>
+      <div class="dominant-cell active">Top</div>
+      <div class="dominant-cell">Top-R</div>
+      <div class="dominant-cell active">Left</div>
+      <div class="dominant-cell active">Center</div>
+      <div class="dominant-cell active">Right</div>
+      <div class="dominant-cell">Bot-L</div>
+      <div class="dominant-cell active">Bottom</div>
+      <div class="dominant-cell">Bot-R</div>
+    </div>
+    <div class="showcase-item-label">Region sampling areas (highlighted = available)</div>
+  </div>
+</div>
+
+<!-- ===== Properties Table ===== -->
+<h2>Properties</h2>
+<table class="props-table">
+  <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>imageUrl</code></td>
+      <td><code>String</code></td>
+      <td>required</td>
+      <td>URL of the image to load</td>
+    </tr>
+    <tr>
+      <td><code>size</code></td>
+      <td><code>Int</code></td>
+      <td><code>300</code></td>
+      <td>Image size in pixels</td>
+    </tr>
+    <tr>
+      <td><code>placeholderBrush</code></td>
+      <td><code>Brush</code></td>
+      <td><code>secondaryContainer</code></td>
+      <td>Background brush for loading/error states</td>
+    </tr>
+    <tr>
+      <td><code>fallbackIcon</code></td>
+      <td><code>ImageVector</code></td>
+      <td><code>Icons.Error</code></td>
+      <td>Icon shown on load failure</td>
+    </tr>
+    <tr>
+      <td><code>onDominantColorExtracted</code></td>
+      <td><code>((Color) -&gt; Unit)?</code></td>
+      <td><code>null</code></td>
+      <td>Callback with extracted dominant color</td>
+    </tr>
+    <tr>
+      <td><code>dominantRegion</code></td>
+      <td><code>DominantRegion</code></td>
+      <td><code>Bottom</code></td>
+      <td>Region to sample for dominant color</td>
+    </tr>
+    <tr>
+      <td><code>clearFilters</code></td>
+      <td><code>Boolean</code></td>
+      <td><code>true</code></td>
+      <td>Whether to clear Palette default filters</td>
+    </tr>
+    <tr>
+      <td><code>brightnessAdjustment</code></td>
+      <td><code>Float</code></td>
+      <td><code>0f</code></td>
+      <td>Brightness adjustment applied to extracted color (-1f to 1f)</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ===== Code Example ===== -->
+<h2>Usage</h2>
+<pre class="code-block"><code>@Composable
+fun PodcastArtwork(podcast: Podcast) {
+    var dominantColor by remember { mutableStateOf(Color.Transparent) }
+
+    StateImage(
+        imageUrl = podcast.imageUrl,
+        size = 300,
+        dominantRegion = DominantRegion.Bottom,
+        onDominantColorExtracted = { color ->
+            dominantColor = color
+        },
+        fallbackIcon = TablerIcons.Microphone,
+        modifier = Modifier
+            .size(150.dp)
+            .clip(RoundedCornerShape(12.dp))
+    )
+
+    // Use dominantColor for gradient background, etc.
+    Box(
+        modifier = Modifier.background(
+            Brush.verticalGradient(
+                colors = listOf(dominantColor, Color.Transparent)
+            )
+        )
+    )
+}</code></pre>
+
+<!-- ===== Design Specs ===== -->
+<h2>Design Specs</h2>
+<div class="showcase" style="gap: 12px;">
+  <span class="spec-badge" data-inspect="Spec: Corner">corner: 12dp (default)</span>
+  <span class="spec-badge" data-inspect="Spec: Default Size">default size: 300px</span>
+  <span class="spec-badge" data-inspect="Spec: Placeholder BG">placeholder bg: secondaryContainer</span>
+  <span class="spec-badge" data-inspect="Spec: Loading Animation">loading: pulse 1.5s ease-in-out infinite</span>
+  <span class="spec-badge" data-inspect="Spec: Image Loader">loader: Coil (AsyncImage)</span>
+  <span class="spec-badge" data-inspect="Spec: Color Extraction">color: Palette API</span>
+  <span class="spec-badge" data-inspect="Spec: Default Region">defaultRegion: Bottom</span>
+</div>
+
+</main>

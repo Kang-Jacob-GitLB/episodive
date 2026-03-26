@@ -1,0 +1,159 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Channel</h1>
+    <p class="page-subtitle">Domain UI components for displaying podcast channels with dominant color extraction</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">core/ui/src/main/kotlin/io/jacob/episodive/core/ui/Channel.kt</span>
+
+<!-- ChannelSection -->
+<h2>ChannelSection</h2>
+<p>Horizontal scrollable channel list with a section title header. Composes a <code>SectionHeader</code> with a <code>LazyRow</code> of <code>ChannelItem</code> cards. Uses snap fling behavior for smooth page-like scrolling with 16dp spacing and horizontal content padding.</p>
+
+<h3>Showcase</h3>
+<div class="showcase" style="flex-direction:column;">
+  <div class="showcase-item" style="width:100%;min-width:0;" data-inspect="ChannelSection" data-layout="SectionHeader + LazyRow" data-spacing="16dp horizontal" data-padding="16dp horizontal content padding" data-fling="snap to start" data-child="ChannelItem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <span style="font-size:18px;font-weight:600;color:var(--md-on-surface);">Popular Channels</span>
+    </div>
+    <div style="display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;">
+      <!-- Channel 1 - warm tones -->
+      <div style="min-width:250px;width:250px;border-radius:28px;overflow:hidden;cursor:pointer;">
+        <div style="width:250px;height:250px;background:linear-gradient(135deg,#e74c3c,#c0392b);display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">&#127911;</div>
+        <div style="width:100%;height:80px;background:rgba(231,76,60,0.5);display:flex;align-items:center;justify-content:center;padding:8px;">
+          <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">The best podcast network for technology enthusiasts and daily tech news</div>
+        </div>
+      </div>
+      <!-- Channel 2 - blue tones -->
+      <div style="min-width:250px;width:250px;border-radius:28px;overflow:hidden;cursor:pointer;">
+        <div style="width:250px;height:250px;background:linear-gradient(135deg,#3498db,#2980b9);display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">&#127908;</div>
+        <div style="width:100%;height:80px;background:rgba(52,152,219,0.5);display:flex;align-items:center;justify-content:center;padding:8px;">
+          <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">Science and nature podcasts curated by leading researchers worldwide</div>
+        </div>
+      </div>
+      <!-- Channel 3 - green tones -->
+      <div style="min-width:250px;width:250px;border-radius:28px;overflow:hidden;cursor:pointer;">
+        <div style="width:250px;height:250px;background:linear-gradient(135deg,#2ecc71,#27ae60);display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">&#127897;</div>
+        <div style="width:100%;height:80px;background:rgba(46,204,113,0.5);display:flex;align-items:center;justify-content:center;padding:8px;">
+          <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">Health and wellness stories from medical professionals</div>
+        </div>
+      </div>
+    </div>
+    <div class="showcase-item-label">ChannelSection &mdash; Horizontal LazyRow with snap fling</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Param</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>title</code></td><td><code>String</code></td><td>required</td></tr>
+    <tr><td><code>channels</code></td><td><code>List&lt;Channel&gt;</code></td><td>required</td></tr>
+    <tr><td><code>onChannelClick</code></td><td><code>(Long) -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">ChannelSection(
+    title = "Popular Channels",
+    channels = channels,
+    onChannelClick = { channelId -> /* navigate to channel */ }
+)</pre>
+
+<!-- ChannelItem -->
+<h2>ChannelItem</h2>
+<p>Channel card with dominant color extraction. Column layout at 250dp width with <code>extraLarge</code> shape (28dp corners). Contains a square image (1:1 aspect ratio) on top and an 80dp description box below. The description box background uses the dominant color extracted from the image at 0.5 alpha, with <code>DominantRegion.Bottom</code> specified for color extraction. Text is centered, <code>titleSmall</code> typography, 3-line max.</p>
+
+<h3>Showcase</h3>
+<div class="showcase" style="flex-wrap:wrap;">
+  <div class="showcase-item" data-inspect="ChannelItem — Warm Dominant Color" data-w="250dp" data-image="1:1 aspect ratio" data-corner="extraLarge (28dp)" data-desc-h="80dp" data-desc-bg="dominant color alpha 0.5" data-dominant-region="Bottom" data-desc-font="titleSmall" data-desc-lines="3" data-desc-align="center" data-color-extraction="StateImage onDominantColorExtracted callback">
+    <div style="width:250px;border-radius:28px;overflow:hidden;cursor:pointer;">
+      <div style="width:250px;height:250px;background:linear-gradient(135deg,#e74c3c,#c0392b);display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">&#127911;</div>
+      <div style="width:100%;height:80px;background:rgba(231,76,60,0.5);display:flex;align-items:center;justify-content:center;padding:8px;">
+        <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">The best podcast network for technology enthusiasts and daily tech news coverage</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Warm dominant color (red)</div>
+  </div>
+
+  <div class="showcase-item" data-inspect="ChannelItem — Cool Dominant Color" data-desc-bg="dominant color (blue) alpha 0.5">
+    <div style="width:250px;border-radius:28px;overflow:hidden;cursor:pointer;">
+      <div style="width:250px;height:250px;background:linear-gradient(135deg,#3498db,#2980b9);display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">&#127908;</div>
+      <div style="width:100%;height:80px;background:rgba(52,152,219,0.5);display:flex;align-items:center;justify-content:center;padding:8px;">
+        <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">Science and nature podcasts curated by leading researchers from top universities</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Cool dominant color (blue)</div>
+  </div>
+
+  <div class="showcase-item" data-inspect="ChannelItem — Green Dominant Color" data-desc-bg="dominant color (green) alpha 0.5">
+    <div style="width:250px;border-radius:28px;overflow:hidden;cursor:pointer;">
+      <div style="width:250px;height:250px;background:linear-gradient(135deg,#2ecc71,#27ae60);display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">&#127897;</div>
+      <div style="width:100%;height:80px;background:rgba(46,204,113,0.5);display:flex;align-items:center;justify-content:center;padding:8px;">
+        <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">Health and wellness stories from medical professionals and therapists</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Green dominant color</div>
+  </div>
+
+  <div class="showcase-item" data-inspect="ChannelItem — Purple Dominant Color" data-desc-bg="dominant color (purple) alpha 0.5">
+    <div style="width:250px;border-radius:28px;overflow:hidden;cursor:pointer;">
+      <div style="width:250px;height:250px;background:linear-gradient(135deg,#9b59b6,#8e44ad);display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">&#127926;</div>
+      <div style="width:100%;height:80px;background:rgba(155,89,182,0.5);display:flex;align-items:center;justify-content:center;padding:8px;">
+        <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">True crime investigations and mystery podcast collections for the curious mind</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Purple dominant color</div>
+  </div>
+
+  <div class="showcase-item" data-inspect="ChannelItem — Orange Dominant Color" data-desc-bg="dominant color (orange) alpha 0.5">
+    <div style="width:250px;border-radius:28px;overflow:hidden;cursor:pointer;">
+      <div style="width:250px;height:250px;background:linear-gradient(135deg,#f39c12,#e67e22);display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">&#128218;</div>
+      <div style="width:100%;height:80px;background:rgba(243,156,18,0.5);display:flex;align-items:center;justify-content:center;padding:8px;">
+        <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">Educational content and online learning podcasts for lifelong learners</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Orange dominant color</div>
+  </div>
+
+  <div class="showcase-item" data-inspect="ChannelItem — Default (DarkGray fallback)" data-desc-bg="DarkGray (default before extraction)">
+    <div style="width:250px;border-radius:28px;overflow:hidden;cursor:pointer;">
+      <div style="width:250px;height:250px;background:linear-gradient(135deg,#555,#777);display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">&#128266;</div>
+      <div style="width:100%;height:80px;background:rgba(85,85,85,0.5);display:flex;align-items:center;justify-content:center;padding:8px;">
+        <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">Default state before dominant color extraction completes (DarkGray fallback)</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Default (DarkGray before extraction)</div>
+  </div>
+</div>
+
+<h3>Implementation Details</h3>
+<p>The dominant color extraction is performed by the <code>StateImage</code> component via the <code>onDominantColorExtracted</code> callback with <code>DominantRegion.Bottom</code> specified. This extracts the dominant color from the bottom portion of the image, which provides a natural visual transition between the image and the description box. The extracted color is stored in a local <code>mutableStateOf</code> and applied at 0.5 alpha as the box background. Before extraction completes, <code>Color.DarkGray</code> is used as the default.</p>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Param</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>channel</code></td><td><code>Channel</code></td><td>required</td></tr>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">ChannelItem(
+    channel = channel,
+    onClick = { /* navigate to channel detail */ }
+)
+
+// ChannelItem internally uses:
+// StateImage(
+//     imageUrl = channel.image,
+//     onDominantColorExtracted = { backgroundColor = it },
+//     dominantRegion = DominantRegion.Bottom
+// )</pre>
+
+</main>

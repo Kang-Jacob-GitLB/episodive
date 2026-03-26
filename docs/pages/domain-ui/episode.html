@@ -1,0 +1,414 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Episode</h1>
+    <p class="page-subtitle">Domain UI components for episode lists, playing state, playback progress, details, and clip views</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">core/ui/src/main/kotlin/io/jacob/episodive/core/ui/Episode.kt</span>
+
+<!-- EpisodesSection -->
+<h2>EpisodesSection</h2>
+<p>Vertical list of episodes with a section title header. Composes a <code>SectionHeader</code> with a <code>Column</code> of <code>EpisodeItem</code> elements, spaced 16dp apart with 16dp horizontal padding.</p>
+
+<h3>Showcase</h3>
+<div class="showcase" style="flex-direction:column;">
+  <div class="showcase-item" style="width:100%;min-width:0;" data-inspect="EpisodesSection" data-layout="SectionHeader + Column of EpisodeItem" data-spacing="16dp vertical" data-padding="16dp horizontal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <span style="font-size:18px;font-weight:600;color:var(--md-on-surface);">Recent Episodes</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <!-- Episode 1 -->
+      <div style="display:flex;align-items:center;gap:16px;height:72px;">
+        <div style="width:72px;height:72px;min-width:72px;border-radius:16px;background:linear-gradient(135deg,#e74c3c,#c0392b);"></div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-around;height:100%;">
+          <div style="font-size:16px;font-weight:500;color:var(--md-on-surface);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">The Future of AI in Everyday Life</div>
+          <div style="font-size:12px;color:var(--md-on-surface-variant);">2 days ago &bull; 45 min</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+          <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--md-on-surface);">&#9654;</div>
+          <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--md-on-surface);">&#9825;</div>
+        </div>
+      </div>
+      <!-- Episode 2 -->
+      <div style="display:flex;align-items:center;gap:16px;height:72px;">
+        <div style="width:72px;height:72px;min-width:72px;border-radius:16px;background:linear-gradient(135deg,#3498db,#2980b9);"></div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-around;height:100%;">
+          <div style="font-size:16px;font-weight:500;color:var(--md-on-surface);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">Deep Ocean Mysteries Revealed</div>
+          <div style="font-size:12px;color:var(--md-on-surface-variant);">5 days ago &bull; Science Hour</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+          <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--md-on-surface);">&#9654;</div>
+          <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--md-on-surface);">&#9829;</div>
+        </div>
+      </div>
+    </div>
+    <div class="showcase-item-label">EpisodesSection &mdash; Vertical Column layout</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Param</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>title</code></td><td><code>String</code></td><td>required</td></tr>
+    <tr><td><code>episodes</code></td><td><code>List&lt;Episode&gt;</code></td><td>required</td></tr>
+    <tr><td><code>onEpisodeClick</code></td><td><code>(Episode) -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>onToggleLikedEpisode</code></td><td><code>(Episode) -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodesSection(
+    title = "Recent Episodes",
+    episodes = episodes,
+    onEpisodeClick = { episode -> /* play or navigate */ },
+    onToggleLikedEpisode = { episode -> /* toggle like */ }
+)</pre>
+
+<!-- EpisodeItem -->
+<h2>EpisodeItem</h2>
+<p>Main episode list item. Fixed height 72dp row with image thumbnail (<code>largeIncreased</code> corners, 16dp corner radius), content column (title 2 lines, subtitle with date and feed/duration), and action column with play and like toggle buttons. The play button uses <code>EpisodiveIconProgressButton</code> (32dp) and the like button uses <code>EpisodiveIconToggleButton</code> (32dp).</p>
+
+<h3>Showcase</h3>
+<div class="showcase" style="flex-direction:column;">
+  <div class="showcase-item" style="width:100%;min-width:0;" data-inspect="EpisodeItem — Default" data-layout="Row: image(72dp) + Column(title,subtitle) + Column(play,like)" data-h="72dp" data-image-corner="largeIncreased (16dp)" data-gap="16dp" data-title-font="titleMedium" data-subtitle-font="labelMedium" data-play-btn="32dp IconProgressButton" data-like-btn="32dp IconToggleButton">
+    <div style="display:flex;align-items:center;gap:16px;height:72px;width:100%;">
+      <div style="width:72px;height:72px;min-width:72px;border-radius:16px;background:linear-gradient(135deg,#e74c3c,#c0392b);"></div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-around;height:100%;">
+        <div style="font-size:16px;font-weight:500;color:var(--md-on-surface);">The Future of AI in Everyday Life</div>
+        <div style="font-size:12px;color:var(--md-on-surface-variant);">2 days ago &bull; 45 min</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;">
+        <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--md-on-surface);">&#9654;</div>
+        <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--md-on-surface);">&#9825;</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Default &mdash; Not liked</div>
+  </div>
+  <div class="showcase-item" style="width:100%;min-width:0;" data-inspect="EpisodeItem — Liked" data-like-state="checked (LikeFilled icon)">
+    <div style="display:flex;align-items:center;gap:16px;height:72px;width:100%;">
+      <div style="width:72px;height:72px;min-width:72px;border-radius:16px;background:linear-gradient(135deg,#3498db,#2980b9);"></div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-around;height:100%;">
+        <div style="font-size:16px;font-weight:500;color:var(--md-on-surface);">Deep Ocean Mysteries</div>
+        <div style="font-size:12px;color:var(--md-on-surface-variant);">5 days ago &bull; Science Hour</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;">
+        <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--md-on-surface);">&#9654;</div>
+        <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--md-primary);">&#9829;</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Liked state</div>
+  </div>
+  <div class="showcase-item" style="width:100%;min-width:0;" data-inspect="EpisodeItem — Loading" data-loading="true (spinner on play button)">
+    <div style="display:flex;align-items:center;gap:16px;height:72px;width:100%;">
+      <div style="width:72px;height:72px;min-width:72px;border-radius:16px;background:linear-gradient(135deg,#2ecc71,#27ae60);"></div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-around;height:100%;">
+        <div style="font-size:16px;font-weight:500;color:var(--md-on-surface);">Startup Founders Talk</div>
+        <div style="font-size:12px;color:var(--md-on-surface-variant);">1 week ago &bull; 32 min</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;">
+        <div style="width:32px;height:32px;border-radius:50%;border:2px solid var(--md-outline-variant);border-top-color:var(--md-primary);animation:spin 0.8s linear infinite;"></div>
+        <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--md-on-surface);">&#9825;</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Loading state (buffering)</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Param</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>episode</code></td><td><code>Episode</code></td><td>required</td></tr>
+    <tr><td><code>progress</code></td><td><code>Float</code></td><td><code>0f</code></td></tr>
+    <tr><td><code>isLoading</code></td><td><code>Boolean</code></td><td><code>false</code></td></tr>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>onToggleLiked</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodeItem(
+    episode = episode,
+    progress = 0.35f,
+    isLoading = false,
+    onClick = { /* play episode */ },
+    onToggleLiked = { /* toggle like */ }
+)</pre>
+
+<!-- PlayingEpisodesSection -->
+<h2>PlayingEpisodesSection</h2>
+<p>Horizontal scrollable section for currently-playing or recently-played episodes. Uses <code>SubSectionHeader</code> with a <code>LazyRow</code> of <code>PlayingEpisodeItem</code> cards. Auto-scrolls to the first item when the list changes.</p>
+
+<h3>Showcase</h3>
+<div class="showcase" style="flex-direction:column;">
+  <div class="showcase-item" style="width:100%;min-width:0;" data-inspect="PlayingEpisodesSection" data-layout="SubSectionHeader + LazyRow" data-spacing="12dp horizontal" data-padding="16dp horizontal content padding" data-fling="snap to start" data-auto-scroll="animateScrollToItem(0) on list change">
+    <div style="margin-bottom:12px;">
+      <span style="font-size:14px;font-weight:600;color:var(--md-on-surface);padding-left:16px;">Continue</span>
+    </div>
+    <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;">
+      <!-- Card 1 -->
+      <div style="min-width:192px;width:192px;height:84px;border-radius:16px;background:var(--md-on-surface);background:rgba(128,128,128,0.1);overflow:hidden;display:flex;padding:8px;gap:10px;">
+        <div style="width:68px;height:68px;min-width:68px;border-radius:16px;background:linear-gradient(135deg,#e74c3c,#c0392b);"></div>
+        <div style="width:98px;display:flex;flex-direction:column;">
+          <div style="font-size:12px;color:var(--md-on-surface);">3 min ago</div>
+          <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">The Future of AI</div>
+          <div style="margin-top:auto;">
+            <div style="height:4px;border-radius:2px;background:var(--md-on-surface-variant);opacity:0.3;position:relative;">
+              <div style="position:absolute;height:100%;width:65%;border-radius:2px;background:var(--md-on-surface);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Card 2 -->
+      <div style="min-width:192px;width:192px;height:84px;border-radius:16px;background:rgba(128,128,128,0.1);overflow:hidden;display:flex;padding:8px;gap:10px;">
+        <div style="width:68px;height:68px;min-width:68px;border-radius:16px;background:linear-gradient(135deg,#3498db,#2980b9);"></div>
+        <div style="width:98px;display:flex;flex-direction:column;">
+          <div style="font-size:12px;color:var(--md-on-surface);">Yesterday</div>
+          <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">Ocean Depths</div>
+          <div style="margin-top:auto;">
+            <div style="height:4px;border-radius:2px;background:var(--md-on-surface-variant);opacity:0.3;position:relative;">
+              <div style="position:absolute;height:100%;width:30%;border-radius:2px;background:var(--md-on-surface);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Card 3 -->
+      <div style="min-width:192px;width:192px;height:84px;border-radius:16px;background:rgba(128,128,128,0.1);overflow:hidden;display:flex;padding:8px;gap:10px;">
+        <div style="width:68px;height:68px;min-width:68px;border-radius:16px;background:linear-gradient(135deg,#9b59b6,#8e44ad);"></div>
+        <div style="width:98px;display:flex;flex-direction:column;">
+          <div style="font-size:12px;color:var(--md-on-surface);">2 days ago</div>
+          <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">True Crime: The Missing</div>
+          <div style="margin-top:auto;">
+            <div style="height:4px;border-radius:2px;background:var(--md-on-surface-variant);opacity:0.3;position:relative;">
+              <div style="position:absolute;height:100%;width:85%;border-radius:2px;background:var(--md-on-surface);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="showcase-item-label">PlayingEpisodesSection &mdash; Horizontal cards with progress</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Param</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>playingEpisodes</code></td><td><code>List&lt;Episode&gt;</code></td><td>required</td></tr>
+    <tr><td><code>onEpisodeClick</code></td><td><code>(Episode) -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">PlayingEpisodesSection(
+    playingEpisodes = recentlyPlayed,
+    onEpisodeClick = { episode -> /* resume playback */ }
+)</pre>
+
+<!-- PlayingEpisodeItem -->
+<h2>PlayingEpisodeItem</h2>
+<p>Compact card for a recently-played or currently-playing episode. Surface with <code>largeIncreased</code> shape at 192x84dp. Row contains a 68dp image and a column with playedAt/feedTitle, title (2 lines), and a <code>LinearProgressIndicator</code> at the bottom.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="PlayingEpisodeItem" data-w="192dp" data-h="84dp" data-corner="largeIncreased (16dp)" data-bg="onSurface alpha 0.1" data-image="68dp, largeIncreased" data-text-w="98dp" data-progress="LinearProgressIndicator 4dp height">
+    <div style="width:192px;height:84px;border-radius:16px;background:rgba(128,128,128,0.1);overflow:hidden;display:flex;padding:8px;gap:10px;">
+      <div style="width:68px;height:68px;min-width:68px;border-radius:16px;background:linear-gradient(135deg,#e74c3c,#c0392b);"></div>
+      <div style="width:98px;display:flex;flex-direction:column;">
+        <div style="font-size:12px;color:var(--md-on-surface);">3 min ago</div>
+        <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">The Future of AI in Everyday Life</div>
+        <div style="margin-top:auto;">
+          <div style="height:4px;border-radius:2px;background:var(--md-on-surface-variant);opacity:0.3;position:relative;">
+            <div style="position:absolute;height:100%;width:65%;border-radius:2px;background:var(--md-on-surface);"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Default</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Param</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>playedEpisode</code></td><td><code>Episode</code></td><td>required</td></tr>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">PlayingEpisodeItem(
+    playedEpisode = episode,
+    onClick = { /* resume playback */ }
+)</pre>
+
+<!-- PlayedEpisodeItem -->
+<h2>PlayedEpisodeItem</h2>
+<p>Episode row with playback progress. Contains a 68dp image, title (2 lines), a <code>LinearProgressIndicator</code> with percentage label, and an optional "completed" or "X left" text. The progress bar color changes to <code>onSurface</code> when completed, <code>primary</code> otherwise.</p>
+
+<h3>Showcase</h3>
+<div class="showcase" style="flex-direction:column;">
+  <div class="showcase-item" style="width:100%;min-width:0;" data-inspect="PlayedEpisodeItem — In Progress" data-layout="Row: image(68dp) + Column(title, progress, remaining)" data-image-corner="largeIncreased (16dp)" data-gap="10dp" data-progress-color="primary" data-progress-track="onSurfaceVariant alpha 0.3">
+    <div style="display:flex;gap:10px;">
+      <div style="width:68px;height:68px;min-width:68px;border-radius:16px;background:linear-gradient(135deg,#e74c3c,#c0392b);"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">The Future of AI in Everyday Life and How It Changes Everything</div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:4px;border-radius:2px;background:var(--md-on-surface-variant);opacity:0.3;position:relative;">
+            <div style="position:absolute;height:100%;width:45%;border-radius:2px;background:var(--md-primary);"></div>
+          </div>
+          <span style="font-size:11px;color:var(--md-on-surface-variant);">45%</span>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--md-on-surface-variant);">24 min left</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">In progress &mdash; 45% with remaining time</div>
+  </div>
+  <div class="showcase-item" style="width:100%;min-width:0;" data-inspect="PlayedEpisodeItem — Completed" data-progress-color="onSurface (completed)" data-progress="100%">
+    <div style="display:flex;gap:10px;">
+      <div style="width:68px;height:68px;min-width:68px;border-radius:16px;background:linear-gradient(135deg,#2ecc71,#27ae60);"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;color:var(--md-on-surface);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">Startup Founders Talk: Building the Next Unicorn</div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:4px;border-radius:2px;background:var(--md-on-surface-variant);opacity:0.3;position:relative;">
+            <div style="position:absolute;height:100%;width:100%;border-radius:2px;background:var(--md-on-surface);"></div>
+          </div>
+          <span style="font-size:11px;color:var(--md-on-surface-variant);">100%</span>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--md-on-surface-variant);">Completed</div>
+      </div>
+    </div>
+    <div class="showcase-item-label">Completed state</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Param</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>playedEpisode</code></td><td><code>Episode</code></td><td>required</td></tr>
+    <tr><td><code>showMoreInfo</code></td><td><code>Boolean</code></td><td><code>true</code></td></tr>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">PlayedEpisodeItem(
+    playedEpisode = episode,
+    showMoreInfo = true,
+    onClick = { /* resume or view details */ }
+)</pre>
+
+<!-- EpisodeDetailItem -->
+<h2>EpisodeDetailItem</h2>
+<p>Large detail card for episode browsing. Column layout at 200dp width with a 200dp square image (<code>extraLarge</code> corners), subtitle line (date and duration/feed), title (1 line), and HTML description (4 lines). Spacing of 4dp between elements with an extra 8dp after the image.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="EpisodeDetailItem" data-w="200dp" data-image="200dp square, extraLarge (28dp) corners" data-title-lines="1" data-desc-lines="4" data-spacing="4dp, 8dp after image" data-subtitle-font="labelMedium" data-title-font="titleMedium" data-desc-font="bodySmall">
+    <div style="width:200px;">
+      <div style="width:200px;height:200px;border-radius:28px;background:linear-gradient(135deg,#e74c3c,#c0392b);display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">&#127911;</div>
+      <div style="margin-top:12px;font-size:12px;color:var(--md-on-surface-variant);">2 days ago &bull; 45 min</div>
+      <div style="margin-top:4px;font-size:16px;font-weight:500;color:var(--md-on-surface);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">The Future of AI in Everyday Life</div>
+      <div style="margin-top:4px;font-size:12px;color:var(--md-on-surface-variant);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;">
+        In this episode, we explore how artificial intelligence is becoming an integral part of our daily routines. From smart home devices to personalized recommendations, AI is transforming how we live, work, and interact with the world around us.
+      </div>
+    </div>
+    <div class="showcase-item-label">EpisodeDetailItem</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Param</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>episode</code></td><td><code>Episode</code></td><td>required</td></tr>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodeDetailItem(
+    episode = episode,
+    onClick = { /* navigate to full episode */ }
+)</pre>
+
+<!-- EpisodeClipItem -->
+<h2>EpisodeClipItem</h2>
+<p>Full-viewport clip item for TikTok-style browsing. Fills the entire available space with a blurred background image (20dp blur radius), a semi-transparent overlay (0.6 alpha background color), and centered content: a 250dp elevated card with the episode image, title (3 lines), HTML description (6 lines), and a bottom row with clip animation text, like toggle, and play/pause toggle.</p>
+
+<h3>Showcase</h3>
+<div class="showcase" style="flex-direction:column;">
+  <div class="showcase-item" style="width:100%;min-width:0;padding:0;overflow:hidden;" data-inspect="EpisodeClipItem" data-layout="Surface(fillMaxSize) > blur bg + overlay + Column(card, text, controls)" data-blur="20dp on background image" data-overlay="background color alpha 0.6" data-card="250dp, largeIncreased, elevation 24dp" data-title-lines="3" data-desc-lines="6" data-controls="ClipAnimationIconText + like toggle + play toggle">
+    <!-- Blurred background simulation -->
+    <div style="position:relative;width:100%;min-height:480px;border-radius:16px;overflow:hidden;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#e74c3c,#c0392b);filter:blur(20px);transform:scale(1.1);"></div>
+      <div style="position:absolute;inset:0;background:var(--md-background);opacity:0.6;"></div>
+      <!-- Content -->
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:24px;min-height:480px;">
+        <!-- Card image -->
+        <div style="width:250px;height:250px;border-radius:16px;background:linear-gradient(135deg,#e74c3c,#c0392b);box-shadow:0 12px 48px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:64px;">&#127911;</div>
+        <!-- Title + description -->
+        <div style="width:100%;max-width:300px;">
+          <div style="font-size:22px;font-weight:600;color:var(--md-on-surface);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;margin-bottom:8px;">The Future of AI in Everyday Life and How It Changes Everything</div>
+          <div style="font-size:14px;color:var(--md-on-surface);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;">
+            In this episode, we explore how artificial intelligence is becoming an integral part of our daily routines. From smart home devices to personalized recommendations, AI is transforming how we live and work.
+          </div>
+        </div>
+        <!-- Controls row -->
+        <div style="width:100%;max-width:300px;display:flex;align-items:center;">
+          <div class="eds-clip-animation">
+            <div class="eds-wave">
+              <div class="eds-wave-bar" style="height:8px;"></div>
+              <div class="eds-wave-bar" style="height:14px;"></div>
+              <div class="eds-wave-bar" style="height:6px;"></div>
+              <div class="eds-wave-bar" style="height:12px;"></div>
+              <div class="eds-wave-bar" style="height:10px;"></div>
+            </div>
+            <span style="font-size:13px;color:var(--md-on-surface);">0:45</span>
+          </div>
+          <div style="flex:1;"></div>
+          <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--md-on-surface);">&#9825;</div>
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--md-primary);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--md-on-primary);">&#9646;&#9646;</div>
+        </div>
+      </div>
+    </div>
+    <div class="showcase-item-label">EpisodeClipItem &mdash; Playing state with blurred background</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Param</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td></tr>
+    <tr><td><code>episode</code></td><td><code>Episode</code></td><td>required</td></tr>
+    <tr><td><code>isPlaying</code></td><td><code>Boolean</code></td><td>required</td></tr>
+    <tr><td><code>remaining</code></td><td><code>Duration</code></td><td>required</td></tr>
+    <tr><td><code>onClick</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>onPlayEpisode</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>onToggleLikedEpisode</code></td><td><code>() -&gt; Unit</code></td><td>required</td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodeClipItem(
+    episode = episode,
+    isPlaying = true,
+    remaining = 45.seconds,
+    onClick = { /* tap to toggle details */ },
+    onPlayEpisode = { /* play/pause clip */ },
+    onToggleLikedEpisode = { /* toggle like */ }
+)</pre>
+
+</main>

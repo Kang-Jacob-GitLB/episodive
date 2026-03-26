@@ -1,0 +1,295 @@
+<main>
+<style>
+.marquee-demo {
+  width: 180px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 16px;
+  color: var(--md-on-surface);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12px, black calc(100% - 12px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 12px, black calc(100% - 12px), transparent);
+}
+.marquee-inner {
+  display: inline-block;
+  animation: marquee-scroll 6s linear 2s infinite;
+}
+@keyframes marquee-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.html-demo {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--md-on-surface-variant);
+  max-width: 320px;
+}
+.html-demo a {
+  color: var(--md-primary);
+  text-decoration: underline;
+}
+</style>
+
+<div class="content-header">
+  <div>
+    <h1>Text</h1>
+    <p class="page-subtitle">Text display components -- FadingEdgeText, HtmlTextContainer, EpisodiveIconText, ClipAnimationIconText</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">Toggle Theme</button>
+</div>
+
+<!-- ======== FadingEdgeText ======== -->
+<h2>FadingEdgeText</h2>
+<span class="source-path">core/designsystem/src/.../component/Text.kt</span>
+
+<h3>Showcase</h3>
+<div class="showcase">
+
+  <div class="showcase-item" style="min-width: 220px;"
+       data-inspect="FadingEdgeText"
+       data-w="wrap_content" data-h="wrap_content"
+       data-fade="12dp" data-initialDelay="2000ms" data-repeatDelay="2000ms"
+       data-modifier="fadingEdgeMarquee() + basicMarquee()" data-blend="DstIn">
+    <div class="marquee-demo">
+      <span class="marquee-inner">This is a very long podcast title that scrolls with fading edges&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This is a very long podcast title that scrolls with fading edges</span>
+    </div>
+    <div class="showcase-item-label">Marquee with fading edges</div>
+  </div>
+
+  <div class="showcase-item" style="min-width: 220px;"
+       data-inspect="FadingEdgeText (short)"
+       data-w="wrap_content" data-h="wrap_content">
+    <div style="font-size: 16px; color: var(--md-on-surface);">Short title</div>
+    <div class="showcase-item-label">No scroll (fits container)</div>
+  </div>
+
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>text</code></td><td><code>String</code></td><td>required</td><td>Text content to display</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td><td>Compose modifier chain</td></tr>
+    <tr><td><code>style</code></td><td><code>TextStyle</code></td><td><code>LocalTextStyle</code></td><td>Typography style</td></tr>
+  </tbody>
+</table>
+
+<h3>Usage</h3>
+<pre class="code-block"><code>FadingEdgeText(
+    text = "A very long podcast episode title that overflows",
+    style = MaterialTheme.typography.titleMedium
+)
+
+// Uses fadingEdgeMarquee() modifier internally:
+// Modifier.graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+//   .drawWithContent { drawContent(); drawFadeGradient(DstIn) }
+//   .basicMarquee(initialDelayMillis = 2000, repeatDelayMillis = 2000)</code></pre>
+
+<h3>Design Specs</h3>
+<div class="showcase" style="gap: 12px;">
+  <span class="spec-badge" data-inspect="Spec: Fade Width">fade width: 12dp</span>
+  <span class="spec-badge" data-inspect="Spec: Initial Delay">initialDelay: 2000ms</span>
+  <span class="spec-badge" data-inspect="Spec: Repeat Delay">repeatDelay: 2000ms</span>
+  <span class="spec-badge" data-inspect="Spec: Blend Mode">blendMode: DstIn</span>
+  <span class="spec-badge" data-inspect="Spec: Gradient">gradient: transparent &rarr; black &rarr; black &rarr; transparent</span>
+</div>
+
+<!-- ======== HtmlTextContainer ======== -->
+<h2>HtmlTextContainer</h2>
+<span class="source-path">core/designsystem/src/.../component/HtmlTextContainer.kt</span>
+
+<h3>Showcase</h3>
+<div class="showcase">
+
+  <div class="showcase-item" style="min-width: 340px;"
+       data-inspect="HtmlTextContainer"
+       data-w="match_parent" data-h="wrap_content"
+       data-linkColor="primary" data-linkStyle="underline"
+       data-autoLink="email, url, phone">
+    <div class="html-demo eds-html-text">
+      This podcast explores the future of AI.
+      Visit <a href="#">example.com</a> for more info.
+      Contact us at <a href="#">hello@podcast.com</a> or call <a href="#">+1-555-0123</a>.
+    </div>
+    <div class="showcase-item-label">HTML text with auto-linked content</div>
+  </div>
+
+  <div class="showcase-item" style="min-width: 340px;"
+       data-inspect="HtmlTextContainer (rich)"
+       data-w="match_parent" data-h="wrap_content">
+    <div class="html-demo eds-html-text">
+      <strong>Bold text</strong> and <em>italic text</em> are supported.
+      Links like <a href="#">this one</a> use primary color with underline decoration.
+    </div>
+    <div class="showcase-item-label">Rich HTML formatting</div>
+  </div>
+
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>htmlText</code></td><td><code>String</code></td><td>required</td><td>Raw HTML string content</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td><td>Compose modifier chain</td></tr>
+    <tr><td><code>style</code></td><td><code>TextStyle</code></td><td><code>bodyMedium</code></td><td>Base text style</td></tr>
+    <tr><td><code>onLinkClick</code></td><td><code>((String) -&gt; Unit)?</code></td><td><code>null</code></td><td>Callback when a link is clicked</td></tr>
+  </tbody>
+</table>
+
+<h3>Design Specs</h3>
+<div class="showcase" style="gap: 12px;">
+  <span class="spec-badge" data-inspect="Spec: Link Color">link color: primary</span>
+  <span class="spec-badge" data-inspect="Spec: Link Decoration">decoration: underline</span>
+  <span class="spec-badge" data-inspect="Spec: Auto-link">autoLink: email, URL, phone</span>
+</div>
+
+<!-- ======== EpisodiveIconText ======== -->
+<h2>EpisodiveIconText</h2>
+<span class="source-path">core/designsystem/src/.../component/IconText.kt</span>
+
+<h3>Showcase</h3>
+<div class="showcase">
+
+  <div class="showcase-item"
+       data-inspect="EpisodiveIconText (icon leading)"
+       data-w="wrap_content" data-h="wrap_content"
+       data-gap="6dp" data-font="bodyMedium">
+    <div class="eds-icon-text">
+      <span style="font-size: 16px;">&#x1F399;</span>
+      <span>128 Episodes</span>
+    </div>
+    <div class="showcase-item-label">Icon leading (default)</div>
+  </div>
+
+  <div class="showcase-item"
+       data-inspect="EpisodiveIconText (icon trailing)"
+       data-w="wrap_content" data-h="wrap_content"
+       data-gap="6dp" data-font="bodyMedium" data-iconLead="false">
+    <div class="eds-icon-text">
+      <span>View all</span>
+      <span style="font-size: 16px;">&#x2192;</span>
+    </div>
+    <div class="showcase-item-label">Icon trailing (iconLead = false)</div>
+  </div>
+
+  <div class="showcase-item"
+       data-inspect="EpisodiveIconText (custom color)"
+       data-w="wrap_content" data-h="wrap_content"
+       data-gap="6dp">
+    <div class="eds-icon-text" style="color: var(--md-primary);">
+      <span style="font-size: 16px;">&#x2764;</span>
+      <span>Liked</span>
+    </div>
+    <div class="showcase-item-label">Custom color</div>
+  </div>
+
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>text</code></td><td><code>String</code></td><td>required</td><td>Text content</td></tr>
+    <tr><td><code>icon</code></td><td><code>ImageVector</code></td><td>required</td><td>Icon to display</td></tr>
+    <tr><td><code>iconLead</code></td><td><code>Boolean</code></td><td><code>true</code></td><td>Whether icon appears before text</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td><td>Compose modifier chain</td></tr>
+    <tr><td><code>style</code></td><td><code>TextStyle</code></td><td><code>bodyMedium</code></td><td>Text style</td></tr>
+    <tr><td><code>color</code></td><td><code>Color</code></td><td><code>onSurfaceVariant</code></td><td>Tint color for icon and text</td></tr>
+  </tbody>
+</table>
+
+<h3>Design Specs</h3>
+<div class="showcase" style="gap: 12px;">
+  <span class="spec-badge" data-inspect="Spec: Gap">gap: 6dp</span>
+  <span class="spec-badge" data-inspect="Spec: Font">font: bodyMedium (14sp)</span>
+  <span class="spec-badge" data-inspect="Spec: Color">color: onSurfaceVariant</span>
+</div>
+
+<!-- ======== ClipAnimationIconText ======== -->
+<h2>ClipAnimationIconText</h2>
+<span class="source-path">core/designsystem/src/.../component/IconText.kt</span>
+
+<h3>Showcase</h3>
+<div class="showcase">
+
+  <div class="showcase-item"
+       data-inspect="ClipAnimationIconText"
+       data-w="wrap_content" data-h="wrap_content"
+       data-shape="CircleShape" data-bg="surface (0.3 alpha)"
+       data-padding="8dp 16dp" data-gap="8dp">
+    <div class="eds-clip-animation">
+      <div class="eds-wave">
+        <div class="eds-wave-bar" style="height: 8px;"></div>
+        <div class="eds-wave-bar" style="height: 14px;"></div>
+        <div class="eds-wave-bar" style="height: 6px;"></div>
+        <div class="eds-wave-bar" style="height: 12px;"></div>
+        <div class="eds-wave-bar" style="height: 10px;"></div>
+      </div>
+      <span style="font-size: 14px; font-weight: 500; color: var(--md-on-surface);">Now Playing</span>
+    </div>
+    <div class="showcase-item-label">Animated wave bars + text</div>
+  </div>
+
+  <div class="showcase-item"
+       data-inspect="ClipAnimationIconText (alt)"
+       data-w="wrap_content" data-h="wrap_content"
+       data-shape="CircleShape" data-bg="surface (0.3 alpha)">
+    <div class="eds-clip-animation">
+      <div class="eds-wave">
+        <div class="eds-wave-bar" style="height: 6px;"></div>
+        <div class="eds-wave-bar" style="height: 10px;"></div>
+        <div class="eds-wave-bar" style="height: 16px;"></div>
+        <div class="eds-wave-bar" style="height: 8px;"></div>
+        <div class="eds-wave-bar" style="height: 12px;"></div>
+      </div>
+      <span style="font-size: 14px; font-weight: 500; color: var(--md-on-surface);">Live Soundbite</span>
+    </div>
+    <div class="showcase-item-label">Alternative text</div>
+  </div>
+
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>text</code></td><td><code>String</code></td><td>required</td><td>Label text</td></tr>
+    <tr><td><code>modifier</code></td><td><code>Modifier</code></td><td><code>Modifier</code></td><td>Compose modifier chain</td></tr>
+    <tr><td><code>style</code></td><td><code>TextStyle</code></td><td><code>labelMedium</code></td><td>Text style</td></tr>
+  </tbody>
+</table>
+
+<h3>Usage</h3>
+<pre class="code-block"><code>// FadingEdgeText
+FadingEdgeText(
+    text = "Very Long Podcast Episode Title That Overflows",
+    style = MaterialTheme.typography.titleMedium
+)
+
+// HtmlTextContainer
+HtmlTextContainer(
+    htmlText = "Visit &lt;a href='https://example.com'&gt;our site&lt;/a&gt; for more.",
+    onLinkClick = { url -> openBrowser(url) }
+)
+
+// EpisodiveIconText
+EpisodiveIconText(
+    text = "128 Episodes",
+    icon = TablerIcons.Microphone,
+    iconLead = true
+)
+
+// ClipAnimationIconText
+ClipAnimationIconText(text = "Now Playing")</code></pre>
+
+<h3>Design Specs</h3>
+<div class="showcase" style="gap: 12px;">
+  <span class="spec-badge" data-inspect="Spec: Shape">shape: CircleShape (full round)</span>
+  <span class="spec-badge" data-inspect="Spec: Background">bg: surface at 0.3 alpha</span>
+  <span class="spec-badge" data-inspect="Spec: Padding">padding: 8dp vertical, 16dp horizontal</span>
+  <span class="spec-badge" data-inspect="Spec: Gap">gap: 8dp</span>
+  <span class="spec-badge" data-inspect="Spec: Wave Bars">5 bars, 2px wide, animated</span>
+</div>
+
+</main>

@@ -1,0 +1,188 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Search Bar</h1>
+    <p class="page-subtitle">EpisodiveSearchBar -- Expandable search input with animated transitions</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">Toggle Theme</button>
+</div>
+<span class="source-path">core/designsystem/src/.../component/SearchBar.kt</span>
+
+<!-- ===== Visual Showcase ===== -->
+<h2>Showcase</h2>
+<div class="showcase">
+
+  <!-- Collapsed State -->
+  <div class="showcase-item" style="min-width: 320px;"
+       data-inspect="EpisodiveSearchBar (Collapsed)"
+       data-w="match_parent" data-h="48dp" data-corner="24dp"
+       data-bg="surfaceContainerHigh" data-padding="0 16dp">
+    <div class="eds-search-bar eds-search-bar-collapsed" style="width: 100%;">
+      <span class="eds-search-bar-icon">&#x1F50D;</span>
+      <span class="eds-search-bar-placeholder">Search podcasts...</span>
+    </div>
+    <div class="showcase-item-label">Collapsed</div>
+  </div>
+
+  <!-- Expanded State (empty) -->
+  <div class="showcase-item" style="min-width: 360px;"
+       data-inspect="EpisodiveSearchBar (Expanded)"
+       data-w="match_parent" data-h="56dp" data-corner="28dp"
+       data-bg="surfaceContainerHigh" data-padding="0 16dp"
+       data-anim="horizontalPadding 0dp to 16dp">
+    <div class="eds-search-bar" style="width: 100%;">
+      <span class="eds-search-bar-icon" style="cursor: pointer;" title="leadingIconOnExpand: Back">&#x2190;</span>
+      <span class="eds-search-bar-placeholder">Search podcasts...</span>
+      <span class="eds-search-bar-icon" style="opacity: 0.3;" title="trailingIcon: Clear (hidden when empty)">&#x2715;</span>
+    </div>
+    <div class="showcase-item-label">Expanded (empty query)</div>
+  </div>
+
+  <!-- Expanded State (with query) -->
+  <div class="showcase-item" style="min-width: 360px;"
+       data-inspect="EpisodiveSearchBar (Expanded + Query)"
+       data-w="match_parent" data-h="56dp" data-corner="28dp"
+       data-bg="surfaceContainerHigh" data-padding="0 16dp">
+    <div class="eds-search-bar" style="width: 100%;">
+      <span class="eds-search-bar-icon" style="cursor: pointer;">&#x2190;</span>
+      <span style="flex: 1; font-size: 16px; color: var(--md-on-surface);">Tech podcasts</span>
+      <span class="eds-search-bar-icon" style="cursor: pointer;" title="trailingIcon: Clear">&#x2715;</span>
+    </div>
+    <div class="showcase-item-label">Expanded (with query)</div>
+  </div>
+
+  <!-- Non-expandable -->
+  <div class="showcase-item" style="min-width: 320px;"
+       data-inspect="EpisodiveSearchBar (isExpandable=false)"
+       data-w="match_parent" data-h="56dp" data-corner="28dp"
+       data-bg="surfaceContainerHigh">
+    <div class="eds-search-bar" style="width: 100%;">
+      <span class="eds-search-bar-icon">&#x1F50D;</span>
+      <span style="flex: 1; font-size: 16px; color: var(--md-on-surface);">Always expanded</span>
+      <span class="eds-search-bar-icon" style="cursor: pointer;">&#x2715;</span>
+    </div>
+    <div class="showcase-item-label">Non-expandable (isExpandable = false)</div>
+  </div>
+
+</div>
+
+<!-- ===== Properties Table ===== -->
+<h2>Properties</h2>
+<table class="props-table">
+  <thead>
+    <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>query</code></td>
+      <td><code>String</code></td>
+      <td>required</td>
+      <td>Current search query text</td>
+    </tr>
+    <tr>
+      <td><code>onQueryChange</code></td>
+      <td><code>(String) -&gt; Unit</code></td>
+      <td>required</td>
+      <td>Callback when query text changes</td>
+    </tr>
+    <tr>
+      <td><code>onSearch</code></td>
+      <td><code>(String) -&gt; Unit</code></td>
+      <td>required</td>
+      <td>Callback when search is submitted</td>
+    </tr>
+    <tr>
+      <td><code>isExpandable</code></td>
+      <td><code>Boolean</code></td>
+      <td><code>true</code></td>
+      <td>Whether the search bar can collapse/expand</td>
+    </tr>
+    <tr>
+      <td><code>isExpanded</code></td>
+      <td><code>Boolean</code></td>
+      <td><code>false</code></td>
+      <td>Current expansion state</td>
+    </tr>
+    <tr>
+      <td><code>placeholder</code></td>
+      <td><code>@Composable</code></td>
+      <td><code>null</code></td>
+      <td>Placeholder content when query is empty</td>
+    </tr>
+    <tr>
+      <td><code>leadingIconOnCollapse</code></td>
+      <td><code>@Composable</code></td>
+      <td><code>null</code></td>
+      <td>Leading icon shown in collapsed state (e.g., search icon)</td>
+    </tr>
+    <tr>
+      <td><code>leadingIconOnExpand</code></td>
+      <td><code>@Composable</code></td>
+      <td><code>null</code></td>
+      <td>Leading icon shown in expanded state (e.g., back arrow)</td>
+    </tr>
+    <tr>
+      <td><code>trailingIcon</code></td>
+      <td><code>@Composable</code></td>
+      <td><code>null</code></td>
+      <td>Trailing icon (e.g., clear button)</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ===== Code Example ===== -->
+<h2>Usage</h2>
+<pre class="code-block"><code>@Composable
+fun SearchScreen() {
+    var query by remember { mutableStateOf("") }
+    var isExpanded by rememberSaveable { mutableStateOf(false) }
+
+    EpisodiveSearchBar(
+        query = query,
+        onQueryChange = { query = it },
+        onSearch = { /* submit search */ },
+        isExpandable = true,
+        isExpanded = isExpanded,
+        placeholder = {
+            Text("Search podcasts...")
+        },
+        leadingIconOnCollapse = {
+            Icon(TablerIcons.Search, contentDescription = "Search")
+        },
+        leadingIconOnExpand = {
+            IconButton(onClick = { isExpanded = false }) {
+                Icon(TablerIcons.ArrowLeft, contentDescription = "Back")
+            }
+        },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { query = "" }) {
+                    Icon(TablerIcons.X, contentDescription = "Clear")
+                }
+            }
+        }
+    )
+}</code></pre>
+
+<!-- ===== Design Specs ===== -->
+<h2>Design Specs</h2>
+<div class="showcase" style="gap: 12px;">
+  <span class="spec-badge"
+        data-inspect="Spec: Expanded Height" data-h="56dp">height: 56dp (expanded)</span>
+  <span class="spec-badge"
+        data-inspect="Spec: Collapsed Height" data-h="48dp">height: 48dp (collapsed)</span>
+  <span class="spec-badge"
+        data-inspect="Spec: Corner Expanded" data-corner="28dp">corner: 28dp (expanded)</span>
+  <span class="spec-badge"
+        data-inspect="Spec: Corner Collapsed" data-corner="24dp">corner: 24dp (collapsed)</span>
+  <span class="spec-badge"
+        data-inspect="Spec: Background">bg: surfaceContainerHigh</span>
+  <span class="spec-badge"
+        data-inspect="Spec: Padding Animation" data-padding="0dp to 16dp">horizontalPadding: 0dp &harr; 16dp (animated)</span>
+  <span class="spec-badge"
+        data-inspect="Spec: Placeholder Color">text: onSurfaceVariant</span>
+  <span class="spec-badge"
+        data-inspect="Spec: Icon Size">icon: 20sp</span>
+</div>
+
+</main>

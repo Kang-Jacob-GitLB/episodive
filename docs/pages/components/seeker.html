@@ -1,0 +1,230 @@
+<main>
+<style>
+.seeker-demo {
+  width: 100%;
+  min-width: 280px;
+}
+.eds-seeker-chapter-gap {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--md-surface-container);
+  z-index: 2;
+}
+.eds-seeker-chapter-gap.dragging {
+  width: 4px;
+}
+.seeker-time-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-family: monospace;
+  color: var(--md-on-surface-variant);
+  margin-top: 4px;
+}
+</style>
+
+<div class="content-header">
+  <div>
+    <h1>Seeker</h1>
+    <p class="page-subtitle">EpisodiveSeeker -- Audio progress bar with chapter support and buffering indicator</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">Toggle Theme</button>
+</div>
+<span class="source-path">core/designsystem/src/.../component/Seeker.kt</span>
+
+<!-- ===== Visual Showcase ===== -->
+<h2>Showcase</h2>
+<div class="showcase">
+
+  <!-- Normal State -->
+  <div class="showcase-item seeker-demo"
+       data-inspect="EpisodiveSeeker (Normal)"
+       data-w="match_parent" data-h="20dp"
+       data-trackH="4dp" data-thumbR="6dp"
+       data-progress="primary" data-track="outline"
+       data-buffered="onSurfaceVariant 0.3alpha">
+    <div class="eds-seeker">
+      <div class="eds-seeker-track">
+        <div class="eds-seeker-buffered" style="width: 65%;"></div>
+        <div class="eds-seeker-progress" style="width: 40%;"></div>
+        <div class="eds-seeker-thumb" style="left: 40%;"></div>
+      </div>
+    </div>
+    <div class="seeker-time-row">
+      <span>12:48</span>
+      <span>32:00</span>
+    </div>
+    <div class="showcase-item-label">Normal -- 40% progress, 65% buffered</div>
+  </div>
+
+  <!-- Dragging State -->
+  <div class="showcase-item seeker-demo"
+       data-inspect="EpisodiveSeeker (Dragging)"
+       data-w="match_parent" data-h="20dp"
+       data-trackH="4dp" data-thumbR="10dp (dragging)"
+       data-chapterGap="4dp (dragging)">
+    <div class="eds-seeker">
+      <div class="eds-seeker-track">
+        <div class="eds-seeker-buffered" style="width: 75%;"></div>
+        <div class="eds-seeker-progress" style="width: 55%;"></div>
+        <div class="eds-seeker-thumb" style="left: 55%; width: 20px; height: 20px;"></div>
+      </div>
+    </div>
+    <div class="seeker-time-row">
+      <span>17:36</span>
+      <span>32:00</span>
+    </div>
+    <div class="showcase-item-label">Dragging -- enlarged thumb (10dp radius)</div>
+  </div>
+
+  <!-- With Chapters -->
+  <div class="showcase-item seeker-demo"
+       data-inspect="EpisodiveSeeker (Chapters)"
+       data-w="match_parent" data-h="20dp"
+       data-chapterGap="2dp (collapsed)" data-chapters="3 segments">
+    <div class="eds-seeker">
+      <div class="eds-seeker-track" style="display: flex; gap: 2px;">
+        <div style="flex: 3; height: 4px; border-radius: 2px; position: relative; overflow: hidden;">
+          <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--md-primary);"></div>
+        </div>
+        <div style="flex: 4; height: 4px; border-radius: 2px; position: relative; overflow: hidden;">
+          <div style="position: absolute; top: 0; left: 0; width: 50%; height: 100%; background: var(--md-primary);"></div>
+          <div style="position: absolute; top: 0; left: 0; width: 80%; height: 100%; background: var(--md-on-surface-variant); opacity: 0.3;"></div>
+          <div style="position: absolute; top: 0; left: 0; width: 50%; height: 100%; background: var(--md-primary);"></div>
+        </div>
+        <div style="flex: 3; height: 4px; border-radius: 2px; background: var(--md-outline); position: relative; overflow: hidden;">
+          <div style="position: absolute; top: 0; left: 0; width: 30%; height: 100%; background: var(--md-on-surface-variant); opacity: 0.3;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="seeker-time-row">
+      <span>18:24</span>
+      <span>45:00</span>
+    </div>
+    <div class="showcase-item-label">With chapters -- 3 segments, gaps between</div>
+  </div>
+
+  <!-- Disabled State -->
+  <div class="showcase-item seeker-demo"
+       data-inspect="EpisodiveSeeker (Disabled)"
+       data-w="match_parent" data-h="20dp"
+       data-controllable="false"
+       data-progress="transparent" data-track="outline">
+    <div class="eds-seeker state-disabled">
+      <div class="eds-seeker-track">
+        <div class="eds-seeker-progress" style="width: 0%; background: transparent;"></div>
+      </div>
+    </div>
+    <div class="seeker-time-row" style="opacity: 0.38;">
+      <span>0:00</span>
+      <span>0:00</span>
+    </div>
+    <div class="showcase-item-label">Disabled (isControllable = false)</div>
+  </div>
+
+  <!-- Start Position -->
+  <div class="showcase-item seeker-demo"
+       data-inspect="EpisodiveSeeker (Start)"
+       data-w="match_parent" data-h="20dp">
+    <div class="eds-seeker">
+      <div class="eds-seeker-track">
+        <div class="eds-seeker-buffered" style="width: 10%;"></div>
+        <div class="eds-seeker-progress" style="width: 0%;"></div>
+        <div class="eds-seeker-thumb" style="left: 0%;"></div>
+      </div>
+    </div>
+    <div class="seeker-time-row">
+      <span>0:00</span>
+      <span>1:05:30</span>
+    </div>
+    <div class="showcase-item-label">Start position (0%)</div>
+  </div>
+
+</div>
+
+<!-- ===== Properties Table ===== -->
+<h2>Properties</h2>
+<table class="props-table">
+  <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>progress</code></td>
+      <td><code>Progress</code></td>
+      <td>required</td>
+      <td>Data class with position (Long), buffered (Long), duration (Long) in ms</td>
+    </tr>
+    <tr>
+      <td><code>onSeekTo</code></td>
+      <td><code>(Long) -&gt; Unit</code></td>
+      <td>required</td>
+      <td>Callback when user seeks to a position (in ms)</td>
+    </tr>
+    <tr>
+      <td><code>chapters</code></td>
+      <td><code>List&lt;Chapter&gt;</code></td>
+      <td><code>emptyList()</code></td>
+      <td>Chapter markers defining segment boundaries</td>
+    </tr>
+    <tr>
+      <td><code>isControllable</code></td>
+      <td><code>Boolean</code></td>
+      <td><code>true</code></td>
+      <td>Whether user can interact with the seeker</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Progress Data Class</h3>
+<table class="props-table">
+  <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>position</code></td><td><code>Long</code></td><td>Current playback position in milliseconds</td></tr>
+    <tr><td><code>buffered</code></td><td><code>Long</code></td><td>Buffered position in milliseconds</td></tr>
+    <tr><td><code>duration</code></td><td><code>Long</code></td><td>Total duration in milliseconds</td></tr>
+  </tbody>
+</table>
+
+<!-- ===== Code Example ===== -->
+<h2>Usage</h2>
+<pre class="code-block"><code>@Composable
+fun PlayerControls(
+    progress: Progress,
+    chapters: List&lt;Chapter&gt;,
+    onSeekTo: (Long) -> Unit
+) {
+    EpisodiveSeeker(
+        progress = Progress(
+            position = 768000L,   // 12:48
+            buffered = 1170000L,  // 19:30
+            duration = 1920000L   // 32:00
+        ),
+        onSeekTo = onSeekTo,
+        chapters = chapters,
+        isControllable = true
+    )
+}
+
+// Chapter data class
+data class Chapter(
+    val title: String,
+    val startTime: Long,  // ms
+    val endTime: Long     // ms
+)</code></pre>
+
+<!-- ===== Design Specs ===== -->
+<h2>Design Specs</h2>
+<div class="showcase" style="gap: 12px;">
+  <span class="spec-badge" data-inspect="Spec: Track Height" data-h="4dp">track height: 4dp</span>
+  <span class="spec-badge" data-inspect="Spec: Chapter Gap Collapsed">chapter gap: 2dp (collapsed)</span>
+  <span class="spec-badge" data-inspect="Spec: Chapter Gap Dragging">chapter gap: 4dp (dragging)</span>
+  <span class="spec-badge" data-inspect="Spec: Thumb Normal" data-r="6dp">thumb radius: 6dp (normal)</span>
+  <span class="spec-badge" data-inspect="Spec: Thumb Dragging" data-r="10dp">thumb radius: 10dp (dragging)</span>
+  <span class="spec-badge" data-inspect="Spec: Progress Color">progress: primary</span>
+  <span class="spec-badge" data-inspect="Spec: Track Color">track: outline</span>
+  <span class="spec-badge" data-inspect="Spec: Buffered Color">buffered: onSurfaceVariant @ 0.3 alpha</span>
+  <span class="spec-badge" data-inspect="Spec: Disabled Color">disabled: transparent</span>
+</div>
+
+</main>

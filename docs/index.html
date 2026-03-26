@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Episodive Design System</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/inspector.css">
+  <link rel="stylesheet" href="css/phone-frame.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">Episodive</div>
+      <div class="sidebar-subtitle">Design System Documentation</div>
+    </div>
+
+    <div class="sidebar-section">Tokens</div>
+    <a class="sidebar-link" data-page="pages/tokens/colors.html">Colors</a>
+    <a class="sidebar-link" data-page="pages/tokens/typography.html">Typography</a>
+    <a class="sidebar-link" data-page="pages/tokens/icons.html">Icons</a>
+    <a class="sidebar-link" data-page="pages/tokens/spacing.html">Spacing & Dimensions</a>
+
+    <div class="sidebar-section">Components</div>
+    <a class="sidebar-link" data-page="pages/components/buttons.html">Buttons</a>
+    <a class="sidebar-link" data-page="pages/components/icon-buttons.html">Icon Buttons</a>
+    <a class="sidebar-link" data-page="pages/components/chips-tags.html">Chips & Tags</a>
+    <a class="sidebar-link" data-page="pages/components/navigation.html">Navigation</a>
+    <a class="sidebar-link" data-page="pages/components/top-app-bar.html">Top App Bar</a>
+    <a class="sidebar-link" data-page="pages/components/search-bar.html">Search Bar</a>
+    <a class="sidebar-link" data-page="pages/components/text.html">Text</a>
+    <a class="sidebar-link" data-page="pages/components/image.html">Image</a>
+    <a class="sidebar-link" data-page="pages/components/seeker.html">Seeker</a>
+    <a class="sidebar-link" data-page="pages/components/dial.html">Dial</a>
+    <a class="sidebar-link" data-page="pages/components/layout.html">Layout</a>
+    <a class="sidebar-link" data-page="pages/components/toggle.html">Toggle & Drag</a>
+    <a class="sidebar-link" data-page="pages/components/animation.html">Animation</a>
+    <a class="sidebar-link" data-page="pages/components/loading.html">Loading & Error</a>
+    <a class="sidebar-link" data-page="pages/components/scrollbar.html">Scrollbar</a>
+
+    <div class="sidebar-section">Domain UI</div>
+    <a class="sidebar-link" data-page="pages/domain-ui/podcast.html">Podcast</a>
+    <a class="sidebar-link" data-page="pages/domain-ui/episode.html">Episode</a>
+    <a class="sidebar-link" data-page="pages/domain-ui/category.html">Category</a>
+    <a class="sidebar-link" data-page="pages/domain-ui/channel.html">Channel</a>
+
+    <div class="sidebar-section">Screens</div>
+    <a class="sidebar-link" data-page="pages/screens/onboarding.html">Onboarding</a>
+    <a class="sidebar-link" data-page="pages/screens/home.html">Home</a>
+    <a class="sidebar-link" data-page="pages/screens/search.html">Search</a>
+    <a class="sidebar-link" data-page="pages/screens/library.html">Library</a>
+    <a class="sidebar-link" data-page="pages/screens/podcast-detail.html">Podcast Detail</a>
+    <a class="sidebar-link" data-page="pages/screens/player.html">Player</a>
+    <a class="sidebar-link" data-page="pages/screens/clip.html">Clip</a>
+    <a class="sidebar-link" data-page="pages/screens/channel-detail.html">Channel Detail</a>
+  </nav>
+
+  <div class="content" id="page-content">
+    <!-- Pages loaded here via SPA navigation -->
+    <div class="content-header">
+      <div>
+        <h1>Episodive Design System</h1>
+        <p class="page-subtitle">Jetpack Compose 기반 팟캐스트 앱의 인터랙티브 디자인 시스템 문서</p>
+      </div>
+      <button class="theme-toggle-btn">🌙 Dark Mode</button>
+    </div>
+    <p>좌측 사이드바에서 섹션을 선택하세요. 각 컴포넌트 위에 마우스를 올리면 Figma처럼 크기, 패딩, 간격 등의 수치를 확인할 수 있습니다.</p>
+  </div>
+
+  <script src="js/theme-toggle.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/inspector.js"></script>
+</body>
+</html>

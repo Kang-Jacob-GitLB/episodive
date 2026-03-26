@@ -1,0 +1,162 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Onboarding</h1>
+    <p class="page-subtitle">First launch experience with category and podcast selection</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">feature/onboarding/src/main/kotlin/io/jacob/episodive/feature/onboarding/OnboardingScreen.kt</span>
+
+<!-- Screen Structure -->
+<h2>Screen Structure</h2>
+<p>The onboarding screen uses a <code>HorizontalPager</code> with 4 pages to guide the user through initial setup. A <code>PagerIndicator</code> and navigation buttons appear at the bottom of every page.</p>
+
+<!-- Phone Frame Mockup: Category Selection Page -->
+<h3>Phone Frame Mockup — Category Selection</h3>
+<p>Showing the category selection page, which is the most visually distinctive step of onboarding.</p>
+
+<div style="display: flex; justify-content: center; margin: 24px 0;">
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <div class="phone-frame" data-inspect="OnboardingScreen — CategorySelection" data-w="360dp" data-h="800dp">
+      <div class="phone-frame-notch"></div>
+      <div class="phone-frame-status-bar">
+        <span>9:41</span>
+        <span></span>
+      </div>
+      <div class="phone-frame-content" style="display: flex; flex-direction: column; padding: 0;">
+
+        <!-- Title area -->
+        <div style="padding: 24px 20px 8px;" data-inspect="Onboarding Title" data-padding="24dp 20dp 8dp">
+          <div style="font-size: 24px; font-weight: 700; color: var(--md-on-surface);">Choose Categories</div>
+          <div style="font-size: 14px; color: var(--md-on-surface-variant); margin-top: 4px;">Select at least 3 categories you enjoy</div>
+        </div>
+
+        <!-- Category Grid -->
+        <div style="flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; position: relative;" data-inspect="LazyVerticalGrid — CategoryButtons" data-component="LazyVerticalGrid" data-columns="3">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%; align-content: start;">
+            <div class="eds-filter-chip selected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — selected">Business</div>
+            <div class="eds-filter-chip selected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — selected">Comedy</div>
+            <div class="eds-filter-chip selected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — selected">Education</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Fiction</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Health</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">History</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Kids</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Leisure</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Music</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">News</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Religion</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Science</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Society</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Sports</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Tech</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Crime</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">TV &amp; Film</div>
+            <div class="eds-filter-chip unselected" style="justify-content: center; height: 44px; font-size: 13px;" data-inspect="CategoryButton — unselected">Govt</div>
+          </div>
+          <!-- Scrollbar -->
+          <div style="position: absolute; right: 4px; top: 8px; width: 4px; height: 80px;" class="eds-scrollbar-thumb" data-inspect="DraggableScrollbar"></div>
+        </div>
+
+        <!-- Pager Indicator + Buttons -->
+        <div style="padding: 16px 20px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; border-top: 1px solid var(--md-outline-variant);" data-inspect="Bottom Navigation Area" data-padding="16dp 20dp 24dp">
+          <!-- Pager Indicator -->
+          <div style="display: flex; gap: 8px;" data-inspect="PagerIndicator" data-pages="4" data-current="1">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--md-outline);"></div>
+            <div style="width: 24px; height: 8px; border-radius: 4px; background: var(--md-primary);"></div>
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--md-outline);"></div>
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--md-outline);"></div>
+          </div>
+          <!-- Navigation Buttons -->
+          <div style="display: flex; gap: 12px; width: 100%;">
+            <button class="eds-button-outlined" style="flex: 1;" data-inspect="Previous Button">Previous</button>
+            <button class="eds-button" style="flex: 1;" data-inspect="Next Button">Next</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="screen-label">Category Selection (Page 2 of 4)</div>
+  </div>
+</div>
+
+<!-- Page Breakdown -->
+<h2>Pager Pages</h2>
+
+<h3>Page 1 — Welcome</h3>
+<p>Displays the Episodive logo and a greeting message. A single "Get Started" button advances to the next page.</p>
+
+<h3>Page 2 — Category Selection</h3>
+<p>A <code>LazyVerticalGrid</code> (3 columns) of <code>CategoryButton</code> chips. Users must select at least 3 categories. A <code>DraggableScrollbar</code> appears on the right edge. Attempting to proceed with fewer than 3 selections triggers the <code>ToastMoreCategories</code> effect.</p>
+
+<h3>Page 3 — Podcast Selection</h3>
+<p>A <code>LazyColumn</code> with paginated <code>PodcastSimpleItem</code> rows, populated by <code>GetUserRecommendedPodcastsPagingUseCase</code> (max 50). Users can follow/unfollow podcasts matching their selected categories.</p>
+
+<h3>Page 4 — Completion</h3>
+<p>A checkmark animation with a congratulatory message. After a 3-second delay, <code>SetFirstLaunchOffUseCase</code> runs. A "Start" button navigates to the home screen.</p>
+
+<!-- MVI Architecture -->
+<h2>MVI Architecture</h2>
+
+<div class="mvi-card" data-inspect="OnboardingState">
+  <h4>OnboardingState</h4>
+  <ul class="mvi-list">
+    <li>Loading</li>
+    <li>Success(categories: List&lt;SelectableCategory&gt;)</li>
+    <li>Error(message: String)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="OnboardingAction">
+  <h4>OnboardingAction</h4>
+  <ul class="mvi-list">
+    <li>NextPage</li>
+    <li>PreviousPage</li>
+    <li>ChooseCategory(category: Category)</li>
+    <li>ChoosePodcast(podcast: Podcast)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="OnboardingEffect">
+  <h4>OnboardingEffect</h4>
+  <ul class="mvi-list">
+    <li>ToastMoreCategories</li>
+    <li>MoveToPage(page: OnboardingPage)</li>
+  </ul>
+</div>
+
+<div class="mvi-card" data-inspect="OnboardingPage">
+  <h4>OnboardingPage (enum)</h4>
+  <ul class="mvi-list">
+    <li>Welcome</li>
+    <li>CategorySelection</li>
+    <li>PodcastSelection</li>
+    <li>Completion</li>
+  </ul>
+</div>
+
+<!-- Additional Data -->
+<h3>Additional Flows</h3>
+<table class="props-table">
+  <thead><tr><th>Flow</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>state</code></td><td><code>StateFlow&lt;OnboardingState&gt;</code></td><td>Category list with selection state</td></tr>
+    <tr><td><code>recommendedPodcasts</code></td><td><code>Flow&lt;PagingData&lt;Podcast&gt;&gt;</code></td><td>Paginated podcast recommendations, only active on PodcastSelection page</td></tr>
+    <tr><td><code>effect</code></td><td><code>SharedFlow&lt;OnboardingEffect&gt;</code></td><td>One-time side effects (toast, page navigation)</td></tr>
+  </tbody>
+</table>
+
+<!-- Navigation Flow -->
+<h2>Navigation Flow</h2>
+<div class="nav-flow" data-inspect="OnboardingNavigation">
+  <div class="nav-flow-node">App Launch</div>
+  <div class="nav-flow-arrow">&#8594;</div>
+  <div class="nav-flow-node">isFirstLaunch?</div>
+  <div class="nav-flow-arrow">&#8594;</div>
+  <div class="nav-flow-node" style="background: var(--md-primary); color: var(--md-on-primary);">Onboarding</div>
+  <div class="nav-flow-arrow">&#8594;</div>
+  <div class="nav-flow-node">Home</div>
+</div>
+<p>The onboarding screen is shown only when <code>UserPreferences.isFirstLaunch</code> is <code>true</code>. After completion, <code>SetFirstLaunchOffUseCase</code> sets the flag to <code>false</code> and the user is routed to the Home screen.</p>
+
+</main>

@@ -1,0 +1,367 @@
+<main>
+<style>
+.color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; margin: 16px 0 32px; }
+.color-card { border-radius: 12px; overflow: hidden; border: 1px solid var(--md-outline-variant); background: var(--md-surface-container); }
+.color-swatch-large { height: 80px; }
+.color-info { padding: 10px 12px; }
+.color-name { font-size: 14px; font-weight: 600; color: var(--md-on-surface); }
+.color-var { font-size: 11px; font-family: monospace; color: var(--md-primary); margin-top: 2px; }
+.color-hex { font-size: 11px; font-family: monospace; color: var(--md-on-surface-variant); margin-top: 1px; }
+.color-compose { font-size: 10px; color: var(--md-on-surface-variant); margin-top: 2px; opacity: 0.7; }
+</style>
+
+<div class="content-header">
+  <div>
+    <h1>Colors</h1>
+    <p class="page-subtitle">Material3 Color System — Color.kt 기반</p>
+  </div>
+  <button class="theme-toggle-btn">🌙 Dark Mode</button>
+</div>
+<span class="source-path">core/designsystem/src/main/kotlin/.../theme/Color.kt</span>
+
+<!-- Primary -->
+<h2>Primary</h2>
+<div class="color-grid">
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-primary)"></div>
+    <div class="color-info">
+      <div class="color-name">Primary</div>
+      <div class="color-var">--md-primary</div>
+      <div class="color-hex">Light #F5332C / Dark #F5332C</div>
+      <div class="color-compose">primaryLight / primaryDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-on-primary)"></div>
+    <div class="color-info">
+      <div class="color-name">On Primary</div>
+      <div class="color-var">--md-on-primary</div>
+      <div class="color-hex">Light #FFFFFF / Dark #FFFFFF</div>
+      <div class="color-compose">onPrimaryLight / onPrimaryDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-primary-container)"></div>
+    <div class="color-info">
+      <div class="color-name">Primary Container</div>
+      <div class="color-var">--md-primary-container</div>
+      <div class="color-hex">Light #FFDAD6 / Dark #8B1E1A</div>
+      <div class="color-compose">primaryContainerLight / primaryContainerDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-on-primary-container)"></div>
+    <div class="color-info">
+      <div class="color-name">On Primary Container</div>
+      <div class="color-var">--md-on-primary-container</div>
+      <div class="color-hex">Light #410002 / Dark #FFDAD6</div>
+      <div class="color-compose">onPrimaryContainerLight / onPrimaryContainerDark</div>
+    </div>
+  </div>
+</div>
+
+<!-- Secondary -->
+<h2>Secondary</h2>
+<div class="color-grid">
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-secondary)"></div>
+    <div class="color-info">
+      <div class="color-name">Secondary</div>
+      <div class="color-var">--md-secondary</div>
+      <div class="color-hex">Light #D63C2F / Dark #FF5449</div>
+      <div class="color-compose">secondaryLight / secondaryDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-on-secondary)"></div>
+    <div class="color-info">
+      <div class="color-name">On Secondary</div>
+      <div class="color-var">--md-on-secondary</div>
+      <div class="color-hex">Light #FFFFFF / Dark #000000</div>
+      <div class="color-compose">onSecondaryLight / onSecondaryDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-secondary-container)"></div>
+    <div class="color-info">
+      <div class="color-name">Secondary Container</div>
+      <div class="color-var">--md-secondary-container</div>
+      <div class="color-hex">Light #FFE0DE / Dark #9C2B23</div>
+      <div class="color-compose">secondaryContainerLight / secondaryContainerDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-on-secondary-container)"></div>
+    <div class="color-info">
+      <div class="color-name">On Secondary Container</div>
+      <div class="color-var">--md-on-secondary-container</div>
+      <div class="color-hex">Light #370B09 / Dark #FFE0DE</div>
+      <div class="color-compose">onSecondaryContainerLight / onSecondaryContainerDark</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tertiary -->
+<h2>Tertiary</h2>
+<div class="color-grid">
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-tertiary)"></div>
+    <div class="color-info">
+      <div class="color-name">Tertiary</div>
+      <div class="color-var">--md-tertiary</div>
+      <div class="color-hex">Light #E65100 / Dark #FF7043</div>
+      <div class="color-compose">tertiaryLight / tertiaryDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-on-tertiary)"></div>
+    <div class="color-info">
+      <div class="color-name">On Tertiary</div>
+      <div class="color-var">--md-on-tertiary</div>
+      <div class="color-hex">Light #FFFFFF / Dark #2D0900</div>
+      <div class="color-compose">onTertiaryLight / onTertiaryDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-tertiary-container)"></div>
+    <div class="color-info">
+      <div class="color-name">Tertiary Container</div>
+      <div class="color-var">--md-tertiary-container</div>
+      <div class="color-hex">Light #FFDBCC / Dark #5C1A00</div>
+      <div class="color-compose">tertiaryContainerLight / tertiaryContainerDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-on-tertiary-container)"></div>
+    <div class="color-info">
+      <div class="color-name">On Tertiary Container</div>
+      <div class="color-var">--md-on-tertiary-container</div>
+      <div class="color-hex">Light #2D0900 / Dark #FFDBCC</div>
+      <div class="color-compose">onTertiaryContainerLight / onTertiaryContainerDark</div>
+    </div>
+  </div>
+</div>
+
+<!-- Error -->
+<h2>Error</h2>
+<div class="color-grid">
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-error)"></div>
+    <div class="color-info">
+      <div class="color-name">Error</div>
+      <div class="color-var">--md-error</div>
+      <div class="color-hex">Light #BA1A1A / Dark #FF6B6B</div>
+      <div class="color-compose">errorLight / errorDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-on-error)"></div>
+    <div class="color-info">
+      <div class="color-name">On Error</div>
+      <div class="color-var">--md-on-error</div>
+      <div class="color-hex">Light #FFFFFF / Dark #370001</div>
+      <div class="color-compose">onErrorLight / onErrorDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-error-container)"></div>
+    <div class="color-info">
+      <div class="color-name">Error Container</div>
+      <div class="color-var">--md-error-container</div>
+      <div class="color-hex">Light #FFDAD6 / Dark #5F1213</div>
+      <div class="color-compose">errorContainerLight / errorContainerDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-on-error-container)"></div>
+    <div class="color-info">
+      <div class="color-name">On Error Container</div>
+      <div class="color-var">--md-on-error-container</div>
+      <div class="color-hex">Light #410002 / Dark #FFDAD6</div>
+      <div class="color-compose">onErrorContainerLight / onErrorContainerDark</div>
+    </div>
+  </div>
+</div>
+
+<!-- Neutral -->
+<h2>Neutral</h2>
+<div class="color-grid">
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-background)"></div>
+    <div class="color-info">
+      <div class="color-name">Background</div>
+      <div class="color-var">--md-background</div>
+      <div class="color-hex">Light #FFFBFF / Dark #1C1B1B</div>
+      <div class="color-compose">backgroundLight / backgroundDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-on-background)"></div>
+    <div class="color-info">
+      <div class="color-name">On Background</div>
+      <div class="color-var">--md-on-background</div>
+      <div class="color-hex">Light #201A1A / Dark #ECE0DF</div>
+      <div class="color-compose">onBackgroundLight / onBackgroundDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-surface)"></div>
+    <div class="color-info">
+      <div class="color-name">Surface</div>
+      <div class="color-var">--md-surface</div>
+      <div class="color-hex">Light #FFFBFF / Dark #1C1B1B</div>
+      <div class="color-compose">surfaceLight / surfaceDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-on-surface)"></div>
+    <div class="color-info">
+      <div class="color-name">On Surface</div>
+      <div class="color-var">--md-on-surface</div>
+      <div class="color-hex">Light #201A1A / Dark #ECE0DF</div>
+      <div class="color-compose">onSurfaceLight / onSurfaceDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-surface-variant)"></div>
+    <div class="color-info">
+      <div class="color-name">Surface Variant</div>
+      <div class="color-var">--md-surface-variant</div>
+      <div class="color-hex">Light #F5DDDA / Dark #534341</div>
+      <div class="color-compose">surfaceVariantLight / surfaceVariantDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-on-surface-variant)"></div>
+    <div class="color-info">
+      <div class="color-name">On Surface Variant</div>
+      <div class="color-var">--md-on-surface-variant</div>
+      <div class="color-hex">Light #534341 / Dark #D8C2BE</div>
+      <div class="color-compose">onSurfaceVariantLight / onSurfaceVariantDark</div>
+    </div>
+  </div>
+</div>
+
+<!-- Outline -->
+<h2>Outline</h2>
+<div class="color-grid">
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-outline)"></div>
+    <div class="color-info">
+      <div class="color-name">Outline</div>
+      <div class="color-var">--md-outline</div>
+      <div class="color-hex">Light #857370 / Dark #9F8C89</div>
+      <div class="color-compose">outlineLight / outlineDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-outline-variant)"></div>
+    <div class="color-info">
+      <div class="color-name">Outline Variant</div>
+      <div class="color-var">--md-outline-variant</div>
+      <div class="color-hex">Light #D8C2BE / Dark #534341</div>
+      <div class="color-compose">outlineVariantLight / outlineVariantDark</div>
+    </div>
+  </div>
+</div>
+
+<!-- Inverse -->
+<h2>Inverse</h2>
+<div class="color-grid">
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-inverse-surface)"></div>
+    <div class="color-info">
+      <div class="color-name">Inverse Surface</div>
+      <div class="color-var">--md-inverse-surface</div>
+      <div class="color-hex">Light #362F2F / Dark #ECE0DF</div>
+      <div class="color-compose">inverseSurfaceLight / inverseSurfaceDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-inverse-on-surface)"></div>
+    <div class="color-info">
+      <div class="color-name">Inverse On Surface</div>
+      <div class="color-var">--md-inverse-on-surface</div>
+      <div class="color-hex">Light #FBEEEE / Dark #362F2F</div>
+      <div class="color-compose">inverseOnSurfaceLight / inverseOnSurfaceDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-inverse-primary)"></div>
+    <div class="color-info">
+      <div class="color-name">Inverse Primary</div>
+      <div class="color-var">--md-inverse-primary</div>
+      <div class="color-hex">Light #FFB3A6 / Dark #FFB3A6</div>
+      <div class="color-compose">inversePrimaryLight / inversePrimaryDark</div>
+    </div>
+  </div>
+</div>
+
+<!-- Surface Containers -->
+<h2>Surface Containers</h2>
+<div class="color-grid">
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-surface-dim)"></div>
+    <div class="color-info">
+      <div class="color-name">Surface Dim</div>
+      <div class="color-var">--md-surface-dim</div>
+      <div class="color-hex">Light #E8D6D5 / Dark #1C1B1B</div>
+      <div class="color-compose">surfaceDimLight / surfaceDimDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-surface-bright)"></div>
+    <div class="color-info">
+      <div class="color-name">Surface Bright</div>
+      <div class="color-var">--md-surface-bright</div>
+      <div class="color-hex">Light #FFFBFF / Dark #433B3A</div>
+      <div class="color-compose">surfaceBrightLight / surfaceBrightDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-surface-container-lowest)"></div>
+    <div class="color-info">
+      <div class="color-name">Surface Container Lowest</div>
+      <div class="color-var">--md-surface-container-lowest</div>
+      <div class="color-hex">Light #FFFFFF / Dark #171515</div>
+      <div class="color-compose">surfaceContainerLowestLight / surfaceContainerLowestDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-surface-container-low)"></div>
+    <div class="color-info">
+      <div class="color-name">Surface Container Low</div>
+      <div class="color-var">--md-surface-container-low</div>
+      <div class="color-hex">Light #FFF0EF / Dark #252323</div>
+      <div class="color-compose">surfaceContainerLowLight / surfaceContainerLowDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-surface-container)"></div>
+    <div class="color-info">
+      <div class="color-name">Surface Container</div>
+      <div class="color-var">--md-surface-container</div>
+      <div class="color-hex">Light #F9EAEA / Dark #292727</div>
+      <div class="color-compose">surfaceContainerLight / surfaceContainerDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-surface-container-high)"></div>
+    <div class="color-info">
+      <div class="color-name">Surface Container High</div>
+      <div class="color-var">--md-surface-container-high</div>
+      <div class="color-hex">Light #F3E4E4 / Dark #343131</div>
+      <div class="color-compose">surfaceContainerHighLight / surfaceContainerHighDark</div>
+    </div>
+  </div>
+  <div class="color-card" data-inspect="Color Token" data-w="160dp" data-h="auto" data-corner="12dp">
+    <div class="color-swatch-large" style="background: var(--md-surface-container-highest)"></div>
+    <div class="color-info">
+      <div class="color-name">Surface Container Highest</div>
+      <div class="color-var">--md-surface-container-highest</div>
+      <div class="color-hex">Light #EDDEDE / Dark #3F3C3C</div>
+      <div class="color-compose">surfaceContainerHighestLight / surfaceContainerHighestDark</div>
+    </div>
+  </div>
+</div>
+</main>

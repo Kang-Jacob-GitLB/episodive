@@ -1,0 +1,439 @@
+<main>
+  <style>
+    .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin: 16px 0; }
+    .icon-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 8px; border-radius: 12px; background: var(--md-surface-container); border: 1px solid var(--md-outline-variant); transition: all 0.15s; cursor: default; }
+    .icon-card:hover { background: var(--md-surface-container-high); border-color: var(--md-primary); }
+    .icon-preview { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--md-on-surface); }
+    .icon-preview svg { width: 24px; height: 24px; stroke: var(--md-on-surface); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .icon-preview svg.filled { fill: var(--md-on-surface); stroke: none; }
+    .icon-preview svg.filled-stroke { fill: var(--md-on-surface); }
+    .icon-name { font-size: 12px; font-weight: 600; color: var(--md-on-surface); text-align: center; line-height: 1.3; }
+    .icon-tabler { font-size: 10px; font-family: 'Roboto Mono', monospace; color: var(--md-on-surface-variant); text-align: center; word-break: break-all; line-height: 1.3; }
+    .icon-section { margin-top: 32px; }
+    .icon-section h3 { font-size: 16px; font-weight: 600; color: var(--md-on-surface); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--md-outline-variant); }
+    .icon-usage-note { font-size: 13px; color: var(--md-on-surface-variant); margin: 8px 0 16px; line-height: 1.5; }
+  </style>
+
+  <div class="content-header">
+    <div>
+      <h1>Icons</h1>
+      <p class="page-subtitle">Tabler Icons 기반 아이콘 시스템</p>
+    </div>
+    <button class="theme-toggle-btn">🌙 Dark Mode</button>
+  </div>
+  <span class="source-path">core/designsystem/src/main/kotlin/.../icon/EpisodiveIcons.kt</span>
+
+  <p>Episodive는 <a href="https://tabler.io/icons" target="_blank" style="color: var(--md-primary);">Tabler Icons</a> 라이브러리를 사용합니다. 모든 아이콘은 <code>EpisodiveIcons</code> object에서 중앙 관리되며, 각 아이콘은 Tabler 아이콘에 매핑됩니다. 아이콘은 24dp 크기를 기본으로 사용하며 stroke width 2를 적용합니다.</p>
+
+  <!-- Navigation Icons -->
+  <div class="icon-section">
+    <h3>Navigation</h3>
+    <p class="icon-usage-note">앱 내 내비게이션과 방향 표시에 사용되는 아이콘입니다.</p>
+    <div class="icon-grid">
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        </div>
+        <div class="icon-name">ArrowBack</div>
+        <div class="icon-tabler">TablerArrowLeft</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="icon-name">CaretDown</div>
+        <div class="icon-tabler">TablerChevronDown</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+        <div class="icon-name">CaretRight</div>
+        <div class="icon-tabler">TablerChevronRight</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        </div>
+        <div class="icon-name">TransitionTop</div>
+        <div class="icon-tabler">TablerTransitionTop</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M5 9l4-4 4 4"/><path d="M15 15l4 4 4-4" transform="translate(-6,0)"/><path d="M9 5v6"/><path d="M15 13v6"/></svg>
+        </div>
+        <div class="icon-name">Expand</div>
+        <div class="icon-tabler">TablerArrowsDiagonal</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M5 9l4 4-4 4"/><path d="M15 5l4 4-4 4" transform="translate(0,6)"/><path d="M9 13v-2"/><path d="M15 13v-2"/></svg>
+        </div>
+        <div class="icon-name">Collapse</div>
+        <div class="icon-tabler">TablerArrowsDiagonalMinimize2</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Icons -->
+  <div class="icon-section">
+    <h3>Bottom Navigation</h3>
+    <p class="icon-usage-note">하단 내비게이션 바에서 사용되는 아이콘입니다. 각각 일반(outline)과 선택(filled) 상태가 있습니다.</p>
+    <div class="icon-grid">
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M12 3C7.5 3 4 7 4 12s3.5 9 8 9 8-5 8-9-3.5-9-8-9z"/></svg>
+        </div>
+        <div class="icon-name">Home</div>
+        <div class="icon-tabler">TablerBlob</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24" class="filled-stroke"><path d="M12 3C7.5 3 4 7 4 12s3.5 9 8 9 8-5 8-9-3.5-9-8-9z" fill="var(--md-on-surface)" opacity="0.9"/></svg>
+        </div>
+        <div class="icon-name">HomeFilled</div>
+        <div class="icon-tabler">TablerBlobFilled</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="7"/><path d="M21 21l-6-6"/></svg>
+        </div>
+        <div class="icon-name">Search</div>
+        <div class="icon-tabler">TablerZoom</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="7" fill="var(--md-on-surface)" opacity="0.2"/><circle cx="10" cy="10" r="7"/><path d="M21 21l-6-6"/></svg>
+        </div>
+        <div class="icon-name">SearchFilled</div>
+        <div class="icon-tabler">TablerZoomFilled</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M12 3c-3 0-6 3-6 8v6h12v-6c0-5-3-8-6-8z"/><path d="M9 21c0 1.5 1.5 3 3 3s3-1.5 3-3"/></svg>
+        </div>
+        <div class="icon-name">Library</div>
+        <div class="icon-tabler">TablerFountain</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M12 3c-3 0-6 3-6 8v6h12v-6c0-5-3-8-6-8z" fill="var(--md-on-surface)" opacity="0.9"/><path d="M9 21c0 1.5 1.5 3 3 3s3-1.5 3-3" stroke="var(--md-on-surface)" stroke-width="2" fill="none"/></svg>
+        </div>
+        <div class="icon-name">LibraryFilled</div>
+        <div class="icon-tabler">TablerFountainFilled</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
+        </div>
+        <div class="icon-name">Clip</div>
+        <div class="icon-tabler">TablerContainer</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" fill="var(--md-on-surface)" opacity="0.9"/></svg>
+        </div>
+        <div class="icon-name">ClipFilled</div>
+        <div class="icon-tabler">TablerContainerFilled</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Player Icons -->
+  <div class="icon-section">
+    <h3>Player Controls</h3>
+    <p class="icon-usage-note">오디오 플레이어 컨트롤에 사용되는 아이콘입니다.</p>
+    <div class="icon-grid">
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg>
+        </div>
+        <div class="icon-name">Play</div>
+        <div class="icon-tabler">TablerPlayerPlay</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        </div>
+        <div class="icon-name">Pause</div>
+        <div class="icon-tabler">TablerPlayerPause</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M17 4v16l-6-4v4l-6-4V8l6-4v4z"/></svg>
+        </div>
+        <div class="icon-name">Replay15</div>
+        <div class="icon-tabler">TablerRewindBackward15</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M7 4v16l6-4v4l6-4V8l-6-4v4z"/></svg>
+        </div>
+        <div class="icon-name">Forward30</div>
+        <div class="icon-tabler">TablerRewindForward30</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M4 4v16l6-4v4l6-4V8l-6-4v4z"/><line x1="20" y1="4" x2="20" y2="20"/></svg>
+        </div>
+        <div class="icon-name">SkipNext</div>
+        <div class="icon-tabler">TablerPlayerSkipForward</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M20 4v16l-6-4v4l-6-4V8l6-4v4z"/><line x1="4" y1="4" x2="4" y2="20"/></svg>
+        </div>
+        <div class="icon-name">SkipPrevious</div>
+        <div class="icon-tabler">TablerPlayerSkipBack</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M12 6v-3l-6 4 6 4v-3c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6"/></svg>
+        </div>
+        <div class="icon-name">History</div>
+        <div class="icon-tabler">TablerHistory</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M12 6H7a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-5"/><path d="M18 4L12 10"/></svg>
+        </div>
+        <div class="icon-name">PlaylistX</div>
+        <div class="icon-tabler">TablerPlaylistX</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Action Icons -->
+  <div class="icon-section">
+    <h3>Actions</h3>
+    <p class="icon-usage-note">사용자 인터랙션 및 액션에 사용되는 아이콘입니다.</p>
+    <div class="icon-grid">
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <div class="icon-name">Add</div>
+        <div class="icon-tabler">TablerPlus</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+        </div>
+        <div class="icon-name">Check</div>
+        <div class="icon-tabler">TablerCheck</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+        <div class="icon-name">Close</div>
+        <div class="icon-tabler">TablerX</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M19.5 12.572L12 20l-7.5-7.428A5 5 0 1 1 12 6.006a5 5 0 1 1 7.5 6.566"/><path d="M15 10l3 0"/><path d="M16.5 8.5v3"/></svg>
+        </div>
+        <div class="icon-name">Like</div>
+        <div class="icon-tabler">TablerHeartPlus</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24" class="filled"><path d="M19.5 12.572L12 20l-7.5-7.428A5 5 0 1 1 12 6.006a5 5 0 1 1 7.5 6.566"/></svg>
+        </div>
+        <div class="icon-name">LikeFilled</div>
+        <div class="icon-tabler">TablerHeartFilled</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M20 11l2 0"/><path d="M21 10v2"/></svg>
+        </div>
+        <div class="icon-name">PersonAdd</div>
+        <div class="icon-tabler">TablerUsersPlus</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M19 11l3 0"/></svg>
+        </div>
+        <div class="icon-name">PersonRemove</div>
+        <div class="icon-tabler">TablerUsersMinus</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="17" r="1"/></svg>
+        </div>
+        <div class="icon-name">MoreVert</div>
+        <div class="icon-tabler">TablerDotsVertical</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Content Icons -->
+  <div class="icon-section">
+    <h3>Content &amp; Info</h3>
+    <p class="icon-usage-note">콘텐츠 표시 및 정보 전달에 사용되는 아이콘입니다.</p>
+    <div class="icon-grid">
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>
+        </div>
+        <div class="icon-name">List</div>
+        <div class="icon-tabler">TablerList</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M4 6h2"/><path d="M10 6h10"/><path d="M4 12h2"/><path d="M10 12h10"/><path d="M4 18h2"/><path d="M10 18h10"/></svg>
+        </div>
+        <div class="icon-name">ListNumbered</div>
+        <div class="icon-tabler">TablerListNumbers</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M4 8h5v8H4z"/><path d="M15 8h5v8h-5z"/><path d="M9 14l6-4"/></svg>
+        </div>
+        <div class="icon-name">Label</div>
+        <div class="icon-tabler">TablerLabel</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="icon-name">Error</div>
+        <div class="icon-tabler">TablerPhotoExclamation</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M12 4a1 1 0 0 1 1 1v4a1 1 0 0 1-2 0V5a1 1 0 0 1 1-1z"/><path d="M12 15a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0v-2a1 1 0 0 1 1-1z"/></svg>
+        </div>
+        <div class="icon-name">LetterI</div>
+        <div class="icon-tabler">TablerLetterISmall</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><path d="M8 4l8 16"/><path d="M16 4l-8 16"/></svg>
+        </div>
+        <div class="icon-name">LetterX</div>
+        <div class="icon-tabler">TablerLetterXSmall</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a14 14 0 0 0 0 18"/><path d="M12 3a14 14 0 0 1 0 18"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+        </div>
+        <div class="icon-name">WorldShare</div>
+        <div class="icon-tabler">TablerWorldShare</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><text x="12" y="16" text-anchor="middle" font-size="12" font-weight="600" fill="var(--md-on-surface)" stroke="none" font-family="serif">C</text></svg>
+        </div>
+        <div class="icon-name">Owner</div>
+        <div class="icon-tabler">TablerCreativeCommonsBy</div>
+      </div>
+
+      <div class="icon-card" data-inspect="Icon" data-w="24dp" data-h="24dp">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="4" y1="11" x2="20" y2="11"/><circle cx="16" cy="16" r="2"/></svg>
+        </div>
+        <div class="icon-name">PublicationDate</div>
+        <div class="icon-tabler">TablerCalendarTime</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Usage Guidelines -->
+  <div class="icon-section">
+    <h3>Usage Guidelines</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin: 16px 0;">
+
+      <div style="padding: 16px; border-radius: 12px; background: var(--md-surface-container-low); border: 1px solid var(--md-outline-variant);">
+        <div style="font-weight: 600; margin-bottom: 8px; color: var(--md-on-surface);">Size</div>
+        <p style="font-size: 13px; color: var(--md-on-surface-variant); margin: 0; line-height: 1.5;">모든 아이콘은 기본 <code>24 x 24dp</code> 크기를 사용합니다. <code>IconButton</code> 내부에서는 <code>40 x 40dp</code> 터치 영역이 보장됩니다.</p>
+      </div>
+
+      <div style="padding: 16px; border-radius: 12px; background: var(--md-surface-container-low); border: 1px solid var(--md-outline-variant);">
+        <div style="font-weight: 600; margin-bottom: 8px; color: var(--md-on-surface);">Color</div>
+        <p style="font-size: 13px; color: var(--md-on-surface-variant); margin: 0; line-height: 1.5;"><code>tint</code> 파라미터로 색상을 지정합니다. 기본값은 <code>LocalContentColor</code>를 따르며, Primary 또는 OnSurface 색상을 주로 사용합니다.</p>
+      </div>
+
+      <div style="padding: 16px; border-radius: 12px; background: var(--md-surface-container-low); border: 1px solid var(--md-outline-variant);">
+        <div style="font-weight: 600; margin-bottom: 8px; color: var(--md-on-surface);">Filled vs Outline</div>
+        <p style="font-size: 13px; color: var(--md-on-surface-variant); margin: 0; line-height: 1.5;">Bottom Navigation에서는 선택 상태에 Filled 아이콘을, 비선택 상태에 Outline 아이콘을 사용합니다.</p>
+      </div>
+
+      <div style="padding: 16px; border-radius: 12px; background: var(--md-surface-container-low); border: 1px solid var(--md-outline-variant);">
+        <div style="font-weight: 600; margin-bottom: 8px; color: var(--md-on-surface);">Accessibility</div>
+        <p style="font-size: 13px; color: var(--md-on-surface-variant); margin: 0; line-height: 1.5;">모든 아이콘에는 <code>contentDescription</code>을 지정하여 스크린리더 접근성을 보장합니다.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Code Example -->
+  <div class="icon-section">
+    <h3>Code Example</h3>
+    <pre style="background: var(--md-surface-container); border: 1px solid var(--md-outline-variant); border-radius: 12px; padding: 16px; font-size: 13px; overflow-x: auto; color: var(--md-on-surface);"><code>// Icon usage
+Icon(
+    imageVector = EpisodiveIcons.Play,
+    contentDescription = "Play",
+    tint = MaterialTheme.colorScheme.primary
+)
+
+// Inside IconButton
+IconButton(onClick = { /* ... */ }) {
+    Icon(
+        imageVector = EpisodiveIcons.Like,
+        contentDescription = "Like"
+    )
+}
+
+// Bottom Navigation selected/unselected
+val icon = if (selected) {
+    EpisodiveIcons.HomeFilled
+} else {
+    EpisodiveIcons.Home
+}</code></pre>
+  </div>
+
+</main>

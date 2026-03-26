@@ -1,0 +1,130 @@
+<main>
+<div class="content-header">
+  <div>
+    <h1>Toggle &amp; Handle</h1>
+    <p class="page-subtitle">View toggle button and drag handle indicator</p>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">&#127769; Dark Mode</button>
+</div>
+<span class="source-path">core/designsystem/src/main/kotlin/.../component/ViewToggle.kt, DragHandle.kt</span>
+
+<!-- EpisodiveViewToggleButton -->
+<h2>EpisodiveViewToggleButton</h2>
+<p>A toggle button that switches between expanded and collapsed views. Displays different text labels and an icon circle that rotates to indicate the current state. Content padding is 16dp start, 8dp top/bottom, 12dp end. The trailing icon sits inside a 38dp circle with <code>surfaceContainerHigh</code> background.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" data-inspect="EpisodiveViewToggleButton — Expanded" data-w="auto" data-h="auto" data-padding="8dp 12dp 8dp 16dp" data-icon-circle="38dp" data-icon-bg="surfaceContainerHigh" data-icon-shape="circle" data-color="onSurface" data-font="labelLarge 14sp/500">
+    <div class="eds-view-toggle">
+      <span style="font-size: 14px; font-weight: 500;">Show Less</span>
+      <div class="eds-view-toggle-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+      </div>
+    </div>
+    <div class="showcase-item-label">Expanded</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveViewToggleButton — Collapsed" data-w="auto" data-h="auto" data-padding="8dp 12dp 8dp 16dp" data-icon-circle="38dp" data-icon-bg="surfaceContainerHigh" data-icon-shape="circle">
+    <div class="eds-view-toggle">
+      <span style="font-size: 14px; font-weight: 500;">Show More</span>
+      <div class="eds-view-toggle-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </div>
+    <div class="showcase-item-label">Collapsed</div>
+  </div>
+  <div class="showcase-item" data-inspect="EpisodiveViewToggleButton — Disabled" data-opacity="0.38">
+    <div class="eds-view-toggle" style="opacity: 0.38; pointer-events: none;">
+      <span style="font-size: 14px; font-weight: 500;">Show More</span>
+      <div class="eds-view-toggle-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </div>
+    <div class="showcase-item-label">Disabled</div>
+  </div>
+</div>
+
+<h3>Properties</h3>
+<table class="props-table">
+  <thead>
+    <tr><th>Param</th><th>Type</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>expanded</code></td><td><code>Boolean</code></td><td>required</td></tr>
+    <tr><td><code>onExpandedChange</code></td><td><code>(Boolean) -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>enabled</code></td><td><code>Boolean</code></td><td><code>true</code></td></tr>
+    <tr><td><code>contentPadding</code></td><td><code>PaddingValues</code></td><td><code>PaddingValues(start=16.dp, top=8.dp, bottom=8.dp, end=12.dp)</code></td></tr>
+    <tr><td><code>text</code></td><td><code>@Composable () -&gt; Unit</code></td><td>required</td></tr>
+    <tr><td><code>compactText</code></td><td><code>@Composable () -&gt; Unit</code></td><td><code>null</code></td></tr>
+    <tr><td><code>expandedText</code></td><td><code>@Composable () -&gt; Unit</code></td><td><code>null</code></td></tr>
+  </tbody>
+</table>
+
+<h3>Compose Example</h3>
+<pre class="code-block">var expanded by remember { mutableStateOf(false) }
+
+EpisodiveViewToggleButton(
+    expanded = expanded,
+    onExpandedChange = { expanded = it },
+    enabled = true,
+    text = { Text("Episodes") },
+    compactText = { Text("Show More") },
+    expandedText = { Text("Show Less") }
+)</pre>
+
+<!-- EpisodiveDragHandle -->
+<h2>EpisodiveDragHandle</h2>
+<p>A small horizontal bar indicator used at the top of bottom sheets to signal drag-to-dismiss affordance. Centered horizontally with 16dp vertical padding.</p>
+
+<h3>Showcase</h3>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 280px; display: flex; flex-direction: column; align-items: center;" data-inspect="EpisodiveDragHandle" data-w="40dp" data-h="4dp" data-corner="small (4dp)" data-color="onSurfaceVariant" data-vertical-padding="16dp" data-alignment="center">
+    <div style="width: 100%; background: var(--md-surface-container-high); border-radius: 16px 16px 0 0; padding: 0; display: flex; flex-direction: column; align-items: center;">
+      <div class="eds-drag-handle"></div>
+      <div style="padding: 16px 24px 24px; color: var(--md-on-surface-variant); font-size: 13px; text-align: center; width: 100%; border-top: 1px solid var(--md-outline-variant);">
+        Bottom sheet content area
+      </div>
+    </div>
+    <div class="showcase-item-label">Drag handle on bottom sheet</div>
+  </div>
+  <div class="showcase-item" style="min-width: 200px; display: flex; flex-direction: column; align-items: center;" data-inspect="EpisodiveDragHandle — Isolated" data-w="40dp" data-h="4dp" data-corner="2dp" data-bg="onSurfaceVariant">
+    <div style="padding: 16px 0; display: flex; justify-content: center;">
+      <div class="eds-drag-handle"></div>
+    </div>
+    <div class="showcase-item-label">Isolated indicator</div>
+  </div>
+</div>
+
+<h3>Compose Example</h3>
+<pre class="code-block">EpisodiveDragHandle(
+    modifier = Modifier.align(Alignment.CenterHorizontally)
+)</pre>
+
+<!-- Design Specs -->
+<h2>Design Specs</h2>
+<div class="showcase">
+  <div class="showcase-item" style="flex: 1; min-width: 300px;">
+    <h3 style="margin-top: 0;">EpisodiveViewToggleButton</h3>
+    <p>
+      <span class="spec-badge">padding: 16dp start, 8dp vert, 12dp end</span>
+      <span class="spec-badge">icon circle: 38dp</span>
+      <span class="spec-badge">icon bg: surfaceContainerHigh</span>
+      <span class="spec-badge">icon shape: CircleShape</span>
+      <span class="spec-badge">font: labelLarge (14sp/500)</span>
+      <span class="spec-badge">color: onSurface</span>
+      <span class="spec-badge">gap: 8dp</span>
+      <span class="spec-badge">disabled opacity: 0.38</span>
+    </p>
+  </div>
+  <div class="showcase-item" style="flex: 1; min-width: 300px;">
+    <h3 style="margin-top: 0;">EpisodiveDragHandle</h3>
+    <p>
+      <span class="spec-badge">width: 40dp</span>
+      <span class="spec-badge">height: 4dp</span>
+      <span class="spec-badge">corner: small (4dp)</span>
+      <span class="spec-badge">color: onSurfaceVariant</span>
+      <span class="spec-badge">vertical padding: 16dp</span>
+      <span class="spec-badge">alignment: CenterHorizontally</span>
+    </p>
+  </div>
+</div>
+</main>
