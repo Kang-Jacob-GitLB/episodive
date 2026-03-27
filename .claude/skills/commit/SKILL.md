@@ -2,7 +2,7 @@
 name: commit
 description: 변경 사항을 staging하고 커밋한다. 사용자가 "/commit"을 입력하거나 "커밋해줘", "변경사항 커밋", "commit the changes" 등을 요청할 때 사용한다.
 disable-model-invocation: true
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git checkout:*), Bash(git add:*)
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git checkout:*), Bash(git add:*), Bash(git commit:*)
 ---
 
 ## 현재 상태
@@ -39,12 +39,12 @@ allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git b
 - `chore/` — 빌드 설정, 의존성, 기타 잡무
 - `ci/` — CI/CD 관련
 
-**브랜치 이름 형식:** `{접두사}/{변경내용을-하이픈으로-이은-한글슬러그}`
+**브랜치 이름 형식:** `{접두사}/{변경내용을-하이픈으로-이은-영문슬러그}`
 
 예시:
-- `feat/라스트-플레이-기능-추가`
-- `fix/재생-목록-크래시-수정`
-- `refactor/플레이어-모듈-분리`
+- `feat/add-last-play`
+- `fix/playback-list-crash`
+- `refactor/split-player-module`
 
 브랜치 생성 명령: `git checkout -b {브랜치명}`
 
