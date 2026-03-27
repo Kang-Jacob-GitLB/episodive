@@ -8,6 +8,7 @@ allowed-tools: Bash(git checkout:*), Bash(git pull:*), Bash(git fetch:*), Bash(g
 ## 현재 상태
 
 - 현재 브랜치: !`git branch --show-current`
+- 워킹 트리 상태: !`git status --short`
 - 로컬 브랜치 목록: !`git branch`
 - Remote에서 삭제된 브랜치: !`git fetch --prune --dry-run 2>&1`
 
@@ -15,7 +16,15 @@ allowed-tools: Bash(git checkout:*), Bash(git pull:*), Bash(git fetch:*), Bash(g
 
 아래 절차를 순서대로 수행한다.
 
-### 1. main으로 이동
+### 1. 사전 확인
+
+`git status --short` 결과가 비어 있지 않으면 (미커밋 변경 또는 untracked 파일 존재) **중단**하고 사용자에게 아래 중 하나를 선택하도록 안내한다:
+
+- **커밋**: 변경 사항을 커밋한 뒤 다시 실행
+- **스태시**: `git stash`로 임시 저장한 뒤 다시 실행
+- **취소**: cleanup을 중단하고 현재 작업 유지
+
+### 2. main으로 이동
 
 ```bash
 git checkout main
