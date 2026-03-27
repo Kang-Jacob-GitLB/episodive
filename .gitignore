@@ -16,3 +16,4 @@
 local.properties
 .kotlin
 *.hprof
+.claude/settings.local.json

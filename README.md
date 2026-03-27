@@ -18,7 +18,8 @@ Podcast Index Api 활용한 팟캐스트 앱
 - **라이브러리**: 구독, 좋아요, 재생 기록 등 사용자 데이터 관리
 - **클립**: 사운드바이트 및 짧은 구간 미리듣기 기능
 - **팟캐스트 상세**: 팟캐스트 정보 및 에피소드 목록 제공
-- **오디오 플레이어**: ExoPlayer 기반의 백그라운드 재생 지원
+- **오디오 플레이어**: ExoPlayer 기반의 백그라운드 재생 및 미디어 알림 지원
+- **Last Play**: 마지막 재생 위치 기억 및 이어듣기
 
 # 아키텍처
 
@@ -86,35 +87,46 @@ Data Sources: Network (:core:network) | Database (:core:database) | DataStore (:
 
 - **Minimum SDK**: 28 (Android 9.0 Pie)
 - **Target SDK**: 36 (Android 16)
-- **Language**: Kotlin
-- **UI Framework**: Jetpack Compose
+- **Language**: Kotlin 2.2.21
+- **UI Framework**: Jetpack Compose (BOM 2025.12.00)
+- **Build**: Gradle AGP 8.13.1, KSP 2.3.1
 
 ## 핵심 라이브러리
 
-- **Dependency Injection**: Hilt
-- **Networking**: Retrofit + OkHttp
-- **Local Database**: Room
-- **Preferences**: DataStore
-- **Audio Playback**: ExoPlayer (Media3)
-- **Asynchronous**: Kotlin Coroutines + Flow
-- **Image Loading**: Coil
-- **Serialization**: Kotlinx Serialization
+| 카테고리 | 라이브러리 | 버전 |
+|:--------|:---------|:----|
+| DI | Hilt | 2.57.2 |
+| Database | Room | 2.8.4 |
+| Paging | Paging 3 | 3.3.6 |
+| Network | Retrofit | 3.0.0 |
+| Network | OkHttp | 5.3.2 |
+| Network | Gson | 2.13.2 |
+| Audio | Media3 (ExoPlayer) | 1.8.0 |
+| Async | Kotlin Coroutines | 1.10.2 |
+| Image | Coil | 2.7.0 |
+| Preferences | DataStore | 1.2.0 |
+| UI | Material3 | 1.5.0-alpha10 |
 
 ## 테스트
 
-- **Unit Testing**: JUnit4, MockK, Turbine
-- **Database Testing**: Robolectric
-- **Test Coverage**: Jacoco
+| 라이브러리 | 버전 |
+|:---------|:----|
+| JUnit4 | 4.13.2 |
+| MockK | 1.14.6 |
+| Turbine | 1.2.1 |
+| Robolectric | 4.16 |
+| JaCoCo | 0.8.12 |
 
 ## 빌드 시스템
 
 - **Gradle Version Catalog**: 의존성 중앙 관리
 - **Convention Plugins**: 모듈별 일관된 빌드 설정
-  - `episodive.android.application` - Application 모듈
+  - `episodive.android.application` / `.application.compose` - Application 모듈
   - `episodive.android.feature` - Feature 모듈 (Compose + Hilt + Test + Jacoco)
-  - `episodive.android.library` - 표준 라이브러리 모듈
+  - `episodive.android.library` / `.library.compose` - 라이브러리 모듈
   - `episodive.android.room` - Room 데이터베이스 설정
   - `episodive.hilt` - Hilt DI 설정
+  - `episodive.jvm.library` - 순수 JVM 라이브러리 모듈
 
 # API 설정
 
@@ -150,15 +162,22 @@ Data Sources: Network (:core:network) | Database (:core:database) | DataStore (:
 
 # 유닛 테스트 실행
 ./gradlew test
+./gradlew testDebugUnitTest
+
+# 기기 연결 테스트
+./gradlew connectedAndroidTest
 
 # 특정 모듈 테스트
-./gradlew :feature:search:test
+./gradlew :core:database:test
+./gradlew :core:data:test
+./gradlew :feature:home:test
+
+# 코드 품질
+./gradlew lint
+./gradlew lintFix
 
 # 코드 커버리지 리포트 생성
 ./gradlew createDebugCoverageReport
-
-# Lint 검사
-./gradlew lint
 ```
 
 # 주요 구현 패턴
@@ -168,26 +187,23 @@ Data Sources: Network (:core:network) | Database (:core:database) | DataStore (:
 프레젠테이션 레이어는 MVI 패턴을 따릅니다:
 
 ```kotlin
-// State - UI 상태를 표현하는 불변 데이터
-data class SearchUiState(
-  val query: String = "",
-  val podcasts: List<Podcast> = emptyList(),
-  val isLoading: Boolean = false
-)
+// State - sealed interface 패턴
+sealed interface SearchState {
+    data object Loading : SearchState
+    data class Success(val podcasts: PagingData<Podcast>) : SearchState
+    data class Error(val message: String) : SearchState
+}
 
 // Action - 사용자 의도를 표현
 sealed interface SearchAction {
-  data class Search(val query: String) : SearchAction
-  data class SelectPodcast(val id: Long) : SearchAction
+    data class QueryChanged(val query: String) : SearchAction
+    data object ClickSearch : SearchAction
+    data class ClickPodcast(val podcastId: Long) : SearchAction
 }
 
-// ViewModel - Action 처리 및 State 업데이트
-class SearchViewModel : ViewModel() {
-  private val _uiState = MutableStateFlow(SearchUiState())
-  val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
-
-  fun onAction(action: SearchAction) { /* ... */
-  }
+// Effect - 일회성 사이드 이펙트 (네비게이션 등)
+sealed interface SearchEffect {
+    data class NavigateToPodcast(val podcastId: Long) : SearchEffect
 }
 ```
 

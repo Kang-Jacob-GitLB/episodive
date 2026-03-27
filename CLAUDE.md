@@ -1,824 +1,232 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+이 파일은 Claude Code(claude.ai/code)가 이 저장소에서 작업할 때 참고하는 가이드입니다.
 
-## Project Overview
+## 프로젝트 개요
 
-Episodive is an Android podcast application built with Kotlin and Jetpack Compose that uses the Podcast Index API. The app follows Clean Architecture with MVI (Model-View-Intent) pattern and implements a multi-module structure (20 modules total) using Gradle convention plugins. The architecture emphasizes offline-first design with Room database as the single source of truth.
+Episodive는 Kotlin과 Jetpack Compose로 만든 Android 팟캐스트 앱으로, Podcast Index API를 사용합니다. Clean Architecture + MVI 패턴, Gradle 컨벤션 플러그인 기반 멀티모듈 구조(20개 모듈), Room DB 중심의 Offline-First 설계를 따릅니다.
 
-### Technology Stack
+### 기술 스택
 
-- **Build**: Gradle 9.2.1, AGP 8.13.1, Kotlin 2.2.21
+- **Build**: Gradle 9.2.1, AGP 8.13.1, Kotlin 2.2.21, KSP 2.3.1
 - **Target**: Min SDK 28, Target/Compile SDK 36, Java 11
 - **UI**: Jetpack Compose (BOM 2025.12.00), Material3 1.5.0-alpha10
 - **DI**: Hilt 2.57.2
-- **Database**: Room 2.8.4 with Paging 3.3.6, Auto-migrations
-- **Network**: Retrofit 3.0.0, OkHttp 5.3.2, Gson
+- **Database**: Room 2.8.4, Paging 3.3.6, Auto-migrations (버전 8)
+- **Network**: Retrofit 3.0.0, OkHttp 5.3.2, Gson 2.13.2
 - **Async**: Kotlin Coroutines 1.10.2, Lifecycle 2.10.0
 - **Media**: Media3 1.8.0 (ExoPlayer), MediaNotificationService
 - **Image**: Coil 2.7.0, Palette API
 - **Testing**: JUnit 4.13.2, MockK 1.14.6, Turbine 1.2.1, Robolectric 4.16
 
-## Build Commands
+## 빌드 명령어
 
-### Core Commands
-- `./gradlew build` - Build all modules
-- `./gradlew test` - Run unit tests for all modules
-- `./gradlew check` - Run all verification tasks (tests, lint, etc.)
-- `./gradlew testDebugUnitTest` - Run debug unit tests only
-- `./gradlew connectedAndroidTest` - Run instrumentation tests on connected devices
+```bash
+./gradlew build                          # 전체 빌드
+./gradlew test                           # 유닛 테스트 실행
+./gradlew testDebugUnitTest              # Debug 유닛 테스트만 실행
+./gradlew connectedAndroidTest           # 기기 연결 테스트
+./gradlew :core:database:test            # 특정 모듈 테스트
+./gradlew lint                           # Lint 검사
+./gradlew lintFix                        # Lint 자동 수정
+./gradlew createDebugCoverageReport      # 커버리지 리포트 생성 (Jacoco)
+```
 
-### Module-specific Testing
-- `./gradlew :core:database:test` - Test database module only
-- `./gradlew :core:network:test` - Test network module only
-- `./gradlew :core:data:test` - Test data module only
-- `./gradlew :core:domain:test` - Test domain module only
-- `./gradlew :feature:home:test` - Test home feature module
-- `./gradlew :feature:search:test` - Test search feature module
+## 아키텍처
 
-### Code Quality
-- `./gradlew lint` - Run lint analysis
-- `./gradlew lintFix` - Auto-fix lint issues where possible
+### 모듈 구조 (20개)
 
-### Coverage
-- `./gradlew createDebugCoverageReport` - Generate test coverage reports (uses Jacoco)
-- `./gradlew generateCoverageReport` - Custom Python script for comprehensive coverage report
+#### Core 모듈 (11개)
 
-## Architecture
+| 모듈 | 역할 |
+|:----|:----|
+| `:core:model` | 순수 Kotlin 도메인 모델 (Podcast, Episode, Category, UserData 등) |
+| `:core:domain` | Repository 인터페이스 + 40개 이상의 Use Case |
+| `:core:data` | Repository 구현체, RemoteUpdater 캐싱 패턴 |
+| `:core:network` | Retrofit API 인터페이스 5개, EpisodiveInterceptor (SHA-1 인증) |
+| `:core:database` | Room DB v8, Entity 12개, View 2개, DAO 5개 |
+| `:core:datastore` | DataStore Preferences 기반 사용자 설정 관리 |
+| `:core:player` | ExoPlayer 래퍼, @Player qualifier로 듀얼 플레이어(Main/Clip) |
+| `:core:common` | 공유 유틸리티, EpisodiveDispatchers, EpisodivePlayers qualifier |
+| `:core:designsystem` | 재사용 Compose 컴포넌트 20개 이상, 테마 시스템 |
+| `:core:ui` | 도메인 특화 상위 레벨 UI 컴포넌트 |
+| `:core:testing` | 테스트 데이터 팩토리, MainDispatcherRule, RoomDatabaseRule |
 
-### Module Structure
+#### Feature 모듈 (8개)
 
-The project follows Clean Architecture with 20 modules organized into Core, Feature, and App layers:
+모든 feature 모듈은 `episodive.android.feature` 컨벤션 플러그인을 사용하며, core:common/domain/designsystem/model/ui/testing과 Compose/Paging/Hilt/Navigation이 자동으로 포함됩니다.
 
-#### **Core Modules (11 modules):**
+| 모듈 | 설명 |
+|:----|:----|
+| `:feature:onboarding` | 온보딩 플로우, 카테고리 선택 |
+| `:feature:home` | 홈 피드: 최근/트렌딩/랜덤/라이브 콘텐츠 |
+| `:feature:search` | FTS 지원 검색, 최근 검색 기록 |
+| `:feature:library` | 구독 팟캐스트, 좋아요/재생 기록 에피소드 |
+| `:feature:podcast` | 팟캐스트 상세 정보 및 에피소드 목록 |
+| `:feature:player` | 오디오 플레이어 UI |
+| `:feature:clip` | 사운드바이트 및 클립 탐색 |
+| `:feature:channel` | 채널/카테고리 탐색 |
 
-1. **`:core:model`** (JVM library)
-   - Pure Kotlin domain models (Podcast, Episode, Category, UserData, etc.)
-   - Enums with value properties: Medium, EpisodeType, Category, GroupKey
-   - Dependencies: kotlinx-datetime only (no Android dependencies)
+### 컨벤션 플러그인 (build-logic/convention/)
 
-2. **`:core:domain`** (Android library)
-   - Repository interfaces: PodcastRepository, EpisodeRepository, UserDataRepository, etc.
-   - 43 Use Cases organized by feature:
-     - Channel: GetChannelUseCase, GetChannelPodcastsUseCase
-     - Episode: GetEpisodeUseCase, GetEpisodesUseCase, GetLiveEpisodesUseCase
-     - Podcast: GetPodcastUseCase, GetPodcastsUseCase, GetTrendingPodcastsUseCase
-     - Player: GetNowPlayingUseCase, PlayPodcastUseCase, PausePlaybackUseCase
-     - Search: SearchPodcastsUseCase, GetRecentSearchesUseCase
-     - User: FollowPodcastUseCase, LikeEpisodeUseCase, MarkAsPlayedUseCase
-   - No implementations, only contracts and interfaces
-   - Dependencies: core:common, core:model, Paging, Media3
+| 플러그인 | 역할 |
+|:--------|:----|
+| `episodive.android.application` | Application 모듈 설정 |
+| `episodive.android.application.compose` | App 모듈 Compose 설정 |
+| `episodive.android.library` | 표준 Android 라이브러리 |
+| `episodive.android.library.compose` | 라이브러리 Compose 설정 |
+| `episodive.android.feature` | Feature 템플릿 (library + compose + hilt + test + jacoco) |
+| `episodive.android.room` | Room + KSP + 스키마 디렉토리 설정 |
+| `episodive.android.test` | 테스트 의존성 |
+| `episodive.android.application.jacoco` / `episodive.android.library.jacoco` | 커버리지 설정 |
+| `episodive.hilt` | Hilt DI + KSP |
+| `episodive.jvm.library` | 순수 Kotlin/JVM 라이브러리 |
 
-3. **`:core:data`** (Android library)
-   - Repository implementations coordinating network, database, and datastore
-   - Custom patterns:
-     - **RemoteUpdater**: Abstract class for managing cache refresh logic
-     - **CacheableQuery**: Interface for cache key and TTL management
-     - Custom **PagingSource** implementations for infinite scroll
-   - Offline-first architecture with Room as single source of truth
-   - Dependencies: All other core modules, Hilt, Paging, Coil, Palette
+## 핵심 아키텍처 패턴
 
-4. **`:core:network`** (Android library)
-   - 5 Retrofit API interfaces: CategoryApi, EpisodeApi, PodcastApi, SearchApi, SoundbiteApi
-   - **EpisodiveInterceptor**: Custom interceptor for Podcast Index API authentication (SHA-1)
-   - Remote data sources with interface and implementation pattern
-   - Response wrappers: ResponseListWrapper for consistent API handling
-   - Dependencies: core:common, core:model, Retrofit, OkHttp, Gson
-
-5. **`:core:database`** (Android library)
-   - **Room Database** version 8 with auto-migrations
-   - **12 Entities**:
-     - Main: PodcastEntity, EpisodeEntity, FeedEntity, SoundbiteEntity
-     - User Interaction: FollowedPodcastEntity, LikedEpisodeEntity, PlayedEpisodeEntity
-     - Grouping: PodcastGroupEntity, EpisodeGroupEntity (for cache management)
-     - FTS: PodcastFtsEntity, EpisodeFtsEntity (Full-Text Search)
-     - Search: RecentSearchEntity
-   - **2 Database Views**:
-     - PodcastWithExtrasView: Joins podcasts with followed status
-     - EpisodeWithExtrasView: Joins episodes with liked/played/clip data
-   - **5 DAOs**: PodcastDao, EpisodeDao, FeedDao, SoundbiteDao, RecentSearchDao
-   - Custom **TypeConverters** for enums, Instant, Duration, collections
-   - All entities have caching fields: cachedAt (Instant), grouping keys
-   - Dependencies: core:common, core:model, Room with KSP, Gson
-
-6. **`:core:datastore`** (Android library)
-   - DataStore Preferences for user settings
-   - UserPreferences model: isFirstLaunch, language, categories, playbackSpeed
-   - Dependencies: core:common, core:model, DataStore Preferences
-
-7. **`:core:player`** (Android library)
-   - ExoPlayer wrapper with Flow-based reactive APIs
-   - **Dual player support** using @Player qualifier:
-     - @Player(EpisodivePlayers.Main) - Main episode playback
-     - @Player(EpisodivePlayers.Clip) - Soundbite/clip playback
-   - PlayerDataSource interface exposing:
-     - nowPlaying, progress, isPlaying, playlist, playbackSpeed, etc.
-   - Dependencies: core:common, core:model, Media3 ExoPlayer
-
-8. **`:core:common`** (JVM library)
-   - Shared utilities and Hilt qualifiers
-   - **EpisodiveDispatchers** enum (Default, IO) with @Dispatcher qualifier
-   - **EpisodivePlayers** enum (Main, Clip) with @Player qualifier
-   - Flow extensions and utility functions
-   - Pure Kotlin, no Android dependencies
-
-9. **`:core:designsystem`** (Android library with Compose)
-   - 60+ reusable Compose components
-   - Theme system: Color, Type, Dimension, Gradient, Background
-   - Custom Tabler icons
-   - Seeker component for audio scrubbing
-   - Dependencies: core:common, core:domain, core:model, Compose, Coil, Palette, Paging
-
-10. **`:core:ui`** (Android library with Compose)
-    - Higher-level domain-specific UI components
-    - Category, Channel, Episode, Podcast cards and lists
-    - Dependencies: core:designsystem, core:model, Compose, Coil, Palette, Paging
-
-11. **`:core:testing`** (Android library)
-    - Test data factories: PodcastTestData, EpisodeTestData, FeedTestData, ChannelTestData
-    - Test utilities: MainDispatcherRule, RoomDatabaseRule, DisabledOnWindowsRule
-    - Paging test extensions
-    - Dependencies: core:model, JUnit, Coroutines Test, MockK, Paging Testing
-
-#### **Feature Modules (8 modules):**
-
-All feature modules use the `episodive.android.feature` convention plugin which automatically includes:
-- Compose, Hilt, Jacoco, Test dependencies
-- Base dependencies: core:common, core:domain, core:designsystem, core:model, core:ui, core:testing
-- Standard libraries: Compose, Paging, Hilt Navigation, Lifecycle, Navigation
-
-1. **`:feature:onboarding`** - Onboarding flow with category selection
-2. **`:feature:home`** - Main feed with recent, trending, random podcast content
-3. **`:feature:search`** - Search and browse with FTS (Full-Text Search) support
-4. **`:feature:library`** - User's followed podcasts, liked episodes, played episodes
-5. **`:feature:podcast`** - Podcast details and episode list
-6. **`:feature:player`** - Audio player UI with controls
-7. **`:feature:clip`** - Soundbites and clips browsing
-8. **`:feature:channel`** - Channel/category browsing
-
-All features follow **MVI pattern**:
-- **State**: Sealed interface (Loading | Success | Error)
-- **Action**: Sealed interface for user intents (ClickPodcast, QueryChanged, etc.)
-- **Effect**: One-time side effects (NavigateToPodcast, ShowError)
-- **ViewModel**: Handles actions, emits state and effects
-
-#### **App Module:**
-
-- **`:app`** - Main Android application
-  - Nested navigation with bottom bar (Home, Search, Library, Clip)
-  - **MediaNotificationService** for background playback (Media3 Session)
-  - Hilt application setup with custom Timber logging
-  - Coil ImageLoader configuration
-  - Entry point for the entire application
-
-### Key Architecture Patterns
-
-#### **Clean Architecture Layers:**
+### Clean Architecture 계층
 ```
 UI (Feature) → Domain (Use Cases) → Data (Repositories) → Data Sources (Network/Database/DataStore)
 ```
 
-#### **MVI (Model-View-Intent) Pattern:**
-All feature modules follow MVI:
-- **State**: Sealed interface representing UI state (Loading | Success | Error)
-- **Action**: Sealed interface for user intents (ClickPodcast, QueryChanged, ToggleLike, etc.)
-- **Effect**: One-time side effects (NavigateToPodcast, ShowError, ShowToast)
-- **ViewModel**: Processes actions, emits state via StateFlow, emits effects via SharedFlow
+### MVI 패턴
+모든 feature 모듈에서 사용:
+- **State**: `sealed interface` (Loading | Success | Error)
+- **Action**: 사용자 의도를 표현하는 `sealed interface`
+- **Effect**: 일회성 사이드 이펙트(네비게이션, 토스트)를 `SharedFlow`로 전달
+- **ViewModel**: Action을 처리하고, State는 `StateFlow`, Effect는 `SharedFlow`로 방출
 
-Example from SearchViewModel:
+### Offline-First / RemoteUpdater 패턴
+`RemoteUpdater` 추상 클래스가 캐시 갱신을 관리:
+1. `CacheableQuery`(키 + TTL)로 캐시 만료 여부 확인
+2. 만료 시 원격 API에서 데이터 페치
+3. API 모델 → Entity 변환 후 타임스탬프와 함께 Room에 저장
+4. DB에서 `Flow`로 반환 (단일 소스)
+
+**CacheableQuery 종류:**
+- `PodcastQuery`: FeedId, Medium, Trending, Recommended, Random, Recent
+- `EpisodeQuery`: FeedId, Live, Random, Recent, RecentNew
+
+### 듀얼 플레이어 시스템
+Hilt `@Player` qualifier로 ExoPlayer 인스턴스 두 개 관리:
+- `@Player(EpisodivePlayers.Main)` — 전체 에피소드 재생
+- `@Player(EpisodivePlayers.Clip)` — 사운드바이트/클립 재생
+
+## 중요 구현 세부사항
+
+### 1. Enum 처리 (필수)
+
+모든 Enum은 **enum name이 아닌 value 프로퍼티**를 사용합니다:
+
 ```kotlin
-sealed interface SearchState {
-    data object Loading : SearchState
-    data class Success(val podcasts: PagingData<Podcast>) : SearchState
-    data class Error(val message: String) : SearchState
-}
-
-sealed interface SearchAction {
-    data class QueryChanged(val query: String) : SearchAction
-    data object ClickSearch : SearchAction
-    data class ClickPodcast(val podcastId: Long) : SearchAction
-}
-
-sealed interface SearchEffect {
-    data class NavigateToPodcast(val podcastId: Long) : SearchEffect
-}
+enum class Medium(val value: String) { PODCAST("podcast"), MUSIC("music"), ... }
 ```
 
-#### **Offline-First Architecture:**
-- **Single Source of Truth**: Room database is authoritative
-- **Reactive Streams**: Kotlin Flow everywhere for reactive data
-- **Cache Strategy**: RemoteUpdater pattern manages cache refresh
-  - Checks cache expiration via CacheableQuery (key + TTL)
-  - Fetches from remote API if expired
-  - Converts API models to entities and stores in database
-  - Emits database data as Flow or PagingData
-- **Database Views**: Join tables with user interaction data for efficient queries
-
-#### **Data Caching Pattern (RemoteUpdater):**
-Abstract class for managing cache refresh logic:
-1. Check if cache is expired using CacheableQuery
-2. If expired, fetch from remote API
-3. Convert API response models to database entities
-4. Store entities in Room database with timestamp
-5. Return Flow from database (single source of truth)
-
-**CacheableQuery Types:**
-- **PodcastQuery**: FeedId, Medium, Trending, Recommended, Random, Recent
-- **EpisodeQuery**: FeedId, Live, Random, Recent, RecentNew
-
-#### **Dual Player System:**
-Two separate ExoPlayer instances managed via Hilt @Player qualifier:
-- **@Player(EpisodivePlayers.Main)**: Main episode playback (full episodes)
-- **@Player(EpisodivePlayers.Clip)**: Soundbite/clip playback (short clips)
-
-This allows simultaneous management of different playback contexts without interference.
-
-#### **Full-Text Search (FTS):**
-- Room FTS4 entities: PodcastFtsEntity, EpisodeFtsEntity
-- Synchronized with main entities via database triggers
-- Fast search with ranking and highlighting support
-
-#### **Paging 3 Integration:**
-- Custom PagingSource implementations for infinite scroll
-- PagingData flows from repository → ViewModel → UI
-- Supports both network and database pagination
-- Integrated with Compose LazyColumn for efficient rendering
-
-### Build Logic (Convention Plugins)
-
-Located in `build-logic/convention/`, these Gradle convention plugins ensure consistent configuration:
-
-1. **episodive.android.application** - Application module setup with Android configuration
-2. **episodive.android.application.compose** - Compose setup for app module
-3. **episodive.android.application.jacoco** - Test coverage for app module
-4. **episodive.android.library** - Standard Android library configuration
-5. **episodive.android.library.compose** - Compose setup for libraries
-6. **episodive.android.library.jacoco** - Test coverage for libraries
-7. **episodive.android.feature** - Feature module template (combines library, compose, hilt, test, jacoco)
-   - Automatically includes: core:common, core:domain, core:designsystem, core:model, core:ui, core:testing
-   - Standard dependencies: Compose, Paging, Hilt Navigation, Lifecycle, Navigation
-8. **episodive.android.room** - Room database configuration with KSP and schema directory
-9. **episodive.android.test** - Test dependencies (JUnit, Robolectric, MockK, Turbine, Coroutines Test)
-10. **episodive.hilt** - Hilt dependency injection setup with KSP
-11. **episodive.jvm.library** - Pure Kotlin/JVM library (no Android dependencies)
-
-**Usage Example:**
+**변환** — 반드시 `entries.find()` 사용, `valueOf()` 절대 금지:
 ```kotlin
-// In feature module's build.gradle.kts
-plugins {
-    alias(libs.plugins.episodive.android.feature)
-}
-// Automatically gets Compose, Hilt, Testing, and all core dependencies
-```
-
-### Important Implementation Details
-
-#### **1. Enum Handling (CRITICAL)**
-
-All enums use **value properties** instead of enum names:
-
-```kotlin
-enum class Medium(val value: String) {
-    PODCAST("podcast"),
-    MUSIC("music"),
-    VIDEO("video"),
-    FILM("film"),
-    AUDIOBOOK("audiobook"),
-    NEWSLETTER("newsletter"),
-    BLOG("blog"),
-    PUBLISHER("publisher"),
-    COURSE("course")
-}
-
-enum class EpisodeType(val value: String) {
-    FULL("full"),
-    TRAILER("trailer"),
-    BONUS("bonus")
-}
-
-enum class Category(val value: String) {
-    BUSINESS("Business"),
-    COMEDY("Comedy"),
-    EDUCATION("Education"),
-    // ... etc
-}
-```
-
-**Conversion Pattern** (used everywhere):
-```kotlin
-// CORRECT: Use entries.find()
 fun String.toMedium(): Medium? = Medium.entries.find { it.value == this }
-
-// WRONG: Do NOT use valueOf()
-// valueOf() expects enum name ("PODCAST") not value ("podcast")
 ```
 
-**Room TypeConverters** must use this pattern:
+Room TypeConverter도 `value`로 저장:
 ```kotlin
-@TypeConverter
-fun toMedium(value: String?): Medium? = value?.toMedium()
-
-@TypeConverter
-fun fromMedium(medium: Medium?): String? = medium?.value
+@TypeConverter fun fromMedium(medium: Medium?): String? = medium?.value
+@TypeConverter fun toMedium(value: String?): Medium? = value?.toMedium()
 ```
 
-**Why**: API returns lowercase values (`"podcast"`), but enum names are uppercase (`PODCAST`). Using `valueOf()` would fail.
-
-#### **2. Database Schema Details**
-
-**Main Entities:**
-- `PodcastEntity` - Cached podcast data with metadata
-- `EpisodeEntity` - Episode data with relationships
-- `FeedEntity` - Feed metadata and grouping
-- `SoundbiteEntity` - Soundbite/clip data
-
-**User Interaction Entities:**
-- `FollowedPodcastEntity` - User's subscribed podcasts
-- `LikedEpisodeEntity` - Liked episodes with timestamp
-- `PlayedEpisodeEntity` - Playback history with progress
-- `RecentSearchEntity` - Search history
-
-**Grouping Entities (for cache management):**
-- `PodcastGroupEntity` - Groups podcasts by query type
-- `EpisodeGroupEntity` - Groups episodes by query type
-
-**FTS Entities (Full-Text Search):**
-- `PodcastFtsEntity` - FTS4 index for podcast search
-- `EpisodeFtsEntity` - FTS4 index for episode search
-
-**Database Views (for efficient queries):**
-- `PodcastWithExtrasView` - JOIN podcasts + followed status
-- `EpisodeWithExtrasView` - JOIN episodes + liked/played/clip data
-
-**Caching Fields (all entities have these):**
-- `cachedAt: Instant` - Timestamp when data was cached
-- Group keys (feedId, medium, etc.) - For cache invalidation
-
-**Auto-migrations:**
-- Room database version 8 with migration history
-- Schema exported to `schemas/` directory
-
-#### **3. API Authentication (Podcast Index)**
-
-Custom `EpisodiveInterceptor` adds authentication headers:
-
-```kotlin
-X-Auth-Date: <unix_timestamp>
-X-Auth-Key: <api_key>
-Authorization: <sha1(apiKey + apiSecret + timestamp)>
-User-Agent: Episodive/<version>
-```
-
-SHA-1 signature calculation:
-```kotlin
-val dataToHash = apiKey + apiSecret + unixTimestamp
-val sha1Hash = MessageDigest.getInstance("SHA-1")
-    .digest(dataToHash.toByteArray())
-    .joinToString("") { "%02x".format(it) }
-```
-
-#### **4. Response Wrappers**
-
-Consistent API response handling:
-```kotlin
-@JsonClass(generateAdapter = true)
-data class ResponseListWrapper<T>(
-    @Json(name = "status") val status: String,
-    @Json(name = "feeds") val feeds: List<T>? = null,
-    @Json(name = "items") val items: List<T>? = null,
-    @Json(name = "channels") val channels: List<T>? = null,
-    @Json(name = "description") val description: String? = null,
-    @Json(name = "count") val count: Int? = null
-)
-```
-
-Different endpoints use different JSON field names; wrapper handles all variations.
-
-#### **5. Player Integration (Dual Players)**
-
-Two separate ExoPlayer instances via Hilt:
-
-```kotlin
-// Main player for full episodes
-@Provides
-@Player(EpisodivePlayers.Main)
-fun provideMainExoPlayer(@ApplicationContext context: Context): ExoPlayer
-
-// Clip player for soundbites
-@Provides
-@Player(EpisodivePlayers.Clip)
-fun provideClipExoPlayer(@ApplicationContext context: Context): ExoPlayer
-```
-
-**PlayerDataSource** interface exposes:
-- `nowPlaying: Flow<Episode?>` - Current playing episode
-- `progress: Flow<Long>` - Playback position in milliseconds
-- `isPlaying: Flow<Boolean>` - Playing state
-- `playlist: Flow<List<Episode>>` - Current playlist
-- `playbackSpeed: Flow<Float>` - Playback speed multiplier
-
-**Background Playback:**
-- `MediaNotificationService` extends Media3 MediaSessionService
-- Handles notification controls (play, pause, next, previous)
-- Supports Android Auto and Wear OS
-
-#### **6. User Preferences (DataStore)**
-
-Stored preferences:
-```kotlin
-data class UserPreferences(
-    val isFirstLaunch: Boolean = true,
-    val language: String = "en",
-    val categories: Set<Category> = emptySet(),
-    val playbackSpeed: Float = 1.0f
-)
-```
-
-DataStore Preferences API for type-safe storage.
-
-## Development Workflow
-
-### When Making Database Changes:
-
-1. **Update Entity** in `:core:database`
-   - Add/modify fields in entity class
-   - Update `@ColumnInfo` annotations if needed
-   - Increment Room database version if schema changes
-2. **Update DAO** in `:core:database`
-   - Add/modify queries in corresponding DAO interface
-   - Use `@Query`, `@Insert`, `@Update`, `@Delete` annotations
-3. **Add/Update TypeConverters** as needed
-   - For enums, use `entries.find { it.value == stringValue }` pattern
-   - For complex types (Instant, Duration, List), add custom converters
-4. **Update Database Views** if entity is used in views
-   - Regenerate PodcastWithExtrasView or EpisodeWithExtrasView
-5. **Update Mappers** in `:core:data`
-   - Add conversion functions between Entity ↔ Model
-6. **Write Tests** in `:core:database`
-   - Use RoomDatabaseRule for in-memory database
-   - Use Turbine for testing Flow emissions
-   - Follow existing test patterns
-
-### When Adding New API Endpoints:
-
-1. **Create Response Models** in `:core:network/model`
-   - Add `@JsonClass(generateAdapter = true)` annotation
-   - Use `@Json(name = "field_name")` for field mapping
-2. **Add to API Interface** in `:core:network/api`
-   - Define endpoint with Retrofit annotations (`@GET`, `@POST`, etc.)
-   - Use appropriate response wrapper (ResponseListWrapper)
-3. **Implement RemoteDataSource** in `:core:network/datasource`
-   - Create interface in `datasource/` package
-   - Implement in `datasource/impl/` package
-4. **Update Repository** in `:core:data`
-   - Add method to repository interface in `:core:domain`
-   - Implement in `:core:data` using RemoteUpdater pattern
-5. **Create Use Case** in `:core:domain`
-   - Follow naming convention: `Get<Entity>UseCase`, `Update<Entity>UseCase`
-   - Inject repository and invoke in `operator fun invoke()`
-6. **Wire to ViewModel** in feature module
-   - Inject use case into ViewModel
-   - Handle in MVI action/state flow
-
-### When Testing Database Code:
-
-```kotlin
-@RunWith(RobolectricTestRunner::class)
-class PodcastDaoTest {
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
-
-    @get:Rule
-    val databaseRule = RoomDatabaseRule()
-
-    private lateinit var podcastDao: PodcastDao
-
-    @Before
-    fun setup() {
-        podcastDao = databaseRule.database.podcastDao()
-    }
-
-    @Test
-    fun insertAndRetrievePodcast() = runTest {
-        // Given
-        val podcast = PodcastTestData.podcasts[0]
-
-        // When
-        podcastDao.insert(podcast.toEntity())
-
-        // Then
-        podcastDao.getPodcast(podcast.id).test {
-            assertEquals(podcast.id, awaitItem()?.id)
-        }
-    }
-}
-```
-
-**Required Test Setup:**
-- Use `RobolectricTestRunner` for Room tests
-- Apply `MainDispatcherRule` for coroutines
-- Use `RoomDatabaseRule` for in-memory database
-- Use Turbine's `.test { }` for Flow testing
-- Use test data from `:core:testing` module
-
-### When Adding New Features:
-
-1. **Create Feature Module**
-   ```kotlin
-   // In settings.gradle.kts
-   include(":feature:myfeature")
-
-   // In feature/myfeature/build.gradle.kts
-   plugins {
-       alias(libs.plugins.episodive.android.feature)
-   }
-   ```
-
-2. **Follow MVI Pattern**
-   - Create `MyFeatureState` sealed interface
-   - Create `MyFeatureAction` sealed interface
-   - Create `MyFeatureEffect` sealed interface (optional)
-   - Create `MyFeatureViewModel` extending ViewModel
-
-3. **Create Composable Screen**
-   ```kotlin
-   @Composable
-   fun MyFeatureScreen(
-       viewModel: MyFeatureViewModel = hiltViewModel(),
-       onNavigateBack: () -> Unit
-   ) {
-       val state by viewModel.state.collectAsStateWithLifecycle()
-
-       LaunchedEffect(Unit) {
-           viewModel.effect.collect { effect ->
-               when (effect) {
-                   is MyFeatureEffect.NavigateBack -> onNavigateBack()
-               }
-           }
-       }
-
-       MyFeatureContent(
-           state = state,
-           onAction = viewModel::onAction
-       )
-   }
-   ```
-
-4. **Wire Navigation** in `:app` module
-   - Add route constant
-   - Add to NavHost in MainActivity
-   - Add navigation calls from other screens
-
-### Repository Pattern Guidelines:
-
-1. **Define Interface** in `:core:domain/repository`
-   ```kotlin
-   interface PodcastRepository {
-       fun getPodcast(id: Long): Flow<Podcast?>
-       fun getTrendingPodcasts(): Flow<PagingData<Podcast>>
-   }
-   ```
-
-2. **Implement in** `:core:data/repository`
-   ```kotlin
-   class PodcastRepositoryImpl @Inject constructor(
-       private val podcastDao: PodcastDao,
-       private val remoteDataSource: PodcastRemoteDataSource,
-       @Dispatcher(EpisodiveDispatchers.IO) private val ioDispatcher: CoroutineDispatcher
-   ) : PodcastRepository {
-       // Implementation using RemoteUpdater pattern
-   }
-   ```
-
-3. **Provide via Hilt** in `:core:data/di`
-   ```kotlin
-   @Module
-   @InstallIn(SingletonComponent::class)
-   interface DataModule {
-       @Binds
-       fun bindsPodcastRepository(
-           podcastRepository: PodcastRepositoryImpl
-       ): PodcastRepository
-   }
-   ```
-
-## Code Editing Rules
-
-**CRITICAL: Import Order Rule**
-
-- **ALWAYS modify/add actual code FIRST, then add necessary imports LAST**
-- NEVER add imports before writing the actual code that uses them
-- This prevents linter conflicts and ensures imports are only added when actually needed
-- Example order: 1) Edit function code 2) Add new composables 3) Then add required imports
-
-## Test Data
-
-The `:core:testing` module provides comprehensive test data factories:
-
-### Available Test Data:
-
-1. **PodcastTestData**
-   - `podcasts: List<PodcastEntity>` - 10 sample podcast entities
-   - Various categories, mediums, and metadata
-   - Realistic podcast data for testing
-
-2. **EpisodeTestData**
-   - `episodes: List<EpisodeEntity>` - 10 sample episode entities
-   - Different episode types (full, trailer, bonus)
-   - Various durations and publication dates
-
-3. **FeedTestData**
-   - `trending: List<FeedEntity>` - Trending feed data
-   - `recent: List<FeedEntity>` - Recent episodes
-   - `recentNew: List<FeedEntity>` - New podcast feeds
-   - `soundbites: List<FeedEntity>` - Soundbite data
-
-4. **ChannelTestData**
-   - Sample channel/category data
-   - For testing channel browsing features
-
-### Test Utilities:
-
-1. **MainDispatcherRule** - JUnit rule for coroutine testing
-   - Sets main dispatcher to test dispatcher
-   - Automatically cleans up after tests
-
-2. **RoomDatabaseRule** - JUnit rule for database testing
-   - Creates in-memory Room database
-   - Provides clean database for each test
-   - Auto-closes database after tests
-
-3. **DisabledOnWindowsRule** - Conditional test execution
-   - Skip tests on Windows platform
-   - Useful for platform-specific issues
-
-4. **Paging Test Extensions**
-   - Extensions for testing PagingData
-   - Helper functions for verifying paged content
-
-### Usage Guidelines:
-
-**DO:**
-- Always use test data from `:core:testing` module
-- Use consistent test data across all modules
-- Leverage test utilities (MainDispatcherRule, RoomDatabaseRule)
-- Use Turbine for testing Flow emissions
-
-**DON'T:**
-- Create inline test objects (use factories instead)
-- Create duplicate test data in individual modules
-- Skip test utilities (they ensure consistent test environment)
-
-### Example Test Setup:
+**이유**: API는 소문자(`"podcast"`)를 반환하지만 enum name은 대문자(`PODCAST`)입니다. `valueOf()`를 쓰면 예외가 발생합니다.
 
+### 2. 데이터베이스 스키마 (Room v8)
+
+**Entity (12개):** PodcastEntity, EpisodeEntity, FeedEntity, SoundbiteEntity, FollowedPodcastEntity, LikedEpisodeEntity, PlayedEpisodeEntity, PodcastGroupEntity, EpisodeGroupEntity, PodcastFtsEntity, EpisodeFtsEntity, RecentSearchEntity
+
+**View (2개):** PodcastWithExtrasView, EpisodeWithExtrasView
+
+**DAO (5개):** PodcastDao, EpisodeDao, FeedDao, SoundbiteDao, RecentSearchDao
+
+**Auto-migration:** 버전 1→8, 필요한 경우 spec 클래스 포함
+
+모든 Entity에는 캐시 무효화를 위한 `cachedAt: Instant`와 그룹 키가 있습니다.
+
+### 3. API 인증 (Podcast Index)
+
+`EpisodiveInterceptor`가 헤더를 추가합니다:
+- `X-Auth-Date`: 유닉스 타임스탬프
+- `X-Auth-Key`: API 키
+- `Authorization`: SHA-1(`apiKey + apiSecret + timestamp`)
+
+API 인터페이스 (5개): `ChapterApi`, `EpisodeApi`, `FeedApi`, `PodcastApi`, `SoundbiteApi`
+
+### 4. 응답 래퍼
+
+`ResponseListWrapper<T>`는 엔드포인트별로 다른 JSON 필드명(`feeds`, `items`, `channels`)을 통합 처리합니다.
+
+## 개발 워크플로우
+
+### 데이터베이스 변경 시
+1. Entity 수정 + DB 버전 증가
+2. DAO 쿼리 수정
+3. TypeConverter 추가/수정 (`entries.find` 패턴 사용)
+4. 필요 시 DB View 수정
+5. `:core:data`의 mapper 수정
+6. 필요 시 auto-migration spec 추가
+7. `RoomDatabaseRule`로 테스트 작성
+
+### 새 API 엔드포인트 추가 시
+1. `:core:network/model`에 응답 모델 추가
+2. `:core:network/api`의 API 인터페이스에 추가
+3. RemoteDataSource 구현 (인터페이스 + 구현체)
+4. `:core:data`의 Repository 구현 업데이트
+5. `:core:domain`에 Use Case 생성
+6. MVI action/state로 ViewModel에 연결
+
+### 새 Feature 추가 시
+1. `episodive.android.feature` 플러그인으로 feature 모듈 생성
+2. `settings.gradle.kts`에 추가
+3. State/Action/Effect sealed interface + ViewModel 구현
+4. state/effect를 수집하는 Composable 화면 작성
+5. `:app` 모듈에서 네비게이션 연결
+
+## 테스트
+
+### 데이터베이스 테스트
 ```kotlin
 @RunWith(RobolectricTestRunner::class)
 class MyDaoTest {
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
-
-    @get:Rule
-    val databaseRule = RoomDatabaseRule()
-
-    private lateinit var myDao: MyDao
-
-    @Before
-    fun setup() {
-        myDao = databaseRule.database.myDao()
-    }
-
-    @Test
-    fun testExample() = runTest {
-        // Use test data from core:testing
-        val podcast = PodcastTestData.podcasts[0]
-
-        myDao.insert(podcast)
-
-        myDao.getAll().test {
-            val items = awaitItem()
-            assertEquals(1, items.size)
-            assertEquals(podcast.id, items[0].id)
-        }
-    }
+    @get:Rule val mainDispatcherRule = MainDispatcherRule()
+    @get:Rule val databaseRule = RoomDatabaseRule()
+    // :core:testing의 PodcastTestData/EpisodeTestData 사용
+    // Flow 검증은 Turbine의 .test { } 사용
 }
 ```
 
-## Common Patterns and Best Practices
+### 테스트 데이터 (`:core:testing`)
+- `PodcastTestData.podcasts` — 샘플 팟캐스트 Entity 10개
+- `EpisodeTestData.episodes` — 샘플 에피소드 Entity 10개
+- `FeedTestData` — 트렌딩/최근/사운드바이트 피드
+- `ChannelTestData` — 채널/카테고리 데이터
 
-### 1. Dependency Injection with Hilt
+**규칙:** 항상 테스트 데이터 팩토리 사용. Flow 테스트는 Turbine 사용. 인라인 테스트 객체 생성 금지.
 
-**Module Organization:**
-- Interface bindings in `:core:data/di`
-- Providers for third-party libraries
-- Scoping: Use `@Singleton` for app-wide instances
+## 코드 편집 규칙
 
-**Qualifiers for Disambiguation:**
-```kotlin
-// For dispatchers
-@Dispatcher(EpisodiveDispatchers.IO) val ioDispatcher: CoroutineDispatcher
+**필수: Import 순서 규칙**
+- 반드시 실제 코드를 먼저 수정/추가한 후, import를 마지막에 추가
+- 코드 작성 전에 import를 추가하지 않음
+- lint 충돌 방지를 위한 규칙
 
-// For players
-@Player(EpisodivePlayers.Main) val mainPlayer: ExoPlayer
-```
+## 공통 패턴
 
-### 2. Flow Usage
-
-**Prefer Flow for Reactive Data:**
-- DAO methods return `Flow<T>` for single items
-- Return `Flow<List<T>>` for collections
-- Use `Flow<PagingData<T>>` for paginated data
-
-**StateFlow vs SharedFlow:**
-- `StateFlow` for UI state (always has current value)
-- `SharedFlow` for one-time effects (navigation, toasts)
-
-### 3. Coroutine Scoping
-
-**ViewModel:**
-```kotlin
-viewModelScope.launch {
-    // Cancelled when ViewModel is cleared
-}
-```
-
-**Repository/Use Case:**
-- Don't create scopes; use suspend functions
-- Let caller (ViewModel) manage lifecycle
-
-**Background Work:**
+### Coroutine Dispatcher
 ```kotlin
 @Dispatcher(EpisodiveDispatchers.IO) val ioDispatcher: CoroutineDispatcher
-
-withContext(ioDispatcher) {
-    // IO-bound work
-}
+// Repository의 IO 작업에는 withContext(ioDispatcher) 사용
 ```
 
-### 4. Navigation Pattern
+### StateFlow vs SharedFlow
+- `StateFlow` — UI 상태 (항상 현재 값 유지)
+- `SharedFlow` — 일회성 이펙트 (네비게이션, 토스트)
 
-**Nested Navigation:**
-- Bottom bar sections (Home, Search, Library, Clip)
-- Each section has its own NavHost
-- Pass lambda callbacks for navigation events
-
-**Type-safe Routes:**
-```kotlin
-object Routes {
-    const val HOME = "home"
-    const val PODCAST = "podcast/{podcastId}"
-
-    fun podcastRoute(podcastId: Long) = "podcast/$podcastId"
-}
-```
-
-### 5. Error Handling
-
-**Repository Layer:**
-- Catch exceptions from network/database
-- Convert to domain-specific errors
-- Emit via Result type or sealed state
-
-**UI Layer:**
-- Display errors in Error state
-- Show toast/snackbar via effects
-- Provide retry actions
-
-### 6. Performance Optimization
-
-**Lazy Loading:**
-- Use Paging 3 for long lists
-- Load data on-demand, not upfront
-
-**Image Loading:**
-- Coil with placeholder/error drawables
-- Automatic memory caching
-- Palette API for dominant colors
-
-**Database Queries:**
-- Use database views for complex joins
-- Index frequently queried columns
-- Limit query results when possible
-
-**Compose Performance:**
-- Remember expensive calculations
-- Use `derivedStateOf` for computed state
-- Avoid recomposition with `key()` where appropriate
-
-### 7. Code Style
-
-**Naming Conventions:**
-- ViewModels: `<Feature>ViewModel`
-- Use Cases: `Get<Entity>UseCase`, `Update<Entity>UseCase`
-- Repositories: `<Entity>Repository`
-- DAOs: `<Entity>Dao`
-- Entities: `<Entity>Entity`
-
-**Package Structure:**
-- Group by feature, not layer
-- Keep related code together
-- Avoid deep nesting
-
-**Import Order (CRITICAL):**
-- Always modify/add actual code FIRST
-- Add necessary imports LAST
-- This prevents linter conflicts
+### 네비게이션
+- Single Activity, Compose Navigation
+- 하단 바: Home, Search, Library, Clip
+- `TYPESAFE_PROJECT_ACCESSORS`로 타입 안전 라우트 사용
