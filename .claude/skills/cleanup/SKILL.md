@@ -33,7 +33,7 @@ git fetch --prune
 remote에서 사라진 브랜치 중 main·master를 제외한 로컬 브랜치를 삭제한다.
 
 ```bash
-git branch -vv | grep ': gone]' | awk '{print $1}' | xargs -r git branch -D
+git branch -vv | grep ': gone]' | awk '{print $1}' | grep -v '^main$\|^master$' | xargs -r git branch -D
 ```
 
 squash merge 방식을 사용하므로 `-D`로 강제 삭제한다. remote가 `gone`인 브랜치는 이미 PR 머지 후 삭제된 것이 확실하다.
