@@ -84,8 +84,6 @@ git commit -m "$(cat <<'EOF'
 {제목}
 
 {본문 (있는 경우만)}
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 EOF
 )"
 ```
