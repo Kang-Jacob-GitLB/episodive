@@ -71,7 +71,7 @@ class RecentSearchLocalDataSourceTest {
             } just Runs
 
             // When
-            dataSource.deleteRecentSearch("query")
+            dataSource.deleteRecentSearch(1L)
 
             // Then
             coVerifySequence {

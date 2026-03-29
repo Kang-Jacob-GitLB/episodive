@@ -7,4 +7,8 @@
     <string name="feature_search_section_podcasts">Podcasts</string>
     <string name="feature_search_section_episodes">Episodes</string>
     <string name="feature_search_section_recent_searches">Recent searches</string>
+    <string name="feature_search_recent_podcast_subtitle">%1$s · Podcast</string>
+    <string name="feature_search_recent_podcast_subtitle_no_author">Podcast</string>
+    <string name="feature_search_recent_episode_subtitle">%1$s · Episode</string>
+    <string name="feature_search_recent_episode_subtitle_no_feed">Episode</string>
 </resources>

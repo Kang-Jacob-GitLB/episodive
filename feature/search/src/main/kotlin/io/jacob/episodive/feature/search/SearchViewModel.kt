@@ -15,6 +15,7 @@ import io.jacob.episodive.core.domain.usecase.search.UpsertRecentSearchUseCase
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
+import io.jacob.episodive.core.model.RecentSearch
 import io.jacob.episodive.core.model.SearchResult
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -70,7 +71,6 @@ class SearchViewModel @Inject constructor(
     ) { query, result, recentSearches, recentEpisodes, trendingPodcasts ->
         SearchState.Success(
             searchQuery = query,
-            searchHistory = emptyList(), // Implement search history if needed
             searchResult = result,
             recentSearches = recentSearches,
             categories = Category.entries.toList(),
@@ -101,8 +101,8 @@ class SearchViewModel @Inject constructor(
                 is SearchAction.QueryChanged -> changeQuery(action.query)
                 is SearchAction.ClickSearch -> search(action.query)
                 is SearchAction.ClearQuery -> clearQuery()
-                is SearchAction.ClickRecentSearch -> search(action.query)
-                is SearchAction.RemoveRecentSearch -> removeRecentSearch(action.query)
+                is SearchAction.ClickRecentSearch -> clickRecentSearch(action.recentSearch)
+                is SearchAction.RemoveRecentSearch -> removeRecentSearch(action.recentSearch)
                 is SearchAction.ClearRecentSearches -> clearRecentSearches()
                 is SearchAction.ClickCategory -> clickCategory(action.category)
                 is SearchAction.ClickPodcast -> clickPodcast(action.podcast)
@@ -129,8 +129,24 @@ class SearchViewModel @Inject constructor(
         _searchQuery.emit("")
     }
 
-    private fun removeRecentSearch(query: String) = viewModelScope.launch {
-        deleteRecentSearchUseCase(query)
+    private fun clickRecentSearch(recentSearch: RecentSearch) = viewModelScope.launch {
+        when (recentSearch) {
+            is RecentSearch.Query -> {
+                _searchQuery.emit(recentSearch.query)
+                upsertRecentSearchUseCase(recentSearch.query)
+            }
+            is RecentSearch.PodcastSearch -> {
+                _effect.emit(SearchEffect.NavigateToPodcast(recentSearch.podcastId))
+            }
+            is RecentSearch.EpisodeSearch -> {
+                // TODO: episodeId로 DB에서 Episode를 조회하는 GetEpisodeByIdUseCase 추가 후 재생 연결
+                Timber.w("EpisodeSearch clicked but direct playback not yet supported: ${recentSearch.title}")
+            }
+        }
+    }
+
+    private fun removeRecentSearch(recentSearch: RecentSearch) = viewModelScope.launch {
+        deleteRecentSearchUseCase(recentSearch)
     }
 
     private fun clearRecentSearches() = viewModelScope.launch {
@@ -142,13 +158,14 @@ class SearchViewModel @Inject constructor(
     }
 
     private fun clickPodcast(podcast: Podcast) = viewModelScope.launch {
+        upsertRecentSearchUseCase(podcast)
         _effect.emit(SearchEffect.NavigateToPodcast(podcast.id))
     }
 
     private fun clickEpisode(episode: Episode) = viewModelScope.launch {
         Timber.w("episode: $episode")
+        upsertRecentSearchUseCase(episode)
         playEpisodeUseCase(episode)
-//        _effect.emit(SearchEffect.NavigateToEpisode(episode))
     }
 
     private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {
@@ -161,9 +178,8 @@ sealed interface SearchState {
     data object Loading : SearchState
     data class Success(
         val searchQuery: String,
-        val searchHistory: List<String>,
         val searchResult: SearchResult,
-        val recentSearches: List<String>,
+        val recentSearches: List<RecentSearch>,
         val categories: List<Category>,
         val recentEpisodes: List<Episode>,
         val trendingPodcasts: List<Podcast>,
@@ -176,8 +192,8 @@ sealed interface SearchAction {
     data class QueryChanged(val query: String) : SearchAction
     data class ClickSearch(val query: String) : SearchAction
     data object ClearQuery : SearchAction
-    data class ClickRecentSearch(val query: String) : SearchAction
-    data class RemoveRecentSearch(val query: String) : SearchAction
+    data class ClickRecentSearch(val recentSearch: RecentSearch) : SearchAction
+    data class RemoveRecentSearch(val recentSearch: RecentSearch) : SearchAction
     data object ClearRecentSearches : SearchAction
     data class ClickCategory(val category: Category) : SearchAction
     data class ClickPodcast(val podcast: Podcast) : SearchAction

@@ -7,4 +7,8 @@
     <string name="feature_search_section_podcasts">팟캐스트</string>
     <string name="feature_search_section_episodes">에피소드</string>
     <string name="feature_search_section_recent_searches">검색 히스토리</string>
+    <string name="feature_search_recent_podcast_subtitle">%1$s · 팟캐스트</string>
+    <string name="feature_search_recent_podcast_subtitle_no_author">팟캐스트</string>
+    <string name="feature_search_recent_episode_subtitle">%1$s · 에피소드</string>
+    <string name="feature_search_recent_episode_subtitle_no_feed">에피소드</string>
 </resources>

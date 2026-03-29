@@ -53,7 +53,7 @@ import io.jacob.episodive.core.database.util.MediumConverter
         PodcastWithExtrasView::class,
         EpisodeWithExtrasView::class,
     ],
-    version = 8,
+    version = 9,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3, spec = AutoMigration2to3::class),

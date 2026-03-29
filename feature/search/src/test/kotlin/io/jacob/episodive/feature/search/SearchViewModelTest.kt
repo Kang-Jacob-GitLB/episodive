@@ -11,6 +11,7 @@ import io.jacob.episodive.core.domain.usecase.search.GetRecentSearchesUseCase
 import io.jacob.episodive.core.domain.usecase.search.SearchUseCase
 import io.jacob.episodive.core.domain.usecase.search.UpsertRecentSearchUseCase
 import io.jacob.episodive.core.model.Category
+import io.jacob.episodive.core.model.RecentSearch
 import io.jacob.episodive.core.model.SearchResult
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
@@ -81,7 +82,10 @@ class SearchViewModelTest {
 
     @Test
     fun `Given all flows emit, When collecting, Then state is Success with all fields`() = runTest {
-        val recentSearches = listOf("kotlin", "android")
+        val recentSearches = listOf(
+            RecentSearch.Query(id = 1, query = "kotlin", searchedAt = kotlin.time.Clock.System.now()),
+            RecentSearch.Query(id = 2, query = "android", searchedAt = kotlin.time.Clock.System.now()),
+        )
         val recentEpisodes = episodeTestDataList.take(3)
         val trendingPodcasts = podcastTestDataList.take(3)
 
@@ -169,7 +173,8 @@ class SearchViewModelTest {
 
             val viewModel = createViewModel()
 
-            viewModel.sendAction(SearchAction.ClickRecentSearch("query"))
+            val recentSearch = RecentSearch.Query(id = 1, query = "query", searchedAt = kotlin.time.Clock.System.now())
+            viewModel.sendAction(SearchAction.ClickRecentSearch(recentSearch))
 
             coVerify { upsertRecentSearchUseCase("query") }
         }
@@ -183,9 +188,10 @@ class SearchViewModelTest {
 
             val viewModel = createViewModel()
 
-            viewModel.sendAction(SearchAction.RemoveRecentSearch("query"))
+            val recentSearch = RecentSearch.Query(id = 1, query = "query", searchedAt = kotlin.time.Clock.System.now())
+            viewModel.sendAction(SearchAction.RemoveRecentSearch(recentSearch))
 
-            coVerify { deleteRecentSearchUseCase("query") }
+            coVerify { deleteRecentSearchUseCase(recentSearch) }
         }
 
     @Test
@@ -231,6 +237,8 @@ class SearchViewModelTest {
                 viewModel.sendAction(SearchAction.ClickPodcast(podcast))
                 assertEquals(SearchEffect.NavigateToPodcast(podcast.id), awaitItem())
             }
+
+            coVerify { upsertRecentSearchUseCase(podcast) }
         }
 
     @Test
@@ -244,6 +252,7 @@ class SearchViewModelTest {
 
         viewModel.sendAction(SearchAction.ClickEpisode(episode))
 
+        coVerify { upsertRecentSearchUseCase(episode) }
         coVerify { playEpisodeUseCase(episode) }
     }
 

@@ -14,8 +14,8 @@ interface RecentSearchDao {
     @Upsert
     suspend fun upsertRecentSearch(recentSearch: RecentSearchEntity)
 
-    @Query("DELETE FROM recent_searches WHERE `query` = :query")
-    suspend fun deleteRecentSearch(query: String)
+    @Query("DELETE FROM recent_searches WHERE id = :id")
+    suspend fun deleteRecentSearch(id: Long)
 
     @Query("DELETE FROM recent_searches")
     suspend fun clearRecentSearches()

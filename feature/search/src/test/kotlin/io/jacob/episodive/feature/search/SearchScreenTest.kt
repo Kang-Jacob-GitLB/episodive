@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
+import io.jacob.episodive.core.model.RecentSearch
 import io.jacob.episodive.core.model.SearchResult
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
@@ -110,7 +111,10 @@ class SearchScreenTest {
                     query = "test",
                     onQueryChange = {},
                     onSearch = {},
-                    recentSearches = listOf("kotlin", "android"),
+                    recentSearches = listOf(
+                        RecentSearch.Query(id = 1, query = "kotlin", searchedAt = kotlin.time.Clock.System.now()),
+                        RecentSearch.Query(id = 2, query = "android", searchedAt = kotlin.time.Clock.System.now()),
+                    ),
                     searchResult = SearchResult(),
                     podcasts = podcastTestDataList,
                     episodes = episodeTestDataList,
