@@ -1,6 +1,7 @@
 package io.jacob.episodive.feature.search
 
 import app.cash.turbine.test
+import io.jacob.episodive.core.domain.usecase.episode.GetEpisodeByIdUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetRecentEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
@@ -39,6 +40,7 @@ class SearchViewModelTest {
     private val getTrendingPodcastsUseCase = mockk<GetTrendingPodcastsUseCase>(relaxed = true)
     private val playEpisodeUseCase = mockk<PlayEpisodeUseCase>(relaxed = true)
     private val toggleLikedEpisodeUseCase = mockk<ToggleLikedEpisodeUseCase>(relaxed = true)
+    private val getEpisodeByIdUseCase = mockk<GetEpisodeByIdUseCase>(relaxed = true)
     private val getRecentSearchesUseCase = mockk<GetRecentSearchesUseCase>(relaxed = true)
     private val upsertRecentSearchUseCase = mockk<UpsertRecentSearchUseCase>(relaxed = true)
     private val deleteRecentSearchUseCase = mockk<DeleteRecentSearchUseCase>(relaxed = true)
@@ -51,6 +53,7 @@ class SearchViewModelTest {
             getTrendingPodcastsUseCase = getTrendingPodcastsUseCase,
             playEpisodeUseCase = playEpisodeUseCase,
             toggleLikedEpisodeUseCase = toggleLikedEpisodeUseCase,
+            getEpisodeByIdUseCase = getEpisodeByIdUseCase,
             getRecentSearchesUseCase = getRecentSearchesUseCase,
             upsertRecentSearchUseCase = upsertRecentSearchUseCase,
             deleteRecentSearchUseCase = deleteRecentSearchUseCase,

@@ -3,6 +3,7 @@ package io.jacob.episodive.feature.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.jacob.episodive.core.domain.usecase.episode.GetEpisodeByIdUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetRecentEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -43,6 +45,7 @@ class SearchViewModel @Inject constructor(
     getTrendingPodcastsUseCase: GetTrendingPodcastsUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase,
+    private val getEpisodeByIdUseCase: GetEpisodeByIdUseCase,
     getRecentSearchesUseCase: GetRecentSearchesUseCase,
     private val upsertRecentSearchUseCase: UpsertRecentSearchUseCase,
     private val deleteRecentSearchUseCase: DeleteRecentSearchUseCase,
@@ -139,8 +142,9 @@ class SearchViewModel @Inject constructor(
                 _effect.emit(SearchEffect.NavigateToPodcast(recentSearch.podcastId))
             }
             is RecentSearch.EpisodeSearch -> {
-                // TODO: episodeId로 DB에서 Episode를 조회하는 GetEpisodeByIdUseCase 추가 후 재생 연결
-                Timber.w("EpisodeSearch clicked but direct playback not yet supported: ${recentSearch.title}")
+                getEpisodeByIdUseCase(recentSearch.episodeId).firstOrNull()?.let { episode ->
+                    playEpisodeUseCase(episode)
+                }
             }
         }
     }
