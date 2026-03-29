@@ -16,8 +16,8 @@ class RecentSearchLocalDataSourceImpl @Inject constructor(
         recentSearchDao.upsertRecentSearch(recentSearch)
     }
 
-    override suspend fun deleteRecentSearch(query: String) {
-        recentSearchDao.deleteRecentSearch(query)
+    override suspend fun deleteRecentSearch(id: Long) {
+        recentSearchDao.deleteRecentSearch(id)
     }
 
     override suspend fun clearRecentSearches() {

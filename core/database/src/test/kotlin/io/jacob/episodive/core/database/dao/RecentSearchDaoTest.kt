@@ -36,18 +36,21 @@ class RecentSearchDaoTest {
             val now = Clock.System.now()
             dao.upsertRecentSearch(
                 RecentSearchEntity(
+                    type = "query",
                     query = "query1",
                     searchedAt = now
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
+                    type = "query",
                     query = "query2",
                     searchedAt = now.plus(1.minutes)
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
+                    type = "query",
                     query = "query3",
                     searchedAt = now.plus(2.minutes)
                 )
@@ -72,18 +75,21 @@ class RecentSearchDaoTest {
             val now = Clock.System.now()
             dao.upsertRecentSearch(
                 RecentSearchEntity(
+                    type = "query",
                     query = "query1",
                     searchedAt = now
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
+                    type = "query",
                     query = "query2",
                     searchedAt = now.plus(1.minutes)
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
+                    type = "query",
                     query = "query3",
                     searchedAt = now.plus(2.minutes)
                 )
@@ -107,31 +113,36 @@ class RecentSearchDaoTest {
             val now = Clock.System.now()
             dao.upsertRecentSearch(
                 RecentSearchEntity(
+                    type = "query",
                     query = "query1",
                     searchedAt = now
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
+                    type = "query",
                     query = "query2",
                     searchedAt = now.plus(1.minutes)
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
+                    type = "query",
                     query = "query3",
                     searchedAt = now.plus(2.minutes)
                 )
             )
 
-            // When
-            dao.deleteRecentSearch("query2")
+            // When — get the id of query2 and delete by id
             dao.getRecentSearches(3).test {
                 val result = awaitItem()
+                val query2Entity = result.first { it.query == "query2" }
+                dao.deleteRecentSearch(query2Entity.id)
+                val updatedResult = awaitItem()
                 // Then
-                assertEquals(2, result.size)
-                assertEquals("query3", result[0].query)
-                assertEquals("query1", result[1].query)
+                assertEquals(2, updatedResult.size)
+                assertEquals("query3", updatedResult[0].query)
+                assertEquals("query1", updatedResult[1].query)
                 cancel()
             }
         }

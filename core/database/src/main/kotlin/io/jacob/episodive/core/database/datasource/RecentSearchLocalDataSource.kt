@@ -6,6 +6,6 @@ import kotlinx.coroutines.flow.Flow
 interface RecentSearchLocalDataSource {
     fun getRecentSearches(limit: Int): Flow<List<RecentSearchEntity>>
     suspend fun upsertRecentSearch(recentSearch: RecentSearchEntity)
-    suspend fun deleteRecentSearch(query: String)
+    suspend fun deleteRecentSearch(id: Long)
     suspend fun clearRecentSearches()
 }

@@ -2,6 +2,7 @@ package io.jacob.episodive.core.domain.usecase.search
 
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.repository.RecentSearchRepository
+import io.jacob.episodive.core.model.RecentSearch
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerifySequence
@@ -33,15 +34,21 @@ class GetRecentSearchesUseCaseTest {
     fun `Given dependencies, When invoked, Then repository is called`() =
         runTest {
             // Given
+            val now = kotlin.time.Clock.System.now()
+            val recentSearches = listOf(
+                RecentSearch.Query(id = 1, query = "test1", searchedAt = now),
+                RecentSearch.Query(id = 2, query = "test2", searchedAt = now),
+                RecentSearch.Query(id = 3, query = "test3", searchedAt = now),
+            )
             coEvery {
                 recentSearchRepository.getRecentSearches(any())
-            } returns flowOf(listOf("test1", "test2", "test3"))
+            } returns flowOf(recentSearches)
 
             // When
             useCase(10).test {
                 // Then
                 val result = awaitItem()
-                assertEquals(listOf("test1", "test2", "test3"), result)
+                assertEquals(recentSearches, result)
                 awaitComplete()
             }
             coVerifySequence {

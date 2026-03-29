@@ -2,6 +2,7 @@ package io.jacob.episodive.core.data.repository
 
 import io.jacob.episodive.core.database.datasource.RecentSearchLocalDataSource
 import io.jacob.episodive.core.domain.repository.RecentSearchRepository
+import io.jacob.episodive.core.model.RecentSearch
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -72,7 +73,8 @@ class RecentSearchRepositoryTest {
             } just Runs
 
             // When
-            repository.deleteRecentSearch("query")
+            val recentSearch = RecentSearch.Query(id = 1, query = "query", searchedAt = kotlin.time.Clock.System.now())
+            repository.deleteRecentSearch(recentSearch)
 
             // Then
             coVerifySequence {

@@ -1,0 +1,1070 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 9,
+    "identityHash": "370c660292670eab825b6204208cebab",
+    "entities": [
+      {
+        "tableName": "podcasts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `podcastGuid` TEXT NOT NULL, `title` TEXT NOT NULL, `url` TEXT NOT NULL, `originalUrl` TEXT NOT NULL, `link` TEXT NOT NULL, `description` TEXT NOT NULL, `author` TEXT NOT NULL, `ownerName` TEXT NOT NULL, `image` TEXT NOT NULL, `artwork` TEXT NOT NULL, `lastUpdateTime` INTEGER NOT NULL, `lastCrawlTime` INTEGER NOT NULL, `lastParseTime` INTEGER NOT NULL, `lastGoodHttpStatusTime` INTEGER NOT NULL, `lastHttpStatus` INTEGER NOT NULL, `contentType` TEXT NOT NULL, `itunesId` INTEGER, `itunesType` TEXT, `generator` TEXT, `language` TEXT NOT NULL, `explicit` INTEGER, `type` INTEGER NOT NULL, `medium` TEXT, `dead` INTEGER NOT NULL, `chash` TEXT, `episodeCount` INTEGER NOT NULL, `crawlErrors` INTEGER NOT NULL, `parseErrors` INTEGER NOT NULL, `categories` TEXT NOT NULL, `locked` INTEGER NOT NULL, `imageUrlHash` INTEGER, `newestItemPublishTime` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "podcastGuid",
+            "columnName": "podcastGuid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "url",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalUrl",
+            "columnName": "originalUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "link",
+            "columnName": "link",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "author",
+            "columnName": "author",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerName",
+            "columnName": "ownerName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "image",
+            "columnName": "image",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "artwork",
+            "columnName": "artwork",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdateTime",
+            "columnName": "lastUpdateTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastCrawlTime",
+            "columnName": "lastCrawlTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastParseTime",
+            "columnName": "lastParseTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastGoodHttpStatusTime",
+            "columnName": "lastGoodHttpStatusTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastHttpStatus",
+            "columnName": "lastHttpStatus",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contentType",
+            "columnName": "contentType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itunesId",
+            "columnName": "itunesId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "itunesType",
+            "columnName": "itunesType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "generator",
+            "columnName": "generator",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "language",
+            "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "explicit",
+            "columnName": "explicit",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "medium",
+            "columnName": "medium",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "dead",
+            "columnName": "dead",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chash",
+            "columnName": "chash",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "episodeCount",
+            "columnName": "episodeCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "crawlErrors",
+            "columnName": "crawlErrors",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parseErrors",
+            "columnName": "parseErrors",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categories",
+            "columnName": "categories",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "locked",
+            "columnName": "locked",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageUrlHash",
+            "columnName": "imageUrlHash",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "newestItemPublishTime",
+            "columnName": "newestItemPublishTime",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "podcasts_fts",
+        "createSql": "CREATE VIRTUAL TABLE IF NOT EXISTS `${TABLE_NAME}` USING FTS4(`title` TEXT NOT NULL, `description` TEXT NOT NULL, `author` TEXT NOT NULL, `ownerName` TEXT NOT NULL, content=`podcasts`)",
+        "fields": [
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "author",
+            "columnName": "author",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerName",
+            "columnName": "ownerName",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "rowid"
+          ]
+        },
+        "ftsVersion": "FTS4",
+        "ftsOptions": {
+          "tokenizer": "simple",
+          "tokenizerArgs": [],
+          "contentTable": "podcasts",
+          "languageIdColumnName": "",
+          "matchInfo": "FTS4",
+          "notIndexedColumns": [],
+          "prefixSizes": [],
+          "preferredOrder": "ASC"
+        },
+        "contentSyncTriggers": [
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_podcasts_fts_BEFORE_UPDATE BEFORE UPDATE ON `podcasts` BEGIN DELETE FROM `podcasts_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_podcasts_fts_BEFORE_DELETE BEFORE DELETE ON `podcasts` BEGIN DELETE FROM `podcasts_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_podcasts_fts_AFTER_UPDATE AFTER UPDATE ON `podcasts` BEGIN INSERT INTO `podcasts_fts`(`docid`, `title`, `description`, `author`, `ownerName`) VALUES (NEW.`rowid`, NEW.`title`, NEW.`description`, NEW.`author`, NEW.`ownerName`); END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_podcasts_fts_AFTER_INSERT AFTER INSERT ON `podcasts` BEGIN INSERT INTO `podcasts_fts`(`docid`, `title`, `description`, `author`, `ownerName`) VALUES (NEW.`rowid`, NEW.`title`, NEW.`description`, NEW.`author`, NEW.`ownerName`); END"
+        ]
+      },
+      {
+        "tableName": "podcast_group",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`groupKey` TEXT NOT NULL, `id` INTEGER NOT NULL, `order` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`groupKey`, `id`), FOREIGN KEY(`id`) REFERENCES `podcasts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "groupKey",
+            "columnName": "groupKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "order",
+            "columnName": "order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "groupKey",
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_podcast_group_groupKey",
+            "unique": false,
+            "columnNames": [
+              "groupKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_podcast_group_groupKey` ON `${TABLE_NAME}` (`groupKey`)"
+          },
+          {
+            "name": "index_podcast_group_id",
+            "unique": false,
+            "columnNames": [
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_podcast_group_id` ON `${TABLE_NAME}` (`id`)"
+          },
+          {
+            "name": "index_podcast_group_groupKey_createdAt",
+            "unique": false,
+            "columnNames": [
+              "groupKey",
+              "createdAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_podcast_group_groupKey_createdAt` ON `${TABLE_NAME}` (`groupKey`, `createdAt`)"
+          },
+          {
+            "name": "index_podcast_group_createdAt",
+            "unique": false,
+            "columnNames": [
+              "createdAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_podcast_group_createdAt` ON `${TABLE_NAME}` (`createdAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "podcasts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "followed_podcasts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `followedAt` INTEGER NOT NULL, `isNotificationEnabled` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`id`) REFERENCES `podcasts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "followedAt",
+            "columnName": "followedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isNotificationEnabled",
+            "columnName": "isNotificationEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_followed_podcasts_followedAt",
+            "unique": false,
+            "columnNames": [
+              "followedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_followed_podcasts_followedAt` ON `${TABLE_NAME}` (`followedAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "podcasts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "episodes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL, `link` TEXT NOT NULL, `description` TEXT, `guid` TEXT NOT NULL, `datePublished` INTEGER NOT NULL, `dateCrawled` INTEGER NOT NULL, `enclosureUrl` TEXT NOT NULL, `enclosureType` TEXT NOT NULL, `enclosureLength` INTEGER NOT NULL, `startTime` INTEGER, `endTime` INTEGER, `status` TEXT, `contentLink` TEXT, `duration` INTEGER, `explicit` INTEGER NOT NULL, `episode` INTEGER, `episodeType` TEXT, `season` INTEGER, `image` TEXT NOT NULL, `feedItunesId` INTEGER, `feedImage` TEXT NOT NULL, `feedId` INTEGER NOT NULL, `feedUrl` TEXT, `feedAuthor` TEXT, `feedTitle` TEXT, `feedLanguage` TEXT NOT NULL, `categories` TEXT NOT NULL, `chaptersUrl` TEXT, `transcriptUrl` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "link",
+            "columnName": "link",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "guid",
+            "columnName": "guid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "datePublished",
+            "columnName": "datePublished",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateCrawled",
+            "columnName": "dateCrawled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enclosureUrl",
+            "columnName": "enclosureUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enclosureType",
+            "columnName": "enclosureType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enclosureLength",
+            "columnName": "enclosureLength",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTime",
+            "columnName": "startTime",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "endTime",
+            "columnName": "endTime",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "contentLink",
+            "columnName": "contentLink",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "duration",
+            "columnName": "duration",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "explicit",
+            "columnName": "explicit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "episode",
+            "columnName": "episode",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "episodeType",
+            "columnName": "episodeType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "season",
+            "columnName": "season",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "image",
+            "columnName": "image",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "feedItunesId",
+            "columnName": "feedItunesId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "feedImage",
+            "columnName": "feedImage",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "feedId",
+            "columnName": "feedId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "feedUrl",
+            "columnName": "feedUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "feedAuthor",
+            "columnName": "feedAuthor",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "feedTitle",
+            "columnName": "feedTitle",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "feedLanguage",
+            "columnName": "feedLanguage",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categories",
+            "columnName": "categories",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chaptersUrl",
+            "columnName": "chaptersUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "transcriptUrl",
+            "columnName": "transcriptUrl",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "episodes_fts",
+        "createSql": "CREATE VIRTUAL TABLE IF NOT EXISTS `${TABLE_NAME}` USING FTS4(`title` TEXT NOT NULL, `description` TEXT NOT NULL, `feedAuthor` TEXT, `feedTitle` TEXT, content=`episodes`)",
+        "fields": [
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "feedAuthor",
+            "columnName": "feedAuthor",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "feedTitle",
+            "columnName": "feedTitle",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "rowid"
+          ]
+        },
+        "ftsVersion": "FTS4",
+        "ftsOptions": {
+          "tokenizer": "simple",
+          "tokenizerArgs": [],
+          "contentTable": "episodes",
+          "languageIdColumnName": "",
+          "matchInfo": "FTS4",
+          "notIndexedColumns": [],
+          "prefixSizes": [],
+          "preferredOrder": "ASC"
+        },
+        "contentSyncTriggers": [
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_episodes_fts_BEFORE_UPDATE BEFORE UPDATE ON `episodes` BEGIN DELETE FROM `episodes_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_episodes_fts_BEFORE_DELETE BEFORE DELETE ON `episodes` BEGIN DELETE FROM `episodes_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_episodes_fts_AFTER_UPDATE AFTER UPDATE ON `episodes` BEGIN INSERT INTO `episodes_fts`(`docid`, `title`, `description`, `feedAuthor`, `feedTitle`) VALUES (NEW.`rowid`, NEW.`title`, NEW.`description`, NEW.`feedAuthor`, NEW.`feedTitle`); END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_episodes_fts_AFTER_INSERT AFTER INSERT ON `episodes` BEGIN INSERT INTO `episodes_fts`(`docid`, `title`, `description`, `feedAuthor`, `feedTitle`) VALUES (NEW.`rowid`, NEW.`title`, NEW.`description`, NEW.`feedAuthor`, NEW.`feedTitle`); END"
+        ]
+      },
+      {
+        "tableName": "episode_group",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`groupKey` TEXT NOT NULL, `id` INTEGER NOT NULL, `order` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`groupKey`, `id`), FOREIGN KEY(`id`) REFERENCES `episodes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "groupKey",
+            "columnName": "groupKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "order",
+            "columnName": "order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "groupKey",
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_episode_group_groupKey",
+            "unique": false,
+            "columnNames": [
+              "groupKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_episode_group_groupKey` ON `${TABLE_NAME}` (`groupKey`)"
+          },
+          {
+            "name": "index_episode_group_id",
+            "unique": false,
+            "columnNames": [
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_episode_group_id` ON `${TABLE_NAME}` (`id`)"
+          },
+          {
+            "name": "index_episode_group_groupKey_createdAt",
+            "unique": false,
+            "columnNames": [
+              "groupKey",
+              "createdAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_episode_group_groupKey_createdAt` ON `${TABLE_NAME}` (`groupKey`, `createdAt`)"
+          },
+          {
+            "name": "index_episode_group_createdAt",
+            "unique": false,
+            "columnNames": [
+              "createdAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_episode_group_createdAt` ON `${TABLE_NAME}` (`createdAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "episodes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "liked_episodes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `likedAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`id`) REFERENCES `episodes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "likedAt",
+            "columnName": "likedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_liked_episodes_likedAt",
+            "unique": false,
+            "columnNames": [
+              "likedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_liked_episodes_likedAt` ON `${TABLE_NAME}` (`likedAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "episodes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "played_episodes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `playedAt` INTEGER NOT NULL, `position` INTEGER NOT NULL, `isCompleted` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`id`) REFERENCES `episodes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playedAt",
+            "columnName": "playedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isCompleted",
+            "columnName": "isCompleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_played_episodes_playedAt",
+            "unique": false,
+            "columnNames": [
+              "playedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_played_episodes_playedAt` ON `${TABLE_NAME}` (`playedAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "episodes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "feeds",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `url` TEXT NOT NULL, `title` TEXT NOT NULL, `newestItemPublishTime` INTEGER NOT NULL, `description` TEXT, `image` TEXT, `itunesId` INTEGER, `language` TEXT NOT NULL, `categories` TEXT NOT NULL, `groupKey` TEXT NOT NULL, `cachedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "url",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "newestItemPublishTime",
+            "columnName": "newestItemPublishTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "image",
+            "columnName": "image",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "itunesId",
+            "columnName": "itunesId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "language",
+            "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categories",
+            "columnName": "categories",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupKey",
+            "columnName": "groupKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cachedAt",
+            "columnName": "cachedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "soundbites",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`enclosureUrl` TEXT NOT NULL, `title` TEXT NOT NULL, `startTime` INTEGER NOT NULL, `duration` INTEGER NOT NULL, `episodeId` INTEGER NOT NULL, `episodeTitle` TEXT NOT NULL, `feedTitle` TEXT NOT NULL, `feedUrl` TEXT NOT NULL, `feedId` INTEGER NOT NULL, `cachedAt` INTEGER NOT NULL, PRIMARY KEY(`episodeId`))",
+        "fields": [
+          {
+            "fieldPath": "enclosureUrl",
+            "columnName": "enclosureUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTime",
+            "columnName": "startTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "duration",
+            "columnName": "duration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "episodeId",
+            "columnName": "episodeId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "episodeTitle",
+            "columnName": "episodeTitle",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "feedTitle",
+            "columnName": "feedTitle",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "feedUrl",
+            "columnName": "feedUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "feedId",
+            "columnName": "feedId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cachedAt",
+            "columnName": "cachedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "episodeId"
+          ]
+        }
+      },
+      {
+        "tableName": "recent_searches",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `query` TEXT, `contentId` INTEGER, `title` TEXT, `imageUrl` TEXT, `subtitle` TEXT, `searchedAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "query",
+            "columnName": "query",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "contentId",
+            "columnName": "contentId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "imageUrl",
+            "columnName": "imageUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "subtitle",
+            "columnName": "subtitle",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "searchedAt",
+            "columnName": "searchedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_recent_searches_type_contentId",
+            "unique": true,
+            "columnNames": [
+              "type",
+              "contentId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_recent_searches_type_contentId` ON `${TABLE_NAME}` (`type`, `contentId`)"
+          },
+          {
+            "name": "index_recent_searches_type_query",
+            "unique": true,
+            "columnNames": [
+              "type",
+              "query"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_recent_searches_type_query` ON `${TABLE_NAME}` (`type`, `query`)"
+          }
+        ]
+      }
+    ],
+    "views": [
+      {
+        "viewName": "podcast_with_extras",
+        "createSql": "CREATE VIEW `${VIEW_NAME}` AS SELECT\n            podcasts.*,\n            followed_podcasts.followedAt AS followedAt,\n            followed_podcasts.isNotificationEnabled AS isNotificationEnabled\n        FROM podcasts\n        LEFT JOIN followed_podcasts ON podcasts.id = followed_podcasts.id"
+      },
+      {
+        "viewName": "episode_with_extras",
+        "createSql": "CREATE VIEW `${VIEW_NAME}` AS SELECT\n            episodes.*,\n            liked_episodes.likedAt AS likedAt,\n            played_episodes.playedAt AS playedAt,\n            played_episodes.position AS position,\n            played_episodes.isCompleted AS isCompleted,\n            soundbites.startTime AS clipStartTime,\n            soundbites.duration AS clipDuration\n        FROM episodes\n        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id\n        LEFT JOIN played_episodes ON episodes.id = played_episodes.id\n        LEFT JOIN soundbites ON episodes.id = soundbites.episodeId"
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '370c660292670eab825b6204208cebab')"
+    ]
+  }
+}

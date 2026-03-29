@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.jacob.episodive.core.database.BuildConfig
 import io.jacob.episodive.core.database.EpisodiveDatabase
+import io.jacob.episodive.core.database.migration.Migration8to9
 import javax.inject.Singleton
 
 @Module
@@ -24,6 +25,7 @@ object DatabaseModule {
             EpisodiveDatabase::class.java,
             "episodive-database",
         ).apply {
+            addMigrations(Migration8to9)
             if (BuildConfig.DEBUG) {
                 fallbackToDestructiveMigrationFrom(true, 3)
             }

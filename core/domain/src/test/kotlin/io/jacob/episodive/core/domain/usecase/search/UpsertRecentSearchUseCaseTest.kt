@@ -33,7 +33,7 @@ class UpsertRecentSearchUseCaseTest {
         runTest {
             // Given
             val query = "test"
-            coEvery { recentSearchRepository.upsertRecentSearch(any()) } just Runs
+            coEvery { recentSearchRepository.upsertRecentSearch(any<String>()) } just Runs
 
             // When
             useCase(query)
