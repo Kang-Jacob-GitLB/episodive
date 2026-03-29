@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -149,6 +151,12 @@ fun PodcastItem(
     podcast: Podcast,
     onClick: () -> Unit = {},
 ) {
+    val textSectionMinHeight = with(LocalDensity.current) {
+        MaterialTheme.typography.bodyMedium.lineHeight.toDp() * 2 +
+            4.dp +
+            MaterialTheme.typography.labelMedium.lineHeight.toDp()
+    }
+
     Column(
         modifier = modifier
             .width(140.dp)
@@ -165,23 +173,27 @@ fun PodcastItem(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text(
-            text = podcast.title,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Column(
+            modifier = Modifier.heightIn(min = textSectionMinHeight),
+        ) {
+            Text(
+                text = podcast.title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
 
-        Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-        Text(
-            text = "${podcast.episodeCount} ${stringResource(R.string.core_ui_episodes)}",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+            Text(
+                text = "${podcast.episodeCount} ${stringResource(R.string.core_ui_episodes)}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
@@ -191,6 +203,12 @@ fun PodcastWithAuthorItem(
     podcast: Podcast,
     onClick: () -> Unit = {},
 ) {
+    val textSectionMinHeight = with(LocalDensity.current) {
+        MaterialTheme.typography.bodyMedium.lineHeight.toDp() * 2 +
+            4.dp +
+            MaterialTheme.typography.labelMedium.lineHeight.toDp()
+    }
+
     Column(
         modifier = modifier
             .width(140.dp)
@@ -207,23 +225,27 @@ fun PodcastWithAuthorItem(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text(
-            text = podcast.title,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Column(
+            modifier = Modifier.heightIn(min = textSectionMinHeight),
+        ) {
+            Text(
+                text = podcast.title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
 
-        Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-        Text(
-            text = podcast.ownerName.ifEmpty { podcast.author },
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+            Text(
+                text = podcast.ownerName.ifEmpty { podcast.author },
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
