@@ -26,12 +26,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconText
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
@@ -151,11 +153,7 @@ fun PodcastItem(
     podcast: Podcast,
     onClick: () -> Unit = {},
 ) {
-    val textSectionMinHeight = with(LocalDensity.current) {
-        MaterialTheme.typography.bodyMedium.lineHeight.toDp() * 2 +
-            4.dp +
-            MaterialTheme.typography.labelMedium.lineHeight.toDp()
-    }
+    val textSectionMinHeight = rememberPodcastTextSectionMinHeight()
 
     Column(
         modifier = modifier
@@ -184,7 +182,7 @@ fun PodcastItem(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(TextSectionSpacing))
 
             Text(
                 text = "${podcast.episodeCount} ${stringResource(R.string.core_ui_episodes)}",
@@ -203,11 +201,7 @@ fun PodcastWithAuthorItem(
     podcast: Podcast,
     onClick: () -> Unit = {},
 ) {
-    val textSectionMinHeight = with(LocalDensity.current) {
-        MaterialTheme.typography.bodyMedium.lineHeight.toDp() * 2 +
-            4.dp +
-            MaterialTheme.typography.labelMedium.lineHeight.toDp()
-    }
+    val textSectionMinHeight = rememberPodcastTextSectionMinHeight()
 
     Column(
         modifier = modifier
@@ -236,7 +230,7 @@ fun PodcastWithAuthorItem(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(TextSectionSpacing))
 
             Text(
                 text = podcast.ownerName.ifEmpty { podcast.author },
@@ -245,6 +239,21 @@ fun PodcastWithAuthorItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+    }
+}
+
+private val TextSectionSpacing = 4.dp
+
+@Composable
+private fun rememberPodcastTextSectionMinHeight(): Dp {
+    val density = LocalDensity.current
+    val typography = MaterialTheme.typography
+    return remember(density, typography) {
+        with(density) {
+            typography.bodyMedium.lineHeight.toDp() * 2 +
+                TextSectionSpacing +
+                typography.labelMedium.lineHeight.toDp()
         }
     }
 }
