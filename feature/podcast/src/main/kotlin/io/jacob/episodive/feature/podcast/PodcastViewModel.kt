@@ -8,6 +8,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.domain.usecase.episode.GetEpisodesByPodcastIdPagingUseCase
+import io.jacob.episodive.core.domain.usecase.episode.SaveEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
@@ -30,6 +31,7 @@ class PodcastViewModel @AssistedInject constructor(
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase,
+    private val saveEpisodeUseCase: SaveEpisodeUseCase,
     @Assisted("id") val id: Long,
 ) : ViewModel() {
     @AssistedFactory
@@ -67,6 +69,7 @@ class PodcastViewModel @AssistedInject constructor(
                 is PodcastAction.ToggleFollowed -> toggleFollowed()
                 is PodcastAction.PlayEpisode -> playEpisode(action.episode, action.visibleEpisodes)
                 is PodcastAction.ToggleLikedEpisode -> toggleLikedEpisode(action.episode)
+                is PodcastAction.ToggleSavedEpisode -> toggleSavedEpisode(action.episode)
             }
         }
     }
@@ -93,6 +96,10 @@ class PodcastViewModel @AssistedInject constructor(
     private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {
         toggleLikedEpisodeUseCase(episode)
     }
+
+    private fun toggleSavedEpisode(episode: Episode) = viewModelScope.launch {
+        saveEpisodeUseCase(episode)
+    }
 }
 
 sealed interface PodcastState {
@@ -111,4 +118,5 @@ sealed interface PodcastAction {
         val visibleEpisodes: List<Episode>,
     ) : PodcastAction
     data class ToggleLikedEpisode(val episode: Episode) : PodcastAction
+    data class ToggleSavedEpisode(val episode: Episode) : PodcastAction
 }

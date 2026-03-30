@@ -15,11 +15,13 @@ class FindInLibraryUseCase @Inject constructor(
         return combine(
             episodeRepository.getPlayedEpisodes(false, query, 1000),
             episodeRepository.getLikedEpisodes(query, 1000),
+            episodeRepository.getSavedEpisodes(query, 1000),
             podcastRepository.getFollowedPodcasts(query, 1000),
-        ) { playingEpisodes, likedEpisodes, followedPodcasts ->
+        ) { playingEpisodes, likedEpisodes, savedEpisodes, followedPodcasts ->
             LibraryFindResult(
                 playingEpisodes = playingEpisodes,
                 likedEpisodes = likedEpisodes,
+                savedEpisodes = savedEpisodes,
                 followedPodcasts = followedPodcasts,
             )
         }

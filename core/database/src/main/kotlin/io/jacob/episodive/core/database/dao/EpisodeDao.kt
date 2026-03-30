@@ -13,6 +13,8 @@ import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.database.model.GroupKeyWithCount
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
+import io.jacob.episodive.core.database.model.SavedEpisodeEntity
+import io.jacob.episodive.core.model.DownloadStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlin.time.Clock
@@ -78,6 +80,7 @@ interface EpisodeDao {
           AND NOT EXISTS (SELECT 1 FROM liked_episodes WHERE liked_episodes.id = episodes.id)
           AND NOT EXISTS (SELECT 1 FROM played_episodes WHERE played_episodes.id = episodes.id)
           AND NOT EXISTS (SELECT 1 FROM episode_group WHERE episode_group.id = episodes.id)
+          AND NOT EXISTS (SELECT 1 FROM saved_episodes WHERE saved_episodes.id = episodes.id)
     """
     )
     suspend fun deleteEpisodesIfOrphaned(ids: List<Long>)
@@ -302,4 +305,71 @@ interface EpisodeDao {
         isCompleted: Boolean? = null,
         query: String? = null,
     ): PagingSource<Int, EpisodeWithExtrasView>
+
+
+    /** SAVED EPISODES **/
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun addSavedEpisode(savedEpisode: SavedEpisodeEntity)
+
+    @Query("DELETE FROM saved_episodes WHERE id = :id")
+    suspend fun removeSavedEpisode(id: Long)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM saved_episodes WHERE id = :id)")
+    fun isSavedEpisode(id: Long): Flow<Boolean>
+
+    @Query(
+        """
+        UPDATE saved_episodes
+        SET downloadedSize = :downloadedSize, downloadStatus = :status
+        WHERE id = :id
+    """
+    )
+    suspend fun updateSavedEpisodeProgress(id: Long, downloadedSize: Long, status: DownloadStatus)
+
+    @Query("UPDATE saved_episodes SET downloadStatus = :status WHERE id = :id")
+    suspend fun updateSavedEpisodeStatus(id: Long, status: DownloadStatus)
+
+    @Transaction
+    suspend fun toggleSavedEpisode(episode: EpisodeEntity, filePath: String): Boolean {
+        return if (isSavedEpisode(episode.id).first()) {
+            removeSavedEpisode(episode.id)
+            deleteEpisodesIfOrphaned(listOf(episode.id))
+            false
+        } else {
+            addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = episode.id,
+                    podcastId = episode.feedId,
+                    savedAt = Clock.System.now(),
+                    filePath = filePath,
+                    totalSize = episode.enclosureLength,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+            true
+        }
+    }
+
+    @Query(
+        """
+        SELECT * FROM episode_with_extras
+        WHERE savedAt IS NOT NULL
+        AND $FTS_SEARCH_CONDITION
+        ORDER BY savedAt DESC
+        LIMIT :limit
+    """
+    )
+    fun getSavedEpisodes(query: String? = null, limit: Int): Flow<List<EpisodeWithExtrasView>>
+
+    @Query(
+        """
+        SELECT * FROM episode_with_extras
+        WHERE savedAt IS NOT NULL
+        AND $FTS_SEARCH_CONDITION
+        ORDER BY savedAt DESC
+    """
+    )
+    fun getSavedEpisodesPaging(query: String? = null): PagingSource<Int, EpisodeWithExtrasView>
 }

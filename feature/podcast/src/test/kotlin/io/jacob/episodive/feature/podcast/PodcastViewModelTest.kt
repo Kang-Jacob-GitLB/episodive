@@ -3,6 +3,7 @@ package io.jacob.episodive.feature.podcast
 import androidx.paging.PagingData
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.usecase.episode.GetEpisodesByPodcastIdPagingUseCase
+import io.jacob.episodive.core.domain.usecase.episode.SaveEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
@@ -34,6 +35,7 @@ class PodcastViewModelTest {
     private val toggleFollowedUseCase = mockk<ToggleFollowedUseCase>(relaxed = true)
     private val playEpisodeUseCase = mockk<PlayEpisodeUseCase>(relaxed = true)
     private val toggleLikedEpisodeUseCase = mockk<ToggleLikedEpisodeUseCase>(relaxed = true)
+    private val saveEpisodeUseCase = mockk<SaveEpisodeUseCase>(relaxed = true)
 
     private fun createViewModel(id: Long = 1L): PodcastViewModel {
         return PodcastViewModel(
@@ -42,6 +44,7 @@ class PodcastViewModelTest {
             toggleFollowedUseCase = toggleFollowedUseCase,
             playEpisodeUseCase = playEpisodeUseCase,
             toggleLikedEpisodeUseCase = toggleLikedEpisodeUseCase,
+            saveEpisodeUseCase = saveEpisodeUseCase,
             id = id,
         )
     }

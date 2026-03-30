@@ -32,11 +32,13 @@ class LibraryScreenTest {
                     onSectionChange = {},
                     playedEpisodes = episodeTestDataList,
                     likedEpisodes = episodeTestDataList,
+                    savedEpisodes = episodeTestDataList,
                     followedPodcasts = podcastTestDataList,
                     preferredCategories = listOf(Category.BUSINESS, Category.COMEDY),
                     selectableCategories = Category.entries.map { SelectableCategory(it, true) },
                     playedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map { SeparatedUiModel.Content(it) })),
                     likedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map { SeparatedUiModel.Content(it) })),
+                    savedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map { SeparatedUiModel.Content(it) })),
                     followedPodcastsPaging = flowOf(PagingData.from(podcastTestDataList.map { SeparatedUiModel.Content(it) })),
                 )
             }
@@ -109,11 +111,13 @@ class LibraryScreenTest {
                     onSectionChange = {},
                     playedEpisodes = emptyList(),
                     likedEpisodes = emptyList(),
+                    savedEpisodes = emptyList(),
                     followedPodcasts = emptyList(),
                     preferredCategories = emptyList(),
                     selectableCategories = emptyList(),
                     playedEpisodesPaging = flowOf(PagingData.from(emptyList())),
                     likedEpisodesPaging = flowOf(PagingData.from(emptyList())),
+                    savedEpisodesPaging = flowOf(PagingData.from(emptyList())),
                     followedPodcastsPaging = flowOf(PagingData.from(emptyList())),
                 )
             }
@@ -148,11 +152,13 @@ class LibraryScreenTest {
                     onSectionChange = {},
                     playedEpisodes = emptyList(),
                     likedEpisodes = emptyList(),
+                    savedEpisodes = emptyList(),
                     followedPodcasts = emptyList(),
                     preferredCategories = listOf(Category.BUSINESS),
                     selectableCategories = emptyList(),
                     playedEpisodesPaging = flowOf(PagingData.from(emptyList())),
                     likedEpisodesPaging = flowOf(PagingData.from(emptyList())),
+                    savedEpisodesPaging = flowOf(PagingData.from(emptyList())),
                     followedPodcastsPaging = flowOf(PagingData.from(emptyList())),
                 )
             }

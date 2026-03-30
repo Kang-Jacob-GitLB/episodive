@@ -6,6 +6,9 @@ import io.jacob.episodive.core.domain.usecase.episode.GetAllPlayedEpisodesPaging
 import io.jacob.episodive.core.domain.usecase.episode.GetAllPlayedEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesPagingUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.episode.GetSavedEpisodesPagingUseCase
+import io.jacob.episodive.core.domain.usecase.episode.GetSavedEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.episode.SaveEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
@@ -59,6 +62,9 @@ class LibraryViewModelTest {
     private val toggleLikedEpisodeUseCase = mockk<ToggleLikedEpisodeUseCase>(relaxed = true)
     private val toggleFollowedUseCase = mockk<ToggleFollowedUseCase>(relaxed = true)
     private val toggleCategoryUseCase = mockk<ToggleCategoryUseCase>(relaxed = true)
+    private val getSavedEpisodesUseCase = mockk<GetSavedEpisodesUseCase>(relaxed = true)
+    private val getSavedEpisodesPagingUseCase = mockk<GetSavedEpisodesPagingUseCase>(relaxed = true)
+    private val saveEpisodeUseCase = mockk<SaveEpisodeUseCase>(relaxed = true)
 
     private fun setupDefaultMocks() {
         every { findInLibraryUseCase(any()) } returns flowOf(LibraryFindResult())
@@ -67,6 +73,7 @@ class LibraryViewModelTest {
         every { getFollowedPodcastsUseCase(max = any()) } returns flowOf(emptyList())
         every { getPreferredCategoriesUseCase() } returns flowOf(emptyList())
         every { getSelectableCategoriesUseCase() } returns flowOf(emptyList())
+        every { getSavedEpisodesUseCase(max = any()) } returns flowOf(emptyList())
     }
 
     private fun createViewModel(): LibraryViewModel {
@@ -85,6 +92,9 @@ class LibraryViewModelTest {
             toggleLikedEpisodeUseCase = toggleLikedEpisodeUseCase,
             toggleFollowedUseCase = toggleFollowedUseCase,
             toggleCategoryUseCase = toggleCategoryUseCase,
+            getSavedEpisodesUseCase = getSavedEpisodesUseCase,
+            getSavedEpisodesPagingUseCase = getSavedEpisodesPagingUseCase,
+            saveEpisodeUseCase = saveEpisodeUseCase,
         )
     }
 
@@ -103,6 +113,7 @@ class LibraryViewModelTest {
     fun `Given no emissions, When ViewModel is created, Then initial state is Loading`() = runTest {
         every { getAllPlayedEpisodesUseCase(max = any()) } returns flowOf()
         every { getLikedEpisodesUseCase(max = any()) } returns flowOf()
+        every { getSavedEpisodesUseCase(max = any()) } returns flowOf()
         every { getFollowedPodcastsUseCase(max = any()) } returns flowOf()
         every { getPreferredCategoriesUseCase() } returns flowOf()
         every { getSelectableCategoriesUseCase() } returns flowOf()
@@ -126,6 +137,7 @@ class LibraryViewModelTest {
 
             every { getAllPlayedEpisodesUseCase(max = any()) } returns flowOf(playedEpisodes)
             every { getLikedEpisodesUseCase(max = any()) } returns flowOf(likedEpisodes)
+            every { getSavedEpisodesUseCase(max = any()) } returns flowOf(emptyList())
             every { getFollowedPodcastsUseCase(max = any()) } returns flowOf(followedPodcasts)
             every { getPreferredCategoriesUseCase() } returns flowOf(preferredCategories)
             every { getSelectableCategoriesUseCase() } returns flowOf(selectableCategories)
@@ -155,6 +167,7 @@ class LibraryViewModelTest {
             throw RuntimeException("Error")
         }
         every { getLikedEpisodesUseCase(max = any()) } returns flowOf(emptyList())
+        every { getSavedEpisodesUseCase(max = any()) } returns flowOf(emptyList())
         every { getFollowedPodcastsUseCase(max = any()) } returns flowOf(emptyList())
         every { getPreferredCategoriesUseCase() } returns flowOf(emptyList())
         every { getSelectableCategoriesUseCase() } returns flowOf(emptyList())
@@ -312,6 +325,7 @@ class LibraryViewModelTest {
             every { findInLibraryUseCase(any()) } returns flowOf(findResult)
             every { getAllPlayedEpisodesUseCase(max = any()) } returns flowOf(episodeTestDataList.take(3))
             every { getLikedEpisodesUseCase(max = any()) } returns flowOf(episodeTestDataList.take(2))
+            every { getSavedEpisodesUseCase(max = any()) } returns flowOf(emptyList())
             every { getFollowedPodcastsUseCase(max = any()) } returns flowOf(podcastTestDataList.take(2))
             every { getPreferredCategoriesUseCase() } returns flowOf(listOf(Category.BUSINESS))
             every { getSelectableCategoriesUseCase() } returns flowOf(emptyList())

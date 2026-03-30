@@ -170,9 +170,15 @@ class PlayerDataSourceImpl @Inject constructor(
             .setArtworkUri(image.ifEmpty { feedImage }.toUri())
             .build()
 
+        val uri = if (isDownloaded && filePath != null) {
+            android.net.Uri.fromFile(java.io.File(filePath))
+        } else {
+            enclosureUrl.toUri()
+        }
+
         val builder = MediaItem.Builder()
             .setMediaId(id.toString())
-            .setUri(enclosureUrl)
+            .setUri(uri)
             .setTag(this)
             .setMediaMetadata(mediaMetadata)
 

@@ -92,6 +92,7 @@ internal fun HomeRoute(
             onPlayEpisode = { viewModel.sendAction(HomeAction.PlayEpisode(it)) },
             onResumeEpisode = { viewModel.sendAction(HomeAction.ResumeEpisode(it)) },
             onToggleLikedEpisode = { viewModel.sendAction(HomeAction.ToggleLikedEpisode(it)) },
+            onToggleSavedEpisode = { viewModel.sendAction(HomeAction.ToggleSavedEpisode(it)) },
             onPodcastClick = { viewModel.sendAction(HomeAction.ClickPodcast(it)) },
             onChannelClick = { viewModel.sendAction(HomeAction.ClickChannel(it)) },
         )
@@ -115,6 +116,7 @@ internal fun HomeScreen(
     onPlayEpisode: (Episode) -> Unit,
     onResumeEpisode: (Episode) -> Unit,
     onToggleLikedEpisode: (Episode) -> Unit,
+    onToggleSavedEpisode: (Episode) -> Unit = {},
     onPodcastClick: (Long) -> Unit,
     onChannelClick: (Long) -> Unit,
 ) {
@@ -198,7 +200,8 @@ internal fun HomeScreen(
                                 title = stringResource(R.string.feature_home_section_random_episodes),
                                 episodes = randomEpisodes,
                                 onEpisodeClick = onPlayEpisode,
-                                onToggleLikedEpisode = onToggleLikedEpisode
+                                onToggleLikedEpisode = onToggleLikedEpisode,
+                                onToggleSavedEpisode = onToggleSavedEpisode,
                             )
                         }
 
@@ -254,6 +257,7 @@ internal fun HomeScreen(
                                 episodes = liveEpisodes,
                                 onEpisodeClick = onPlayEpisode,
                                 onToggleLikedEpisode = onToggleLikedEpisode,
+                                onToggleSavedEpisode = onToggleSavedEpisode,
                             )
                         }
 

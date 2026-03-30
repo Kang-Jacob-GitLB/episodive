@@ -148,6 +148,7 @@ fun PlayerBottomSheet(
             isPlaying = s.isPlaying,
             onCollapse = { collapse() },
             onToggleLike = { viewModel.sendAction(PlayerAction.ToggleLike) },
+            onToggleSave = { viewModel.sendAction(PlayerAction.ToggleSave) },
             onSeekTo = { viewModel.sendAction(PlayerAction.SeekTo(it)) },
             onPlayOrPause = { viewModel.sendAction(PlayerAction.PlayOrPause) },
             onBackward = { viewModel.sendAction(PlayerAction.SeekBackward) },
@@ -163,6 +164,7 @@ fun PlayerBottomSheet(
             onEpisodeClick = { viewModel.sendAction(PlayerAction.ClickEpisode(it)) },
             onPlayIndex = { viewModel.sendAction(PlayerAction.PlayIndex(it)) },
             onToggleLikedEpisode = { viewModel.sendAction(PlayerAction.ToggleLikedEpisode(it)) },
+            onToggleSavedEpisode = { viewModel.sendAction(PlayerAction.ToggleSavedEpisode(it)) },
             speed = s.speed,
             onSpeedChange = { viewModel.sendAction(PlayerAction.Speed(it)) },
             chapters = s.chapters,
@@ -182,6 +184,7 @@ internal fun PlayerScreen(
     isPlaying: Boolean,
     onCollapse: () -> Unit,
     onToggleLike: () -> Unit,
+    onToggleSave: () -> Unit,
     onSeekTo: (Long) -> Unit,
     onPlayOrPause: () -> Unit,
     onBackward: () -> Unit,
@@ -194,6 +197,7 @@ internal fun PlayerScreen(
     onEpisodeClick: (Episode) -> Unit,
     onPlayIndex: (Int) -> Unit,
     onToggleLikedEpisode: (Episode) -> Unit,
+    onToggleSavedEpisode: (Episode) -> Unit = {},
     speed: Float,
     onSpeedChange: (Float) -> Unit,
     chapters: List<Chapter>,
@@ -314,6 +318,7 @@ internal fun PlayerScreen(
 
                     ControlPanelBottom(
                         isPlaying = isPlaying,
+                        isSaved = nowPlaying.isSaved,
                         onPlayOrPause = onPlayOrPause,
                         onBackward = onBackward,
                         onForward = onForward,
@@ -322,6 +327,7 @@ internal fun PlayerScreen(
                         onSpeed = { showSpeedSheet = true },
                         speed = speed,
                         onList = { showPlaylistSheet = true },
+                        onToggleSave = onToggleSave,
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -374,6 +380,7 @@ internal fun PlayerScreen(
             playingIndex = indexOfList,
             onEpisodeClick = onEpisodeClick,
             onToggleLikedEpisode = onToggleLikedEpisode,
+            onToggleSavedEpisode = onToggleSavedEpisode,
             onDismiss = { showPlaylistSheet = false }
         )
     }
@@ -508,6 +515,7 @@ private fun ControlPanelProgress(
 private fun ControlPanelBottom(
     modifier: Modifier = Modifier,
     isPlaying: Boolean,
+    isSaved: Boolean = false,
     onPlayOrPause: () -> Unit = {},
     onBackward: () -> Unit = {},
     onForward: () -> Unit = {},
@@ -516,6 +524,7 @@ private fun ControlPanelBottom(
     onSpeed: () -> Unit = {},
     speed: Float,
     onList: () -> Unit = {},
+    onToggleSave: () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -624,6 +633,32 @@ private fun ControlPanelBottom(
                     text = "${decimalFormat.format(speed)}x"
                 )
             }
+
+            EpisodiveIconToggleButton(
+                modifier = Modifier.size(32.dp),
+                checked = isSaved,
+                onCheckedChange = { onToggleSave() },
+                colors = IconButtonDefaults.iconToggleButtonColors(
+                    checkedContainerColor = Color.Transparent,
+                    checkedContentColor = MaterialTheme.colorScheme.onSurface,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                ),
+                icon = {
+                    Icon(
+                        modifier = Modifier.size(24.dp),
+                        imageVector = EpisodiveIcons.Save,
+                        contentDescription = "Save",
+                    )
+                },
+                checkedIcon = {
+                    Icon(
+                        modifier = Modifier.size(24.dp),
+                        imageVector = EpisodiveIcons.SaveFilled,
+                        contentDescription = "Unsave",
+                    )
+                }
+            )
 
             EpisodiveIconButton(
                 modifier = Modifier.size(32.dp),
@@ -813,6 +848,7 @@ private fun PlaylistSheet(
     playingIndex: Int,
     onEpisodeClick: (Episode) -> Unit = {},
     onToggleLikedEpisode: (Episode) -> Unit = {},
+    onToggleSavedEpisode: (Episode) -> Unit = {},
     onDismiss: () -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -834,7 +870,8 @@ private fun PlaylistSheet(
                 episodes = playlist,
                 playingIndex = playingIndex,
                 onEpisodeClick = onEpisodeClick,
-                onToggleLikedEpisode = onToggleLikedEpisode
+                onToggleLikedEpisode = onToggleLikedEpisode,
+                onToggleSavedEpisode = onToggleSavedEpisode,
             )
         }
     }
@@ -916,6 +953,7 @@ private fun PlayerScreenPreview() {
             isPlaying = true,
             onCollapse = {},
             onToggleLike = {},
+            onToggleSave = {},
             onSeekTo = {},
             onPlayOrPause = {},
             onBackward = {},

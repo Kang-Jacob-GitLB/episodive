@@ -12,6 +12,8 @@ import io.jacob.episodive.core.designsystem.icon.tabler.ChevronRight
 import io.jacob.episodive.core.designsystem.icon.tabler.Container
 import io.jacob.episodive.core.designsystem.icon.tabler.ContainerFilled
 import io.jacob.episodive.core.designsystem.icon.tabler.CreativeCommonsBy
+import io.jacob.episodive.core.designsystem.icon.tabler.DeviceFloppy
+import io.jacob.episodive.core.designsystem.icon.tabler.DeviceFloppyFilled
 import io.jacob.episodive.core.designsystem.icon.tabler.DotsVertical
 import io.jacob.episodive.core.designsystem.icon.tabler.Fountain
 import io.jacob.episodive.core.designsystem.icon.tabler.FountainFilled
@@ -75,6 +77,8 @@ object EpisodiveIcons {
     val PlaylistX = Tabler.PlaylistX
     val PublicationDate = Tabler.CalendarTime
     val Replay15 = Tabler.RewindBackward15
+    val Save = Tabler.DeviceFloppy
+    val SaveFilled = Tabler.DeviceFloppyFilled
     val Search = Tabler.Zoom
     val SearchFilled = Tabler.ZoomFilled
     val SkipNext = Tabler.PlayerSkipForward

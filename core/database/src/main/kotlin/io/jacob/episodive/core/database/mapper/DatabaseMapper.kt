@@ -147,6 +147,9 @@ fun EpisodeWithExtrasView.toEpisode(): Episode =
         isCompleted = isCompleted ?: false,
         clipStartTime = clipStartTime,
         clipDuration = clipDuration,
+        savedAt = savedAt,
+        filePath = filePath,
+        downloadStatus = downloadStatus,
     )
 
 fun List<EpisodeWithExtrasView>.toEpisodes(): List<Episode> =
@@ -160,6 +163,9 @@ fun Episode.toEpisodeWithExtrasView(): EpisodeWithExtrasView =
         playedAt = playedAt,
         position = position,
         isCompleted = isCompleted,
+        savedAt = savedAt,
+        filePath = filePath,
+        downloadStatus = downloadStatus,
     )
 
 @RestrictTo(RestrictTo.Scope.TESTS)

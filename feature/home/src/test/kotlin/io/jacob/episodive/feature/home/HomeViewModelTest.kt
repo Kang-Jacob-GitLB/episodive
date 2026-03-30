@@ -5,6 +5,7 @@ import io.jacob.episodive.core.domain.usecase.channel.GetChannelsUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLiveEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetMyRandomEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetPlayingEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.episode.SaveEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
@@ -50,6 +51,7 @@ class HomeViewModelTest {
     private val playEpisodeUseCase = mockk<PlayEpisodeUseCase>(relaxed = true)
     private val resumeEpisodeUseCase = mockk<ResumeEpisodeUseCase>(relaxed = true)
     private val toggleLikedEpisodeUseCase = mockk<ToggleLikedEpisodeUseCase>(relaxed = true)
+    private val saveEpisodeUseCase = mockk<SaveEpisodeUseCase>(relaxed = true)
 
     private fun setupDefaultMocks() {
         every { getPlayingEpisodesUseCase(max = any()) } returns flowOf(emptyList())
@@ -77,6 +79,7 @@ class HomeViewModelTest {
             playEpisodeUseCase = playEpisodeUseCase,
             resumeEpisodeUseCase = resumeEpisodeUseCase,
             toggleLikedEpisodeUseCase = toggleLikedEpisodeUseCase,
+            saveEpisodeUseCase = saveEpisodeUseCase,
         )
     }
 

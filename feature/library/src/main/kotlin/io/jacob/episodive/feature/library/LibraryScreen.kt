@@ -104,16 +104,19 @@ fun LibraryRoute(
             onSectionChange = { viewModel.sendAction(LibraryAction.SelectSection(it)) },
             playedEpisodes = s.allPlayedEpisodes,
             likedEpisodes = s.likedEpisodes,
+            savedEpisodes = s.savedEpisodes,
             followedPodcasts = s.followedPodcasts,
             preferredCategories = s.preferredCategories,
             selectableCategories = s.selectableCategories,
             playedEpisodesPaging = viewModel.playedEpisodesPaging,
             likedEpisodesPaging = viewModel.likedEpisodesPaging,
+            savedEpisodesPaging = viewModel.savedEpisodesPaging,
             followedPodcastsPaging = viewModel.followedPodcastsPaging,
             onPlayedEpisodeClick = { viewModel.sendAction(LibraryAction.ClickPlayingEpisode(it)) },
             onEpisodeClick = { viewModel.sendAction(LibraryAction.ClickEpisode(it)) },
             onPodcastClick = { viewModel.sendAction(LibraryAction.ClickPodcast(it)) },
             onToggleLikedEpisode = { viewModel.sendAction(LibraryAction.ToggleLikedEpisode(it)) },
+            onToggleSavedEpisode = { viewModel.sendAction(LibraryAction.ToggleSavedEpisode(it)) },
             onToggleFollowedPodcast = { viewModel.sendAction(LibraryAction.ToggleFollowedPodcast(it)) },
             onTogglePreferredCategory = {
                 viewModel.sendAction(
@@ -138,16 +141,19 @@ internal fun LibraryScreen(
     onSectionChange: (LibrarySection) -> Unit = {},
     playedEpisodes: List<Episode>,
     likedEpisodes: List<Episode>,
+    savedEpisodes: List<Episode>,
     followedPodcasts: List<Podcast>,
     preferredCategories: List<Category>,
     selectableCategories: List<SelectableCategory>,
     playedEpisodesPaging: Flow<PagingData<SeparatedUiModel<Episode>>>,
     likedEpisodesPaging: Flow<PagingData<SeparatedUiModel<Episode>>>,
+    savedEpisodesPaging: Flow<PagingData<SeparatedUiModel<Episode>>>,
     followedPodcastsPaging: Flow<PagingData<SeparatedUiModel<Podcast>>>,
     onPlayedEpisodeClick: (Episode) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
     onPodcastClick: (Podcast) -> Unit = {},
     onToggleLikedEpisode: (Episode) -> Unit = {},
+    onToggleSavedEpisode: (Episode) -> Unit = {},
     onToggleFollowedPodcast: (Podcast) -> Unit = {},
     onTogglePreferredCategory: (Category) -> Unit = {},
 ) {
@@ -186,6 +192,7 @@ internal fun LibraryScreen(
                 nestedScrollConnection = nestedScrollConnection,
                 playedEpisodes = playedEpisodes,
                 likedEpisodes = likedEpisodes,
+                savedEpisodes = savedEpisodes,
                 followedPodcasts = followedPodcasts,
                 preferredCategories = preferredCategories,
                 onPlayedEpisodeClick = onPlayedEpisodeClick,
@@ -208,6 +215,15 @@ internal fun LibraryScreen(
                 likedEpisodesPaging = likedEpisodesPaging,
                 onLikedEpisodeClick = { onEpisodeClick(it) },
                 onToggleLiked = onToggleLikedEpisode
+            )
+
+            LibrarySection.Saved -> SavedContent(
+                modifier = modifier,
+                paddingValues = paddingValues,
+                nestedScrollConnection = nestedScrollConnection,
+                savedEpisodesPaging = savedEpisodesPaging,
+                onSavedEpisodeClick = { onEpisodeClick(it) },
+                onToggleSaved = onToggleSavedEpisode
             )
 
             LibrarySection.Followed -> FollowedContent(
@@ -239,6 +255,7 @@ private fun AllSectionContent(
     nestedScrollConnection: NestedScrollConnection,
     playedEpisodes: List<Episode>,
     likedEpisodes: List<Episode>,
+    savedEpisodes: List<Episode>,
     followedPodcasts: List<Podcast>,
     preferredCategories: List<Category>,
     onPlayedEpisodeClick: (Episode) -> Unit,
@@ -272,6 +289,14 @@ private fun AllSectionContent(
                     )
                 }
 
+                if (savedEpisodes.isNotEmpty()) {
+                    EpisodeRowSection(
+                        title = stringResource(R.string.feature_library_section_saved_episodes),
+                        episodes = savedEpisodes,
+                        onEpisodeClick = onEpisodeClick,
+                    )
+                }
+
                 if (followedPodcasts.isNotEmpty()) {
                     PodcastsSection(
                         title = stringResource(R.string.feature_library_section_followed_podcasts),
@@ -291,6 +316,7 @@ private fun AllSectionContent(
                 if (
                     playedEpisodes.isEmpty() &&
                     likedEpisodes.isEmpty() &&
+                    savedEpisodes.isEmpty() &&
                     followedPodcasts.isEmpty() &&
                     preferredCategories.isEmpty()
                 ) {
@@ -423,6 +449,76 @@ private fun LikedContent(
                         episode = episode,
                         onClick = { onLikedEpisodeClick(episode) },
                         onToggleLiked = { onToggleLiked(episode) }
+                    )
+                }
+
+                is SeparatedUiModel.Separator -> {
+                    val date = item.label
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(horizontal = 16.dp)
+                            .padding(vertical = 8.dp),
+                        text = date,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(LocalDimensionTheme.current.playerBarHeight))
+        }
+    }
+}
+
+@Composable
+private fun SavedContent(
+    modifier: Modifier = Modifier,
+    paddingValues: PaddingValues,
+    nestedScrollConnection: NestedScrollConnection,
+    savedEpisodesPaging: Flow<PagingData<SeparatedUiModel<Episode>>>,
+    onSavedEpisodeClick: (Episode) -> Unit,
+    onToggleSaved: (Episode) -> Unit,
+) {
+    val items = savedEpisodesPaging.collectAsLazyPagingItems()
+
+    LazyColumn(
+        modifier = modifier
+            .padding(paddingValues)
+            .nestedScroll(nestedScrollConnection),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        items(
+            count = items.itemCount,
+            key = items.itemKey {
+                when (it) {
+                    is SeparatedUiModel.Content -> it.data.id
+                    is SeparatedUiModel.Separator -> it.label
+                }
+            },
+            contentType = {
+                when (items[it]) {
+                    is SeparatedUiModel.Content -> "episode"
+                    is SeparatedUiModel.Separator -> "separator"
+                    null -> "loading"
+                }
+            }
+        ) { index ->
+            when (val item = items[index] ?: return@items) {
+                is SeparatedUiModel.Content -> {
+                    val episode = item.data
+                    EpisodeItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .animateItem(),
+                        episode = episode,
+                        onClick = { onSavedEpisodeClick(episode) },
+                        onToggleLiked = {},
+                        onToggleSaved = { onToggleSaved(episode) }
                     )
                 }
 
@@ -614,6 +710,7 @@ private fun SectionFilter(
         LibrarySection.All to stringResource(R.string.feature_library_filter_all),
         LibrarySection.RecentlyListened to stringResource(R.string.feature_library_filter_recently_listened),
         LibrarySection.Liked to stringResource(R.string.feature_library_filter_liked),
+        LibrarySection.Saved to stringResource(R.string.feature_library_filter_saved),
         LibrarySection.Followed to stringResource(R.string.feature_library_filter_followed),
         LibrarySection.Preferred to stringResource(R.string.feature_library_filter_preferred),
     )
@@ -799,12 +896,16 @@ private fun LibraryScreenPreview() {
             section = LibrarySection.All,
             playedEpisodes = episodeTestDataList,
             likedEpisodes = episodeTestDataList,
+            savedEpisodes = episodeTestDataList,
             followedPodcasts = podcastTestDataList,
             preferredCategories = Category.entries,
             playedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map {
                 SeparatedUiModel.Content(it)
             })),
             likedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map {
+                SeparatedUiModel.Content(it)
+            })),
+            savedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map {
                 SeparatedUiModel.Content(it)
             })),
             followedPodcastsPaging = flowOf(PagingData.from(podcastTestDataList.map {

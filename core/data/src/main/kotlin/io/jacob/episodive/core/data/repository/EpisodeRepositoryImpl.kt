@@ -18,6 +18,7 @@ import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Chapter
+import io.jacob.episodive.core.model.DownloadStatus
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
@@ -280,5 +281,38 @@ class EpisodeRepositoryImpl @Inject constructor(
         return episodeLocalDataSource.getEpisodesByGroupKey(groupKey, Int.MAX_VALUE)
             .first()
             .toEpisodes()
+    }
+
+    override fun getSavedEpisodes(query: String?, max: Int): Flow<List<Episode>> {
+        return episodeLocalDataSource.getSavedEpisodes(
+            query = query,
+            limit = max,
+        ).map { it.toEpisodes() }
+    }
+
+    override fun getSavedEpisodesPaging(query: String?): Flow<PagingData<Episode>> {
+        return Pager(
+            config = config,
+            pagingSourceFactory = { episodeLocalDataSource.getSavedEpisodesPaging(query) }
+        ).flow.map { pagingData ->
+            pagingData.map { it.toEpisode() }
+        }
+    }
+
+    override suspend fun toggleSavedEpisode(episode: Episode): Boolean {
+        val filePath = "${episode.feedId}/${episode.id}.${episode.enclosureType.substringAfterLast("/", "mp3")}"
+        return episodeLocalDataSource.toggleSavedEpisode(episode.toEpisodeEntity(), filePath)
+    }
+
+    override suspend fun updateSavedEpisodeProgress(
+        id: Long,
+        downloadedSize: Long,
+        status: DownloadStatus,
+    ) {
+        episodeLocalDataSource.updateSavedEpisodeProgress(id, downloadedSize, status)
+    }
+
+    override suspend fun removeSavedEpisode(id: Long) {
+        episodeLocalDataSource.removeSavedEpisode(id)
     }
 }
