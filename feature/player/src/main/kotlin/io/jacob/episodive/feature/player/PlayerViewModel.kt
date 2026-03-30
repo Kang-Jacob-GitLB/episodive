@@ -41,7 +41,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -100,7 +99,6 @@ class PlayerViewModel @Inject constructor(
         chapters,
         playerRepository.cue,
     ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, chapters, cue ->
-        Timber.w("progress: $progress")
         if (podcast != null && nowPlaying != null) {
             PlayerState.Success(
                 podcast = podcast,
