@@ -258,7 +258,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     private fun clickPodcast(podcast: Podcast) = viewModelScope.launch {
-        _effect.emit(PlayerEffect.NavigateToPodcast(podcast))
+        _effect.emit(PlayerEffect.NavigateToPodcast(podcast.id))
     }
 
     private fun clickEpisode(episode: Episode) = viewModelScope.launch {
@@ -331,7 +331,7 @@ sealed interface PlayerAction {
 }
 
 sealed interface PlayerEffect {
-    data class NavigateToPodcast(val podcast: Podcast) : PlayerEffect
+    data class NavigateToPodcast(val podcastId: Long) : PlayerEffect
     data object ShowPlayerBottomSheet : PlayerEffect
     data object HidePlayerBottomSheet : PlayerEffect
 }

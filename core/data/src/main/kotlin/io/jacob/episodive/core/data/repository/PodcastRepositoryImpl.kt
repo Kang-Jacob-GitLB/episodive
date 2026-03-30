@@ -4,6 +4,7 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import io.jacob.episodive.core.data.util.paging.PagingDefaults
 import io.jacob.episodive.core.data.util.paging.RecommendedPodcastPagingSource
 import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
@@ -30,11 +31,7 @@ class PodcastRepositoryImpl @Inject constructor(
     private val feedRemoteDataSource: FeedRemoteDataSource,
     private val remoteUpdater: PodcastRemoteUpdater.Factory,
 ) : PodcastRepository {
-    private val config = PagingConfig(
-        pageSize = 20,
-        prefetchDistance = 5,
-        enablePlaceholders = false
-    )
+    private val config = PagingDefaults.DEFAULT_CONFIG
 
     override fun searchPodcasts(
         query: String,

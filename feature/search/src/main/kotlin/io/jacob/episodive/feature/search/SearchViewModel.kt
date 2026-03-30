@@ -59,7 +59,7 @@ class SearchViewModel @Inject constructor(
         .distinctUntilChanged()
         .flatMapLatest { query ->
             if (query.isNotEmpty()) {
-                searchUseCase(query, 100)
+                searchUseCase(query, SEARCH_MAX_RESULTS)
             } else {
                 flowOf(SearchResult())
             }
@@ -68,9 +68,9 @@ class SearchViewModel @Inject constructor(
     val state: StateFlow<SearchState> = combine(
         _searchQuery,
         _searchResult,
-        getRecentSearchesUseCase(100),
-        getRecentEpisodesUseCase(max = 6),
-        getTrendingPodcastsUseCase(max = 10),
+        getRecentSearchesUseCase(RECENT_SEARCHES_LIMIT),
+        getRecentEpisodesUseCase(max = RECENT_EPISODES_MAX),
+        getTrendingPodcastsUseCase(max = TRENDING_PODCASTS_MAX),
     ) { query, result, recentSearches, recentEpisodes, trendingPodcasts ->
         SearchState.Success(
             searchQuery = query,
@@ -175,6 +175,13 @@ class SearchViewModel @Inject constructor(
     private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {
         Timber.w("episode: $episode")
         toggleLikedEpisodeUseCase(episode)
+    }
+
+    companion object {
+        private const val SEARCH_MAX_RESULTS = 100
+        private const val RECENT_SEARCHES_LIMIT = 100
+        private const val RECENT_EPISODES_MAX = 6
+        private const val TRENDING_PODCASTS_MAX = 10
     }
 }
 

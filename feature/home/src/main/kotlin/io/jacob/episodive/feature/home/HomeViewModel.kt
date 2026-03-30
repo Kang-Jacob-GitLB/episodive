@@ -46,14 +46,14 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     val state: StateFlow<HomeState> = combine(
-        getPlayingEpisodesUseCase(max = 10),
-        getUserRecentPodcastsUseCase(max = 10),
-        getMyRandomEpisodesUseCase(max = 6),
-        getUserTrendingPodcastsUseCase(max = 10),
-        getFollowedPodcastsUseCase(max = 10),
-        getLocalTrendingPodcastsUseCase(max = 10),
-        getForeignTrendingPodcastsUseCase(max = 10),
-        getLiveEpisodesUseCase(max = 6),
+        getPlayingEpisodesUseCase(max = FEED_MAX),
+        getUserRecentPodcastsUseCase(max = FEED_MAX),
+        getMyRandomEpisodesUseCase(max = COMPACT_MAX),
+        getUserTrendingPodcastsUseCase(max = FEED_MAX),
+        getFollowedPodcastsUseCase(max = FEED_MAX),
+        getLocalTrendingPodcastsUseCase(max = FEED_MAX),
+        getForeignTrendingPodcastsUseCase(max = FEED_MAX),
+        getLiveEpisodesUseCase(max = COMPACT_MAX),
         getChannelsUseCase(),
     ) {
             playingEpisodes,
@@ -133,7 +133,8 @@ class HomeViewModel @Inject constructor(
     }
 
     companion object {
-        private val languages = listOf("en", "es", "fr", "de", "it", "ja", "ko", "pt", "ru", "zh")
+        private const val FEED_MAX = 10
+        private const val COMPACT_MAX = 6
     }
 }
 

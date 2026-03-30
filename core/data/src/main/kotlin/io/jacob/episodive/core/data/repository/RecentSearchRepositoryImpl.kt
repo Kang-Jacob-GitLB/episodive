@@ -6,6 +6,7 @@ import io.jacob.episodive.core.domain.repository.RecentSearchRepository
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.RecentSearch
+import io.jacob.episodive.core.model.RecentSearchType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -23,7 +24,7 @@ class RecentSearchRepositoryImpl @Inject constructor(
     override suspend fun upsertRecentSearch(query: String) {
         recentSearchLocalDataSource.upsertRecentSearch(
             RecentSearchEntity(
-                type = "query",
+                type = RecentSearchType.QUERY,
                 query = query,
                 searchedAt = Clock.System.now(),
             )
@@ -33,7 +34,7 @@ class RecentSearchRepositoryImpl @Inject constructor(
     override suspend fun upsertRecentSearch(podcast: Podcast) {
         recentSearchLocalDataSource.upsertRecentSearch(
             RecentSearchEntity(
-                type = "podcast",
+                type = RecentSearchType.PODCAST,
                 contentId = podcast.id,
                 title = podcast.title,
                 imageUrl = podcast.artwork.ifEmpty { podcast.image },
@@ -46,7 +47,7 @@ class RecentSearchRepositoryImpl @Inject constructor(
     override suspend fun upsertRecentSearch(episode: Episode) {
         recentSearchLocalDataSource.upsertRecentSearch(
             RecentSearchEntity(
-                type = "episode",
+                type = RecentSearchType.EPISODE,
                 contentId = episode.id,
                 title = episode.title,
                 imageUrl = episode.image.ifEmpty { episode.feedImage },
@@ -66,12 +67,12 @@ class RecentSearchRepositoryImpl @Inject constructor(
 
     private fun RecentSearchEntity.toRecentSearch(): RecentSearch? {
         return when (type) {
-            "query" -> RecentSearch.Query(
+            RecentSearchType.QUERY -> RecentSearch.Query(
                 id = id,
                 query = query ?: return null,
                 searchedAt = searchedAt,
             )
-            "podcast" -> RecentSearch.PodcastSearch(
+            RecentSearchType.PODCAST -> RecentSearch.PodcastSearch(
                 id = id,
                 podcastId = contentId ?: return null,
                 title = title ?: return null,
@@ -79,7 +80,7 @@ class RecentSearchRepositoryImpl @Inject constructor(
                 author = subtitle ?: "",
                 searchedAt = searchedAt,
             )
-            "episode" -> RecentSearch.EpisodeSearch(
+            RecentSearchType.EPISODE -> RecentSearch.EpisodeSearch(
                 id = id,
                 episodeId = contentId ?: return null,
                 title = title ?: return null,
@@ -87,7 +88,6 @@ class RecentSearchRepositoryImpl @Inject constructor(
                 feedTitle = subtitle ?: "",
                 searchedAt = searchedAt,
             )
-            else -> null
         }
     }
 }

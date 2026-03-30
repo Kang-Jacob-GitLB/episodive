@@ -79,60 +79,60 @@ class LibraryViewModel @Inject constructor(
 
     private val _section = MutableStateFlow(LibrarySection.All)
 
-    val playedEpisodesPaging: Flow<PagingData<PlayedUiModel>> =
+    val playedEpisodesPaging: Flow<PagingData<SeparatedUiModel<Episode>>> =
         getAllPlayedEpisodesPagingUseCase().map { pagingData ->
             pagingData
-                .map { episode -> PlayedUiModel.EpisodeModel(episode) }
+                .map { episode -> SeparatedUiModel.Content(episode) }
                 .insertSeparators { before, after ->
                     if (after == null) {
                         return@insertSeparators null
                     }
 
-                    val beforeDate = before?.episode?.playedAt?.toHumanReadable()
-                    val afterDate = after.episode.playedAt?.toHumanReadable()
+                    val beforeDate = before?.data?.playedAt?.toHumanReadable()
+                    val afterDate = after.data.playedAt?.toHumanReadable()
 
                     if (before == null || beforeDate != afterDate) {
-                        afterDate?.let { PlayedUiModel.SeparatorModel(it) }
+                        afterDate?.let { SeparatedUiModel.Separator(it) }
                     } else {
                         null
                     }
                 }
         }.cachedIn(viewModelScope)
 
-    val likedEpisodesPaging: Flow<PagingData<LikedUiModel>> =
+    val likedEpisodesPaging: Flow<PagingData<SeparatedUiModel<Episode>>> =
         getLikedEpisodesPagingUseCase().map { pagingData ->
             pagingData
-                .map { episode -> LikedUiModel.EpisodeModel(episode) }
+                .map { episode -> SeparatedUiModel.Content(episode) }
                 .insertSeparators { before, after ->
                     if (after == null) {
                         return@insertSeparators null
                     }
 
-                    val beforeDate = before?.episode?.likedAt?.toHumanReadable()
-                    val afterDate = after.episode.likedAt?.toHumanReadable()
+                    val beforeDate = before?.data?.likedAt?.toHumanReadable()
+                    val afterDate = after.data.likedAt?.toHumanReadable()
 
                     if (before == null || beforeDate != afterDate) {
-                        afterDate?.let { LikedUiModel.SeparatorModel(it) }
+                        afterDate?.let { SeparatedUiModel.Separator(it) }
                     } else {
                         null
                     }
                 }
         }.cachedIn(viewModelScope)
 
-    val followedPodcastsPaging: Flow<PagingData<FollowedUiModel>> =
+    val followedPodcastsPaging: Flow<PagingData<SeparatedUiModel<Podcast>>> =
         getFollowedPodcastsPagingUseCase().map { pagingData ->
             pagingData
-                .map { podcast -> FollowedUiModel.PodcastModel(podcast) }
+                .map { podcast -> SeparatedUiModel.Content(podcast) }
                 .insertSeparators { before, after ->
                     if (after == null) {
                         return@insertSeparators null
                     }
 
-                    val beforeDate = before?.podcast?.followedAt?.toHumanReadable()
-                    val afterDate = after.podcast.followedAt?.toHumanReadable()
+                    val beforeDate = before?.data?.followedAt?.toHumanReadable()
+                    val afterDate = after.data.followedAt?.toHumanReadable()
 
                     if (before == null || beforeDate != afterDate) {
-                        afterDate?.let { FollowedUiModel.SeparatorModel(it) }
+                        afterDate?.let { SeparatedUiModel.Separator(it) }
                     } else {
                         null
                     }
@@ -142,9 +142,9 @@ class LibraryViewModel @Inject constructor(
     val state: StateFlow<LibraryState> = combine(
         _findQuery,
         _findResult,
-        getAllPlayedEpisodesUseCase(max = 10),
-        getLikedEpisodesUseCase(max = 10),
-        getFollowedPodcastsUseCase(max = 10),
+        getAllPlayedEpisodesUseCase(max = SECTION_MAX),
+        getLikedEpisodesUseCase(max = SECTION_MAX),
+        getFollowedPodcastsUseCase(max = SECTION_MAX),
         getPreferredCategoriesUseCase(),
         getSelectableCategoriesUseCase(),
         _section
@@ -230,7 +230,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun clickPodcast(podcast: Podcast) = viewModelScope.launch {
-        _effect.emit(LibraryEffect.NavigateToPodcast(podcast))
+        _effect.emit(LibraryEffect.NavigateToPodcast(podcast.id))
     }
 
     private fun toggleLikedEpisode(episode: Episode) = viewModelScope.launch {
@@ -247,6 +247,10 @@ class LibraryViewModel @Inject constructor(
 
     private fun selectSection(section: LibrarySection) = viewModelScope.launch {
         _section.emit(section)
+    }
+
+    companion object {
+        private const val SECTION_MAX = 10
     }
 }
 
@@ -279,22 +283,12 @@ sealed interface LibraryAction {
 }
 
 sealed interface LibraryEffect {
-    data class NavigateToPodcast(val podcast: Podcast) : LibraryEffect
+    data class NavigateToPodcast(val podcastId: Long) : LibraryEffect
 }
 
 enum class LibrarySection { All, RecentlyListened, Liked, Followed, Preferred; }
 
-sealed interface PlayedUiModel {
-    data class SeparatorModel(val date: String) : PlayedUiModel
-    data class EpisodeModel(val episode: Episode) : PlayedUiModel
-}
-
-sealed interface LikedUiModel {
-    data class SeparatorModel(val date: String) : LikedUiModel
-    data class EpisodeModel(val episode: Episode) : LikedUiModel
-}
-
-sealed interface FollowedUiModel {
-    data class SeparatorModel(val date: String) : FollowedUiModel
-    data class PodcastModel(val podcast: Podcast) : FollowedUiModel
+sealed interface SeparatedUiModel<out T> {
+    data class Separator(val label: String) : SeparatedUiModel<Nothing>
+    data class Content<T>(val data: T) : SeparatedUiModel<T>
 }

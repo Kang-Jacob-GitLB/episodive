@@ -12,7 +12,7 @@ android {
 dependencies {
     implementation(projects.core.common)
     implementation(projects.core.domain)
-    implementation(projects.core.testing)
+    testImplementation(projects.core.testing)
     implementation(projects.core.model)
 
     //----- Seeker

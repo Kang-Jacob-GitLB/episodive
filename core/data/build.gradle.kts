@@ -7,14 +7,6 @@ plugins {
 
 android {
     namespace = "io.jacob.episodive.core.data"
-
-    lint {
-        // FIXME: Temporarily disabled, as it is causing issues with the build process.
-        disable += setOf(
-            "FlowOperatorInvokedInComposition",
-            "CoroutineCreationDuringComposition"
-        )
-    }
 }
 
 dependencies {
@@ -30,7 +22,7 @@ dependencies {
     implementation(libs.androidx.media3.common)
 
     //----- Coil
-    implementation(libs.coil.compose)
+    implementation(libs.coil)
 
     //----- Palette
     implementation(libs.androidx.palette.ktx)

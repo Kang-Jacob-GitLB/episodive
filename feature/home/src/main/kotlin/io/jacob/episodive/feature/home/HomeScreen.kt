@@ -53,7 +53,6 @@ import io.jacob.episodive.core.ui.ChannelSection
 import io.jacob.episodive.core.ui.EpisodesSection
 import io.jacob.episodive.core.ui.PlayingEpisodesSection
 import io.jacob.episodive.core.ui.PodcastsSection
-import io.jacob.episodive.core.ui.PodcastsWithAuthorSection
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -184,9 +183,10 @@ internal fun HomeScreen(
                         contentPadding = PaddingValues(vertical = 16.dp),
                     ) {
                         itemWithDivider {
-                            PodcastsWithAuthorSection(
+                            PodcastsSection(
                                 title = stringResource(R.string.feature_home_section_my_recent_feeds),
                                 podcasts = userRecentPodcasts,
+                                subtitleProvider = { it.ownerName.ifEmpty { it.author } },
                                 onPodcastClick = { feed ->
                                     onPodcastClick(feed.id)
                                 }
@@ -203,9 +203,10 @@ internal fun HomeScreen(
                         }
 
                         itemWithDivider {
-                            PodcastsWithAuthorSection(
+                            PodcastsSection(
                                 title = stringResource(R.string.feature_home_section_my_trending_feeds),
                                 podcasts = userTrendingPodcasts,
+                                subtitleProvider = { it.ownerName.ifEmpty { it.author } },
                                 onPodcastClick = { feed ->
                                     onPodcastClick(feed.id)
                                 }
@@ -226,9 +227,10 @@ internal fun HomeScreen(
                         }
 
                         itemWithDivider {
-                            PodcastsWithAuthorSection(
+                            PodcastsSection(
                                 title = stringResource(R.string.feature_home_section_trending_in_local),
                                 podcasts = localTrendingPodcasts,
+                                subtitleProvider = { it.ownerName.ifEmpty { it.author } },
                                 onPodcastClick = { feed ->
                                     onPodcastClick(feed.id)
                                 }
@@ -236,9 +238,10 @@ internal fun HomeScreen(
                         }
 
                         itemWithDivider {
-                            PodcastsWithAuthorSection(
+                            PodcastsSection(
                                 title = stringResource(R.string.feature_home_section_trending_in_foreign),
                                 podcasts = foreignTrendingPodcasts,
+                                subtitleProvider = { it.ownerName.ifEmpty { it.author } },
                                 onPodcastClick = { feed ->
                                     onPodcastClick(feed.id)
                                 }

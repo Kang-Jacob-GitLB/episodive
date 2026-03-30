@@ -3,6 +3,7 @@ package io.jacob.episodive.core.database.dao
 import app.cash.turbine.test
 import io.jacob.episodive.core.database.RoomDatabaseRule
 import io.jacob.episodive.core.database.model.RecentSearchEntity
+import io.jacob.episodive.core.model.RecentSearchType
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -36,21 +37,21 @@ class RecentSearchDaoTest {
             val now = Clock.System.now()
             dao.upsertRecentSearch(
                 RecentSearchEntity(
-                    type = "query",
+                    type = RecentSearchType.QUERY,
                     query = "query1",
                     searchedAt = now
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
-                    type = "query",
+                    type = RecentSearchType.QUERY,
                     query = "query2",
                     searchedAt = now.plus(1.minutes)
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
-                    type = "query",
+                    type = RecentSearchType.QUERY,
                     query = "query3",
                     searchedAt = now.plus(2.minutes)
                 )
@@ -75,21 +76,21 @@ class RecentSearchDaoTest {
             val now = Clock.System.now()
             dao.upsertRecentSearch(
                 RecentSearchEntity(
-                    type = "query",
+                    type = RecentSearchType.QUERY,
                     query = "query1",
                     searchedAt = now
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
-                    type = "query",
+                    type = RecentSearchType.QUERY,
                     query = "query2",
                     searchedAt = now.plus(1.minutes)
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
-                    type = "query",
+                    type = RecentSearchType.QUERY,
                     query = "query3",
                     searchedAt = now.plus(2.minutes)
                 )
@@ -113,21 +114,21 @@ class RecentSearchDaoTest {
             val now = Clock.System.now()
             dao.upsertRecentSearch(
                 RecentSearchEntity(
-                    type = "query",
+                    type = RecentSearchType.QUERY,
                     query = "query1",
                     searchedAt = now
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
-                    type = "query",
+                    type = RecentSearchType.QUERY,
                     query = "query2",
                     searchedAt = now.plus(1.minutes)
                 )
             )
             dao.upsertRecentSearch(
                 RecentSearchEntity(
-                    type = "query",
+                    type = RecentSearchType.QUERY,
                     query = "query3",
                     searchedAt = now.plus(2.minutes)
                 )

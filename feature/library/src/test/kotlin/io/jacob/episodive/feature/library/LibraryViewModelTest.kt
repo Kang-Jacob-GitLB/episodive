@@ -246,7 +246,7 @@ class LibraryViewModelTest {
 
             viewModel.effect.test {
                 viewModel.sendAction(LibraryAction.ClickPodcast(podcast))
-                assertEquals(LibraryEffect.NavigateToPodcast(podcast), awaitItem())
+                assertEquals(LibraryEffect.NavigateToPodcast(podcast.id), awaitItem())
             }
         }
 
