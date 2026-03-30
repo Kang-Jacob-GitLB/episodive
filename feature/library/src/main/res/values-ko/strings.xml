@@ -6,10 +6,12 @@
     <string name="feature_library_filter_liked">좋아요 표시한</string>
     <string name="feature_library_filter_followed">팔로우한</string>
     <string name="feature_library_filter_preferred">선호하는</string>
+    <string name="feature_library_filter_saved">저장한</string>
     <string name="feature_library_section_recently_listened_episodes">최근 들었던 에피소드</string>
     <string name="feature_library_section_liked_episodes">좋아요 표시한 에피소드</string>
     <string name="feature_library_section_followed_podcasts">팔로우한 팟캐스트</string>
     <string name="feature_library_section_preferred_categories">선호하는 카테고리</string>
+    <string name="feature_library_section_saved_episodes">저장한 에피소드</string>
     <string name="feature_library_find_your_library">당신의 라이브러리를 찾아보세요</string>
     <string name="feature_library_not_found_results">결과를 찾을 수 없습니다.</string>
 </resources>

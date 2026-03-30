@@ -52,6 +52,7 @@ class PlayerScreenTest {
                         Chapter("Chapter 3", 3000.seconds, 6000.seconds),
                     ),
                     onToggleFollowedPodcast = {},
+                    onToggleSave = {},
                     cue = "test cue text",
                 )
             }
@@ -135,6 +136,7 @@ class PlayerScreenTest {
                     onSpeedChange = {},
                     chapters = emptyList(),
                     onToggleFollowedPodcast = {},
+                    onToggleSave = {},
                     cue = "",
                 )
             }

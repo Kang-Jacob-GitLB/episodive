@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import io.jacob.episodive.core.common.TimeProvider
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
+import io.jacob.episodive.core.domain.usecase.episode.SaveEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.UpdatePlayedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
@@ -56,6 +57,7 @@ class PlayerViewModelTest {
     private val toggleFollowedUseCase = mockk<ToggleFollowedUseCase>(relaxed = true)
     private val saveLastPlayStateUseCase = mockk<SaveLastPlayStateUseCase>(relaxed = true)
     private val restoreLastPlayStateUseCase = mockk<RestoreLastPlayStateUseCase>(relaxed = true)
+    private val saveEpisodeUseCase = mockk<SaveEpisodeUseCase>(relaxed = true)
     private val timeProvider = mockk<TimeProvider>(relaxed = true)
 
     private val progressFlow = MutableStateFlow(Progress(0.seconds, 0.seconds, 0.seconds))
@@ -102,6 +104,7 @@ class PlayerViewModelTest {
             toggleFollowedUseCase = toggleFollowedUseCase,
             saveLastPlayStateUseCase = saveLastPlayStateUseCase,
             restoreLastPlayStateUseCase = restoreLastPlayStateUseCase,
+            saveEpisodeUseCase = saveEpisodeUseCase,
             timeProvider = timeProvider,
         ).also { viewModelInstance = it }
     }

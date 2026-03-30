@@ -13,6 +13,9 @@ import io.jacob.episodive.core.domain.usecase.episode.GetAllPlayedEpisodesPaging
 import io.jacob.episodive.core.domain.usecase.episode.GetAllPlayedEpisodesUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesPagingUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetLikedEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.episode.GetSavedEpisodesUseCase
+import io.jacob.episodive.core.domain.usecase.episode.GetSavedEpisodesPagingUseCase
+import io.jacob.episodive.core.domain.usecase.episode.SaveEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.ResumeEpisodeUseCase
@@ -51,6 +54,8 @@ class LibraryViewModel @Inject constructor(
     private val findInLibraryUseCase: FindInLibraryUseCase,
     getAllPlayedEpisodesUseCase: GetAllPlayedEpisodesUseCase,
     getLikedEpisodesUseCase: GetLikedEpisodesUseCase,
+    getSavedEpisodesUseCase: GetSavedEpisodesUseCase,
+    getSavedEpisodesPagingUseCase: GetSavedEpisodesPagingUseCase,
     getFollowedPodcastsUseCase: GetFollowedPodcastsUseCase,
     getPreferredCategoriesUseCase: GetPreferredCategoriesUseCase,
     getSelectableCategoriesUseCase: GetSelectableCategoriesUseCase,
@@ -60,6 +65,7 @@ class LibraryViewModel @Inject constructor(
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val resumeEpisodeUseCase: ResumeEpisodeUseCase,
     private val toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase,
+    private val saveEpisodeUseCase: SaveEpisodeUseCase,
     private val toggleFollowedUseCase: ToggleFollowedUseCase,
     private val toggleCategoryUseCase: ToggleCategoryUseCase,
 ) : ViewModel() {
@@ -119,6 +125,26 @@ class LibraryViewModel @Inject constructor(
                 }
         }.cachedIn(viewModelScope)
 
+    val savedEpisodesPaging: Flow<PagingData<SeparatedUiModel<Episode>>> =
+        getSavedEpisodesPagingUseCase().map { pagingData ->
+            pagingData
+                .map { episode -> SeparatedUiModel.Content(episode) }
+                .insertSeparators { before, after ->
+                    if (after == null) {
+                        return@insertSeparators null
+                    }
+
+                    val beforeDate = before?.data?.savedAt?.toHumanReadable()
+                    val afterDate = after.data.savedAt?.toHumanReadable()
+
+                    if (before == null || beforeDate != afterDate) {
+                        afterDate?.let { SeparatedUiModel.Separator(it) }
+                    } else {
+                        null
+                    }
+                }
+        }.cachedIn(viewModelScope)
+
     val followedPodcastsPaging: Flow<PagingData<SeparatedUiModel<Podcast>>> =
         getFollowedPodcastsPagingUseCase().map { pagingData ->
             pagingData
@@ -144,16 +170,18 @@ class LibraryViewModel @Inject constructor(
         _findResult,
         getAllPlayedEpisodesUseCase(max = SECTION_MAX),
         getLikedEpisodesUseCase(max = SECTION_MAX),
+        getSavedEpisodesUseCase(max = SECTION_MAX),
         getFollowedPodcastsUseCase(max = SECTION_MAX),
         getPreferredCategoriesUseCase(),
         getSelectableCategoriesUseCase(),
         _section
-    ) { query, result, allPlayedEpisodes, likedEpisodes, followedPodcasts, preferredCategories, selectableCategories, section ->
+    ) { query, result, allPlayedEpisodes, likedEpisodes, savedEpisodes, followedPodcasts, preferredCategories, selectableCategories, section ->
         if (query.isEmpty() && result.isAllEmpty) {
             LibraryState.Success(
                 findQuery = query,
                 allPlayedEpisodes = allPlayedEpisodes,
                 likedEpisodes = likedEpisodes,
+                savedEpisodes = savedEpisodes,
                 followedPodcasts = followedPodcasts,
                 preferredCategories = preferredCategories,
                 selectableCategories = selectableCategories,
@@ -164,6 +192,7 @@ class LibraryViewModel @Inject constructor(
                 findQuery = query,
                 allPlayedEpisodes = result.playingEpisodes,
                 likedEpisodes = result.likedEpisodes,
+                savedEpisodes = result.savedEpisodes,
                 followedPodcasts = result.followedPodcasts,
                 preferredCategories = emptyList(),
                 selectableCategories = selectableCategories,
@@ -198,6 +227,7 @@ class LibraryViewModel @Inject constructor(
                 is LibraryAction.ClickEpisode -> playEpisode(action.episode)
                 is LibraryAction.ClickPodcast -> clickPodcast(action.podcast)
                 is LibraryAction.ToggleLikedEpisode -> toggleLikedEpisode(action.episode)
+                is LibraryAction.ToggleSavedEpisode -> toggleSavedEpisode(action.episode)
                 is LibraryAction.ToggleFollowedPodcast -> toggleFollowedPodcast(action.podcast)
                 is LibraryAction.TogglePreferredCategory -> toggleCategory(action.category)
                 is LibraryAction.SelectSection -> selectSection(action.section)
@@ -237,6 +267,10 @@ class LibraryViewModel @Inject constructor(
         toggleLikedEpisodeUseCase(episode)
     }
 
+    private fun toggleSavedEpisode(episode: Episode) = viewModelScope.launch {
+        saveEpisodeUseCase(episode)
+    }
+
     private fun toggleFollowedPodcast(followedPodcast: Podcast) = viewModelScope.launch {
         toggleFollowedUseCase(followedPodcast.id)
     }
@@ -260,6 +294,7 @@ sealed interface LibraryState {
         val findQuery: String,
         val allPlayedEpisodes: List<Episode>,
         val likedEpisodes: List<Episode>,
+        val savedEpisodes: List<Episode>,
         val followedPodcasts: List<Podcast>,
         val preferredCategories: List<Category>,
         val selectableCategories: List<SelectableCategory>,
@@ -277,6 +312,7 @@ sealed interface LibraryAction {
     data class ClickEpisode(val episode: Episode) : LibraryAction
     data class ClickPodcast(val podcast: Podcast) : LibraryAction
     data class ToggleLikedEpisode(val episode: Episode) : LibraryAction
+    data class ToggleSavedEpisode(val episode: Episode) : LibraryAction
     data class ToggleFollowedPodcast(val podcast: Podcast) : LibraryAction
     data class TogglePreferredCategory(val category: Category) : LibraryAction
     data class SelectSection(val section: LibrarySection) : LibraryAction
@@ -286,7 +322,7 @@ sealed interface LibraryEffect {
     data class NavigateToPodcast(val podcastId: Long) : LibraryEffect
 }
 
-enum class LibrarySection { All, RecentlyListened, Liked, Followed, Preferred; }
+enum class LibrarySection { All, RecentlyListened, Liked, Saved, Followed, Preferred; }
 
 sealed interface SeparatedUiModel<out T> {
     data class Separator(val label: String) : SeparatedUiModel<Nothing>

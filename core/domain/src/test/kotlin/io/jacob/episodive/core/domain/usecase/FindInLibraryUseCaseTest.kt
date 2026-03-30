@@ -40,6 +40,9 @@ class FindInLibraryUseCaseTest {
                 episodeRepository.getLikedEpisodes(any(), any())
             } returns mockk(relaxed = true)
             coEvery {
+                episodeRepository.getSavedEpisodes(any(), any())
+            } returns mockk(relaxed = true)
+            coEvery {
                 podcastRepository.getFollowedPodcasts(any(), any())
             } returns mockk(relaxed = true)
 
@@ -52,6 +55,7 @@ class FindInLibraryUseCaseTest {
             coVerifySequence {
                 episodeRepository.getPlayedEpisodes(false, "query", 1000)
                 episodeRepository.getLikedEpisodes("query", 1000)
+                episodeRepository.getSavedEpisodes("query", 1000)
                 podcastRepository.getFollowedPodcasts("query", 1000)
             }
         }

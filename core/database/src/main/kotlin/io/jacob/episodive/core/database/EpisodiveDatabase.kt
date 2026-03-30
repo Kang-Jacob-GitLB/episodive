@@ -27,8 +27,10 @@ import io.jacob.episodive.core.database.model.PodcastFtsEntity
 import io.jacob.episodive.core.database.model.PodcastGroupEntity
 import io.jacob.episodive.core.database.model.PodcastWithExtrasView
 import io.jacob.episodive.core.database.model.RecentSearchEntity
+import io.jacob.episodive.core.database.model.SavedEpisodeEntity
 import io.jacob.episodive.core.database.model.SoundbiteEntity
 import io.jacob.episodive.core.database.util.CategoryConverter
+import io.jacob.episodive.core.database.util.DownloadStatusConverter
 import io.jacob.episodive.core.database.util.DurationConverter
 import io.jacob.episodive.core.database.util.EpisodeTypeConverter
 import io.jacob.episodive.core.database.util.InstantConverter
@@ -49,12 +51,13 @@ import io.jacob.episodive.core.database.util.RecentSearchTypeConverter
         FeedEntity::class,
         SoundbiteEntity::class,
         RecentSearchEntity::class,
+        SavedEpisodeEntity::class,
     ],
     views = [
         PodcastWithExtrasView::class,
         EpisodeWithExtrasView::class,
     ],
-    version = 9,
+    version = 10,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3, spec = AutoMigration2to3::class),
@@ -68,6 +71,7 @@ import io.jacob.episodive.core.database.util.RecentSearchTypeConverter
 )
 @TypeConverters(
     CategoryConverter::class,
+    DownloadStatusConverter::class,
     DurationConverter::class,
     EpisodeTypeConverter::class,
     InstantConverter::class,

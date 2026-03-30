@@ -1,5 +1,8 @@
 package io.jacob.episodive.core.designsystem.icon
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.DownloadDone
 import io.jacob.episodive.core.designsystem.icon.tabler.ArrowLeft
 import io.jacob.episodive.core.designsystem.icon.tabler.ArrowsDiagonal
 import io.jacob.episodive.core.designsystem.icon.tabler.ArrowsDiagonalMinimize2
@@ -12,6 +15,8 @@ import io.jacob.episodive.core.designsystem.icon.tabler.ChevronRight
 import io.jacob.episodive.core.designsystem.icon.tabler.Container
 import io.jacob.episodive.core.designsystem.icon.tabler.ContainerFilled
 import io.jacob.episodive.core.designsystem.icon.tabler.CreativeCommonsBy
+import io.jacob.episodive.core.designsystem.icon.tabler.DeviceFloppy
+import io.jacob.episodive.core.designsystem.icon.tabler.DeviceFloppyFilled
 import io.jacob.episodive.core.designsystem.icon.tabler.DotsVertical
 import io.jacob.episodive.core.designsystem.icon.tabler.Fountain
 import io.jacob.episodive.core.designsystem.icon.tabler.FountainFilled
@@ -51,6 +56,8 @@ object EpisodiveIcons {
     val ClipFilled = Tabler.ContainerFilled
     val Close = Tabler.X
     val Collapse = Tabler.ArrowsDiagonalMinimize2
+    val Download = Icons.Default.Download
+    val DownloadDone = Icons.Default.DownloadDone
     val Error = Tabler.PhotoExclamation
     val Expand = Tabler.ArrowsDiagonal
     val Forward30 = Tabler.RewindForward30
@@ -75,6 +82,8 @@ object EpisodiveIcons {
     val PlaylistX = Tabler.PlaylistX
     val PublicationDate = Tabler.CalendarTime
     val Replay15 = Tabler.RewindBackward15
+    val Save = Tabler.DeviceFloppy
+    val SaveFilled = Tabler.DeviceFloppyFilled
     val Search = Tabler.Zoom
     val SearchFilled = Tabler.ZoomFilled
     val SkipNext = Tabler.PlayerSkipForward

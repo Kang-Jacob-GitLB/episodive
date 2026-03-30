@@ -80,6 +80,7 @@ internal fun PodcastRoute(
                     viewModel.sendAction(PodcastAction.PlayEpisode(episode, visibleEpisodes))
                 },
                 onToggleLikedEpisode = { viewModel.sendAction(PodcastAction.ToggleLikedEpisode(it)) },
+                onToggleSavedEpisode = { viewModel.sendAction(PodcastAction.ToggleSavedEpisode(it)) },
                 onBackClick = onBackClick,
                 onShowSnackbar = onShowSnackbar
             )
@@ -97,6 +98,7 @@ internal fun PodcastScreen(
     onFollowClick: () -> Unit,
     onEpisodeClick: (Episode, List<Episode>) -> Unit,
     onToggleLikedEpisode: (Episode) -> Unit,
+    onToggleSavedEpisode: (Episode) -> Unit = {},
     onBackClick: () -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
@@ -154,6 +156,7 @@ internal fun PodcastScreen(
                             onEpisodeClick(episode, visibleEpisodes)
                         },
                         onToggleLiked = { onToggleLikedEpisode(episode) },
+                        onToggleSaved = { onToggleSavedEpisode(episode) },
                     )
                 }
             }

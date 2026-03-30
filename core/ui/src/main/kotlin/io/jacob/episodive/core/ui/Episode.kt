@@ -70,6 +70,7 @@ fun EpisodesSection(
     episodes: List<Episode>,
     onEpisodeClick: (Episode) -> Unit,
     onToggleLikedEpisode: (Episode) -> Unit,
+    onToggleSavedEpisode: (Episode) -> Unit = {},
 ) {
     SectionHeader(
         modifier = modifier,
@@ -87,7 +88,8 @@ fun EpisodesSection(
                     progress = 0f,
                     isLoading = false,
                     onClick = { onEpisodeClick(episode) },
-                    onToggleLiked = { onToggleLikedEpisode(episode) }
+                    onToggleLiked = { onToggleLikedEpisode(episode) },
+                    onToggleSaved = { onToggleSavedEpisode(episode) },
                 )
             }
         }
@@ -100,6 +102,7 @@ fun LazyListScope.episodeItems(
     playingIndex: Int,
     onEpisodeClick: (Episode) -> Unit,
     onToggleLikedEpisode: (Episode) -> Unit,
+    onToggleSavedEpisode: (Episode) -> Unit = {},
 ) {
     itemsIndexed(
         items = episodes,
@@ -113,7 +116,8 @@ fun LazyListScope.episodeItems(
             progress = 0f,
             isLoading = index == playingIndex,
             onClick = { onEpisodeClick(episode) },
-            onToggleLiked = { onToggleLikedEpisode(episode) }
+            onToggleLiked = { onToggleLikedEpisode(episode) },
+            onToggleSaved = { onToggleSavedEpisode(episode) },
         )
     }
 }
@@ -126,6 +130,7 @@ fun EpisodeItem(
     isLoading: Boolean = false,
     onClick: () -> Unit,
     onToggleLiked: () -> Unit,
+    onToggleSaved: () -> Unit = {},
 ) {
     Row(
         modifier = modifier
@@ -214,6 +219,34 @@ fun EpisodeItem(
                         modifier = Modifier.size(16.dp),
                         imageVector = EpisodiveIcons.LikeFilled,
                         contentDescription = "Unlike",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            )
+
+            EpisodiveIconToggleButton(
+                modifier = Modifier.size(32.dp),
+                checked = episode.isSaved,
+                onCheckedChange = { onToggleSaved() },
+                colors = IconButtonDefaults.iconToggleButtonColors(
+                    checkedContainerColor = Color.Transparent,
+                    checkedContentColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+                icon = {
+                    Icon(
+                        modifier = Modifier.size(16.dp),
+                        imageVector = EpisodiveIcons.Save,
+                        contentDescription = "Save",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                },
+                checkedIcon = {
+                    Icon(
+                        modifier = Modifier.size(16.dp),
+                        imageVector = EpisodiveIcons.SaveFilled,
+                        contentDescription = "Unsave",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -667,6 +700,7 @@ private fun EpisodeItemPreview() {
             isLoading = false,
             onClick = {},
             onToggleLiked = {},
+            onToggleSaved = {},
         )
     }
 }

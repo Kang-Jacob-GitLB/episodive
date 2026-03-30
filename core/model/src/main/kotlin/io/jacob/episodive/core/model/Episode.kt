@@ -41,6 +41,9 @@ data class Episode(
     val isCompleted: Boolean = false,
     val clipStartTime: Instant? = null, // for soundbite
     val clipDuration: Duration? = null, // for soundbite
+    val savedAt: Instant? = null,
+    val filePath: String? = null,
+    val downloadStatus: DownloadStatus? = null,
 ) {
     val isLive: Boolean
         get() = enclosureLength == 0L ||
@@ -50,6 +53,10 @@ data class Episode(
                 contentLink != null
 
     val isLiked: Boolean = likedAt != null
+
+    val isSaved: Boolean = savedAt != null
+
+    val isDownloaded: Boolean = downloadStatus == DownloadStatus.COMPLETED
 
     val progress: Float = duration?.let {
         if (it == Duration.ZERO) 0f
