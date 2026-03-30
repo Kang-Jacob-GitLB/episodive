@@ -186,7 +186,7 @@ fun EpisodeItem(
                     Icon(
                         modifier = Modifier.size(24.dp),
                         imageVector = EpisodiveIcons.Play,
-                        contentDescription = "Like",
+                        contentDescription = "Play",
                     )
                 },
             )

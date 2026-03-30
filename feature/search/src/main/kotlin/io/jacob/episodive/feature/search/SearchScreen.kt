@@ -56,7 +56,6 @@ import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.ui.EpisodeItem
 import io.jacob.episodive.core.ui.EpisodesSection
 import io.jacob.episodive.core.ui.PodcastsSection
-import io.jacob.episodive.core.ui.PodcastsWithAuthorSection
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -178,11 +177,12 @@ private fun SearchContentsOnCollapse(
     ) {
         if (podcasts.isNotEmpty()) {
             item {
-                PodcastsWithAuthorSection(
+                PodcastsSection(
                     modifier = Modifier
                         .fillMaxWidth(),
                     title = stringResource(R.string.feature_search_section_global_trending_feeds),
                     podcasts = podcasts,
+                    subtitleProvider = { it.ownerName.ifEmpty { it.author } },
                     onPodcastClick = onPodcastClick
                 )
             }
@@ -262,13 +262,10 @@ private fun SearchResultsOnExpand(
                 }
 
                 item {
-                    EpisodesSection(
+                    SectionHeader(
                         modifier = Modifier
                             .fillMaxWidth(),
                         title = stringResource(R.string.feature_search_section_episodes),
-                        episodes = emptyList(),
-                        onEpisodeClick = onEpisodeClick,
-                        onToggleLikedEpisode = onToggleLikedEpisode,
                     )
                 }
 

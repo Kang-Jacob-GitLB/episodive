@@ -113,7 +113,7 @@ fun PlayerBottomSheet(
     LaunchedEffect(Unit) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is PlayerEffect.NavigateToPodcast -> onPodcastClick(effect.podcast.id)
+                is PlayerEffect.NavigateToPodcast -> onPodcastClick(effect.podcastId)
                 is PlayerEffect.ShowPlayerBottomSheet -> {}
                 is PlayerEffect.HidePlayerBottomSheet -> sheetState.hide()
             }

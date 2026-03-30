@@ -22,14 +22,12 @@ fun NavController.navigateToSearch(navOptions: NavOptions) =
     navigate(route = SearchBaseRoute, navOptions)
 
 private fun NavGraphBuilder.searchScreen(
-    onPodcatClick: (Long) -> Unit,
-//    onStoryClick: (Story) -> Unit,
+    onPodcastClick: (Long) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     composable<SearchRoute> {
         SearchRoute(
-            onPodcastClick = onPodcatClick,
-//            onStoryClick = onStoryClick,
+            onPodcastClick = onPodcastClick,
             onShowSnackbar = onShowSnackbar
         )
     }
@@ -39,7 +37,6 @@ private fun NavGraphBuilder.searchScreen(
 private fun SearchNavHost(
     navController: NavHostController,
     navigateToPodcast: NavController.(Long) -> Unit,
-//    navigateToStoryDetail: NavController.(Story) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
 ) {
@@ -48,8 +45,7 @@ private fun SearchNavHost(
         startDestination = SearchRoute
     ) {
         searchScreen(
-            onPodcatClick = { navController.navigateToPodcast(it) },
-//            onStoryClick = { navController.navigateToStoryDetail(it) },
+            onPodcastClick = { navController.navigateToPodcast(it) },
             onShowSnackbar = onShowSnackbar,
         )
 
@@ -60,7 +56,6 @@ private fun SearchNavHost(
 fun NavGraphBuilder.searchSection(
     onRegisterNestedNavController: (NavHostController) -> Unit,
     navigateToPodcast: NavController.(Long) -> Unit,
-//    navigateToStoryDetail: NavController.(Story) -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     destination: NavGraphBuilder.(NavController) -> Unit,
 ) {
@@ -74,7 +69,6 @@ fun NavGraphBuilder.searchSection(
         SearchNavHost(
             navController = navController,
             navigateToPodcast = navigateToPodcast,
-//            navigateToStoryDetail = navigateToStoryDetail,
             onShowSnackbar = onShowSnackbar,
             destination = destination
         )

@@ -4,6 +4,7 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import io.jacob.episodive.core.data.util.paging.PagingDefaults
 import io.jacob.episodive.core.data.util.paging.SoundbiteEpisodePagingSource
 import io.jacob.episodive.core.data.util.query.EpisodeQuery
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
@@ -38,11 +39,7 @@ class EpisodeRepositoryImpl @Inject constructor(
     private val soundbiteRemoteDataSource: SoundbiteRemoteDataSource,
     private val remoteUpdater: EpisodeRemoteUpdater.Factory,
 ) : EpisodeRepository {
-    private val config = PagingConfig(
-        pageSize = 20,
-        prefetchDistance = 5,
-        enablePlaceholders = false
-    )
+    private val config = PagingDefaults.DEFAULT_CONFIG
 
     override suspend fun upsertEpisode(episode: Episode) {
         episodeLocalDataSource.upsertEpisode(episode.toEpisodeEntity())

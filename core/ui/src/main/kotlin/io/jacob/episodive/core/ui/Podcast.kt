@@ -54,6 +54,7 @@ fun PodcastsSection(
     modifier: Modifier = Modifier,
     title: String,
     podcasts: List<Podcast>,
+    subtitleProvider: ((Podcast) -> String)? = null,
     onMore: () -> Unit = {},
     onPodcastClick: (Podcast) -> Unit = {},
 ) {
@@ -77,40 +78,7 @@ fun PodcastsSection(
         ) {
             podcasts(
                 podcasts = podcasts,
-                onPodcastClick = onPodcastClick
-            )
-        }
-    }
-}
-
-@Stable
-@Composable
-fun PodcastsWithAuthorSection(
-    modifier: Modifier = Modifier,
-    title: String,
-    podcasts: List<Podcast>,
-    onPodcastClick: (Podcast) -> Unit = {},
-) {
-    SectionHeader(
-        modifier = modifier,
-        title = title,
-    ) {
-        val lazyListState = rememberLazyListState()
-        val flingBehavior = rememberSnapFlingBehavior(
-            lazyListState = lazyListState,
-            snapPosition = SnapPosition.Start,
-        )
-
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth(),
-            state = lazyListState,
-            flingBehavior = flingBehavior,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp),
-        ) {
-            podcastsWithAuthor(
-                podcasts = podcasts,
+                subtitleProvider = subtitleProvider,
                 onPodcastClick = onPodcastClick
             )
         }
@@ -120,6 +88,7 @@ fun PodcastsWithAuthorSection(
 fun LazyListScope.podcasts(
     itemModifier: Modifier = Modifier,
     podcasts: List<Podcast>,
+    subtitleProvider: ((Podcast) -> String)? = null,
     onPodcastClick: (Podcast) -> Unit,
 ) = items(
     items = podcasts,
@@ -128,21 +97,7 @@ fun LazyListScope.podcasts(
     PodcastItem(
         modifier = itemModifier,
         podcast = podcast,
-        onClick = { onPodcastClick(podcast) }
-    )
-}
-
-fun LazyListScope.podcastsWithAuthor(
-    itemModifier: Modifier = Modifier,
-    podcasts: List<Podcast>,
-    onPodcastClick: (Podcast) -> Unit,
-) = items(
-    items = podcasts,
-    key = { it.id }
-) { podcast ->
-    PodcastWithAuthorItem(
-        modifier = itemModifier,
-        podcast = podcast,
+        subtitle = subtitleProvider?.invoke(podcast),
         onClick = { onPodcastClick(podcast) }
     )
 }
@@ -151,9 +106,12 @@ fun LazyListScope.podcastsWithAuthor(
 fun PodcastItem(
     modifier: Modifier = Modifier,
     podcast: Podcast,
+    subtitle: String? = null,
     onClick: () -> Unit = {},
 ) {
     val textSectionMinHeight = rememberPodcastTextSectionMinHeight()
+    val subtitleText = subtitle
+        ?: "${podcast.episodeCount} ${stringResource(R.string.core_ui_episodes)}"
 
     Column(
         modifier = modifier
@@ -185,55 +143,7 @@ fun PodcastItem(
             Spacer(modifier = Modifier.height(TextSectionSpacing))
 
             Text(
-                text = "${podcast.episodeCount} ${stringResource(R.string.core_ui_episodes)}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
-@Composable
-fun PodcastWithAuthorItem(
-    modifier: Modifier = Modifier,
-    podcast: Podcast,
-    onClick: () -> Unit = {},
-) {
-    val textSectionMinHeight = rememberPodcastTextSectionMinHeight()
-
-    Column(
-        modifier = modifier
-            .width(140.dp)
-            .clickable { onClick() },
-    ) {
-        StateImage(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .clip(MaterialTheme.shapes.extraLarge),
-            imageUrl = podcast.image,
-            contentDescription = podcast.title,
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Column(
-            modifier = Modifier.heightIn(min = textSectionMinHeight),
-        ) {
-            Text(
-                text = podcast.title,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            Spacer(modifier = Modifier.height(TextSectionSpacing))
-
-            Text(
-                text = podcast.ownerName.ifEmpty { podcast.author },
+                text = subtitleText,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -488,8 +398,9 @@ private fun PodcastItemPreview() {
 @Composable
 private fun PodcastWithAuthorPreview() {
     EpisodiveTheme {
-        PodcastWithAuthorItem(
+        PodcastItem(
             podcast = podcastTestData,
+            subtitle = podcastTestData.ownerName.ifEmpty { podcastTestData.author },
         )
     }
 }

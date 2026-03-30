@@ -33,6 +33,7 @@ import io.jacob.episodive.core.database.util.DurationConverter
 import io.jacob.episodive.core.database.util.EpisodeTypeConverter
 import io.jacob.episodive.core.database.util.InstantConverter
 import io.jacob.episodive.core.database.util.MediumConverter
+import io.jacob.episodive.core.database.util.RecentSearchTypeConverter
 
 @Database(
     entities = [
@@ -71,6 +72,7 @@ import io.jacob.episodive.core.database.util.MediumConverter
     EpisodeTypeConverter::class,
     InstantConverter::class,
     MediumConverter::class,
+    RecentSearchTypeConverter::class,
 )
 abstract class EpisodiveDatabase : RoomDatabase() {
     abstract fun podcastDao(): PodcastDao

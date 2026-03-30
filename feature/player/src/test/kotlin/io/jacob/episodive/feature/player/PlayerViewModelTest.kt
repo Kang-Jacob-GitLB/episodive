@@ -301,7 +301,7 @@ class PlayerViewModelTest {
 
             viewModel.effect.test {
                 viewModel.sendAction(PlayerAction.ClickPodcast(podcast))
-                assertEquals(PlayerEffect.NavigateToPodcast(podcast), awaitItem())
+                assertEquals(PlayerEffect.NavigateToPodcast(podcast.id), awaitItem())
             }
         }
 

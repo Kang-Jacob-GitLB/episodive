@@ -35,9 +35,9 @@ class LibraryScreenTest {
                     followedPodcasts = podcastTestDataList,
                     preferredCategories = listOf(Category.BUSINESS, Category.COMEDY),
                     selectableCategories = Category.entries.map { SelectableCategory(it, true) },
-                    playedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map { PlayedUiModel.EpisodeModel(it) })),
-                    likedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map { LikedUiModel.EpisodeModel(it) })),
-                    followedPodcastsPaging = flowOf(PagingData.from(podcastTestDataList.map { FollowedUiModel.PodcastModel(it) })),
+                    playedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map { SeparatedUiModel.Content(it) })),
+                    likedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map { SeparatedUiModel.Content(it) })),
+                    followedPodcastsPaging = flowOf(PagingData.from(podcastTestDataList.map { SeparatedUiModel.Content(it) })),
                 )
             }
         }

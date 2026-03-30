@@ -108,6 +108,7 @@ kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime",
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 inject = { group = "javax.inject", name = "javax.inject", version.ref = "inject" }
+coil = { group = "io.coil-kt", name = "coil", version.ref = "coil" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 xerial-sqlite = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "xerialSqlite" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }

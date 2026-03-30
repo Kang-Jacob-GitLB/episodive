@@ -87,7 +87,7 @@ fun LibraryRoute(
     LaunchedEffect(Unit) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is LibraryEffect.NavigateToPodcast -> onPodcastClick(effect.podcast.id)
+                is LibraryEffect.NavigateToPodcast -> onPodcastClick(effect.podcastId)
             }
         }
     }
@@ -141,9 +141,9 @@ internal fun LibraryScreen(
     followedPodcasts: List<Podcast>,
     preferredCategories: List<Category>,
     selectableCategories: List<SelectableCategory>,
-    playedEpisodesPaging: Flow<PagingData<PlayedUiModel>>,
-    likedEpisodesPaging: Flow<PagingData<LikedUiModel>>,
-    followedPodcastsPaging: Flow<PagingData<FollowedUiModel>>,
+    playedEpisodesPaging: Flow<PagingData<SeparatedUiModel<Episode>>>,
+    likedEpisodesPaging: Flow<PagingData<SeparatedUiModel<Episode>>>,
+    followedPodcastsPaging: Flow<PagingData<SeparatedUiModel<Podcast>>>,
     onPlayedEpisodeClick: (Episode) -> Unit = {},
     onEpisodeClick: (Episode) -> Unit = {},
     onPodcastClick: (Podcast) -> Unit = {},
@@ -317,7 +317,7 @@ private fun RecentlyListenedContent(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
-    playedEpisodesPaging: Flow<PagingData<PlayedUiModel>>,
+    playedEpisodesPaging: Flow<PagingData<SeparatedUiModel<Episode>>>,
     onPlayedEpisodeClick: (Episode) -> Unit,
 ) {
     val items = playedEpisodesPaging.collectAsLazyPagingItems()
@@ -332,21 +332,21 @@ private fun RecentlyListenedContent(
             count = items.itemCount,
             key = items.itemKey {
                 when (it) {
-                    is PlayedUiModel.EpisodeModel -> it.episode.id
-                    is PlayedUiModel.SeparatorModel -> it.date
+                    is SeparatedUiModel.Content -> it.data.id
+                    is SeparatedUiModel.Separator -> it.label
                 }
             },
             contentType = {
                 when (items[it]) {
-                    is PlayedUiModel.EpisodeModel -> "episode"
-                    is PlayedUiModel.SeparatorModel -> "separator"
+                    is SeparatedUiModel.Content -> "episode"
+                    is SeparatedUiModel.Separator -> "separator"
                     null -> "loading"
                 }
             }
         ) { index ->
             when (val item = items[index] ?: return@items) {
-                is PlayedUiModel.EpisodeModel -> {
-                    val episode = item.episode
+                is SeparatedUiModel.Content -> {
+                    val episode = item.data
                     PlayedEpisodeItem(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -357,8 +357,8 @@ private fun RecentlyListenedContent(
                     )
                 }
 
-                is PlayedUiModel.SeparatorModel -> {
-                    val date = item.date
+                is SeparatedUiModel.Separator -> {
+                    val date = item.label
                     Text(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -384,7 +384,7 @@ private fun LikedContent(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
-    likedEpisodesPaging: Flow<PagingData<LikedUiModel>>,
+    likedEpisodesPaging: Flow<PagingData<SeparatedUiModel<Episode>>>,
     onLikedEpisodeClick: (Episode) -> Unit,
     onToggleLiked: (Episode) -> Unit,
 ) {
@@ -400,21 +400,21 @@ private fun LikedContent(
             count = items.itemCount,
             key = items.itemKey {
                 when (it) {
-                    is LikedUiModel.EpisodeModel -> it.episode.id
-                    is LikedUiModel.SeparatorModel -> it.date
+                    is SeparatedUiModel.Content -> it.data.id
+                    is SeparatedUiModel.Separator -> it.label
                 }
             },
             contentType = {
                 when (items[it]) {
-                    is LikedUiModel.EpisodeModel -> "episode"
-                    is LikedUiModel.SeparatorModel -> "separator"
+                    is SeparatedUiModel.Content -> "episode"
+                    is SeparatedUiModel.Separator -> "separator"
                     null -> "loading"
                 }
             }
         ) { index ->
             when (val item = items[index] ?: return@items) {
-                is LikedUiModel.EpisodeModel -> {
-                    val episode = item.episode
+                is SeparatedUiModel.Content -> {
+                    val episode = item.data
                     EpisodeItem(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -426,8 +426,8 @@ private fun LikedContent(
                     )
                 }
 
-                is LikedUiModel.SeparatorModel -> {
-                    val date = item.date
+                is SeparatedUiModel.Separator -> {
+                    val date = item.label
                     Text(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -453,7 +453,7 @@ private fun FollowedContent(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
-    followedPodcastsPaging: Flow<PagingData<FollowedUiModel>>,
+    followedPodcastsPaging: Flow<PagingData<SeparatedUiModel<Podcast>>>,
     onFollowedPodcastClick: (Podcast) -> Unit,
     onToggleFollowed: (Podcast) -> Unit,
 ) {
@@ -469,21 +469,21 @@ private fun FollowedContent(
             count = items.itemCount,
             key = items.itemKey {
                 when (it) {
-                    is FollowedUiModel.PodcastModel -> it.podcast.id
-                    is FollowedUiModel.SeparatorModel -> it.date
+                    is SeparatedUiModel.Content -> it.data.id
+                    is SeparatedUiModel.Separator -> it.label
                 }
             },
             contentType = {
                 when (items[it]) {
-                    is FollowedUiModel.PodcastModel -> "podcast"
-                    is FollowedUiModel.SeparatorModel -> "separator"
+                    is SeparatedUiModel.Content -> "podcast"
+                    is SeparatedUiModel.Separator -> "separator"
                     null -> "loading"
                 }
             }
         ) { index ->
             when (val item = items[index] ?: return@items) {
-                is FollowedUiModel.PodcastModel -> {
-                    val podcast = item.podcast
+                is SeparatedUiModel.Content -> {
+                    val podcast = item.data
                     PodcastDetailItem(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -495,8 +495,8 @@ private fun FollowedContent(
                     )
                 }
 
-                is FollowedUiModel.SeparatorModel -> {
-                    val date = item.date
+                is SeparatedUiModel.Separator -> {
+                    val date = item.label
                     Text(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -802,13 +802,13 @@ private fun LibraryScreenPreview() {
             followedPodcasts = podcastTestDataList,
             preferredCategories = Category.entries,
             playedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map {
-                PlayedUiModel.EpisodeModel(it)
+                SeparatedUiModel.Content(it)
             })),
             likedEpisodesPaging = flowOf(PagingData.from(episodeTestDataList.map {
-                LikedUiModel.EpisodeModel(it)
+                SeparatedUiModel.Content(it)
             })),
             followedPodcastsPaging = flowOf(PagingData.from(podcastTestDataList.map {
-                FollowedUiModel.PodcastModel(it)
+                SeparatedUiModel.Content(it)
             })),
             selectableCategories = Category.entries.map { category ->
                 SelectableCategory(
