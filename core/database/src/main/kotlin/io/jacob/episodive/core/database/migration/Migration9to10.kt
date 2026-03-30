@@ -28,25 +28,24 @@ val Migration9to10 = object : Migration(9, 10) {
         db.execSQL("DROP VIEW IF EXISTS episode_with_extras")
 
         // 4. 새 view 생성 (saved_episodes LEFT JOIN 포함)
+        // @DatabaseView 어노테이션이 생성하는 SQL과 정확히 일치해야 함 (백틱, 들여쓰기)
         db.execSQL(
-            """
-            CREATE VIEW episode_with_extras AS SELECT
-                episodes.*,
-                liked_episodes.likedAt AS likedAt,
-                played_episodes.playedAt AS playedAt,
-                played_episodes.position AS position,
-                played_episodes.isCompleted AS isCompleted,
-                soundbites.startTime AS clipStartTime,
-                soundbites.duration AS clipDuration,
-                saved_episodes.savedAt AS savedAt,
-                saved_episodes.filePath AS filePath,
-                saved_episodes.downloadStatus AS downloadStatus
-            FROM episodes
-            LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
-            LEFT JOIN played_episodes ON episodes.id = played_episodes.id
-            LEFT JOIN soundbites ON episodes.id = soundbites.episodeId
-            LEFT JOIN saved_episodes ON episodes.id = saved_episodes.id
-            """.trimIndent()
+            "CREATE VIEW `episode_with_extras` AS SELECT\n" +
+                "            episodes.*,\n" +
+                "            liked_episodes.likedAt AS likedAt,\n" +
+                "            played_episodes.playedAt AS playedAt,\n" +
+                "            played_episodes.position AS position,\n" +
+                "            played_episodes.isCompleted AS isCompleted,\n" +
+                "            soundbites.startTime AS clipStartTime,\n" +
+                "            soundbites.duration AS clipDuration,\n" +
+                "            saved_episodes.savedAt AS savedAt,\n" +
+                "            saved_episodes.filePath AS filePath,\n" +
+                "            saved_episodes.downloadStatus AS downloadStatus\n" +
+                "        FROM episodes\n" +
+                "        LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id\n" +
+                "        LEFT JOIN played_episodes ON episodes.id = played_episodes.id\n" +
+                "        LEFT JOIN soundbites ON episodes.id = soundbites.episodeId\n" +
+                "        LEFT JOIN saved_episodes ON episodes.id = saved_episodes.id"
         )
     }
 }
