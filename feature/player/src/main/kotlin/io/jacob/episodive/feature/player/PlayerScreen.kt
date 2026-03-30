@@ -647,14 +647,14 @@ private fun ControlPanelBottom(
                 icon = {
                     Icon(
                         modifier = Modifier.size(24.dp),
-                        imageVector = EpisodiveIcons.Save,
+                        imageVector = EpisodiveIcons.Download,
                         contentDescription = "Save",
                     )
                 },
                 checkedIcon = {
                     Icon(
                         modifier = Modifier.size(24.dp),
-                        imageVector = EpisodiveIcons.SaveFilled,
+                        imageVector = EpisodiveIcons.DownloadDone,
                         contentDescription = "Unsave",
                     )
                 }

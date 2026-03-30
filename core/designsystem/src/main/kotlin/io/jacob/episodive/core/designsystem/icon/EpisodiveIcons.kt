@@ -1,5 +1,8 @@
 package io.jacob.episodive.core.designsystem.icon
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.DownloadDone
 import io.jacob.episodive.core.designsystem.icon.tabler.ArrowLeft
 import io.jacob.episodive.core.designsystem.icon.tabler.ArrowsDiagonal
 import io.jacob.episodive.core.designsystem.icon.tabler.ArrowsDiagonalMinimize2
@@ -53,6 +56,8 @@ object EpisodiveIcons {
     val ClipFilled = Tabler.ContainerFilled
     val Close = Tabler.X
     val Collapse = Tabler.ArrowsDiagonalMinimize2
+    val Download = Icons.Default.Download
+    val DownloadDone = Icons.Default.DownloadDone
     val Error = Tabler.PhotoExclamation
     val Expand = Tabler.ArrowsDiagonal
     val Forward30 = Tabler.RewindForward30

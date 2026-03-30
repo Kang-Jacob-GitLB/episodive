@@ -15,6 +15,9 @@ dependencies {
     testImplementation(projects.core.testing)
     implementation(projects.core.model)
 
+    //----- Material Icons Extended
+    implementation(libs.androidx.compose.material.icons.extended)
+
     //----- Seeker
     implementation(libs.seeker)
 
