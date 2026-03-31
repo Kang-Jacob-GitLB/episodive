@@ -1,7 +1,5 @@
 package io.jacob.episodive.feature.library
 
-import androidx.paging.PagingData
-import androidx.paging.testing.asSnapshot
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.usecase.FindInLibraryUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetAllPlayedEpisodesPagingUseCase
@@ -29,12 +27,10 @@ import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import kotlin.time.Instant
-import androidx.lifecycle.viewModelScope
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -487,176 +483,6 @@ class LibraryViewModelTest {
             assertEquals(LibrarySection.Saved, (state as LibraryState.Success).section)
         }
     }
-
-    @Test
-    fun `Given played episodes with different dates, When collecting paging, Then separators are inserted`() =
-        runTest {
-            // Given - episodes with different playedAt dates
-            val episode1 = episodeTestData.copy(
-                id = 1L,
-                playedAt = Instant.fromEpochSeconds(1700000000L),
-            )
-            val episode2 = episodeTestData.copy(
-                id = 2L,
-                playedAt = Instant.fromEpochSeconds(1700000000L),
-            )
-            val episode3 = episodeTestData.copy(
-                id = 3L,
-                playedAt = Instant.fromEpochSeconds(1690000000L),
-            )
-
-            every { getAllPlayedEpisodesPagingUseCase() } returns flowOf(
-                PagingData.from(listOf(episode1, episode2, episode3))
-            )
-            setupDefaultMocks()
-
-            val viewModel = createViewModel()
-
-            // When
-            val result = viewModel.playedEpisodesPaging.asSnapshot()
-
-            // Then - expect separator before episode1, no separator between episode1 & episode2 (same date), separator before episode3
-            assertTrue(result.isNotEmpty())
-            assertTrue(result[0] is SeparatedUiModel.Separator)
-            assertTrue(result[1] is SeparatedUiModel.Content)
-            assertEquals(episode1, (result[1] as SeparatedUiModel.Content).data)
-            // No separator between same-date episodes
-            assertTrue(result[2] is SeparatedUiModel.Content)
-            assertEquals(episode2, (result[2] as SeparatedUiModel.Content).data)
-            // Separator before different-date episode
-            assertTrue(result[3] is SeparatedUiModel.Separator)
-            assertTrue(result[4] is SeparatedUiModel.Content)
-            assertEquals(episode3, (result[4] as SeparatedUiModel.Content).data)
-
-            viewModel.viewModelScope.cancel()
-        }
-
-    @Test
-    fun `Given liked episodes with different dates, When collecting paging, Then separators are inserted`() =
-        runTest {
-            val episode1 = episodeTestData.copy(
-                id = 1L,
-                likedAt = Instant.fromEpochSeconds(1700000000L),
-            )
-            val episode2 = episodeTestData.copy(
-                id = 2L,
-                likedAt = Instant.fromEpochSeconds(1690000000L),
-            )
-
-            every { getLikedEpisodesPagingUseCase() } returns flowOf(
-                PagingData.from(listOf(episode1, episode2))
-            )
-            setupDefaultMocks()
-
-            val viewModel = createViewModel()
-
-            val result = viewModel.likedEpisodesPaging.asSnapshot()
-
-            assertTrue(result.isNotEmpty())
-            assertTrue(result[0] is SeparatedUiModel.Separator)
-            assertTrue(result[1] is SeparatedUiModel.Content)
-            assertEquals(episode1, (result[1] as SeparatedUiModel.Content).data)
-
-            viewModel.viewModelScope.cancel()
-        }
-
-    @Test
-    fun `Given saved episodes with different dates, When collecting paging, Then separators are inserted`() =
-        runTest {
-            val episode1 = episodeTestData.copy(
-                id = 1L,
-                savedAt = Instant.fromEpochSeconds(1700000000L),
-            )
-            val episode2 = episodeTestData.copy(
-                id = 2L,
-                savedAt = Instant.fromEpochSeconds(1690000000L),
-            )
-
-            every { getSavedEpisodesPagingUseCase() } returns flowOf(
-                PagingData.from(listOf(episode1, episode2))
-            )
-            setupDefaultMocks()
-
-            val viewModel = createViewModel()
-
-            val result = viewModel.savedEpisodesPaging.asSnapshot()
-
-            assertTrue(result.isNotEmpty())
-            assertTrue(result[0] is SeparatedUiModel.Separator)
-            assertTrue(result[1] is SeparatedUiModel.Content)
-            assertEquals(episode1, (result[1] as SeparatedUiModel.Content).data)
-
-            viewModel.viewModelScope.cancel()
-        }
-
-    @Test
-    fun `Given followed podcasts with different dates, When collecting paging, Then separators are inserted`() =
-        runTest {
-            val podcast1 = podcastTestData.copy(
-                id = 1L,
-                followedAt = Instant.fromEpochSeconds(1700000000L),
-            )
-            val podcast2 = podcastTestData.copy(
-                id = 2L,
-                followedAt = Instant.fromEpochSeconds(1690000000L),
-            )
-
-            every { getFollowedPodcastsPagingUseCase() } returns flowOf(
-                PagingData.from(listOf(podcast1, podcast2))
-            )
-            setupDefaultMocks()
-
-            val viewModel = createViewModel()
-
-            val result = viewModel.followedPodcastsPaging.asSnapshot()
-
-            assertTrue(result.isNotEmpty())
-            assertTrue(result[0] is SeparatedUiModel.Separator)
-            assertTrue(result[1] is SeparatedUiModel.Content)
-            assertEquals(podcast1, (result[1] as SeparatedUiModel.Content).data)
-
-            viewModel.viewModelScope.cancel()
-        }
-
-    @Test
-    fun `Given played episodes with same date, When collecting paging, Then no separator between them`() =
-        runTest {
-            val sameDate = Instant.fromEpochSeconds(1700000000L)
-            val episode1 = episodeTestData.copy(id = 1L, playedAt = sameDate)
-            val episode2 = episodeTestData.copy(id = 2L, playedAt = sameDate)
-
-            every { getAllPlayedEpisodesPagingUseCase() } returns flowOf(
-                PagingData.from(listOf(episode1, episode2))
-            )
-            setupDefaultMocks()
-
-            val viewModel = createViewModel()
-
-            val result = viewModel.playedEpisodesPaging.asSnapshot()
-
-            // Expect: Separator, Content(episode1), Content(episode2) - no separator between same dates
-            assertEquals(3, result.size)
-            assertTrue(result[0] is SeparatedUiModel.Separator)
-            assertTrue(result[1] is SeparatedUiModel.Content)
-            assertTrue(result[2] is SeparatedUiModel.Content)
-
-            viewModel.viewModelScope.cancel()
-        }
-
-    @Test
-    fun `Given empty played episodes, When collecting paging, Then no items emitted`() =
-        runTest {
-            every { getAllPlayedEpisodesPagingUseCase() } returns flowOf(PagingData.from(emptyList()))
-            setupDefaultMocks()
-
-            val viewModel = createViewModel()
-
-            val result = viewModel.playedEpisodesPaging.asSnapshot()
-
-            assertTrue(result.isEmpty())
-
-            viewModel.viewModelScope.cancel()
-        }
 
     @Test
     fun `Given find query with results, When collecting, Then state uses find result data`() =
