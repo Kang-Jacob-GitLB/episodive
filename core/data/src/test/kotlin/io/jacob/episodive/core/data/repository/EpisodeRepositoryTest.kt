@@ -11,6 +11,7 @@ import io.jacob.episodive.core.database.mapper.toEpisodeEntity
 import io.jacob.episodive.core.database.mapper.toEpisodeWithExtrasViews
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
+import io.jacob.episodive.core.model.DownloadStatus
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
@@ -518,5 +520,188 @@ class EpisodeRepositoryTest {
                 remoteUpdater.create(expectedQuery)
                 mockUpdater.getPagingData(any())
             }
+        }
+
+    @Test
+    fun `Given feedUrl, When getEpisodesByFeedUrlPaging, Then creates correct query and calls sourceFactory`() =
+        runTest {
+            // Given
+            val feedUrl = "https://example.com/feed.xml"
+            val expectedQuery = EpisodeQuery.FeedUrl(feedUrl)
+
+            val mockUpdater = mockk<EpisodeRemoteUpdater>(relaxed = true)
+            coEvery {
+                mockUpdater.getPagingData(any())
+            } returns flowOf(PagingData.from(episodeDtos))
+            coEvery { remoteUpdater.create(expectedQuery) } returns mockUpdater
+
+            // When
+            val result = repository.getEpisodesByFeedUrlPaging(feedUrl).asSnapshot()
+
+            // Then
+            assertEquals(episodeTestDataList.size, result.size)
+            assertEquals(episodeTestDataList, result)
+
+            coVerifySequence {
+                remoteUpdater.create(expectedQuery)
+                mockUpdater.getPagingData(any())
+            }
+        }
+
+    @Test
+    fun `Given guid, When getEpisodesByPodcastGuidPaging, Then creates correct query and calls sourceFactory`() =
+        runTest {
+            // Given
+            val guid = "test-podcast-guid"
+            val expectedQuery = EpisodeQuery.PodcastGuid(guid)
+
+            val mockUpdater = mockk<EpisodeRemoteUpdater>(relaxed = true)
+            coEvery {
+                mockUpdater.getPagingData(any())
+            } returns flowOf(PagingData.from(episodeDtos))
+            coEvery { remoteUpdater.create(expectedQuery) } returns mockUpdater
+
+            // When
+            val result = repository.getEpisodesByPodcastGuidPaging(guid).asSnapshot()
+
+            // Then
+            assertEquals(episodeTestDataList.size, result.size)
+            assertEquals(episodeTestDataList, result)
+
+            coVerifySequence {
+                remoteUpdater.create(expectedQuery)
+                mockUpdater.getPagingData(any())
+            }
+        }
+
+    @Test
+    fun `When getSavedEpisodes, Then calls localDataSource getSavedEpisodes`() =
+        runTest {
+            // Given
+            coEvery { localDataSource.getSavedEpisodes(any(), any()) } returns flowOf(episodeDtos)
+
+            // When
+            repository.getSavedEpisodes(max = 10).test {
+                awaitItem()
+                awaitComplete()
+            }
+
+            // Then
+            coVerifySequence {
+                localDataSource.getSavedEpisodes(query = null, limit = 10)
+            }
+        }
+
+    @Test
+    fun `When toggleSavedEpisode, Then calls localDataSource with correct filePath`() =
+        runTest {
+            // Given
+            val episode = episodeTestData
+            coEvery { localDataSource.toggleSavedEpisode(any(), any()) } returns true
+
+            // When
+            val result = repository.toggleSavedEpisode(episode)
+
+            // Then
+            assertEquals(true, result)
+            coVerify {
+                localDataSource.toggleSavedEpisode(any(), any())
+            }
+        }
+
+    @Test
+    fun `When updateSavedEpisodeProgress, Then calls localDataSource`() =
+        runTest {
+            // Given
+            coEvery { localDataSource.updateSavedEpisodeProgress(any(), any(), any()) } just Runs
+
+            // When
+            repository.updateSavedEpisodeProgress(123L, 5000L, DownloadStatus.COMPLETED)
+
+            // Then
+            coVerifySequence {
+                localDataSource.updateSavedEpisodeProgress(123L, 5000L, DownloadStatus.COMPLETED)
+            }
+        }
+
+    @Test
+    fun `When removeSavedEpisode, Then calls localDataSource`() =
+        runTest {
+            // Given
+            coEvery { localDataSource.removeSavedEpisode(any()) } just Runs
+
+            // When
+            repository.removeSavedEpisode(123L)
+
+            // Then
+            coVerifySequence {
+                localDataSource.removeSavedEpisode(123L)
+            }
+        }
+
+    @Test
+    fun `When replaceEpisodes, Then calls localDataSource`() =
+        runTest {
+            // Given
+            coEvery { localDataSource.replaceEpisodes(any(), any()) } just Runs
+
+            // When
+            repository.replaceEpisodes(episodeTestDataList, "groupKey")
+
+            // Then
+            coVerifySequence {
+                localDataSource.replaceEpisodes(any(), "groupKey")
+            }
+        }
+
+    @Test
+    fun `When getLikedEpisodesPaging, Then returns flow of paging data`() =
+        runTest {
+            // Given
+            coEvery { localDataSource.getLikedEpisodesPaging(any()) } returns mockk(relaxed = true)
+
+            // When
+            val flow = repository.getLikedEpisodesPaging()
+
+            // Then
+            assertNotNull(flow)
+        }
+
+    @Test
+    fun `When getPlayedEpisodesPaging, Then returns flow of paging data`() =
+        runTest {
+            // Given
+            coEvery {
+                localDataSource.getPlayedEpisodesPaging(any(), any())
+            } returns mockk(relaxed = true)
+
+            // When
+            val flow = repository.getPlayedEpisodesPaging()
+
+            // Then
+            assertNotNull(flow)
+        }
+
+    @Test
+    fun `When getSavedEpisodesPaging, Then returns flow of paging data`() =
+        runTest {
+            // Given
+            coEvery { localDataSource.getSavedEpisodesPaging(any()) } returns mockk(relaxed = true)
+
+            // When
+            val flow = repository.getSavedEpisodesPaging()
+
+            // Then
+            assertNotNull(flow)
+        }
+
+    @Test
+    fun `When getSoundbiteEpisodesPaging, Then returns flow of paging data`() =
+        runTest {
+            // When
+            val flow = repository.getSoundbiteEpisodesPaging(max = 10)
+
+            // Then
+            assertNotNull(flow)
         }
 }

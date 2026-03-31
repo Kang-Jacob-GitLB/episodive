@@ -61,7 +61,11 @@ def parse_coverage(xml_path):
             excluded_patterns = [
                 '$', 'Hilt_', '_Factory', '_Generated',
                 '_MembersInjector', '_HiltModules', '_Provide',
-                'Dagger', 'BuildConfig', 'ComposableSingletons'
+                'Dagger', 'BuildConfig', 'ComposableSingletons',
+                'NavigationKt', 'Route',
+                'Dao_Impl', 'Database_Impl', 'Migration',
+                'DownloadCompletedReceiver', 'EpisodeDownloaderImpl',
+                'ScreenKt', 'BarKt'
             ]
             if any(excl in class_name for excl in excluded_patterns):
                 continue

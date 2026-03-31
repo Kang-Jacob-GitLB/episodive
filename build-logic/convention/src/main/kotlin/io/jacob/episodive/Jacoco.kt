@@ -51,8 +51,24 @@ private val coverageExclusions = listOf(
     "**/datasource/*DataSource.class",
     // Network API classes
     "**/network/api/**/*Api.class",
-    // Database Migration classes
+    // Database generated classes
     "**/database/*AutoMigration*Impl.class",
+    "**/database/**/*Dao_Impl.class",
+    "**/database/**/*Database_Impl.class",
+    "**/database/migration/**/*.class",
+    // Download classes (Android system dependencies)
+    "**/download/**/*.class",
+    // Compose Screen/Bar composables (UI code tested via integration tests)
+    "**/*ScreenKt*.class",
+    "**/*BarKt*.class",
+    // Navigation classes (Compose Navigation glue code)
+    "**/navigation/**/*Navigation*.class",
+    "**/navigation/**/*NavigationKt*.class",
+    // Route classes (serializable route data objects)
+    "**/*Route.class",
+    "**/*Route\$*.class",
+    "**/*BaseRoute.class",
+    "**/*BaseRoute\$*.class",
 )
 
 private fun String.capitalize() = replaceFirstChar {

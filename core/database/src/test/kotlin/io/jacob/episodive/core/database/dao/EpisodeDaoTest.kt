@@ -7,6 +7,8 @@ import io.jacob.episodive.core.database.mapper.toEpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeGroupEntity
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
+import io.jacob.episodive.core.database.model.SavedEpisodeEntity
+import io.jacob.episodive.core.model.DownloadStatus
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -1300,6 +1302,381 @@ class EpisodeDaoTest {
             // Then
             assertEquals(1, episodes.size)
             assertEquals("Kotlin Programming", episodes[0].episode.title)
+        }
+
+
+    /** SAVED EPISODES **/
+
+    @Test
+    fun `Given episode, When addSavedEpisode is called, Then episode is saved`() =
+        runTest {
+            // Given
+            dao.upsertEpisode(episodeEntity.copy(id = 100L))
+
+            // When
+            dao.addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = 100L,
+                    podcastId = episodeEntity.feedId,
+                    savedAt = Instant.fromEpochSeconds(0),
+                    filePath = "/data/episode_100.mp3",
+                    totalSize = 1000L,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+
+            // Then
+            dao.isSavedEpisode(100L).test {
+                val isSaved = awaitItem()
+                assertEquals(true, isSaved)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given saved episode, When removeSavedEpisode is called, Then episode is unsaved`() =
+        runTest {
+            // Given
+            dao.upsertEpisode(episodeEntity.copy(id = 100L))
+            dao.addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = 100L,
+                    podcastId = episodeEntity.feedId,
+                    savedAt = Instant.fromEpochSeconds(0),
+                    filePath = "/data/episode_100.mp3",
+                    totalSize = 1000L,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+
+            // When
+            dao.removeSavedEpisode(100L)
+
+            // Then
+            dao.isSavedEpisode(100L).test {
+                val isSaved = awaitItem()
+                assertEquals(false, isSaved)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given saved episode, When isSavedEpisode is called, Then true is returned`() =
+        runTest {
+            // Given
+            dao.upsertEpisode(episodeEntity.copy(id = 100L))
+            dao.addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = 100L,
+                    podcastId = episodeEntity.feedId,
+                    savedAt = Instant.fromEpochSeconds(0),
+                    filePath = "/data/episode_100.mp3",
+                    totalSize = 1000L,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+
+            // When
+            dao.isSavedEpisode(100L).test {
+                val isSaved = awaitItem()
+                // Then
+                assertEquals(true, isSaved)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given unsaved episode, When isSavedEpisode is called, Then false is returned`() =
+        runTest {
+            // Given
+            dao.upsertEpisode(episodeEntity.copy(id = 100L))
+
+            // When
+            dao.isSavedEpisode(100L).test {
+                val isSaved = awaitItem()
+                // Then
+                assertEquals(false, isSaved)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given saved episode, When updateSavedEpisodeProgress is called, Then progress is updated`() =
+        runTest {
+            // Given
+            dao.upsertEpisode(episodeEntity.copy(id = 100L))
+            dao.addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = 100L,
+                    podcastId = episodeEntity.feedId,
+                    savedAt = Instant.fromEpochSeconds(0),
+                    filePath = "/data/episode_100.mp3",
+                    totalSize = 1000L,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+
+            // When
+            dao.updateSavedEpisodeProgress(100L, 500L, DownloadStatus.DOWNLOADING)
+
+            // Then
+            dao.getSavedEpisodes(limit = 10).test {
+                val episodes = awaitItem()
+                assertEquals(1, episodes.size)
+                assertEquals(DownloadStatus.DOWNLOADING, episodes[0].downloadStatus)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given saved episode, When updateSavedEpisodeStatus is called, Then status is updated`() =
+        runTest {
+            // Given
+            dao.upsertEpisode(episodeEntity.copy(id = 100L))
+            dao.addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = 100L,
+                    podcastId = episodeEntity.feedId,
+                    savedAt = Instant.fromEpochSeconds(0),
+                    filePath = "/data/episode_100.mp3",
+                    totalSize = 1000L,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+
+            // When
+            dao.updateSavedEpisodeStatus(100L, DownloadStatus.COMPLETED)
+
+            // Then
+            dao.getSavedEpisodes(limit = 10).test {
+                val episodes = awaitItem()
+                assertEquals(1, episodes.size)
+                assertEquals(DownloadStatus.COMPLETED, episodes[0].downloadStatus)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given unsaved episode, When toggleSavedEpisode is called, Then episode is saved`() =
+        runTest {
+            // Given
+            val episode = episodeEntity.copy(id = 100L)
+            dao.upsertEpisode(episode)
+
+            // When
+            val result = dao.toggleSavedEpisode(episode, "/data/episode_100.mp3")
+
+            // Then
+            assertEquals(true, result)
+            dao.isSavedEpisode(100L).test {
+                val isSaved = awaitItem()
+                assertEquals(true, isSaved)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given saved episode, When toggleSavedEpisode is called, Then episode is unsaved`() =
+        runTest {
+            // Given
+            val episode = episodeEntity.copy(id = 100L)
+            dao.upsertEpisode(episode)
+            dao.addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = 100L,
+                    podcastId = episode.feedId,
+                    savedAt = Instant.fromEpochSeconds(0),
+                    filePath = "/data/episode_100.mp3",
+                    totalSize = 1000L,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+
+            // When
+            val result = dao.toggleSavedEpisode(episode, "/data/episode_100.mp3")
+
+            // Then
+            assertEquals(false, result)
+            dao.isSavedEpisode(100L).test {
+                val isSaved = awaitItem()
+                assertEquals(false, isSaved)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given no query, When getSavedEpisodes is called, Then all saved episodes are returned`() =
+        runTest {
+            // Given
+            dao.upsertEpisodes(episodeEntities.take(3))
+            episodeEntities.take(3).forEach {
+                dao.addSavedEpisode(
+                    SavedEpisodeEntity(
+                        id = it.id,
+                        podcastId = it.feedId,
+                        savedAt = Instant.fromEpochSeconds(0),
+                        filePath = "/data/episode_${it.id}.mp3",
+                        totalSize = 1000L,
+                        downloadedSize = 0L,
+                        downloadStatus = DownloadStatus.PENDING,
+                    )
+                )
+            }
+
+            // When
+            dao.getSavedEpisodes(limit = 10).test {
+                val episodes = awaitItem()
+                // Then
+                assertEquals(3, episodes.size)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given query, When getSavedEpisodes is called, Then filtered saved episodes are returned`() =
+        runTest {
+            // Given
+            dao.upsertEpisodes(
+                listOf(
+                    episodeEntity.copy(id = 100L, title = "Kotlin Programming"),
+                    episodeEntity.copy(id = 101L, title = "Java Programming"),
+                )
+            )
+            dao.addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = 100L,
+                    podcastId = episodeEntity.feedId,
+                    savedAt = Instant.fromEpochSeconds(0),
+                    filePath = "/data/episode_100.mp3",
+                    totalSize = 1000L,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+            dao.addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = 101L,
+                    podcastId = episodeEntity.feedId,
+                    savedAt = Instant.fromEpochSeconds(0),
+                    filePath = "/data/episode_101.mp3",
+                    totalSize = 1000L,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+
+            // When
+            dao.getSavedEpisodes(query = "Kotlin", limit = 10).test {
+                val episodes = awaitItem()
+                // Then
+                assertEquals(1, episodes.size)
+                assertEquals("Kotlin Programming", episodes[0].episode.title)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given query, When getSavedEpisodesPaging is called, Then filtered saved episodes are returned`() =
+        runTest {
+            // Given
+            dao.upsertEpisodes(
+                listOf(
+                    episodeEntity.copy(id = 100L, title = "Kotlin Programming"),
+                    episodeEntity.copy(id = 101L, title = "Java Programming"),
+                )
+            )
+            dao.addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = 100L,
+                    podcastId = episodeEntity.feedId,
+                    savedAt = Instant.fromEpochSeconds(0),
+                    filePath = "/data/episode_100.mp3",
+                    totalSize = 1000L,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+            dao.addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = 101L,
+                    podcastId = episodeEntity.feedId,
+                    savedAt = Instant.fromEpochSeconds(0),
+                    filePath = "/data/episode_101.mp3",
+                    totalSize = 1000L,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+
+            // When
+            val episodes = dao.getSavedEpisodesPaging(query = "Kotlin").loadAsSnapshot()
+
+            // Then
+            assertEquals(1, episodes.size)
+            assertEquals("Kotlin Programming", episodes[0].episode.title)
+        }
+
+    @Test
+    fun `Given saved episode, When deleteEpisodesIfOrphaned is called, Then episode is not deleted`() =
+        runTest {
+            // Given
+            dao.upsertEpisode(episodeEntity.copy(id = 100L))
+            dao.addSavedEpisode(
+                SavedEpisodeEntity(
+                    id = 100L,
+                    podcastId = episodeEntity.feedId,
+                    savedAt = Instant.fromEpochSeconds(0),
+                    filePath = "/data/episode_100.mp3",
+                    totalSize = 1000L,
+                    downloadedSize = 0L,
+                    downloadStatus = DownloadStatus.PENDING,
+                )
+            )
+
+            // When
+            dao.deleteEpisodesIfOrphaned(listOf(100L))
+
+            // Then
+            dao.getEpisodes(limit = 10).test {
+                val episodes = awaitItem()
+                assertEquals(1, episodes.size)
+                assertEquals(100L, episodes[0].episode.id)
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given no saved episodes, When getSavedEpisodesPaging is called, Then empty result is returned`() =
+        runTest {
+            // Given
+            dao.upsertEpisodes(episodeEntities.take(3))
+
+            // When
+            val episodes = dao.getSavedEpisodesPaging().loadAsSnapshot()
+
+            // Then
+            assertEquals(0, episodes.size)
+        }
+
+    @Test
+    fun `Given episode ids once, When getEpisodesByIdsOnce is called, Then episodes are returned`() =
+        runTest {
+            // Given
+            dao.upsertEpisodes(episodeEntities.take(3))
+            val ids = episodeEntities.take(3).map { it.id }
+
+            // When
+            val episodes = dao.getEpisodesByIdsOnce(ids)
+
+            // Then
+            assertEquals(3, episodes.size)
+            assertEquals(ids.toSet(), episodes.map { it.episode.id }.toSet())
         }
 
 }

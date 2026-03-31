@@ -3,6 +3,7 @@ package io.jacob.episodive.core.datastore.store
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.testing.util.DisabledOnWindows
@@ -46,6 +47,18 @@ class UserPreferencesStoreTest {
             produceFile = { testFile }
         )
         userPreferencesStore = UserPreferencesStore(dataStore)
+    }
+
+    private fun createFreshDataStore(name: String): DataStore<Preferences> {
+        val file = File(tmpFolder.root, "${name}.preferences_pb")
+        return PreferenceDataStoreFactory.create(
+            scope = testScope,
+            produceFile = { file }
+        )
+    }
+
+    private fun createFreshStore(name: String): UserPreferencesStore {
+        return UserPreferencesStore(createFreshDataStore(name))
     }
 
     @Test
@@ -279,5 +292,143 @@ class UserPreferencesStoreTest {
         assertEquals(9000L, result.positionMs)
         assertTrue(result.shuffle)
         assertEquals(Repeat.ALL, result.repeat)
+    }
+
+    @Test
+    @DisabledOnWindows
+    fun getLastPlayState_withOnlyEpisodeId_returnsDefaults() = runTest {
+        dataStore.edit {
+            it[UserPreferencesStore.UserPreferencesKeys.lastPlayingEpisodeId] = 999L
+        }
+
+        val result = userPreferencesStore.getLastPlayState()
+        assertNotNull(result)
+        assertEquals(999L, result!!.episodeId)
+        assertEquals(0, result.index)
+        assertEquals(0L, result.positionMs)
+        assertFalse(result.shuffle)
+        assertEquals(Repeat.OFF, result.repeat)
+    }
+
+    @Test
+    fun getUserPreferences_withDefaultSpeed_returnsOnePointZero() = runTest {
+        val result = userPreferencesStore.getUserPreferences().first()
+        assertEquals(1f, result.speed)
+    }
+
+    @Test
+    fun addCategory_singleCategory_storesInPreferences() = runTest {
+        userPreferencesStore.addCategory(Category.SCIENCE)
+
+        val result = userPreferencesStore.getCategories().first()
+        assertEquals(1, result.size)
+        assertEquals(Category.SCIENCE, result.first())
+    }
+
+    @Test
+    fun addCategory_duplicateCategory_doesNotDuplicate() = runTest {
+        val store = createFreshStore("add_dup_cat")
+        store.addCategory(Category.HEALTH)
+        store.addCategory(Category.HEALTH)
+
+        val result = store.getCategories().first()
+        assertEquals(1, result.size)
+        assertEquals(Category.HEALTH, result.first())
+    }
+
+    @Test
+    @DisabledOnWindows
+    fun removeCategory_existingCategory_removesIt2() = runTest {
+        userPreferencesStore.addCategories(listOf(Category.ARTS, Category.TECHNOLOGY))
+        userPreferencesStore.removeCategory(Category.ARTS)
+
+        val result = userPreferencesStore.getCategories().first()
+        assertEquals(1, result.size)
+        assertEquals(Category.TECHNOLOGY, result.first())
+    }
+
+    @Test
+    fun removeCategory_fromEmptyCategories_noOp() = runTest {
+        // removeCategory on empty categories (no prior write) covers the
+        // mutableListOf() default path + contains(category)==false branch
+        userPreferencesStore.removeCategory(Category.COMEDY)
+
+        val result = userPreferencesStore.getCategories().first()
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun getLastPlayState_withOnlyEpisodeIdSet_returnsDefaultsForOtherFields() = runTest {
+        dataStore.edit {
+            it[UserPreferencesStore.UserPreferencesKeys.lastPlayingEpisodeId] = 42L
+        }
+
+        val result = userPreferencesStore.getLastPlayState()
+        assertNotNull(result)
+        assertEquals(42L, result!!.episodeId)
+        assertEquals(0, result.index)
+        assertEquals(0L, result.positionMs)
+        assertFalse(result.shuffle)
+        assertEquals(Repeat.OFF, result.repeat)
+    }
+
+    @Test
+    fun clearLastPlayState_removesAllFieldsFromEmptyState() = runTest {
+        // clearLastPlayState on empty state verifies it doesn't throw
+        userPreferencesStore.clearLastPlayState()
+
+        assertNull(userPreferencesStore.getLastPlayState())
+    }
+
+    @Test
+    @DisabledOnWindows
+    fun clearLastPlayState_afterSaving_returnsNull2() = runTest {
+        userPreferencesStore.saveLastPlayState(
+            episodeId = 555L,
+            index = 1,
+            positionMs = 3000L,
+            shuffle = false,
+            repeat = Repeat.ALL,
+        )
+        userPreferencesStore.clearLastPlayState()
+
+        assertNull(userPreferencesStore.getLastPlayState())
+    }
+
+    @Test
+    fun saveLastPlayState_thenGetReturnsDefaultsForUnsetFields() = runTest {
+        // Given - save with known defaults for index, position, shuffle, repeat
+        userPreferencesStore.saveLastPlayState(
+            episodeId = 999L,
+            index = 0,
+            positionMs = 0L,
+            shuffle = false,
+            repeat = Repeat.OFF,
+        )
+
+        // When
+        val result = userPreferencesStore.getLastPlayState()
+
+        // Then - verify default-like values are returned correctly
+        assertNotNull(result)
+        assertEquals(999L, result!!.episodeId)
+        assertEquals(0, result.index)
+        assertEquals(0L, result.positionMs)
+        assertFalse(result.shuffle)
+        assertEquals(Repeat.OFF, result.repeat)
+    }
+
+    @Test
+    fun setFirstLaunch_false_thenGetUserPreferences_returnsNotFirstLaunch() = runTest {
+        // Given
+        userPreferencesStore.setFirstLaunch(false)
+
+        // When
+        val result = userPreferencesStore.getUserPreferences().first()
+
+        // Then
+        assertFalse(result.isFirstLaunch)
+        assertEquals(1f, result.speed)
+        assertTrue(result.categories.isEmpty())
     }
 }

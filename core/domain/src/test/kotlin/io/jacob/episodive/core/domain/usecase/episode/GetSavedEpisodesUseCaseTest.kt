@@ -12,13 +12,13 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
-class GetLikedEpisodesUseCaseTest {
+class GetSavedEpisodesUseCaseTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
 
-    private val useCase = GetLikedEpisodesUseCase(
+    private val useCase = GetSavedEpisodesUseCase(
         episodeRepository = episodeRepository,
     )
 
@@ -30,19 +30,16 @@ class GetLikedEpisodesUseCaseTest {
     @Test
     fun `Given dependencies, when invoke called, then repository called`() =
         runTest {
-            // Given
             coEvery {
-                episodeRepository.getLikedEpisodes(any(), any())
+                episodeRepository.getSavedEpisodes(any(), any())
             } returns mockk(relaxed = true)
 
-            // When
             useCase(null, 6).test {
                 awaitComplete()
             }
 
-            // Then
             coVerifySequence {
-                episodeRepository.getLikedEpisodes(any(), any())
+                episodeRepository.getSavedEpisodes(any(), any())
             }
         }
 
@@ -50,7 +47,7 @@ class GetLikedEpisodesUseCaseTest {
     fun `Given query, when invoke called with query, then repository called with query`() =
         runTest {
             coEvery {
-                episodeRepository.getLikedEpisodes(any(), any())
+                episodeRepository.getSavedEpisodes(any(), any())
             } returns mockk(relaxed = true)
 
             useCase("search", 10).test {
@@ -58,7 +55,7 @@ class GetLikedEpisodesUseCaseTest {
             }
 
             coVerifySequence {
-                episodeRepository.getLikedEpisodes("search", 10)
+                episodeRepository.getSavedEpisodes("search", 10)
             }
         }
 
@@ -66,7 +63,7 @@ class GetLikedEpisodesUseCaseTest {
     fun `Given no query, when invoke called with max only, then repository called with null query`() =
         runTest {
             coEvery {
-                episodeRepository.getLikedEpisodes(any(), any())
+                episodeRepository.getSavedEpisodes(any(), any())
             } returns mockk(relaxed = true)
 
             useCase(max = 6).test {
@@ -74,7 +71,7 @@ class GetLikedEpisodesUseCaseTest {
             }
 
             coVerifySequence {
-                episodeRepository.getLikedEpisodes(null, 6)
+                episodeRepository.getSavedEpisodes(null, 6)
             }
         }
 }

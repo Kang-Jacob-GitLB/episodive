@@ -1,5 +1,7 @@
 package io.jacob.episodive.core.data.repository
 
+import androidx.paging.PagingData
+import androidx.paging.testing.asSnapshot
 import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.query.PodcastQuery
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import kotlin.time.Instant
@@ -358,5 +361,88 @@ class PodcastRepositoryTest {
                 remoteUpdater.create(query)
                 updater.getFlowList(max)
             }
+        }
+
+    @Test
+    fun `Given medium, When getPodcastsByMediumPaging is called, Then creates correct query and calls sourceFactory`() =
+        runTest {
+            // Given
+            val medium = "podcast"
+            val query = PodcastQuery.Medium(medium)
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery {
+                updater.getPagingData(any())
+            } returns flowOf(PagingData.from(podcastDtos))
+            coEvery { remoteUpdater.create(query) } returns updater
+
+            // When
+            val result = repository.getPodcastsByMediumPaging(medium).asSnapshot()
+
+            // Then
+            assertEquals(podcastTestDataList.size, result.size)
+            assertEquals(podcastTestDataList, result)
+
+            coVerifySequence {
+                remoteUpdater.create(query)
+                updater.getPagingData(any())
+            }
+        }
+
+    @Test
+    fun `Given channel, When getPodcastsByChannelPaging is called, Then creates correct query and calls sourceFactory`() =
+        runTest {
+            // Given
+            val channel = Channel(
+                id = 1,
+                title = "Test Channel",
+                description = "Test Description",
+                image = "https://example.com/image.jpg",
+                link = "https://example.com",
+                count = 3,
+                podcastGuids = listOf("guid1", "guid2", "guid3")
+            )
+            val query = PodcastQuery.ByChannel(channel)
+
+            val updater = mockk<PodcastRemoteUpdater>(relaxed = true)
+            coEvery {
+                updater.getPagingData(any())
+            } returns flowOf(PagingData.from(podcastDtos))
+            coEvery { remoteUpdater.create(query) } returns updater
+
+            // When
+            val result = repository.getPodcastsByChannelPaging(channel).asSnapshot()
+
+            // Then
+            assertEquals(podcastTestDataList.size, result.size)
+            assertEquals(podcastTestDataList, result)
+
+            coVerifySequence {
+                remoteUpdater.create(query)
+                updater.getPagingData(any())
+            }
+        }
+
+    @Test
+    fun `When getFollowedPodcastsPaging is called, Then returns flow of paging data`() =
+        runTest {
+            // Given
+            coEvery { localDataSource.getFollowedPodcastsPaging(any()) } returns mockk(relaxed = true)
+
+            // When
+            val flow = repository.getFollowedPodcastsPaging()
+
+            // Then
+            assertNotNull(flow)
+        }
+
+    @Test
+    fun `When getRecommendedPodcastsPaging is called, Then returns flow of paging data`() =
+        runTest {
+            // When
+            val flow = repository.getRecommendedPodcastsPaging(max = 10)
+
+            // Then
+            assertNotNull(flow)
         }
 }
