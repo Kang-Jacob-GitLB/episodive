@@ -4,6 +4,7 @@ import io.jacob.episodive.core.database.dao.EpisodeDao
 import io.jacob.episodive.core.database.mapper.toEpisodeEntities
 import io.jacob.episodive.core.database.mapper.toEpisodeEntity
 import io.jacob.episodive.core.database.model.PlayedEpisodeEntity
+import io.jacob.episodive.core.model.DownloadStatus
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -449,4 +450,141 @@ class EpisodeLocalDataSourceTest {
             dao.getEpisodesByIdsOnce(ids)
         }
     }
+
+    @Test
+    fun `Given episode, When isSavedEpisode is called, Then dao isSavedEpisode is called`() =
+        runTest {
+            // When
+            dataSource.isSavedEpisode(episodeEntity)
+
+            // Then
+            coVerify {
+                dao.isSavedEpisode(episodeEntity.id)
+            }
+        }
+
+    @Test
+    fun `Given episode and filePath, When toggleSavedEpisode is called, Then dao toggleSavedEpisode is called`() =
+        runTest {
+            // Given
+            val filePath = "/storage/emulated/0/episodes/test.mp3"
+
+            // When
+            dataSource.toggleSavedEpisode(episodeEntity, filePath)
+
+            // Then
+            coVerify {
+                dao.toggleSavedEpisode(episodeEntity, filePath)
+            }
+        }
+
+    @Test
+    fun `Given id and progress, When updateSavedEpisodeProgress is called, Then dao updateSavedEpisodeProgress is called`() =
+        runTest {
+            // Given
+            val id = episodeEntity.id
+            val downloadedSize = 1024L
+            val status = DownloadStatus.DOWNLOADING
+
+            // When
+            dataSource.updateSavedEpisodeProgress(id, downloadedSize, status)
+
+            // Then
+            coVerify {
+                dao.updateSavedEpisodeProgress(id, downloadedSize, status)
+            }
+        }
+
+    @Test
+    fun `Given id and status, When updateSavedEpisodeStatus is called, Then dao updateSavedEpisodeStatus is called`() =
+        runTest {
+            // Given
+            val id = episodeEntity.id
+            val status = DownloadStatus.COMPLETED
+
+            // When
+            dataSource.updateSavedEpisodeStatus(id, status)
+
+            // Then
+            coVerify {
+                dao.updateSavedEpisodeStatus(id, status)
+            }
+        }
+
+    @Test
+    fun `Given id, When removeSavedEpisode is called, Then dao removeSavedEpisode is called`() =
+        runTest {
+            // Given
+            val id = episodeEntity.id
+
+            // When
+            dataSource.removeSavedEpisode(id)
+
+            // Then
+            coVerify {
+                dao.removeSavedEpisode(id)
+            }
+        }
+
+    @Test
+    fun `Given query and limit, When getSavedEpisodes is called, Then dao getSavedEpisodes is called`() =
+        runTest {
+            // Given
+            val query = "test"
+            val limit = 10
+
+            // When
+            dataSource.getSavedEpisodes(query, limit)
+
+            // Then
+            coVerify {
+                dao.getSavedEpisodes("*$query*", limit)
+            }
+        }
+
+    @Test
+    fun `Given blank query and limit, When getSavedEpisodes is called, Then dao getSavedEpisodes is called with null query`() =
+        runTest {
+            // Given
+            val query = "  "
+            val limit = 10
+
+            // When
+            dataSource.getSavedEpisodes(query, limit)
+
+            // Then
+            coVerify {
+                dao.getSavedEpisodes(null, limit)
+            }
+        }
+
+    @Test
+    fun `Given query, When getSavedEpisodesPaging is called, Then dao getSavedEpisodesPaging is called`() =
+        runTest {
+            // Given
+            val query = "test"
+
+            // When
+            dataSource.getSavedEpisodesPaging(query)
+
+            // Then
+            coVerify {
+                dao.getSavedEpisodesPaging("*$query*")
+            }
+        }
+
+    @Test
+    fun `Given blank query, When getSavedEpisodesPaging is called, Then dao getSavedEpisodesPaging is called with null query`() =
+        runTest {
+            // Given
+            val query = "  "
+
+            // When
+            dataSource.getSavedEpisodesPaging(query)
+
+            // Then
+            coVerify {
+                dao.getSavedEpisodesPaging(null)
+            }
+        }
 }

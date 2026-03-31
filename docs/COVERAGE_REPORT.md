@@ -1,6 +1,6 @@
 # Code Coverage Report
 
-Generated: 2026-03-18 13:13:34
+Generated: 2026-03-31 14:05:54
 
 ---
 
@@ -8,21 +8,21 @@ Generated: 2026-03-18 13:13:34
 
 | Module | Line Coverage | Branch Coverage | Total Lines | Covered | Missed |
 |--------|--------------|----------------|-------------|---------|--------|
-| core:data       |  78.6% |  45.0% |    793 |    623 |    170 |
-| core:database   |  79.3% |  49.9% |   6562 |   5205 |   1357 |
+| core:data       |  87.2% |  50.9% |    844 |    736 |    108 |
+| core:database   |  77.0% |  48.2% |   3320 |   2558 |    762 |
 | core:datastore  |  72.6% |  25.0% |    106 |     77 |     29 |
-| core:domain     |  87.2% |  52.5% |    305 |    266 |     39 |
+| core:domain     |  87.7% |  56.7% |    334 |    293 |     41 |
 | core:network    |  87.2% |  58.1% |    477 |    416 |     61 |
-| feature:channel |  75.4% |  23.0% |    240 |    181 |     59 |
-| feature:clip    |  60.1% |  29.6% |    233 |    140 |     93 |
-| feature:home    |  60.3% |  31.4% |    307 |    185 |    122 |
-| feature:library |  69.9% |  35.9% |    745 |    521 |    224 |
-| feature:onboarding |  84.4% |  38.9% |    409 |    345 |     64 |
-| feature:player  |  65.6% |  31.5% |   1057 |    693 |    364 |
-| feature:podcast |  66.4% |  31.0% |    229 |    152 |     77 |
-| feature:search  |  73.0% |  38.1% |    437 |    319 |    118 |
+| feature:channel |  98.0% |  53.3% |     51 |     50 |      1 |
+| feature:clip    | 100.0% |  81.2% |     65 |     65 |      0 |
+| feature:home    |  95.7% |  66.7% |     92 |     88 |      4 |
+| feature:library |  73.2% |  26.9% |    198 |    145 |     53 |
+| feature:onboarding |  95.5% |  73.1% |     89 |     85 |      4 |
+| feature:player  |  91.7% |  69.4% |    228 |    209 |     19 |
+| feature:podcast |  92.1% |  68.4% |     63 |     58 |      5 |
+| feature:search  |  93.7% |  68.6% |    126 |    118 |      8 |
 |--------|--------------|----------------|-------------|---------|--------|
-| **TOTAL** | ** 76.7%** | ** 40.1%** | ** 11900** | **  9123** | **  2777** |
+| **TOTAL** | ** 81.7%** | ** 50.0%** | **  5993** | **  4898** | **  1095** |
 
 ---
 
@@ -30,66 +30,41 @@ Generated: 2026-03-18 13:13:34
 
 | Module | Package | Class | Coverage | Covered/Total | Missed |
 |--------|---------|-------|----------|---------------|--------|
-| feature:home | io.jacob.episodive.feature.hom | HomeNavigationKt.kt            |   0.0% | 0/31 | 31 |
-| feature:home | io.jacob.episodive.feature.hom | HomeBaseRoute.kt               |   0.0% | 0/2 | 2 |
-| feature:home | io.jacob.episodive.feature.hom | HomeRoute.kt                   |   0.0% | 0/2 | 2 |
-| feature:search | io.jacob.episodive.feature.sea | SearchBaseRoute.kt             |   0.0% | 0/2 | 2 |
-| feature:search | io.jacob.episodive.feature.sea | SearchRoute.kt                 |   0.0% | 0/2 | 2 |
-| feature:search | io.jacob.episodive.feature.sea | SearchNavigationKt.kt          |   0.0% | 0/28 | 28 |
-| feature:library | io.jacob.episodive.feature.lib | LibraryBaseRoute.kt            |   0.0% | 0/2 | 2 |
-| feature:library | io.jacob.episodive.feature.lib | LibraryRoute.kt                |   0.0% | 0/2 | 2 |
-| feature:library | io.jacob.episodive.feature.lib | LibraryNavigationKt.kt         |   0.0% | 0/28 | 28 |
-| feature:podcast | io.jacob.episodive.feature.pod | PodcastRoute.kt                |   0.0% | 0/2 | 2 |
-| feature:podcast | io.jacob.episodive.feature.pod | PodcastNavigationKt.kt         |   0.0% | 0/14 | 14 |
-| feature:clip | io.jacob.episodive.feature.cli | ClipRoute.kt                   |   0.0% | 0/2 | 2 |
-| feature:clip | io.jacob.episodive.feature.cli | ClipBaseRoute.kt               |   0.0% | 0/2 | 2 |
-| feature:clip | io.jacob.episodive.feature.cli | ClipNavigationKt.kt            |   0.0% | 0/28 | 28 |
-| feature:channel | io.jacob.episodive.feature.cha | ChannelNavigationKt.kt         |   0.0% | 0/15 | 15 |
-| feature:channel | io.jacob.episodive.feature.cha | ChannelRoute.kt                |   0.0% | 0/2 | 2 |
-| core:data  | io.jacob.episodive.core.data.u | ConnectivityManagerNetworkMoni |  45.5% | 5/11 | 6 |
-| feature:player | io.jacob.episodive.feature.pla | PlayerScreenKt.kt              |  57.7% | 318/551 | 233 |
-| feature:clip | io.jacob.episodive.feature.cli | ClipScreenKt.kt                |  58.7% | 54/92 | 38 |
-| feature:home | io.jacob.episodive.feature.hom | HomeScreenKt.kt                |  58.9% | 89/151 | 62 |
-| core:data  | io.jacob.episodive.core.data.r | PodcastRepositoryImpl.kt       |  61.2% | 52/85 | 33 |
-| core:data  | io.jacob.episodive.core.data.r | EpisodeRepositoryImpl.kt       |  65.5% | 78/119 | 41 |
-| feature:podcast | io.jacob.episodive.feature.pod | PodcastScreenKt.kt             |  66.4% | 89/134 | 45 |
-| feature:player | io.jacob.episodive.feature.pla | PlayerBarKt.kt                 |  68.9% | 82/119 | 37 |
+| core:data  | io.jacob.episodive.core.data.u | ConnectivityManagerNetworkMoni |  72.7% | 8/11 | 3 |
 | core:datastore | io.jacob.episodive.core.datast | UserPreferencesStore.kt        |  73.0% | 27/37 | 10 |
-| core:domain | io.jacob.episodive.core.domain | GetLikedEpisodesUseCase.kt     |  75.0% | 3/4 | 1 |
-| feature:library | io.jacob.episodive.feature.lib | LibraryScreenKt.kt             |  76.2% | 374/491 | 117 |
-| core:database | io.jacob.episodive.core.databa | EpisodeDao_Impl.kt             |  79.7% | 1465/1837 | 372 |
-| core:database | io.jacob.episodive.core.databa | PodcastDao_Impl.kt             |  79.8% | 1120/1404 | 284 |
+| feature:library | io.jacob.episodive.feature.lib | LibraryViewModel.kt            |  78.3% | 72/92 | 20 |
 
 ---
 
 ## Detailed Module Reports
 
-### core:data - 78.6% Coverage
+### core:data - 87.2% Coverage
 
-#### 📦 io.jacob.episodive.core.data.repository - 73.3%
+#### 📦 io.jacob.episodive.core.data.repository - 89.0%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ PodcastRepositoryImpl.kt                 |  61.2% | 52/85 | N/A |
-| ❌ EpisodeRepositoryImpl.kt                 |  65.5% | 78/119 | N/A |
+| ⚠️ PodcastRepositoryImpl.kt                 |  84.1% | 69/82 | N/A |
+| ⚠️ EpisodeRepositoryImpl.kt                 |  86.3% | 113/131 | N/A |
 | ⚠️ PlayerRepositoryImpl.kt                  |  89.6% | 60/67 | N/A |
-| ✅ RecentSearchRepositoryImpl.kt            |  92.3% | 12/13 | N/A |
 | ✅ UserRepositoryImpl.kt                    |  92.6% | 25/27 | 2/2 |
 | ✅ ChannelRepositoryImpl.kt                 | 100.0% | 4/4 | N/A |
+| ✅ RecentSearchRepositoryImpl.kt            | 100.0% | 51/51 | 29/37 |
 
-#### 📦 io.jacob.episodive.core.data.util - 78.6%
+#### 📦 io.jacob.episodive.core.data.util - 89.3%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ ConnectivityManagerNetworkMonitor.kt     |  45.5% | 5/11 | 0/4 |
+| ❌ ConnectivityManagerNetworkMonitor.kt     |  72.7% | 8/11 | 1/4 |
 | ✅ ImageCacheInterceptor.kt                 | 100.0% | 17/17 | 4/4 |
 
-#### 📦 io.jacob.episodive.core.data.util.paging - 92.2%
+#### 📦 io.jacob.episodive.core.data.util.paging - 92.4%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
 | ✅ RecommendedPodcastPagingSource.kt        |  91.4% | 64/70 | 20/34 |
 | ✅ SoundbiteEpisodePagingSource.kt          |  92.9% | 78/84 | 26/44 |
+| ✅ PagingDefaults.kt                        | 100.0% | 4/4 | N/A |
 
 #### 📦 io.jacob.episodive.core.data.util.updater - 95.2%
 
@@ -99,34 +74,22 @@ Generated: 2026-03-18 13:13:34
 | ✅ EpisodeRemoteUpdater.kt                  |  94.4% | 34/36 | 13/16 |
 | ✅ RemoteUpdater.kt                         | 100.0% | 18/18 | 1/2 |
 
-### core:database - 79.3% Coverage
+### core:database - 77.0% Coverage
 
-#### 📦 io.jacob.episodive.core.database.dao - 81.4%
+#### 📦 io.jacob.episodive.core.database.dao - 96.3%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ EpisodeDao_Impl.kt                       |  79.7% | 1465/1837 | 251/496 |
-| ❌ PodcastDao_Impl.kt                       |  79.8% | 1120/1404 | 165/330 |
-| ⚠️ RecentSearchDao_Impl.kt                  |  83.3% | 45/54 | 4/6 |
-| ⚠️ FeedDao_Impl.kt                          |  88.8% | 175/197 | 21/36 |
-| ✅ SoundbiteDao_Impl.kt                     |  91.7% | 165/180 | 18/32 |
-| ✅ EpisodeDao.kt                            |  95.2% | 59/62 | 9/12 |
+| ✅ EpisodeDao.kt                            |  96.2% | 75/78 | 11/14 |
 | ✅ PodcastDao.kt                            |  96.2% | 50/52 | 8/10 |
 | ✅ FeedDao.kt                               | 100.0% | 3/3 | N/A |
 | ✅ SoundbiteDao.kt                          | 100.0% | 3/3 | N/A |
 
-#### 📦 io.jacob.episodive.core.database - 96.3%
+#### 📦 io.jacob.episodive.core.database.mapper - 97.3%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ✅ EpisodiveDatabase_Impl.kt                |  96.2% | 51/53 | N/A |
-| ✅ EpisodiveDatabase.kt                     | 100.0% | 1/1 | N/A |
-
-#### 📦 io.jacob.episodive.core.database.mapper - 97.2%
-
-| Class | Coverage | Lines Covered/Total | Branches Covered/Total |
-|-------|----------|---------------------|------------------------|
-| ✅ DatabaseMapperKt.kt                      |  97.2% | 210/216 | 3/6 |
+| ✅ DatabaseMapperKt.kt                      |  97.3% | 216/222 | 3/6 |
 
 #### 📦 io.jacob.episodive.core.database.util - 100.0%
 
@@ -134,9 +97,11 @@ Generated: 2026-03-18 13:13:34
 |-------|----------|---------------------|------------------------|
 | ✅ FtsExtKt.kt                              | 100.0% | 3/3 | 6/6 |
 | ✅ DurationConverter.kt                     | 100.0% | 3/3 | 3/4 |
+| ✅ RecentSearchTypeConverter.kt             | 100.0% | 3/3 | 2/4 |
 | ✅ InstantConverter.kt                      | 100.0% | 3/3 | 4/4 |
 | ✅ MediumConverter.kt                       | 100.0% | 3/3 | 2/4 |
 | ✅ EpisodeTypeConverter.kt                  | 100.0% | 3/3 | 2/4 |
+| ✅ DownloadStatusConverter.kt               | 100.0% | 3/3 | 4/4 |
 | ✅ CategoryConverter.kt                     | 100.0% | 3/3 | N/A |
 
 #### 📦 io.jacob.episodive.core.database.datasource - 100.0%
@@ -144,20 +109,16 @@ Generated: 2026-03-18 13:13:34
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
 | ✅ PodcastLocalDataSourceImpl.kt            | 100.0% | 31/31 | 5/8 |
-| ✅ EpisodeLocalDataSourceImpl.kt            | 100.0% | 44/44 | 7/12 |
+| ✅ EpisodeLocalDataSourceImpl.kt            | 100.0% | 56/56 | 9/16 |
 | ✅ RecentSearchLocalDataSourceImpl.kt       | 100.0% | 9/9 | N/A |
 | ✅ FeedLocalDataSourceImpl.kt               | 100.0% | 14/14 | N/A |
 | ✅ SoundbiteLocalDataSourceImpl.kt          | 100.0% | 12/12 | N/A |
 
-#### 📦 io.jacob.episodive.core.database.migration - 100.0%
+#### 📦 io.jacob.episodive.core.database - 100.0%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ✅ AutoMigration4to5.kt                     | 100.0% | 1/1 | N/A |
-| ✅ AutoMigration3to4.kt                     | 100.0% | 1/1 | N/A |
-| ✅ AutoMigration6to7.kt                     | 100.0% | 1/1 | N/A |
-| ✅ AutoMigration2to3.kt                     | 100.0% | 1/1 | N/A |
-| ✅ AutoMigration5to6.kt                     | 100.0% | 1/1 | N/A |
+| ✅ EpisodiveDatabase.kt                     | 100.0% | 1/1 | N/A |
 
 ### core:datastore - 72.6% Coverage
 
@@ -179,25 +140,7 @@ Generated: 2026-03-18 13:13:34
 |-------|----------|---------------------|------------------------|
 | ✅ DataStoreMapperKt.kt                     | 100.0% | 12/12 | N/A |
 
-### core:domain - 87.2% Coverage
-
-#### 📦 io.jacob.episodive.core.domain.usecase.episode - 98.5%
-
-| Class | Coverage | Lines Covered/Total | Branches Covered/Total |
-|-------|----------|---------------------|------------------------|
-| ❌ GetLikedEpisodesUseCase.kt               |  75.0% | 3/4 | N/A |
-| ✅ ToggleLikedEpisodeUseCase.kt             | 100.0% | 4/4 | N/A |
-| ✅ GetEpisodesByPodcastIdPagingUseCase.kt   | 100.0% | 4/4 | N/A |
-| ✅ GetLikedEpisodesPagingUseCase.kt         | 100.0% | 3/3 | N/A |
-| ✅ GetAllPlayedEpisodesUseCase.kt           | 100.0% | 8/8 | N/A |
-| ✅ GetLiveEpisodesUseCase.kt                | 100.0% | 3/3 | N/A |
-| ✅ GetClipEpisodesPagingUseCase.kt          | 100.0% | 3/3 | N/A |
-| ✅ GetAllPlayedEpisodesPagingUseCase.kt     | 100.0% | 7/7 | N/A |
-| ✅ UpdatePlayedEpisodeUseCase.kt            | 100.0% | 11/11 | 2/4 |
-| ✅ GetMyRandomEpisodesUseCase.kt            | 100.0% | 4/4 | N/A |
-| ✅ GetPlayingEpisodesUseCase.kt             | 100.0% | 8/8 | N/A |
-| ✅ GetRecentEpisodesUseCase.kt              | 100.0% | 3/3 | N/A |
-| ✅ GetChaptersUseCase.kt                    | 100.0% | 3/3 | N/A |
+### core:domain - 87.7% Coverage
 
 #### 📦 io.jacob.episodive.core.domain.usecase.channel - 100.0%
 
@@ -206,11 +149,33 @@ Generated: 2026-03-18 13:13:34
 | ✅ GetChannelByIdUseCase.kt                 | 100.0% | 3/3 | N/A |
 | ✅ GetChannelsUseCase.kt                    | 100.0% | 3/3 | N/A |
 
+#### 📦 io.jacob.episodive.core.domain.usecase.episode - 100.0%
+
+| Class | Coverage | Lines Covered/Total | Branches Covered/Total |
+|-------|----------|---------------------|------------------------|
+| ✅ GetEpisodeByIdUseCase.kt                 | 100.0% | 3/3 | N/A |
+| ✅ GetSavedEpisodesPagingUseCase.kt         | 100.0% | 3/3 | N/A |
+| ✅ ToggleLikedEpisodeUseCase.kt             | 100.0% | 4/4 | N/A |
+| ✅ GetEpisodesByPodcastIdPagingUseCase.kt   | 100.0% | 4/4 | N/A |
+| ✅ GetLikedEpisodesPagingUseCase.kt         | 100.0% | 3/3 | N/A |
+| ✅ GetAllPlayedEpisodesUseCase.kt           | 100.0% | 8/8 | N/A |
+| ✅ GetLiveEpisodesUseCase.kt                | 100.0% | 3/3 | N/A |
+| ✅ GetClipEpisodesPagingUseCase.kt          | 100.0% | 3/3 | N/A |
+| ✅ GetLikedEpisodesUseCase.kt               | 100.0% | 4/4 | N/A |
+| ✅ GetAllPlayedEpisodesPagingUseCase.kt     | 100.0% | 7/7 | N/A |
+| ✅ SaveEpisodeUseCase.kt                    | 100.0% | 11/11 | 6/6 |
+| ✅ UpdatePlayedEpisodeUseCase.kt            | 100.0% | 11/11 | 2/4 |
+| ✅ GetMyRandomEpisodesUseCase.kt            | 100.0% | 4/4 | N/A |
+| ✅ GetPlayingEpisodesUseCase.kt             | 100.0% | 8/8 | N/A |
+| ✅ GetSavedEpisodesUseCase.kt               | 100.0% | 4/4 | N/A |
+| ✅ GetRecentEpisodesUseCase.kt              | 100.0% | 3/3 | N/A |
+| ✅ GetChaptersUseCase.kt                    | 100.0% | 3/3 | N/A |
+
 #### 📦 io.jacob.episodive.core.domain.usecase.search - 100.0%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ✅ UpsertRecentSearchUseCase.kt             | 100.0% | 4/4 | N/A |
+| ✅ UpsertRecentSearchUseCase.kt             | 100.0% | 8/8 | N/A |
 | ✅ SearchUseCase.kt                         | 100.0% | 4/4 | N/A |
 | ✅ GetRecentSearchesUseCase.kt              | 100.0% | 3/3 | N/A |
 | ✅ DeleteRecentSearchUseCase.kt             | 100.0% | 4/4 | N/A |
@@ -220,7 +185,7 @@ Generated: 2026-03-18 13:13:34
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ✅ FindInLibraryUseCase.kt                  | 100.0% | 7/7 | N/A |
+| ✅ FindInLibraryUseCase.kt                  | 100.0% | 8/8 | N/A |
 
 #### 📦 io.jacob.episodive.core.domain.usecase.podcast - 100.0%
 
@@ -287,149 +252,75 @@ Generated: 2026-03-18 13:13:34
 | ✅ ChannelRemoteDataSourceImpl.kt           | 100.0% | 7/7 | 3/6 |
 | ✅ EpisodeRemoteDataSourceImpl.kt           | 100.0% | 47/47 | 1/4 |
 
-### feature:channel - 75.4% Coverage
+### feature:channel - 98.0% Coverage
 
-#### 📦 io.jacob.episodive.feature.channel.navigation - 0.0%
-
-| Class | Coverage | Lines Covered/Total | Branches Covered/Total |
-|-------|----------|---------------------|------------------------|
-| ❌ ChannelNavigationKt.kt                   |   0.0% | 0/15 | N/A |
-| ❌ ChannelRoute.kt                          |   0.0% | 0/2 | 0/2 |
-
-#### 📦 io.jacob.episodive.feature.channel - 84.4%
+#### 📦 io.jacob.episodive.feature.channel - 100.0%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ⚠️ ChannelScreenKt.kt                       |  81.3% | 113/139 | 24/118 |
 | ✅ ChannelViewModel.kt                      | 100.0% | 28/28 | N/A |
 
-### feature:clip - 60.1% Coverage
+### feature:clip - 100.0% Coverage
 
-#### 📦 io.jacob.episodive.feature.clip.navigation - 0.0%
-
-| Class | Coverage | Lines Covered/Total | Branches Covered/Total |
-|-------|----------|---------------------|------------------------|
-| ❌ ClipRoute.kt                             |   0.0% | 0/2 | N/A |
-| ❌ ClipBaseRoute.kt                         |   0.0% | 0/2 | N/A |
-| ❌ ClipNavigationKt.kt                      |   0.0% | 0/28 | 0/24 |
-
-#### 📦 io.jacob.episodive.feature.clip - 71.4%
+#### 📦 io.jacob.episodive.feature.clip - 100.0%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ ClipScreenKt.kt                          |  58.7% | 54/92 | 50/181 |
-| ✅ ClipPlayerState.kt                       | 100.0% | 5/5 | N/A |
 | ✅ ClipViewModel.kt                         | 100.0% | 36/36 | N/A |
+| ✅ ClipPlayerState.kt                       | 100.0% | 5/5 | N/A |
 
-### feature:home - 60.3% Coverage
+### feature:home - 95.7% Coverage
 
-#### 📦 io.jacob.episodive.feature.home.navigation - 0.0%
-
-| Class | Coverage | Lines Covered/Total | Branches Covered/Total |
-|-------|----------|---------------------|------------------------|
-| ❌ HomeNavigationKt.kt                      |   0.0% | 0/31 | 0/30 |
-| ❌ HomeBaseRoute.kt                         |   0.0% | 0/2 | N/A |
-| ❌ HomeRoute.kt                             |   0.0% | 0/2 | N/A |
-
-#### 📦 io.jacob.episodive.feature.home - 67.7%
+#### 📦 io.jacob.episodive.feature.home - 95.3%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ HomeScreenKt.kt                          |  58.9% | 89/151 | 42/122 |
-| ✅ HomeViewModel.kt                         | 100.0% | 41/41 | N/A |
+| ✅ HomeViewModel.kt                         |  95.3% | 41/43 | N/A |
 
-### feature:library - 69.9% Coverage
+### feature:library - 73.2% Coverage
 
-#### 📦 io.jacob.episodive.feature.library.navigation - 0.0%
-
-| Class | Coverage | Lines Covered/Total | Branches Covered/Total |
-|-------|----------|---------------------|------------------------|
-| ❌ LibraryBaseRoute.kt                      |   0.0% | 0/2 | N/A |
-| ❌ LibraryRoute.kt                          |   0.0% | 0/2 | N/A |
-| ❌ LibraryNavigationKt.kt                   |   0.0% | 0/28 | 0/24 |
-
-#### 📦 io.jacob.episodive.feature.library - 77.0%
+#### 📦 io.jacob.episodive.feature.library - 78.5%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ LibraryScreenKt.kt                       |  76.2% | 374/491 | 241/626 |
-| ⚠️ LibraryViewModel.kt                      |  81.5% | 66/81 | N/A |
+| ❌ LibraryViewModel.kt                      |  78.3% | 72/92 | N/A |
 | ✅ LibrarySection.kt                        | 100.0% | 1/1 | N/A |
 
-### feature:onboarding - 84.4% Coverage
+### feature:onboarding - 95.5% Coverage
 
-#### 📦 io.jacob.episodive.feature.onboarding - 86.4%
+#### 📦 io.jacob.episodive.feature.onboarding - 92.7%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ⚠️ OnboardingScreenKt.kt                    |  85.0% | 209/246 | 72/198 |
 | ✅ OnboardingViewModel.kt                   |  92.2% | 47/51 | N/A |
 | ✅ OnboardingPage.kt                        | 100.0% | 4/4 | N/A |
 
-### feature:player - 65.6% Coverage
+### feature:player - 91.7% Coverage
 
-#### 📦 io.jacob.episodive.feature.player - 64.8%
+#### 📦 io.jacob.episodive.feature.player - 96.1%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ PlayerScreenKt.kt                        |  57.7% | 318/551 | 155/552 |
-| ❌ PlayerBarKt.kt                           |  68.9% | 82/119 | 19/88 |
+| ✅ PlayerViewModel.kt                       |  95.8% | 92/96 | N/A |
 | ✅ LastPlaySnapshot.kt                      | 100.0% | 6/6 | N/A |
-| ✅ PlayerViewModel.kt                       | 100.0% | 91/91 | N/A |
 
-### feature:podcast - 66.4% Coverage
+### feature:podcast - 92.1% Coverage
 
-#### 📦 io.jacob.episodive.feature.podcast.navigation - 0.0%
-
-| Class | Coverage | Lines Covered/Total | Branches Covered/Total |
-|-------|----------|---------------------|------------------------|
-| ❌ PodcastRoute.kt                          |   0.0% | 0/2 | 0/2 |
-| ❌ PodcastNavigationKt.kt                   |   0.0% | 0/14 | N/A |
-
-#### 📦 io.jacob.episodive.feature.podcast - 73.1%
+#### 📦 io.jacob.episodive.feature.podcast - 94.4%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ❌ PodcastScreenKt.kt                       |  66.4% | 89/134 | 28/110 |
-| ✅ PodcastViewModel.kt                      | 100.0% | 33/33 | N/A |
+| ✅ PodcastViewModel.kt                      |  94.4% | 34/36 | N/A |
 
-### feature:search - 73.0% Coverage
+### feature:search - 93.7% Coverage
 
-#### 📦 io.jacob.episodive.feature.search.navigation - 0.0%
-
-| Class | Coverage | Lines Covered/Total | Branches Covered/Total |
-|-------|----------|---------------------|------------------------|
-| ❌ SearchBaseRoute.kt                       |   0.0% | 0/2 | N/A |
-| ❌ SearchRoute.kt                           |   0.0% | 0/2 | N/A |
-| ❌ SearchNavigationKt.kt                    |   0.0% | 0/28 | 0/24 |
-
-#### 📦 io.jacob.episodive.feature.search - 86.6%
+#### 📦 io.jacob.episodive.feature.search - 98.3%
 
 | Class | Coverage | Lines Covered/Total | Branches Covered/Total |
 |-------|----------|---------------------|------------------------|
-| ⚠️ SearchScreenKt.kt                        |  83.8% | 191/228 | 139/364 |
-| ✅ SearchViewModel.kt                       |  98.2% | 54/55 | N/A |
+| ✅ SearchViewModel.kt                       |  98.3% | 57/58 | N/A |
 
 ---
 
 ## Recommendations
-
-### 🔴 Priority: Zero Coverage Classes
-
-These classes have no test coverage and should be prioritized:
-
-- **feature:home/HomeNavigationKt.kt** (31 lines)
-- **feature:home/HomeBaseRoute.kt** (2 lines)
-- **feature:home/HomeRoute.kt** (2 lines)
-- **feature:search/SearchBaseRoute.kt** (2 lines)
-- **feature:search/SearchRoute.kt** (2 lines)
-- **feature:search/SearchNavigationKt.kt** (28 lines)
-- **feature:library/LibraryBaseRoute.kt** (2 lines)
-- **feature:library/LibraryRoute.kt** (2 lines)
-- **feature:library/LibraryNavigationKt.kt** (28 lines)
-- **feature:podcast/PodcastRoute.kt** (2 lines)
-
-### 🟡 Medium Priority: Low Coverage Classes (< 50%)
-
-- **core:data/ConnectivityManagerNetworkMonitor.kt** - 45.5% (6 lines missed)
 

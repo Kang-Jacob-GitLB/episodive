@@ -26,6 +26,7 @@ import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
+import kotlin.time.Instant
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -106,6 +107,7 @@ class LibraryViewModelTest {
             toggleLikedEpisodeUseCase,
             toggleFollowedUseCase,
             toggleCategoryUseCase,
+            saveEpisodeUseCase,
         )
     }
 
@@ -431,4 +433,88 @@ class LibraryViewModelTest {
             assertEquals(LibrarySection.Preferred, (state as LibraryState.Success).section)
         }
     }
+
+    @Test
+    fun `Given ToggleSavedEpisode action, When sent, Then saveEpisodeUseCase is invoked`() =
+        runTest {
+            setupDefaultMocks()
+            val viewModel = createViewModel()
+            val episode = episodeTestData
+
+            viewModel.sendAction(LibraryAction.ToggleSavedEpisode(episode))
+
+            coVerify { saveEpisodeUseCase(episode) }
+        }
+
+    @Test
+    fun `Given saved episodes exist, When collecting, Then state includes saved episodes`() =
+        runTest {
+            val savedEpisodes = episodeTestDataList.take(2)
+            every { getAllPlayedEpisodesUseCase(max = any()) } returns flowOf(emptyList())
+            every { getLikedEpisodesUseCase(max = any()) } returns flowOf(emptyList())
+            every { getSavedEpisodesUseCase(max = any()) } returns flowOf(savedEpisodes)
+            every { getFollowedPodcastsUseCase(max = any()) } returns flowOf(emptyList())
+            every { getPreferredCategoriesUseCase() } returns flowOf(emptyList())
+            every { getSelectableCategoriesUseCase() } returns flowOf(emptyList())
+
+            val viewModel = createViewModel()
+
+            viewModel.state.test {
+                assertEquals(LibraryState.Loading, awaitItem())
+                mainDispatcherRule.testDispatcher.scheduler.advanceTimeBy(600)
+                val state = awaitItem()
+                assertTrue(state is LibraryState.Success)
+                assertEquals(savedEpisodes, (state as LibraryState.Success).savedEpisodes)
+            }
+        }
+
+    @Test
+    fun `Given SelectSection Saved, When sent, Then section updates to Saved`() = runTest {
+        setupDefaultMocks()
+        val viewModel = createViewModel()
+
+        viewModel.sendAction(LibraryAction.SelectSection(LibrarySection.Saved))
+
+        viewModel.state.test {
+            assertEquals(LibraryState.Loading, awaitItem())
+            mainDispatcherRule.testDispatcher.scheduler.advanceTimeBy(600)
+            val state = awaitItem()
+            assertTrue(state is LibraryState.Success)
+            assertEquals(LibrarySection.Saved, (state as LibraryState.Success).section)
+        }
+    }
+
+    @Test
+    fun `Given find query with results, When collecting, Then state uses find result data`() =
+        runTest {
+            val findResult = LibraryFindResult(
+                playingEpisodes = episodeTestDataList.take(1),
+                likedEpisodes = episodeTestDataList.take(1),
+                savedEpisodes = emptyList(),
+                followedPodcasts = podcastTestDataList.take(1),
+            )
+            every { findInLibraryUseCase(any()) } returns flowOf(findResult)
+            every { getAllPlayedEpisodesUseCase(max = any()) } returns flowOf(episodeTestDataList)
+            every { getLikedEpisodesUseCase(max = any()) } returns flowOf(episodeTestDataList)
+            every { getSavedEpisodesUseCase(max = any()) } returns flowOf(emptyList())
+            every { getFollowedPodcastsUseCase(max = any()) } returns flowOf(podcastTestDataList)
+            every { getPreferredCategoriesUseCase() } returns flowOf(listOf(Category.BUSINESS))
+            every { getSelectableCategoriesUseCase() } returns flowOf(emptyList())
+
+            val viewModel = createViewModel()
+
+            viewModel.sendAction(LibraryAction.ClickFind("query"))
+
+            viewModel.state.test {
+                assertEquals(LibraryState.Loading, awaitItem())
+                mainDispatcherRule.testDispatcher.scheduler.advanceTimeBy(600)
+                val state = awaitItem()
+                assertTrue(state is LibraryState.Success)
+                val success = state as LibraryState.Success
+                assertEquals("query", success.findQuery)
+                assertEquals(findResult.playingEpisodes, success.allPlayedEpisodes)
+                assertEquals(findResult.likedEpisodes, success.likedEpisodes)
+                assertEquals(findResult.followedPodcasts, success.followedPodcasts)
+            }
+        }
 }
