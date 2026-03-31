@@ -76,7 +76,7 @@ git push -u origin HEAD
 - `ci` → `ci/cd`
 
 ```bash
-gh pr create --title "{타입}: {제목}" --assignee "alsrb968" --label "{라벨}" --body "$(cat <<'EOF'
+gh pr create --title "{타입}: {제목}" --assignee "Kang-Jacob-GitLB" --label "{라벨}" --body "$(cat <<'EOF'
 {본문}
 EOF
 )"

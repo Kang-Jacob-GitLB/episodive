@@ -1,5 +1,5 @@
-![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/alsrb968/991664386c54d6464bb3399f02d8e1c1/raw/coverage.json)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/alsrb968/episodive)
+![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/Kang-Jacob-GitLB/991664386c54d6464bb3399f02d8e1c1/raw/coverage.json)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Kang-Jacob-GitLB/episodive)
 
 # Episodive
 Podcast Index Api 활용한 팟캐스트 앱
