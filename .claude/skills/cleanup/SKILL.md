@@ -2,7 +2,7 @@
 name: cleanup
 description: PR 머지 후 main으로 돌아가 pull, fetch --prune하고 삭제된 remote 브랜치의 로컬 브랜치를 정리한다. 사용자가 "/cleanup"을 입력하거나 "머지 후 정리", "브랜치 정리해줘" 등을 요청할 때 사용한다.
 disable-model-invocation: true
-allowed-tools: Bash(git checkout:*), Bash(git pull:*), Bash(git fetch:*), Bash(git branch:*)
+allowed-tools: Bash
 ---
 
 ## 현재 상태

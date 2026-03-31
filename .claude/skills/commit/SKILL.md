@@ -2,7 +2,7 @@
 name: commit
 description: 변경 사항을 staging하고 커밋한다. 사용자가 "/commit"을 입력하거나 "커밋해줘", "변경사항 커밋", "commit the changes" 등을 요청할 때 사용한다.
 disable-model-invocation: true
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git checkout:*), Bash(git add:*), Bash(git commit:*)
+allowed-tools: Bash, Read
 ---
 
 ## 현재 상태

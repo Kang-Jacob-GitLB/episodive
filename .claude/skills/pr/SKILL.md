@@ -2,8 +2,12 @@
 name: pr
 description: 현재 브랜치를 push하고 PR을 생성한다. 사용자가 "/pr"을 입력하거나 "PR 만들어줘", "풀리퀘스트 생성", "PR 올려줘" 등을 요청할 때 사용한다.
 disable-model-invocation: true
-allowed-tools: Bash(git status:*), Bash(git log:*), Bash(git branch:*), Bash(git diff:*), Bash(git push:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr edit:*)
+allowed-tools: Bash, Read
 ---
+
+## 사전 요구사항
+
+- [GitHub CLI (`gh`)](https://cli.github.com/) 설치 및 인증 필요 (`gh auth login`)
 
 ## 현재 상태
 
@@ -75,8 +79,14 @@ git push -u origin HEAD
 - `chore` → `chore`
 - `ci` → `ci/cd`
 
+먼저 현재 GitHub 사용자명을 가져온다:
 ```bash
-gh pr create --title "{타입}: {제목}" --assignee "Kang-Jacob-GitLB" --label "{라벨}" --body "$(cat <<'EOF'
+gh api user --jq '.login'
+```
+
+그 결과를 `--assignee`에 사용한다:
+```bash
+gh pr create --title "{타입}: {제목}" --assignee "$(gh api user --jq '.login')" --label "{라벨}" --body "$(cat <<'EOF'
 {본문}
 EOF
 )"
