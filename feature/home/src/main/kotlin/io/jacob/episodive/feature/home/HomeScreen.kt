@@ -19,6 +19,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -32,6 +33,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.coerceIn
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -137,14 +139,19 @@ internal fun HomeScreen(
             )
         )
 
+        val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+
         BottomSheetScaffold(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
             scaffoldState = sheetState,
             topBar = {
                 EpisodiveTopAppBar(
                     modifier = Modifier.onSizeChanged { size ->
                         topBarHeight = with(density) { size.height.toDp() }
                     },
+                    scrollBehavior = scrollBehavior,
                     title = {
                         Text(
                             text = stringResource(R.string.feature_home_title),
