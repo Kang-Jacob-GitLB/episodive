@@ -16,7 +16,7 @@ activityCompose = "1.12.1"
 constraintlayoutCompose = "1.1.1"
 animationCompose = "1.10.0"
 foundationCompose = "1.10.0"
-navigationCompose = "2.9.6"
+navigation3 = "1.0.1"
 material3 = "1.5.0-alpha10"
 media3 = "1.8.0"
 room = "2.8.4"
@@ -72,7 +72,9 @@ androidx-compose-material3-android = { group = "androidx.compose.material3", nam
 androidx-datastore = { group = "androidx.datastore", name = "datastore", version.ref = "datastore" }
 androidx-datastore-core = { group = "androidx.datastore", name = "datastore-core", version.ref = "datastore" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
-androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
+androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "lifecycle" }
 androidx-animation-compose = { group = "androidx.compose.animation", name = "animation", version.ref = "animationCompose" }
 androidx-foundation-compose = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundationCompose" }
 androidx-media3-common = { group = "androidx.media3", name = "media3-common", version.ref = "media3" }

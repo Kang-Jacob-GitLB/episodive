@@ -2,97 +2,57 @@ package io.jacob.episodive.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.NavHost
-import io.jacob.episodive.feature.channel.navigation.channelScreen
-import io.jacob.episodive.feature.channel.navigation.navigateToChannel
-import io.jacob.episodive.feature.clip.navigation.clipSection
-import io.jacob.episodive.feature.home.navigation.homeSection
-import io.jacob.episodive.feature.library.navigation.librarySection
-import io.jacob.episodive.feature.podcast.navigation.navigateToPodcast
-import io.jacob.episodive.feature.podcast.navigation.podcastScreen
-import io.jacob.episodive.feature.search.navigation.searchSection
-import io.jacob.episodive.ui.EpisodiveAppState
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
+import io.jacob.episodive.feature.channel.navigation.ChannelRoute
+import io.jacob.episodive.feature.channel.navigation.channelEntries
+import io.jacob.episodive.feature.clip.navigation.clipEntries
+import io.jacob.episodive.feature.home.navigation.homeEntries
+import io.jacob.episodive.feature.library.navigation.libraryEntries
+import io.jacob.episodive.feature.podcast.navigation.PodcastRoute
+import io.jacob.episodive.feature.podcast.navigation.podcastEntries
+import io.jacob.episodive.feature.search.navigation.searchEntries
 
 @Composable
 fun EpisodiveNavHost(
+    navigationState: EpisodiveNavigationState,
+    navigator: EpisodiveNavigator,
+    onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
     modifier: Modifier = Modifier,
-    appState: EpisodiveAppState,
-    onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
-    NavHost(
-        navController = appState.navController,
-        startDestination = appState.startDestination.baseRoute,
-        modifier = modifier,
-    ) {
-        homeSection(
-            onRegisterNestedNavController = { navController ->
-                appState.registerNestedNavController(BottomBarDestination.HOME, navController)
-            },
-            navigateToPodcast = { navigateToPodcast(it) },
-            navigateToChannel = { navigateToChannel(it) },
+    val entryProvider = entryProvider<NavKey> {
+        homeEntries(
+            onPodcastClick = { navigator.navigate(PodcastRoute(it)) },
+            onChannelClick = { navigator.navigate(ChannelRoute(it)) },
             onShowSnackbar = onShowSnackbar,
-        ) { nestedNavController ->
-            addDetailsGraph(
-                navController = nestedNavController,
-                onShowSnackbar = onShowSnackbar
-            )
-        }
-
-        searchSection(
-            onRegisterNestedNavController = { navController ->
-                appState.registerNestedNavController(BottomBarDestination.SEARCH, navController)
-            },
-            navigateToPodcast = { navigateToPodcast(it) },
-//            navigateToStoryDetail = { navigateToStoryDetail(it) },
-            onShowSnackbar = onShowSnackbar
-        ) { nestedNavController ->
-            addDetailsGraph(
-                navController = nestedNavController,
-                onShowSnackbar = onShowSnackbar
-            )
-        }
-
-        librarySection(
-            onRegisterNestedNavController = { navController ->
-                appState.registerNestedNavController(BottomBarDestination.LIBRARY, navController)
-            },
-            navigateToPodcast = { navigateToPodcast(it) },
-            onShowSnackbar = onShowSnackbar
-        ) { nestedNavController ->
-            addDetailsGraph(
-                navController = nestedNavController,
-                onShowSnackbar = onShowSnackbar
-            )
-        }
-
-        clipSection(
-            onRegisterNestedNavController = { navController ->
-                appState.registerNestedNavController(BottomBarDestination.CLIP, navController)
-            },
-            navigateToPodcast = { navigateToPodcast(it) },
-            onShowSnackbar = onShowSnackbar
-        ) { nestedNavController ->
-            addDetailsGraph(
-                navController = nestedNavController,
-                onShowSnackbar = onShowSnackbar
-            )
-        }
+        )
+        searchEntries(
+            onPodcastClick = { navigator.navigate(PodcastRoute(it)) },
+            onShowSnackbar = onShowSnackbar,
+        )
+        libraryEntries(
+            onPodcastClick = { navigator.navigate(PodcastRoute(it)) },
+            onShowSnackbar = onShowSnackbar,
+        )
+        clipEntries(
+            onPodcastClick = { navigator.navigate(PodcastRoute(it)) },
+            onShowSnackbar = onShowSnackbar,
+        )
+        podcastEntries(
+            onBackClick = { navigator.goBack() },
+            onShowSnackbar = onShowSnackbar,
+        )
+        channelEntries(
+            onBackClick = { navigator.goBack() },
+            onPodcastClick = { navigator.navigate(PodcastRoute(it)) },
+            onShowSnackbar = onShowSnackbar,
+        )
     }
-}
 
-fun NavGraphBuilder.addDetailsGraph(
-    navController: NavController,
-    onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
-) {
-    channelScreen(
-        onBackClick = navController::popBackStack,
-        onPodcastClick = navController::navigateToPodcast,
-        onShowSnackbar = onShowSnackbar
-    )
-    podcastScreen(
-        onBackClick = navController::popBackStack,
-        onShowSnackbar = onShowSnackbar
+    NavDisplay(
+        entries = navigationState.toDecoratedEntries(entryProvider),
+        onBack = { navigator.goBack() },
+        modifier = modifier,
     )
 }
