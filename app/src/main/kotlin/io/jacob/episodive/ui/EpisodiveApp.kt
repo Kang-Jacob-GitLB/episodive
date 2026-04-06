@@ -26,18 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
 import io.jacob.episodive.R
 import io.jacob.episodive.core.designsystem.component.EpisodiveBackground
 import io.jacob.episodive.core.designsystem.component.EpisodiveNavigationBar
 import io.jacob.episodive.core.designsystem.component.EpisodiveNavigationBarItem
 import io.jacob.episodive.feature.onboarding.OnboardingRoute
 import io.jacob.episodive.feature.player.PlayerBar
-import io.jacob.episodive.feature.podcast.navigation.navigateToPodcast
 import io.jacob.episodive.navigation.EpisodiveNavHost
-import kotlin.reflect.KClass
 
 @Composable
 fun EpisodiveApp(
@@ -73,9 +68,6 @@ fun EpisodiveApp(
 ) {
     val state by appState.viewModel.state.collectAsStateWithLifecycle()
 
-    val currentDestination by appState.currentDestination
-        .collectAsStateWithLifecycle(initialValue = null)
-
     if (state.isFirstLaunch()) {
         Box(
             modifier = Modifier
@@ -107,8 +99,7 @@ fun EpisodiveApp(
         bottomBar = {
             EpisodiveNavigationBar {
                 appState.bottomBarDestinations.forEach { destination ->
-                    val selected = currentDestination
-                        .isRouteInHierarchy(destination.baseRoute)
+                    val selected = destination.navKey == appState.navigationState.topLevelRoute
                     val text = stringResource(destination.iconTextId)
 
                     EpisodiveNavigationBarItem(
@@ -151,7 +142,8 @@ fun EpisodiveApp(
                 .padding(paddingValues)
         ) {
             EpisodiveNavHost(
-                appState = appState,
+                navigationState = appState.navigationState,
+                navigator = appState.navigator,
                 onShowSnackbar = { message, action ->
                     snackbarHostState.showSnackbar(
                         message = message,
@@ -162,13 +154,8 @@ fun EpisodiveApp(
             )
 
             PlayerBar(
-                onPodcastClick = { appState.currentNestedNavController?.navigateToPodcast(it) }
+                onPodcastClick = { appState.navigateToPodcast(it) }
             )
         }
     }
 }
-
-private fun NavDestination?.isRouteInHierarchy(route: KClass<*>) =
-    this?.hierarchy?.any {
-        it.hasRoute(route)
-    } ?: false
