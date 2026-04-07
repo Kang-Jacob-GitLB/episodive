@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import io.jacob.episodive.core.domain.usecase.episode.NewEpisodeResult
 import io.jacob.episodive.core.testing.model.episodeTestDataList
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
@@ -48,7 +49,7 @@ class EpisodeSyncNotificationHelperTest {
     }
 
     @Test
-    fun `Given empty results, When showNewEpisodeNotification, Then no notification is shown`() {
+    fun `Given empty results, When showNewEpisodeNotification, Then no notification is shown`() = runTest {
         val shadowNm = shadowOf(notificationManager)
 
         helper.showNewEpisodeNotification(emptyList())
@@ -57,7 +58,7 @@ class EpisodeSyncNotificationHelperTest {
     }
 
     @Test
-    fun `Given single podcast result, When showNewEpisodeNotification, Then notification is shown`() {
+    fun `Given single podcast result, When showNewEpisodeNotification, Then notification is shown`() = runTest {
         val episodes = episodeTestDataList.take(2)
         val results = listOf(NewEpisodeResult(feedId = episodes.first().feedId, episodes = episodes))
         val shadowNm = shadowOf(notificationManager)
@@ -72,7 +73,7 @@ class EpisodeSyncNotificationHelperTest {
     }
 
     @Test
-    fun `Given single podcast result, When showNewEpisodeNotification, Then notification title is feed title`() {
+    fun `Given single podcast result, When showNewEpisodeNotification, Then notification title is feed title`() = runTest {
         val episodes = episodeTestDataList.take(1)
         val results = listOf(NewEpisodeResult(feedId = episodes.first().feedId, episodes = episodes))
         val shadowNm = shadowOf(notificationManager)
@@ -87,7 +88,7 @@ class EpisodeSyncNotificationHelperTest {
     }
 
     @Test
-    fun `Given multiple podcast results, When showNewEpisodeNotification, Then notification is shown`() {
+    fun `Given multiple podcast results, When showNewEpisodeNotification, Then notification is shown`() = runTest {
         val episodes1 = episodeTestDataList.take(2)
         val episodes2 = episodeTestDataList.drop(2).take(2)
         val results = listOf(
@@ -105,7 +106,7 @@ class EpisodeSyncNotificationHelperTest {
     }
 
     @Test
-    fun `Given results, When showNewEpisodeNotification, Then latest result feedId is used in intent`() {
+    fun `Given results, When showNewEpisodeNotification, Then latest result feedId is used in intent`() = runTest {
         val episodes = episodeTestDataList.take(2)
         val feedId = episodes.first().feedId
         val results = listOf(NewEpisodeResult(feedId = feedId, episodes = episodes))
