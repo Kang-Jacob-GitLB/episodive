@@ -587,4 +587,31 @@ class EpisodeLocalDataSourceTest {
                 dao.getSavedEpisodesPaging(null)
             }
         }
+
+    @Test
+    fun `Given episodes, When upsertEpisodes is called, Then dao upsertEpisodes is called`() =
+        runTest {
+            // When
+            dataSource.upsertEpisodes(episodeEntities)
+
+            // Then
+            coVerify {
+                dao.upsertEpisodes(episodeEntities)
+            }
+        }
+
+    @Test
+    fun `Given feedId, When getLatestEpisodeDatePublished is called, Then dao is called`() =
+        runTest {
+            // Given
+            val feedId = 5778530L
+
+            // When
+            dataSource.getLatestEpisodeDatePublished(feedId)
+
+            // Then
+            coVerify {
+                dao.getLatestEpisodeDatePublished(feedId)
+            }
+        }
 }

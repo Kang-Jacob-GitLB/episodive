@@ -54,7 +54,9 @@ private val coverageExclusions = listOf(
     // Database generated classes
     "**/database/*AutoMigration*Impl.class",
     "**/database/**/*Dao_Impl.class",
+    "**/database/**/*Dao_Impl\$*.class",
     "**/database/**/*Database_Impl.class",
+    "**/database/**/*Database_Impl\$*.class",
     "**/database/migration/**/*.class",
     // Download classes (Android system dependencies)
     "**/download/**/*.class",
@@ -62,13 +64,27 @@ private val coverageExclusions = listOf(
     "**/*ScreenKt*.class",
     "**/*BarKt*.class",
     // Navigation classes (Compose Navigation glue code)
-    "**/navigation/**/*Navigation*.class",
-    "**/navigation/**/*NavigationKt*.class",
+    "**/navigation/**/*.class",
     // Route classes (serializable route data objects)
     "**/*Route.class",
     "**/*Route\$*.class",
     "**/*BaseRoute.class",
     "**/*BaseRoute\$*.class",
+    // Android framework classes (tested via instrumented tests)
+    "**/*Activity.class",
+    "**/*Activity\$*.class",
+    "**/*Service.class",
+    "**/*Service\$*.class",
+    "**/*Application.class",
+    "**/*Application\$*.class",
+    // Media service implementation details (CustomCommand enum)
+    "**/CustomCommand.class",
+    "**/CustomCommand\$*.class",
+    // Top-level Compose app shell (not unit-testable)
+    "**/*AppKt*.class",
+    "**/*AppState*.class",
+    // Compose design system components (UI tested via screenshot/integration tests)
+    "**/designsystem/**/*.class",
 )
 
 private fun String.capitalize() = replaceFirstChar {
@@ -105,7 +121,14 @@ internal fun Project.configureJacoco(
                 dependsOn("test${variant.name.capitalize()}UnitTest")
 
                 classDirectories.setFrom(
-                    allJars,
+                    allJars.map { jars ->
+                        jars.map { jar ->
+                            project.zipTree(jar.asFile).matching {
+                                include("io/jacob/episodive/**")
+                                exclude(coverageExclusions)
+                            }
+                        }
+                    },
                     allDirectories.map { dirs ->
                         dirs.map { dir ->
                             myObjFactory.fileTree().setDir(dir).exclude(coverageExclusions)

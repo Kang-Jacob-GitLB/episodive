@@ -1679,4 +1679,49 @@ class EpisodeDaoTest {
             assertEquals(ids.toSet(), episodes.map { it.episode.id }.toSet())
         }
 
+    @Test
+    fun `Given episodes for feed, When getLatestEpisodeDatePublished, Then returns max datePublished`() =
+        runTest {
+            // Given
+            val feedId = 5778530L
+            dao.upsertEpisodes(
+                listOf(
+                    episodeEntity.copy(id = 1L, feedId = feedId, datePublished = Instant.fromEpochSeconds(1000)),
+                    episodeEntity.copy(id = 2L, feedId = feedId, datePublished = Instant.fromEpochSeconds(3000)),
+                    episodeEntity.copy(id = 3L, feedId = feedId, datePublished = Instant.fromEpochSeconds(2000)),
+                )
+            )
+
+            // When
+            val result = dao.getLatestEpisodeDatePublished(feedId)
+
+            // Then
+            assertEquals(Instant.fromEpochSeconds(3000), result)
+        }
+
+    @Test
+    fun `Given no episodes for feed, When getLatestEpisodeDatePublished, Then returns null`() =
+        runTest {
+            val result = dao.getLatestEpisodeDatePublished(999L)
+            assertEquals(null, result)
+        }
+
+    @Test
+    fun `Given episodes for different feeds, When getLatestEpisodeDatePublished, Then returns max for specific feed only`() =
+        runTest {
+            // Given
+            dao.upsertEpisodes(
+                listOf(
+                    episodeEntity.copy(id = 1L, feedId = 100L, datePublished = Instant.fromEpochSeconds(5000)),
+                    episodeEntity.copy(id = 2L, feedId = 200L, datePublished = Instant.fromEpochSeconds(1000)),
+                )
+            )
+
+            // When
+            val result = dao.getLatestEpisodeDatePublished(200L)
+
+            // Then
+            assertEquals(Instant.fromEpochSeconds(1000), result)
+        }
+
 }
