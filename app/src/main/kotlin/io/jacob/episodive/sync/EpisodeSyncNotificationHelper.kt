@@ -33,7 +33,7 @@ class EpisodeSyncNotificationHelper @Inject constructor(
             .createNotificationChannel(channel)
     }
 
-    fun showNewEpisodeNotification(results: List<NewEpisodeResult>) {
+    suspend fun showNewEpisodeNotification(results: List<NewEpisodeResult>) {
         if (results.isEmpty()) return
 
         val latestResult = results.maxByOrNull { result ->
@@ -66,11 +66,17 @@ class EpisodeSyncNotificationHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
+        val latestEpisode = results.flatMap { it.episodes }
+            .maxByOrNull { it.datePublished }
+        val largeIcon = latestEpisode?.image?.let { loadBitmap(it) }
+            ?: latestEpisode?.feedImage?.let { loadBitmap(it) }
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.media3_notification_small_icon)
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(pendingIntent)
+            .apply { if (largeIcon != null) setLargeIcon(largeIcon) }
             .setAutoCancel(true)
             .build()
 
@@ -78,6 +84,21 @@ class EpisodeSyncNotificationHelper @Inject constructor(
             == PackageManager.PERMISSION_GRANTED
         ) {
             NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+        }
+    }
+
+
+    private suspend fun loadBitmap(url: String): android.graphics.Bitmap? {
+        return try {
+            val request = coil.request.ImageRequest.Builder(context)
+                .data(url)
+                .size(256)
+                .allowHardware(false)
+                .build()
+            val result = coil.Coil.imageLoader(context).execute(request)
+            (result.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
+        } catch (_: Exception) {
+            null
         }
     }
 
