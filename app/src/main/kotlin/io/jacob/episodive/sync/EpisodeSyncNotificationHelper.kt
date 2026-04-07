@@ -24,10 +24,10 @@ class EpisodeSyncNotificationHelper @Inject constructor(
     fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "새 에피소드",
+            context.getString(R.string.notification_channel_new_episodes),
             NotificationManager.IMPORTANCE_DEFAULT,
         ).apply {
-            description = "팔로우한 팟캐스트의 새 에피소드 알림"
+            description = context.getString(R.string.notification_channel_new_episodes_description)
         }
         context.getSystemService(NotificationManager::class.java)
             .createNotificationChannel(channel)
@@ -40,14 +40,19 @@ class EpisodeSyncNotificationHelper @Inject constructor(
             result.episodes.maxOf { it.datePublished }
         } ?: return
 
-        val feedTitle = latestResult.episodes.firstOrNull()?.feedTitle ?: "팟캐스트"
+        val feedTitle = latestResult.episodes.firstOrNull()?.feedTitle
+            ?: context.getString(R.string.notification_podcast_fallback)
         val totalNewEpisodes = results.sumOf { it.episodes.size }
 
-        val title = if (results.size == 1) feedTitle else "새 에피소드"
-        val text = if (results.size == 1) {
-            "${totalNewEpisodes}개의 새 에피소드"
+        val title = if (results.size == 1) {
+            feedTitle
         } else {
-            "${results.size}개 팟캐스트에서 ${totalNewEpisodes}개의 새 에피소드"
+            context.getString(R.string.notification_new_episodes_title)
+        }
+        val text = if (results.size == 1) {
+            context.getString(R.string.notification_new_episodes_single, totalNewEpisodes)
+        } else {
+            context.getString(R.string.notification_new_episodes_multiple, totalNewEpisodes, results.size)
         }
 
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -62,7 +67,7 @@ class EpisodeSyncNotificationHelper @Inject constructor(
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.media3_notification_small_icon)
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(pendingIntent)

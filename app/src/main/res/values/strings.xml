@@ -2,4 +2,12 @@
     <string name="app_name" translatable="false">Episodive</string>
     <string name="tag_name" translatable="false">EpisodiveTag</string>
     <string name="not_connected">⚠️ You aren’t connected to the internet</string>
+    <string name="notification_channel_new_episodes">New Episodes</string>
+    <string name="notification_channel_new_episodes_description">Notifications for new episodes from followed podcasts</string>
+    <string name="notification_new_episodes_title">New Episodes</string>
+    <string name="notification_podcast_fallback">Podcast</string>
+    <string name="notification_new_episodes_single">%d new episode(s)</string>
+    <string name="notification_new_episodes_multiple">%1$d new episode(s) from %2$d podcast(s)</string>
+    <string name="notification_channel_playback">Playback</string>
+    <string name="notification_channel_playback_description">Media playback controls</string>
 </resources>
