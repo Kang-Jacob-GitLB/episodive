@@ -3,6 +3,9 @@ package io.jacob.episodive.sync
 import android.app.NotificationManager
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import coil.Coil
+import coil.ImageLoader
+import coil.test.FakeImageLoaderEngine
 import io.jacob.episodive.core.domain.usecase.episode.NewEpisodeResult
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import kotlinx.coroutines.test.runTest
@@ -24,6 +27,9 @@ class EpisodeSyncNotificationHelperTest {
     @Before
     fun setup() {
         context = ApplicationProvider.getApplicationContext()
+        val engine = FakeImageLoaderEngine.Builder().default(android.graphics.drawable.ColorDrawable()).build()
+        val imageLoader = ImageLoader.Builder(context).components { add(engine) }.build()
+        Coil.setImageLoader(imageLoader)
         helper = EpisodeSyncNotificationHelper(context)
         notificationManager = context.getSystemService(NotificationManager::class.java)
     }

@@ -75,6 +75,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    //----- Coil
+    testImplementation(libs.coil.test)
+
     //----- Leak Canary
     debugImplementation(libs.squareup.leakcanary)
 }
