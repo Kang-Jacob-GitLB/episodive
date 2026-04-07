@@ -15,6 +15,7 @@ Episodive는 Kotlin과 Jetpack Compose로 만든 Android 팟캐스트 앱으로,
 - **Database**: Room 2.8.4, Paging 3.3.6, Auto-migrations (버전 8)
 - **Network**: Retrofit 3.0.0, OkHttp 5.3.2, Gson 2.13.2
 - **Async**: Kotlin Coroutines 1.10.2, Lifecycle 2.10.0
+- **Background**: WorkManager 2.10.1, Hilt Worker
 - **Media**: Media3 1.8.0 (ExoPlayer), MediaNotificationService
 - **Image**: Coil 2.7.0, Palette API
 - **Testing**: JUnit 4.13.2, MockK 1.14.6, Turbine 1.2.1, Robolectric 4.16
@@ -106,6 +107,15 @@ UI (Feature) → Domain (Use Cases) → Data (Repositories) → Data Sources (Ne
 **CacheableQuery 종류:**
 - `PodcastQuery`: FeedId, Medium, Trending, Recommended, Random, Recent
 - `EpisodeQuery`: FeedId, Live, Random, Recent, RecentNew
+
+### 백그라운드 에피소드 동기화
+WorkManager + HiltWorker 기반 3시간 주기 동기화:
+1. `EpisodeSyncScheduler`가 `PeriodicWorkRequest`로 주기적 동기화 예약
+2. `EpisodeSyncWorker`가 `SyncNewEpisodesUseCase`를 실행하여 팔로우 팟캐스트의 새 에피소드 확인
+3. 새 에피소드 발견 시 `EpisodeSyncNotificationHelper`로 썸네일 포함 알림 표시
+4. Coil로 에피소드 이미지를 Bitmap 변환 후 `setLargeIcon`으로 알림에 포함
+
+**관련 파일:** `:app` 모듈의 `sync/` 패키지 (EpisodeSyncScheduler, EpisodeSyncWorker, EpisodeSyncNotificationHelper)
 
 ### 듀얼 플레이어 시스템
 Hilt `@Player` qualifier로 ExoPlayer 인스턴스 두 개 관리:
