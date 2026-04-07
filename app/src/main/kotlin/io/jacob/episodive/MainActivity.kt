@@ -40,6 +40,8 @@ class MainActivity : ComponentActivity() {
             viewModel.state.value.shouldKeepSplashScreen()
         }
 
+        viewModel.handleDeepLink(intent)
+
         // Start and bind MediaSessionService
         val intent = Intent(this, MediaNotificationService::class.java)
         startService(intent)
@@ -60,6 +62,11 @@ class MainActivity : ComponentActivity() {
                 EpisodiveApp(appState)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        viewModel.handleDeepLink(intent)
     }
 
     override fun onDestroy() {

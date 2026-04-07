@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Instant
 
 class EpisodeRepositoryImpl @Inject constructor(
     private val episodeLocalDataSource: EpisodeLocalDataSource,
@@ -314,5 +315,20 @@ class EpisodeRepositoryImpl @Inject constructor(
 
     override suspend fun removeSavedEpisode(id: Long) {
         episodeLocalDataSource.removeSavedEpisode(id)
+    }
+
+    override suspend fun getLatestEpisodeDatePublished(feedId: Long): Instant? {
+        return episodeLocalDataSource.getLatestEpisodeDatePublished(feedId)
+    }
+
+    override suspend fun fetchAndSaveNewEpisodes(feedId: Long, since: Instant): List<Episode> {
+        val responses = episodeRemoteDataSource.getEpisodesByFeedId(
+            feedId = feedId,
+            since = since.epochSeconds,
+        )
+        val episodes = responses.toEpisodes()
+        val entities = episodes.toEpisodeEntities()
+        episodeLocalDataSource.upsertEpisodes(entities)
+        return episodes
     }
 }

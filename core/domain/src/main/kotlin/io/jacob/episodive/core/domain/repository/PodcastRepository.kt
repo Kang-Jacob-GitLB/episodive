@@ -65,4 +65,6 @@ interface PodcastRepository {
     fun getFollowedPodcastsPaging(query: String? = null): Flow<PagingData<Podcast>>
 
     suspend fun toggleFollowed(id: Long): Boolean
+
+    suspend fun getFollowedPodcastIdsWithNotificationEnabled(): List<Long>
 }

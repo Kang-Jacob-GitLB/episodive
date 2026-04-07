@@ -96,4 +96,8 @@ class PodcastLocalDataSourceImpl(
             query = query?.asFtsWildcard()
         )
     }
+
+    override suspend fun getFollowedPodcastIdsWithNotificationEnabled(): List<Long> {
+        return podcastDao.getFollowedPodcastIdsWithNotificationEnabled()
+    }
 }

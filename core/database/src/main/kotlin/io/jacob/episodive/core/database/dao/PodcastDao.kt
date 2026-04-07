@@ -245,4 +245,7 @@ interface PodcastDao {
     """
     )
     fun getFollowedPodcastsPaging(query: String? = null): PagingSource<Int, PodcastWithExtrasView>
+
+    @Query("SELECT id FROM followed_podcasts WHERE isNotificationEnabled = 1")
+    suspend fun getFollowedPodcastIdsWithNotificationEnabled(): List<Long>
 }

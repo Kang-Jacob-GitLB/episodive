@@ -49,6 +49,12 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.kotlinx.serialization.json)
 
+    //----- WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+    testImplementation(libs.androidx.work.testing)
+
     //----- Media3 Session
     implementation(libs.androidx.media3.session)
 
