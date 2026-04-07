@@ -24,4 +24,5 @@ interface PodcastLocalDataSource {
     suspend fun toggleFollowedPodcast(id: Long): Boolean
     fun getFollowedPodcasts(query: String? = null, limit: Int): Flow<List<PodcastWithExtrasView>>
     fun getFollowedPodcastsPaging(query: String? = null): PagingSource<Int, PodcastWithExtrasView>
+    suspend fun getFollowedPodcastIdsWithNotificationEnabled(): List<Long>
 }

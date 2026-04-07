@@ -163,4 +163,12 @@ class EpisodeLocalDataSourceImpl @Inject constructor(
     override fun getSavedEpisodesPaging(query: String?): PagingSource<Int, EpisodeWithExtrasView> {
         return episodeDao.getSavedEpisodesPaging(query?.asFtsWildcard())
     }
+
+    override suspend fun upsertEpisodes(episodes: List<EpisodeEntity>) {
+        episodeDao.upsertEpisodes(episodes)
+    }
+
+    override suspend fun getLatestEpisodeDatePublished(feedId: Long): Instant? {
+        return episodeDao.getLatestEpisodeDatePublished(feedId)
+    }
 }

@@ -199,4 +199,8 @@ class PodcastRepositoryImpl @Inject constructor(
     override suspend fun toggleFollowed(id: Long): Boolean {
         return podcastLocalDataSource.toggleFollowedPodcast(id)
     }
+
+    override suspend fun getFollowedPodcastIdsWithNotificationEnabled(): List<Long> {
+        return podcastLocalDataSource.getFollowedPodcastIdsWithNotificationEnabled()
+    }
 }

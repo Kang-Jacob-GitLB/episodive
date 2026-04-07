@@ -41,6 +41,8 @@ appcompat = "1.7.1"
 material = "1.13.0"
 seeker = "1.2.2"
 leakcanary = "2.14"
+work = "2.10.1"
+hiltWork = "1.2.0"
 stabilityAnalyzer = "0.6.0"
 
 [libraries]
@@ -91,6 +93,10 @@ androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", 
 androidx-paging-common = { group = "androidx.paging", name = "paging-common", version.ref = "paging" }
 androidx-paging-testing = { group = "androidx.paging", name = "paging-testing", version.ref = "paging" }
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltCompose" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltWork" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltWork" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-work-testing = { group = "androidx.work", name = "work-testing", version.ref = "work" }
 google-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 google-hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
 google-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
@@ -112,6 +118,7 @@ timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "tim
 inject = { group = "javax.inject", name = "javax.inject", version.ref = "inject" }
 coil = { group = "io.coil-kt", name = "coil", version.ref = "coil" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+coil-test = { group = "io.coil-kt", name = "coil-test", version.ref = "coil" }
 xerial-sqlite = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "xerialSqlite" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }

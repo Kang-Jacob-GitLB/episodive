@@ -53,4 +53,7 @@ interface EpisodeLocalDataSource {
     suspend fun removeSavedEpisode(id: Long)
     fun getSavedEpisodes(query: String? = null, limit: Int): Flow<List<EpisodeWithExtrasView>>
     fun getSavedEpisodesPaging(query: String? = null): PagingSource<Int, EpisodeWithExtrasView>
+
+    suspend fun upsertEpisodes(episodes: List<EpisodeEntity>)
+    suspend fun getLatestEpisodeDatePublished(feedId: Long): Instant?
 }

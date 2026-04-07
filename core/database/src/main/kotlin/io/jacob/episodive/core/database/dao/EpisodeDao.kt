@@ -212,6 +212,10 @@ interface EpisodeDao {
     }
 
 
+    @Query("SELECT MAX(datePublished) FROM episodes WHERE feedId = :feedId")
+    suspend fun getLatestEpisodeDatePublished(feedId: Long): Instant?
+
+
     /** LIKED EPISODES **/
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)

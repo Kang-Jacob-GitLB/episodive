@@ -19,6 +19,7 @@ Podcast Index Api 활용한 팟캐스트 앱
 - **클립**: 사운드바이트 및 짧은 구간 미리듣기 기능
 - **팟캐스트 상세**: 팟캐스트 정보 및 에피소드 목록 제공
 - **오디오 플레이어**: ExoPlayer 기반의 백그라운드 재생 및 미디어 알림 지원
+- **백그라운드 동기화**: WorkManager 기반 3시간 주기 에피소드 동기화 및 새 에피소드 알림
 - **Last Play**: 마지막 재생 위치 기억 및 이어듣기
 
 # 아키텍처
@@ -103,6 +104,7 @@ Data Sources: Network (:core:network) | Database (:core:database) | DataStore (:
 | Network | Gson | 2.13.2 |
 | Audio | Media3 (ExoPlayer) | 1.8.0 |
 | Async | Kotlin Coroutines | 1.10.2 |
+| Background | WorkManager | 2.10.1 |
 | Image | Coil | 2.7.0 |
 | Preferences | DataStore | 1.2.0 |
 | UI | Material3 | 1.5.0-alpha10 |

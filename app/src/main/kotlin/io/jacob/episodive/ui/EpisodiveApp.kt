@@ -17,15 +17,23 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.jacob.episodive.DeepLinkEvent
 import io.jacob.episodive.R
 import io.jacob.episodive.core.designsystem.component.EpisodiveBackground
 import io.jacob.episodive.core.designsystem.component.EpisodiveNavigationBar
@@ -92,6 +100,34 @@ fun EpisodiveApp(
             )
         }
         return
+    }
+
+    // Deep link handling
+    LaunchedEffect(Unit) {
+        appState.viewModel.deepLinkEvent.collect { event ->
+            when (event) {
+                is DeepLinkEvent.Podcast -> {
+                    appState.navigateToPodcast(event.id)
+                    appState.viewModel.consumeDeepLink()
+                }
+            }
+        }
+    }
+
+    // POST_NOTIFICATIONS runtime permission request (Android 13+)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val permissionLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { /* granted or denied — no action needed */ }
+
+        val context = LocalContext.current
+        LaunchedEffect(Unit) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 
     Scaffold(

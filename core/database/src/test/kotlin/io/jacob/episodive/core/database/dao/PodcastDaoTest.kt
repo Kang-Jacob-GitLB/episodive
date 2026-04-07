@@ -1018,4 +1018,35 @@ class PodcastDaoTest {
             assertEquals("Kotlin Programming", podcasts[0].podcast.title)
         }
 
+    @Test
+    fun `Given followed podcasts with notification enabled, When getFollowedPodcastIdsWithNotificationEnabled, Then returns only enabled ids`() =
+        runTest {
+            // Given
+            dao.upsertPodcast(podcastEntity.copy(id = 1L))
+            dao.upsertPodcast(podcastEntity.copy(id = 2L))
+            dao.upsertPodcast(podcastEntity.copy(id = 3L))
+            dao.addFollowedPodcast(
+                FollowedPodcastEntity(id = 1L, followedAt = Instant.fromEpochSeconds(1000), isNotificationEnabled = true)
+            )
+            dao.addFollowedPodcast(
+                FollowedPodcastEntity(id = 2L, followedAt = Instant.fromEpochSeconds(2000), isNotificationEnabled = false)
+            )
+            dao.addFollowedPodcast(
+                FollowedPodcastEntity(id = 3L, followedAt = Instant.fromEpochSeconds(3000), isNotificationEnabled = true)
+            )
+
+            // When
+            val result = dao.getFollowedPodcastIdsWithNotificationEnabled()
+
+            // Then
+            assertEquals(listOf(1L, 3L), result.sorted())
+        }
+
+    @Test
+    fun `Given no followed podcasts, When getFollowedPodcastIdsWithNotificationEnabled, Then returns empty list`() =
+        runTest {
+            val result = dao.getFollowedPodcastIdsWithNotificationEnabled()
+            assertTrue(result.isEmpty())
+        }
+
 }

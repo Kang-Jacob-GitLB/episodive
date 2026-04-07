@@ -7,6 +7,7 @@ import io.jacob.episodive.core.model.DownloadStatus
 import io.jacob.episodive.core.model.Episode
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
+import kotlin.time.Instant
 
 interface EpisodeRepository {
     suspend fun upsertEpisode(episode: Episode)
@@ -105,4 +106,8 @@ interface EpisodeRepository {
     suspend fun updateSavedEpisodeProgress(id: Long, downloadedSize: Long, status: DownloadStatus)
 
     suspend fun removeSavedEpisode(id: Long)
+
+    suspend fun getLatestEpisodeDatePublished(feedId: Long): Instant?
+
+    suspend fun fetchAndSaveNewEpisodes(feedId: Long, since: Instant): List<Episode>
 }
