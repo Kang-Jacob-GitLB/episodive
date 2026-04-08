@@ -40,6 +40,9 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -70,6 +73,8 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveDial
 import io.jacob.episodive.core.designsystem.component.EpisodiveDragHandle
 import io.jacob.episodive.core.designsystem.component.EpisodiveGradientBackground
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
+import io.jacob.episodive.core.designsystem.component.EpisodiveIconProgressButton
+import io.jacob.episodive.core.designsystem.component.EpisodiveSwipeDismissSnackbarHost
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveSeeker
 import io.jacob.episodive.core.designsystem.component.EpisodiveTextButton
@@ -82,6 +87,7 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.GradientColors
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Chapter
+import io.jacob.episodive.core.model.DownloadStatus
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
@@ -91,10 +97,11 @@ import io.jacob.episodive.core.model.mapper.toMediaTime
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
+import io.jacob.episodive.core.ui.R as uiR
 import io.jacob.episodive.core.ui.ChapterItem
 import io.jacob.episodive.core.ui.PodcastSimpleItem
 import io.jacob.episodive.core.ui.episodeItems
-import kotlinx.coroutines.flow.collectLatest
+
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import kotlin.time.Duration.Companion.seconds
@@ -107,15 +114,29 @@ fun PlayerBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
+    val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
+
     LaunchedEffect(Unit) {
-        viewModel.effect.collectLatest { effect ->
+        viewModel.effect.collect { effect ->
             when (effect) {
                 is PlayerEffect.NavigateToPodcast -> onPodcastClick(effect.podcastId)
                 is PlayerEffect.ShowPlayerBottomSheet -> {}
                 is PlayerEffect.HidePlayerBottomSheet -> sheetState.hide()
+                is PlayerEffect.ShowUnsaveSnackbar -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = unsavedMessage,
+                        actionLabel = undoLabel,
+                        duration = SnackbarDuration.Long,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.sendAction(PlayerAction.ToggleSavedEpisode(effect.episode))
+                    }
+                }
             }
         }
     }
@@ -140,6 +161,7 @@ fun PlayerBottomSheet(
             }
         }
 
+        Box {
         PlayerScreen(
             modifier = Modifier,
             podcast = s.podcast,
@@ -171,6 +193,12 @@ fun PlayerBottomSheet(
             onToggleFollowedPodcast = { viewModel.sendAction(PlayerAction.ToggleFollowedPodcast(it)) },
             cue = s.cue,
         )
+
+            EpisodiveSwipeDismissSnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
     }
 }
 
@@ -319,6 +347,8 @@ internal fun PlayerScreen(
                     ControlPanelBottom(
                         isPlaying = isPlaying,
                         isSaved = nowPlaying.isSaved,
+                        isDownloading = nowPlaying.isDownloading,
+                        downloadProgress = nowPlaying.downloadProgress,
                         onPlayOrPause = onPlayOrPause,
                         onBackward = onBackward,
                         onForward = onForward,
@@ -516,6 +546,8 @@ private fun ControlPanelBottom(
     modifier: Modifier = Modifier,
     isPlaying: Boolean,
     isSaved: Boolean = false,
+    isDownloading: Boolean = false,
+    downloadProgress: Float = 0f,
     onPlayOrPause: () -> Unit = {},
     onBackward: () -> Unit = {},
     onForward: () -> Unit = {},
@@ -634,31 +666,50 @@ private fun ControlPanelBottom(
                 )
             }
 
-            EpisodiveIconToggleButton(
-                modifier = Modifier.size(32.dp),
-                checked = isSaved,
-                onCheckedChange = { onToggleSave() },
-                colors = IconButtonDefaults.iconToggleButtonColors(
-                    checkedContainerColor = Color.Transparent,
-                    checkedContentColor = MaterialTheme.colorScheme.onSurface,
-                    containerColor = Color.Transparent,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-                icon = {
-                    Icon(
-                        modifier = Modifier.size(24.dp),
-                        imageVector = EpisodiveIcons.Download,
-                        contentDescription = "Save",
-                    )
-                },
-                checkedIcon = {
-                    Icon(
-                        modifier = Modifier.size(24.dp),
-                        imageVector = EpisodiveIcons.DownloadDone,
-                        contentDescription = "Unsave",
-                    )
-                }
-            )
+            if (isDownloading) {
+                EpisodiveIconProgressButton(
+                    modifier = Modifier.size(32.dp),
+                    onClick = { onToggleSave() },
+                    progress = downloadProgress,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                    icon = {
+                        Icon(
+                            modifier = Modifier.size(24.dp),
+                            imageVector = EpisodiveIcons.DownloadDone,
+                            contentDescription = "Downloading",
+                        )
+                    },
+                )
+            } else {
+                EpisodiveIconToggleButton(
+                    modifier = Modifier.size(32.dp),
+                    checked = isSaved,
+                    onCheckedChange = { onToggleSave() },
+                    colors = IconButtonDefaults.iconToggleButtonColors(
+                        checkedContainerColor = Color.Transparent,
+                        checkedContentColor = MaterialTheme.colorScheme.onSurface,
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                    icon = {
+                        Icon(
+                            modifier = Modifier.size(24.dp),
+                            imageVector = EpisodiveIcons.Download,
+                            contentDescription = "Save",
+                        )
+                    },
+                    checkedIcon = {
+                        Icon(
+                            modifier = Modifier.size(24.dp),
+                            imageVector = EpisodiveIcons.DownloadDone,
+                            contentDescription = "Unsave",
+                        )
+                    }
+                )
+            }
 
             EpisodiveIconButton(
                 modifier = Modifier.size(32.dp),

@@ -50,10 +50,11 @@ import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.liveEpisodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.ui.ChannelSection
+import io.jacob.episodive.core.ui.R as uiR
 import io.jacob.episodive.core.ui.EpisodesSection
 import io.jacob.episodive.core.ui.PlayingEpisodesSection
 import io.jacob.episodive.core.ui.PodcastsSection
-import kotlinx.coroutines.flow.collectLatest
+
 
 @Composable
 internal fun HomeRoute(
@@ -65,11 +66,18 @@ internal fun HomeRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
+    val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
+
     LaunchedEffect(Unit) {
-        viewModel.effect.collectLatest { effect ->
+        viewModel.effect.collect { effect ->
             when (effect) {
                 is HomeEffect.NavigateToPodcast -> onPodcastClick(effect.podcastId)
                 is HomeEffect.NavigateToChannel -> onChannelClick(effect.channelId)
+                is HomeEffect.ShowUnsaveSnackbar -> {
+                    val undone = onShowSnackbar(unsavedMessage, undoLabel)
+                    if (undone) viewModel.sendAction(HomeAction.ToggleSavedEpisode(effect.episode))
+                }
             }
         }
     }

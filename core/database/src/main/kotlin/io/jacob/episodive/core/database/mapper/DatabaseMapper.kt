@@ -150,6 +150,11 @@ fun EpisodeWithExtrasView.toEpisode(): Episode =
         savedAt = savedAt,
         filePath = filePath,
         downloadStatus = downloadStatus,
+        downloadProgress = if (totalSize != null && totalSize > 0) {
+            (downloadedSize ?: 0L).toFloat() / totalSize
+        } else {
+            0f
+        },
     )
 
 fun List<EpisodeWithExtrasView>.toEpisodes(): List<Episode> =

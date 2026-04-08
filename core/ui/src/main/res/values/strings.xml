@@ -6,4 +6,8 @@
     <string name="core_ui_left">Left</string>
     <string name="core_ui_follow">Follow</string>
     <string name="core_ui_unfollow">Unfollow</string>
+    <string name="core_ui_snackbar_followed">팟캐스트를 구독했습니다</string>
+    <string name="core_ui_snackbar_unfollowed">구독을 해제했습니다</string>
+    <string name="core_ui_snackbar_unsaved">저장을 취소했습니다</string>
+    <string name="core_ui_snackbar_undo">실행 취소</string>
 </resources>

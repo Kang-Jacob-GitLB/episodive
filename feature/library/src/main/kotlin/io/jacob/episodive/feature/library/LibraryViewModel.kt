@@ -268,7 +268,10 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun toggleSavedEpisode(episode: Episode) = viewModelScope.launch {
-        saveEpisodeUseCase(episode)
+        val isSavedNow = saveEpisodeUseCase(episode)
+        if (!isSavedNow) {
+            _effect.emit(LibraryEffect.ShowUnsaveSnackbar(episode))
+        }
     }
 
     private fun toggleFollowedPodcast(followedPodcast: Podcast) = viewModelScope.launch {
@@ -320,6 +323,7 @@ sealed interface LibraryAction {
 
 sealed interface LibraryEffect {
     data class NavigateToPodcast(val podcastId: Long) : LibraryEffect
+    data class ShowUnsaveSnackbar(val episode: Episode) : LibraryEffect
 }
 
 enum class LibrarySection { All, RecentlyListened, Liked, Saved, Followed, Preferred; }

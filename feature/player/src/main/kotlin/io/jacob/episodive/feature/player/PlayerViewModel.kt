@@ -285,12 +285,18 @@ class PlayerViewModel @Inject constructor(
     private fun toggleCurrentSavedEpisode() = viewModelScope.launch {
         val currentState = state.value
         if (currentState is PlayerState.Success) {
-            saveEpisodeUseCase(currentState.nowPlaying)
+            val isSavedNow = saveEpisodeUseCase(currentState.nowPlaying)
+            if (!isSavedNow) {
+                _effect.emit(PlayerEffect.ShowUnsaveSnackbar(currentState.nowPlaying))
+            }
         }
     }
 
     private fun toggleSavedEpisode(episode: Episode) = viewModelScope.launch {
-        saveEpisodeUseCase(episode)
+        val isSavedNow = saveEpisodeUseCase(episode)
+        if (!isSavedNow) {
+            _effect.emit(PlayerEffect.ShowUnsaveSnackbar(episode))
+        }
     }
 
     private fun toggleFollowedPodcast(podcast: Podcast) = viewModelScope.launch {
@@ -349,6 +355,7 @@ sealed interface PlayerEffect {
     data class NavigateToPodcast(val podcastId: Long) : PlayerEffect
     data object ShowPlayerBottomSheet : PlayerEffect
     data object HidePlayerBottomSheet : PlayerEffect
+    data class ShowUnsaveSnackbar(val episode: Episode) : PlayerEffect
 }
 
 private data class LastPlaySnapshot(

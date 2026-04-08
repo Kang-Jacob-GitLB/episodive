@@ -65,6 +65,7 @@ import io.jacob.episodive.core.model.SelectableCategory
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.ui.CategoryButton
+import io.jacob.episodive.core.ui.R as uiR
 import io.jacob.episodive.core.ui.CategoryItem
 import io.jacob.episodive.core.ui.EpisodeDetailItem
 import io.jacob.episodive.core.ui.EpisodeItem
@@ -72,7 +73,7 @@ import io.jacob.episodive.core.ui.PlayedEpisodeItem
 import io.jacob.episodive.core.ui.PodcastDetailItem
 import io.jacob.episodive.core.ui.PodcastsSection
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collectLatest
+
 import kotlinx.coroutines.flow.flowOf
 
 @Composable
@@ -84,10 +85,17 @@ fun LibraryRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
+    val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
+
     LaunchedEffect(Unit) {
-        viewModel.effect.collectLatest { effect ->
+        viewModel.effect.collect { effect ->
             when (effect) {
                 is LibraryEffect.NavigateToPodcast -> onPodcastClick(effect.podcastId)
+                is LibraryEffect.ShowUnsaveSnackbar -> {
+                    val undone = onShowSnackbar(unsavedMessage, undoLabel)
+                    if (undone) viewModel.sendAction(LibraryAction.ToggleSavedEpisode(effect.episode))
+                }
             }
         }
     }

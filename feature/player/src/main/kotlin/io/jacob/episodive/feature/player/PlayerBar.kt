@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,7 +47,7 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.podcastTestData
-import kotlinx.coroutines.flow.collectLatest
+import io.jacob.episodive.core.ui.R as uiR
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -54,13 +55,17 @@ fun PlayerBar(
     modifier: Modifier = Modifier,
     viewModel: PlayerViewModel = hiltViewModel(),
     onPodcastClick: (Long) -> Unit,
+    onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean = { _, _ -> false },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     var isShowPlayer by remember { mutableStateOf(false) }
 
+    val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
+    val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
+
     LaunchedEffect(Unit) {
-        viewModel.effect.collectLatest { effect ->
+        viewModel.effect.collect { effect ->
             when (effect) {
                 is PlayerEffect.NavigateToPodcast -> {}
                 is PlayerEffect.ShowPlayerBottomSheet -> {
@@ -69,6 +74,14 @@ fun PlayerBar(
 
                 is PlayerEffect.HidePlayerBottomSheet -> {
                     isShowPlayer = false
+                }
+
+                is PlayerEffect.ShowUnsaveSnackbar -> {
+                    if (!isShowPlayer) {
+                        val undone = onShowSnackbar(unsavedMessage, undoLabel)
+                        if (undone) viewModel.sendAction(PlayerAction.ToggleSavedEpisode(effect.episode))
+                    }
+                    // full player open → handled in PlayerBottomSheet
                 }
             }
         }
