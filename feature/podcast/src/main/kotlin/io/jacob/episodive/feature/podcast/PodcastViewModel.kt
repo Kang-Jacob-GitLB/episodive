@@ -17,6 +17,7 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
@@ -59,6 +60,9 @@ class PodcastViewModel @AssistedInject constructor(
 
     private val _action = MutableSharedFlow<PodcastAction>(extraBufferCapacity = 1)
 
+    private val _effect = MutableSharedFlow<PodcastEffect>(extraBufferCapacity = 1)
+    val effect = _effect.asSharedFlow()
+
     init {
         handleActions()
     }
@@ -79,7 +83,8 @@ class PodcastViewModel @AssistedInject constructor(
     }
 
     private fun toggleFollowed() = viewModelScope.launch {
-        toggleFollowedUseCase(id)
+        val isFollowedNow = toggleFollowedUseCase(id)
+        _effect.emit(PodcastEffect.ShowFollowSnackbar(isFollowedNow))
     }
 
     private fun playEpisode(episode: Episode, visibleEpisodes: List<Episode>) =
@@ -98,8 +103,16 @@ class PodcastViewModel @AssistedInject constructor(
     }
 
     private fun toggleSavedEpisode(episode: Episode) = viewModelScope.launch {
-        saveEpisodeUseCase(episode)
+        val isSavedNow = saveEpisodeUseCase(episode)
+        if (!isSavedNow) {
+            _effect.emit(PodcastEffect.ShowUnsaveSnackbar(episode))
+        }
     }
+}
+
+sealed interface PodcastEffect {
+    data class ShowFollowSnackbar(val isFollowed: Boolean) : PodcastEffect
+    data class ShowUnsaveSnackbar(val episode: Episode) : PodcastEffect
 }
 
 sealed interface PodcastState {

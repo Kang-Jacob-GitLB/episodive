@@ -128,7 +128,10 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun toggleSavedEpisode(episode: Episode) = viewModelScope.launch {
-        saveEpisodeUseCase(episode)
+        val isSavedNow = saveEpisodeUseCase(episode)
+        if (!isSavedNow) {
+            _effect.emit(HomeEffect.ShowUnsaveSnackbar(episode))
+        }
     }
 
     private fun clickPodcast(podcastId: Long) = viewModelScope.launch {
@@ -174,4 +177,5 @@ sealed interface HomeAction {
 sealed interface HomeEffect {
     data class NavigateToPodcast(val podcastId: Long) : HomeEffect
     data class NavigateToChannel(val channelId: Long) : HomeEffect
+    data class ShowUnsaveSnackbar(val episode: Episode) : HomeEffect
 }

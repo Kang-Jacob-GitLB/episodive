@@ -10,6 +10,7 @@ import dagger.hilt.components.SingletonComponent
 import io.jacob.episodive.core.database.BuildConfig
 import io.jacob.episodive.core.database.EpisodiveDatabase
 import io.jacob.episodive.core.database.migration.Migration8to9
+import io.jacob.episodive.core.database.migration.Migration10to11
 import io.jacob.episodive.core.database.migration.Migration9to10
 import javax.inject.Singleton
 
@@ -26,7 +27,7 @@ object DatabaseModule {
             EpisodiveDatabase::class.java,
             "episodive-database",
         ).apply {
-            addMigrations(Migration8to9, Migration9to10)
+            addMigrations(Migration8to9, Migration9to10, Migration10to11)
             if (BuildConfig.DEBUG) {
                 fallbackToDestructiveMigrationFrom(true, 3)
             }

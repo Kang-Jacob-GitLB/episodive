@@ -18,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +55,7 @@ import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.ui.EpisodeItem
 import kotlinx.coroutines.flow.Flow
+
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import io.jacob.episodive.core.ui.R as uiR
@@ -66,6 +68,27 @@ internal fun PodcastRoute(
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    val followedMessage = stringResource(uiR.string.core_ui_snackbar_followed)
+    val unfollowedMessage = stringResource(uiR.string.core_ui_snackbar_unfollowed)
+    val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
+    val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is PodcastEffect.ShowFollowSnackbar -> {
+                    val message = if (effect.isFollowed) followedMessage else unfollowedMessage
+                    val undone = onShowSnackbar(message, undoLabel)
+                    if (undone) viewModel.sendAction(PodcastAction.ToggleFollowed)
+                }
+                is PodcastEffect.ShowUnsaveSnackbar -> {
+                    val undone = onShowSnackbar(unsavedMessage, undoLabel)
+                    if (undone) viewModel.sendAction(PodcastAction.ToggleSavedEpisode(effect.episode))
+                }
+            }
+        }
+    }
 
     when (val s = state) {
         is PodcastState.Loading -> LoadingScreen()

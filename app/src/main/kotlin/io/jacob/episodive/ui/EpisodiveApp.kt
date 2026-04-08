@@ -13,7 +13,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -36,6 +35,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.DeepLinkEvent
 import io.jacob.episodive.R
 import io.jacob.episodive.core.designsystem.component.EpisodiveBackground
+import io.jacob.episodive.core.designsystem.component.EpisodiveSwipeDismissSnackbarHost
+import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.component.EpisodiveNavigationBar
 import io.jacob.episodive.core.designsystem.component.EpisodiveNavigationBarItem
 import io.jacob.episodive.feature.onboarding.OnboardingRoute
@@ -76,22 +77,26 @@ fun EpisodiveApp(
 ) {
     val state by appState.viewModel.state.collectAsStateWithLifecycle()
 
+    val onShowSnackbar: suspend (String, String?) -> Boolean = remember {
+        { message: String, action: String? ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = action,
+                duration = if (action != null) SnackbarDuration.Long else SnackbarDuration.Short,
+            ) == SnackbarResult.ActionPerformed
+        }
+    }
+
     if (state.isFirstLaunch()) {
         Box(
             modifier = Modifier
                 .fillMaxSize(),
         ) {
             OnboardingRoute(
-                onShowSnackbar = { message, action ->
-                    snackbarHostState.showSnackbar(
-                        message = message,
-                        actionLabel = action,
-                        duration = SnackbarDuration.Short,
-                    ) == SnackbarResult.ActionPerformed
-                },
+                onShowSnackbar = onShowSnackbar,
             )
 
-            SnackbarHost(
+            EpisodiveSwipeDismissSnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -167,9 +172,11 @@ fun EpisodiveApp(
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets
             .exclude(WindowInsets.statusBars),
         snackbarHost = {
-            SnackbarHost(
-                snackbarHostState,
-                modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+            EpisodiveSwipeDismissSnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(bottom = LocalDimensionTheme.current.playerBarHeight),
             )
         },
     ) { paddingValues ->
@@ -180,17 +187,12 @@ fun EpisodiveApp(
             EpisodiveNavHost(
                 navigationState = appState.navigationState,
                 navigator = appState.navigator,
-                onShowSnackbar = { message, action ->
-                    snackbarHostState.showSnackbar(
-                        message = message,
-                        actionLabel = action,
-                        duration = SnackbarDuration.Short,
-                    ) == SnackbarResult.ActionPerformed
-                },
+                onShowSnackbar = onShowSnackbar,
             )
 
             PlayerBar(
-                onPodcastClick = { appState.navigateToPodcast(it) }
+                onPodcastClick = { appState.navigateToPodcast(it) },
+                onShowSnackbar = onShowSnackbar,
             )
         }
     }

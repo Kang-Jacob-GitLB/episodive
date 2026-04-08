@@ -19,7 +19,9 @@ import kotlin.time.Instant
             soundbites.duration AS clipDuration,
             saved_episodes.savedAt AS savedAt,
             saved_episodes.filePath AS filePath,
-            saved_episodes.downloadStatus AS downloadStatus
+            saved_episodes.downloadStatus AS downloadStatus,
+            saved_episodes.downloadedSize AS downloadedSize,
+            saved_episodes.totalSize AS totalSize
         FROM episodes
         LEFT JOIN liked_episodes ON episodes.id = liked_episodes.id
         LEFT JOIN played_episodes ON episodes.id = played_episodes.id
@@ -38,4 +40,6 @@ data class EpisodeWithExtrasView(
     val savedAt: Instant? = null,
     val filePath: String? = null,
     val downloadStatus: DownloadStatus? = null,
+    val downloadedSize: Long? = null,
+    val totalSize: Long? = null,
 )
