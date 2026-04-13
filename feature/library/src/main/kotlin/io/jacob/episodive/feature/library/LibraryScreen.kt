@@ -13,7 +13,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,9 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
@@ -64,7 +62,6 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
-import io.jacob.episodive.core.ui.CategoryButton
 import io.jacob.episodive.core.ui.R as uiR
 import io.jacob.episodive.core.ui.CategoryItem
 import io.jacob.episodive.core.ui.EpisodeDetailItem
@@ -622,6 +619,7 @@ private fun FollowedContent(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PreferredContent(
     modifier: Modifier = Modifier,
@@ -631,28 +629,26 @@ private fun PreferredContent(
     onCategoryClick: (Category) -> Unit = {},
     onTogglePreferred: (Category) -> Unit = {},
 ) {
-    LazyVerticalGrid(
+    LazyColumn(
         modifier = modifier
             .padding(paddingValues)
             .nestedScroll(nestedScrollConnection),
-        columns = GridCells.Fixed(2),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(16.dp),
     ) {
-        items(
-            items = selectableCategories,
-            key = { it.category.id },
-        ) {
-            val category = it.category
-            CategoryButton(
-                modifier = Modifier
-                    .aspectRatio(1f)
-                    .animateItem(),
-                category = category,
-                isSelected = it.isSelected,
-                onClick = { onTogglePreferred(category) }
-            )
+        item {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                selectableCategories.forEach {
+                    val category = it.category
+                    EpisodiveFilterChip(
+                        selected = it.isSelected,
+                        onSelectedChange = { _ -> onTogglePreferred(category) },
+                        label = { Text(text = category.label) },
+                    )
+                }
+            }
         }
 
         item {

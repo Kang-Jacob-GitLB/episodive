@@ -11,7 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,11 +22,6 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -68,7 +64,7 @@ import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.SelectableCategory
 import io.jacob.episodive.core.testing.model.podcastTestDataList
-import io.jacob.episodive.core.ui.CategoryButton
+import io.jacob.episodive.core.designsystem.component.EpisodiveFilterChip
 import io.jacob.episodive.core.ui.PodcastDetailItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
@@ -234,81 +230,61 @@ private fun WelcomeScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CategorySelectionScreen(
     modifier: Modifier = Modifier,
     categories: List<SelectableCategory>,
     onCategoryCheckedChanged: (Category) -> Unit,
 ) {
-    val lazyGridState = rememberLazyGridState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
-    val scope = rememberCoroutineScope()
 
-    Box(
+    LazyColumn(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 16.dp + systemBarsPadding.calculateTopPadding(),
+            bottom = 16.dp + systemBarsPadding.calculateBottomPadding() + 64.dp
+        ),
         modifier = modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .testTag("onboarding:categorySelection"),
     ) {
-        LazyVerticalGrid(
-            state = lazyGridState,
-            columns = GridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 16.dp + systemBarsPadding.calculateTopPadding(),
-                bottom = 16.dp + systemBarsPadding.calculateBottomPadding() + 64.dp
-            ),
-            modifier = Modifier
-                .fillMaxSize()
-                .testTag("onboarding:categorySelection"),
-        ) {
-            item(span = { GridItemSpan(2) }) {
-                Text(
-                    text = stringResource(R.string.feature_onboarding_category_title),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                )
-            }
-
-            item(span = { GridItemSpan(2) }) {
-                Text(
-                    text = stringResource(R.string.feature_onboarding_category_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-            }
-
-            items(
-                items = categories,
-                key = { it.category.id },
-            ) {
-                CategoryButton(
-                    modifier = Modifier
-                        .aspectRatio(1f),
-                    category = it.category,
-                    isSelected = it.isSelected,
-                    onClick = onCategoryCheckedChanged
-                )
-            }
+        item {
+            Text(
+                text = stringResource(R.string.feature_onboarding_category_title),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
         }
-        lazyGridState.DraggableScrollbar(
-            modifier = Modifier
-                .fillMaxHeight()
-                .padding(vertical = 12.dp)
-                .align(Alignment.TopEnd),
-            state = lazyGridState.scrollbarState(itemsAvailable = categories.size),
-            orientation = Orientation.Vertical,
-            onThumbMoved = { thumbPosition ->
-                scope.launch {
-                    val itemIndex = (thumbPosition * categories.size).toInt()
-                        .coerceIn(0, categories.size - 1)
-                    lazyGridState.scrollToItem(itemIndex)
+
+        item {
+            Text(
+                text = stringResource(R.string.feature_onboarding_category_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        item {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                categories.forEach {
+                    EpisodiveFilterChip(
+                        selected = it.isSelected,
+                        onSelectedChange = { _ -> onCategoryCheckedChanged(it.category) },
+                        label = { Text(text = it.category.label) },
+                    )
                 }
             }
-        )
+        }
     }
 }
 
