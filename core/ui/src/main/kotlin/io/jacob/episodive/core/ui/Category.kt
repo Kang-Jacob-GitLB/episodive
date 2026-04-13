@@ -1,6 +1,5 @@
 package io.jacob.episodive.core.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -20,16 +19,16 @@ fun CategoryItem(
     onClick: () -> Unit,
 ) {
     Surface(
-        modifier = modifier
-            .clickable { onClick() },
+        modifier = modifier,
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant,
+        onClick = onClick,
     ) {
         Text(
             text = category.label,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )

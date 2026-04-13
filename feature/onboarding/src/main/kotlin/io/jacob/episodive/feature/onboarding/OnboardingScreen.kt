@@ -237,54 +237,77 @@ private fun CategorySelectionScreen(
     categories: List<SelectableCategory>,
     onCategoryCheckedChanged: (Category) -> Unit,
 ) {
+    val lazyListState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
+    val scope = rememberCoroutineScope()
 
-    LazyColumn(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-        contentPadding = PaddingValues(
-            start = 16.dp,
-            end = 16.dp,
-            top = 16.dp + systemBarsPadding.calculateTopPadding(),
-            bottom = 16.dp + systemBarsPadding.calculateBottomPadding() + 64.dp
-        ),
+    Box(
         modifier = modifier
-            .fillMaxSize()
-            .testTag("onboarding:categorySelection"),
+            .fillMaxSize(),
     ) {
-        item {
-            Text(
-                text = stringResource(R.string.feature_onboarding_category_title),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
-        }
+        LazyColumn(
+            state = lazyListState,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = 16.dp + systemBarsPadding.calculateTopPadding(),
+                bottom = 16.dp + systemBarsPadding.calculateBottomPadding() + 64.dp
+            ),
+            modifier = Modifier
+                .fillMaxSize()
+                .testTag("onboarding:categorySelection"),
+        ) {
+            item {
+                Text(
+                    text = stringResource(R.string.feature_onboarding_category_title),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                )
+            }
 
-        item {
-            Text(
-                text = stringResource(R.string.feature_onboarding_category_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
+            item {
+                Text(
+                    text = stringResource(R.string.feature_onboarding_category_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
 
-        item {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                categories.forEach {
-                    EpisodiveFilterChip(
-                        selected = it.isSelected,
-                        onSelectedChange = { _ -> onCategoryCheckedChanged(it.category) },
-                        label = { Text(text = it.category.label) },
-                    )
+            item {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    categories.forEach {
+                        EpisodiveFilterChip(
+                            selected = it.isSelected,
+                            onSelectedChange = { _ -> onCategoryCheckedChanged(it.category) },
+                            label = { Text(text = it.category.label) },
+                        )
+                    }
                 }
             }
         }
+        lazyListState.DraggableScrollbar(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(vertical = 12.dp)
+                .align(Alignment.TopEnd),
+            state = lazyListState.scrollbarState(itemsAvailable = categories.size),
+            orientation = Orientation.Vertical,
+            onThumbMoved = { thumbPosition ->
+                scope.launch {
+                    val itemIndex = (thumbPosition * categories.size).toInt()
+                        .coerceIn(0, categories.size - 1)
+                    lazyListState.scrollToItem(itemIndex)
+                }
+            }
+        )
     }
 }
 
