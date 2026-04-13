@@ -217,6 +217,30 @@ class MyDaoTest {
 
 **규칙:** 항상 테스트 데이터 팩토리 사용. Flow 테스트는 Turbine 사용. 인라인 테스트 객체 생성 금지.
 
+## mccm:Commit Conventions
+
+- language: 한글
+- title-format: {제목}
+- title-max-length: 50
+- body: 선택
+- branch-prefixes: feat/, fix/, refactor/, test/, docs/, chore/, ci/
+- branch-format: {prefix}/{english-slug}
+
+## mccm:PR Conventions
+
+- language: 한글
+- title-format: {타입}: {제목}
+- types: feat, fix, refactor, test, docs, chore, ci
+- title-max-length: 70
+- body-format: ## 변경 사항\n- ...\n\n## 테스트\n...
+- label-map: feat→feature, fix→bugfix, refactor→refactoring, test→test, docs→documentation, chore→chore, ci→ci/cd
+- auto-assignee: true
+
+## mccm:Cleanup Conventions
+
+- default-branch: main
+- protected-branches: main, master
+
 ## 코드 편집 규칙
 
 **필수: Import 순서 규칙**
