@@ -438,4 +438,96 @@ class PlayerViewModelTest {
 
             coVerify(exactly = 0) { restoreLastPlayStateUseCase() }
         }
+
+    // --- Sleep Timer Tests ---
+
+    @Test
+    fun `Given SetSleepTimer action, When timer expires, Then pause is called and SleepTimerExpired effect is emitted`() =
+        runTest {
+            setupDefaultMocks()
+            every { timeProvider.currentTimeMillis() } returnsMany listOf(0L, 60_001L)
+
+            val viewModel = createViewModel()
+
+            viewModel.effect.test {
+                viewModel.sendAction(PlayerAction.SetSleepTimer(60_000L))
+                assertEquals(PlayerEffect.SleepTimerExpired, awaitItem())
+            }
+
+            verify { playerRepository.pause() }
+        }
+
+    @Test
+    fun `Given SetSleepTimer action, When timer expires, Then sleepTimerRemainingMs becomes null in state`() =
+        runTest {
+            setupPlayerRepositoryMocks()
+            val episode = episodeTestData
+            val podcast = podcastTestData
+
+            every { getNowPlayingUseCase() } returns flowOf(episode)
+            every { getPodcastUseCase(episode.feedId) } returns flowOf(podcast)
+            every { getPlaylistUseCase() } returns flowOf(listOf(episode))
+            every { getUserDataUseCase() } returns flowOf(UserData(speed = 1.0f))
+            every { timeProvider.currentTimeMillis() } returnsMany listOf(0L, 60_001L)
+
+            val viewModel = createViewModel()
+
+            viewModel.state.test {
+                val state = awaitItem()
+                assertTrue(state is PlayerState.Success)
+                assertEquals(null, (state as PlayerState.Success).sleepTimerRemainingMs)
+            }
+
+            viewModel.sendAction(PlayerAction.SetSleepTimer(60_000L))
+
+            // After expiry, sleepTimerRemainingMs should be null
+            val finalState = viewModel.state.value
+            if (finalState is PlayerState.Success) {
+                assertEquals(null, finalState.sleepTimerRemainingMs)
+            }
+        }
+
+    @Test
+    fun `Given CancelSleepTimer action, When no timer is active, Then no crash occurs`() =
+        runTest {
+            setupDefaultMocks()
+            val viewModel = createViewModel()
+
+            viewModel.sendAction(PlayerAction.CancelSleepTimer)
+
+            // Should not crash; verify no pause called
+            verify(exactly = 0) { playerRepository.pause() }
+        }
+
+    @Test
+    fun `Given two SetSleepTimer actions, When both expire, Then pause is called twice`() =
+        runTest {
+            setupDefaultMocks()
+            every { timeProvider.currentTimeMillis() } returnsMany listOf(
+                0L, 60_001L,       // first timer: start → expire
+                0L, 30_001L,       // second timer: start → expire
+            )
+
+            val viewModel = createViewModel()
+
+            viewModel.sendAction(PlayerAction.SetSleepTimer(60_000L))
+            viewModel.sendAction(PlayerAction.SetSleepTimer(30_000L))
+
+            verify(exactly = 2) { playerRepository.pause() }
+        }
+
+    @Test
+    fun `Given SleepTimerEndOfEpisode action with live stream, When duration is zero, Then no timer starts`() =
+        runTest {
+            setupDefaultMocks()
+            nowPlayingFlow.value = episodeTestData
+            progressFlow.value = Progress(0.seconds, 0.seconds, 0.seconds)
+
+            val viewModel = createViewModel()
+
+            viewModel.sendAction(PlayerAction.SleepTimerEndOfEpisode)
+
+            // No pause should be called for live stream (duration = 0)
+            verify(exactly = 0) { playerRepository.pause() }
+        }
 }

@@ -83,6 +83,10 @@ fun PlayerBar(
                     }
                     // full player open → handled in PlayerBottomSheet
                 }
+
+                is PlayerEffect.SleepTimerExpired -> {
+                    // handled in PlayerBottomSheet
+                }
             }
         }
     }

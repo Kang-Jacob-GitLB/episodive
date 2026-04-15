@@ -28,6 +28,7 @@ import io.jacob.episodive.core.designsystem.icon.tabler.LetterISmall
 import io.jacob.episodive.core.designsystem.icon.tabler.LetterXSmall
 import io.jacob.episodive.core.designsystem.icon.tabler.List
 import io.jacob.episodive.core.designsystem.icon.tabler.ListNumbers
+import io.jacob.episodive.core.designsystem.icon.tabler.Moon
 import io.jacob.episodive.core.designsystem.icon.tabler.PhotoExclamation
 import io.jacob.episodive.core.designsystem.icon.tabler.PlayerPause
 import io.jacob.episodive.core.designsystem.icon.tabler.PlayerPlay
@@ -73,6 +74,7 @@ object EpisodiveIcons {
     val LikeFilled = Tabler.HeartFilled
     val List = Tabler.List
     val ListNumbered = Tabler.ListNumbers
+    val Moon = Tabler.Moon
     val MoreVert = Tabler.DotsVertical
     val Owner = Tabler.CreativeCommonsBy
     val Pause = Tabler.PlayerPause

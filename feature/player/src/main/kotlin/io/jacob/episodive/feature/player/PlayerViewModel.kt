@@ -25,7 +25,12 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.Repeat
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -88,6 +93,9 @@ class PlayerViewModel @Inject constructor(
         }
 
 
+    private var sleepTimerJob: Job? = null
+    private val _sleepTimerRemainingMs = MutableStateFlow<Long?>(null)
+
     val state: StateFlow<PlayerState> = combineTyped(
         podcast,
         nowPlaying,
@@ -98,7 +106,8 @@ class PlayerViewModel @Inject constructor(
         playerRepository.speed,
         chapters,
         playerRepository.cue,
-    ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, chapters, cue ->
+        _sleepTimerRemainingMs,
+    ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, chapters, cue, sleepTimerRemainingMs ->
         if (podcast != null && nowPlaying != null) {
             PlayerState.Success(
                 podcast = podcast,
@@ -110,6 +119,7 @@ class PlayerViewModel @Inject constructor(
                 speed = speed,
                 chapters = chapters,
                 cue = cue,
+                sleepTimerRemainingMs = sleepTimerRemainingMs,
             ) as PlayerState
         } else {
             PlayerState.Error("podcast or nowPlaying is null")
@@ -189,7 +199,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     private fun handleActions() = viewModelScope.launch {
-        _action.collectLatest { action ->
+        _action.collect { action ->
             when (action) {
                 is PlayerAction.PlayOrPause -> playOrPause()
                 is PlayerAction.Next -> next()
@@ -210,6 +220,9 @@ class PlayerViewModel @Inject constructor(
                 is PlayerAction.ToggleFollowedPodcast -> toggleFollowedPodcast(action.podcast)
                 is PlayerAction.ExpandPlayer -> expandPlayer()
                 is PlayerAction.CollapsePlayer -> collapsePlayer()
+                is PlayerAction.SetSleepTimer -> startSleepTimer(action.durationMs)
+                is PlayerAction.CancelSleepTimer -> cancelSleepTimer()
+                is PlayerAction.SleepTimerEndOfEpisode -> startEndOfEpisodeTimer()
             }
         }
     }
@@ -310,6 +323,72 @@ class PlayerViewModel @Inject constructor(
     private fun collapsePlayer() = viewModelScope.launch {
         _effect.emit(PlayerEffect.HidePlayerBottomSheet)
     }
+
+    private fun startSleepTimer(durationMs: Long) {
+        sleepTimerJob?.cancel()
+        playerRepository.setVolume(1f)
+        sleepTimerJob = viewModelScope.launch {
+            _sleepTimerRemainingMs.value = durationMs
+            val endTime = timeProvider.currentTimeMillis() + durationMs
+            while (isActive) {
+                val remaining = endTime - timeProvider.currentTimeMillis()
+                if (remaining <= 0) {
+                    playerRepository.setVolume(0f)
+                    playerRepository.pause()
+                    playerRepository.setVolume(1f)
+                    _sleepTimerRemainingMs.value = null
+                    _effect.emit(PlayerEffect.SleepTimerExpired)
+                    break
+                }
+                if (remaining <= FADE_OUT_DURATION_MS) {
+                    val volume = remaining.toFloat() / FADE_OUT_DURATION_MS
+                    playerRepository.setVolume(volume)
+                }
+                _sleepTimerRemainingMs.value = remaining
+                delay(1000)
+            }
+        }
+    }
+
+    private fun startEndOfEpisodeTimer() {
+        sleepTimerJob?.cancel()
+        playerRepository.setVolume(1f)
+        sleepTimerJob = viewModelScope.launch {
+            val startEpisodeId = nowPlaying.value?.id ?: return@launch
+            val duration = playerRepository.progress.first().duration.inWholeMilliseconds
+            if (duration <= 0) return@launch
+
+            combine(playerRepository.progress, nowPlaying) { progress, episode ->
+                progress to episode
+            }.takeWhile { (progress, episode) ->
+                val remaining = progress.duration.inWholeMilliseconds - progress.position.inWholeMilliseconds
+                val sameEpisode = episode?.id == startEpisodeId
+                _sleepTimerRemainingMs.value = remaining.coerceAtLeast(0)
+                if (remaining <= FADE_OUT_DURATION_MS) {
+                    val volume = remaining.toFloat() / FADE_OUT_DURATION_MS
+                    playerRepository.setVolume(volume.coerceIn(0f, 1f))
+                }
+                sameEpisode && remaining > 500
+            }.collect {}
+
+            playerRepository.setVolume(0f)
+            playerRepository.pause()
+            playerRepository.setVolume(1f)
+            _sleepTimerRemainingMs.value = null
+            _effect.emit(PlayerEffect.SleepTimerExpired)
+        }
+    }
+
+    private fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        _sleepTimerRemainingMs.value = null
+        playerRepository.setVolume(1f)
+    }
+
+    companion object {
+        internal const val FADE_OUT_DURATION_MS = 15_000L
+    }
 }
 
 sealed interface PlayerState {
@@ -324,6 +403,7 @@ sealed interface PlayerState {
         val speed: Float,
         val chapters: List<Chapter>,
         val cue: String,
+        val sleepTimerRemainingMs: Long? = null,
     ) : PlayerState
 
     data class Error(val message: String) : PlayerState
@@ -349,6 +429,9 @@ sealed interface PlayerAction {
     data class ToggleFollowedPodcast(val podcast: Podcast) : PlayerAction
     data object ExpandPlayer : PlayerAction
     data object CollapsePlayer : PlayerAction
+    data class SetSleepTimer(val durationMs: Long) : PlayerAction
+    data object CancelSleepTimer : PlayerAction
+    data object SleepTimerEndOfEpisode : PlayerAction
 }
 
 sealed interface PlayerEffect {
@@ -356,6 +439,7 @@ sealed interface PlayerEffect {
     data object ShowPlayerBottomSheet : PlayerEffect
     data object HidePlayerBottomSheet : PlayerEffect
     data class ShowUnsaveSnackbar(val episode: Episode) : PlayerEffect
+    data object SleepTimerExpired : PlayerEffect
 }
 
 private data class LastPlaySnapshot(
