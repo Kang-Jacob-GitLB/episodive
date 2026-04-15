@@ -63,6 +63,7 @@ fun PlayerBar(
 
     val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
     val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
+    val sleepTimerExpiredMessage = stringResource(R.string.feature_player_sleep_timer_expired)
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -82,6 +83,12 @@ fun PlayerBar(
                         if (undone) viewModel.sendAction(PlayerAction.ToggleSavedEpisode(effect.episode))
                     }
                     // full player open → handled in PlayerBottomSheet
+                }
+
+                is PlayerEffect.SleepTimerExpired -> {
+                    if (!isShowPlayer) {
+                        onShowSnackbar(sleepTimerExpiredMessage, null)
+                    }
                 }
             }
         }

@@ -29,6 +29,7 @@ interface PlayerRepository {
     fun changeRepeat()
     fun setRepeat(repeat: Repeat)
     fun setSpeed(speed: Float)
+    fun setVolume(volume: Float)
     fun addTrack(episode: Episode, index: Int? = null)
     fun addTrack(episodes: List<Episode>, index: Int? = null)
     fun addClipTrack(episode: Episode, index: Int? = null)

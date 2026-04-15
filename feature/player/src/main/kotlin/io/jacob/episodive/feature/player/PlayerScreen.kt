@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -59,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -120,6 +122,7 @@ fun PlayerBottomSheet(
 
     val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
     val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
+    val sleepTimerExpiredMessage = stringResource(R.string.feature_player_sleep_timer_expired)
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -136,6 +139,13 @@ fun PlayerBottomSheet(
                     if (result == SnackbarResult.ActionPerformed) {
                         viewModel.sendAction(PlayerAction.ToggleSavedEpisode(effect.episode))
                     }
+                }
+
+                is PlayerEffect.SleepTimerExpired -> {
+                    snackbarHostState.showSnackbar(
+                        message = sleepTimerExpiredMessage,
+                        duration = SnackbarDuration.Short,
+                    )
                 }
             }
         }
@@ -192,6 +202,10 @@ fun PlayerBottomSheet(
             chapters = s.chapters,
             onToggleFollowedPodcast = { viewModel.sendAction(PlayerAction.ToggleFollowedPodcast(it)) },
             cue = s.cue,
+            sleepTimerRemainingMs = s.sleepTimerRemainingMs,
+            onSetSleepTimer = { viewModel.sendAction(PlayerAction.SetSleepTimer(it)) },
+            onCancelSleepTimer = { viewModel.sendAction(PlayerAction.CancelSleepTimer) },
+            onSleepTimerEndOfEpisode = { viewModel.sendAction(PlayerAction.SleepTimerEndOfEpisode) },
         )
 
             EpisodiveSwipeDismissSnackbarHost(
@@ -231,11 +245,16 @@ internal fun PlayerScreen(
     chapters: List<Chapter>,
     onToggleFollowedPodcast: (Podcast) -> Unit,
     cue: String,
+    sleepTimerRemainingMs: Long? = null,
+    onSetSleepTimer: (Long) -> Unit = {},
+    onCancelSleepTimer: () -> Unit = {},
+    onSleepTimerEndOfEpisode: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
     var showSpeedSheet by remember { mutableStateOf(false) }
     var showPlaylistSheet by remember { mutableStateOf(false) }
+    var showSleepTimerSheet by remember { mutableStateOf(false) }
     var chapterIndex by remember { mutableStateOf(0) }
     var dominantColor by remember { mutableStateOf(Color.DarkGray) }
 
@@ -356,6 +375,8 @@ internal fun PlayerScreen(
                         onNext = onNext,
                         onSpeed = { showSpeedSheet = true },
                         speed = speed,
+                        onSleepTimer = { showSleepTimerSheet = true },
+                        sleepTimerRemainingMs = sleepTimerRemainingMs,
                         onList = { showPlaylistSheet = true },
                         onToggleSave = onToggleSave,
                     )
@@ -412,6 +433,17 @@ internal fun PlayerScreen(
             onToggleLikedEpisode = onToggleLikedEpisode,
             onToggleSavedEpisode = onToggleSavedEpisode,
             onDismiss = { showPlaylistSheet = false }
+        )
+    }
+
+    if (showSleepTimerSheet) {
+        SleepTimerSheet(
+            remainingMs = sleepTimerRemainingMs,
+            isPlaying = isPlaying,
+            onSetTimer = { onSetSleepTimer(it) },
+            onEndOfEpisode = onSleepTimerEndOfEpisode,
+            onCancel = onCancelSleepTimer,
+            onDismiss = { showSleepTimerSheet = false },
         )
     }
 }
@@ -555,6 +587,8 @@ private fun ControlPanelBottom(
     onNext: () -> Unit = {},
     onSpeed: () -> Unit = {},
     speed: Float,
+    onSleepTimer: () -> Unit = {},
+    sleepTimerRemainingMs: Long? = null,
     onList: () -> Unit = {},
     onToggleSave: () -> Unit = {},
 ) {
@@ -665,6 +699,31 @@ private fun ControlPanelBottom(
                     text = "${decimalFormat.format(speed)}x"
                 )
             }
+
+            EpisodiveIconButton(
+                modifier = Modifier.size(32.dp),
+                onClick = onSleepTimer,
+                icon = {
+                    val moonTint = when {
+                        sleepTimerRemainingMs == null -> MaterialTheme.colorScheme.onSurface
+                        sleepTimerRemainingMs <= PlayerViewModel.FADE_OUT_DURATION_MS -> {
+                            val fraction = sleepTimerRemainingMs / PlayerViewModel.FADE_OUT_DURATION_MS.toFloat()
+                            lerp(
+                                MaterialTheme.colorScheme.onSurface,
+                                MaterialTheme.colorScheme.primary,
+                                fraction,
+                            )
+                        }
+                        else -> MaterialTheme.colorScheme.primary
+                    }
+                    Icon(
+                        modifier = Modifier.size(24.dp),
+                        imageVector = EpisodiveIcons.Moon,
+                        contentDescription = stringResource(R.string.feature_player_sleep_timer),
+                        tint = moonTint,
+                    )
+                }
+            )
 
             if (isDownloading) {
                 EpisodiveIconProgressButton(
@@ -923,6 +982,158 @@ private fun PlaylistSheet(
                 onEpisodeClick = onEpisodeClick,
                 onToggleLikedEpisode = onToggleLikedEpisode,
                 onToggleSavedEpisode = onToggleSavedEpisode,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SleepTimerSheet(
+    modifier: Modifier = Modifier,
+    remainingMs: Long?,
+    isPlaying: Boolean,
+    onSetTimer: (Long) -> Unit = {},
+    onEndOfEpisode: () -> Unit = {},
+    onCancel: () -> Unit = {},
+    onDismiss: () -> Unit = {},
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val requiresPlaybackMessage = stringResource(R.string.feature_player_sleep_timer_requires_playback)
+
+    fun handleAction(action: () -> Unit) {
+        if (isPlaying) {
+            action()
+        } else {
+            scope.launch {
+                snackbarHostState.currentSnackbarData?.dismiss()
+                snackbarHostState.showSnackbar(
+                    message = requiresPlaybackMessage,
+                    duration = SnackbarDuration.Short,
+                )
+            }
+        }
+    }
+
+    val timerPresets = remember {
+        listOf(
+            30L * 1000,
+            5L * 60 * 1000,
+            10L * 60 * 1000,
+            15L * 60 * 1000,
+            30L * 60 * 1000,
+            45L * 60 * 1000,
+            60L * 60 * 1000,
+        )
+    }
+    // TODO: 30초 프리셋은 테스트용. 출시 시 제거
+    val isActive = remainingMs != null
+
+    ModalBottomSheet(
+        modifier = modifier.fillMaxWidth(),
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = { EpisodiveDragHandle() }
+    ) {
+        Box {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateContentSize(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stringResource(R.string.feature_player_sleep_timer),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                val displayMs = remainingMs ?: 0L
+                val minutes = displayMs / 1000 / 60
+                val seconds = (displayMs / 1000) % 60
+                val timerColor = when {
+                    !isActive -> MaterialTheme.colorScheme.onSurface
+                    displayMs <= PlayerViewModel.FADE_OUT_DURATION_MS -> {
+                        val fraction = displayMs / PlayerViewModel.FADE_OUT_DURATION_MS.toFloat()
+                        lerp(
+                            MaterialTheme.colorScheme.onSurface,
+                            MaterialTheme.colorScheme.primary,
+                            fraction,
+                        )
+                    }
+                    else -> MaterialTheme.colorScheme.primary
+                }
+                Text(
+                    text = String.format("%d:%02d", minutes, seconds),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = timerColor,
+                )
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    timerPresets.forEach { durationMs ->
+                        val totalSeconds = (durationMs / 1000).toInt()
+                        val label = if (totalSeconds < 60) "${totalSeconds}s"
+                        else stringResource(R.string.feature_player_sleep_timer_minutes, totalSeconds / 60)
+                        EpisodiveButton(
+                            modifier = Modifier.size(48.dp),
+                            onClick = { handleAction { onSetTimer(durationMs) } },
+                            shape = CircleShape,
+                            contentPadding = PaddingValues(0.dp),
+                            buttonColors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        ) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                        }
+                    }
+                }
+
+                EpisodiveButton(
+                    onClick = { handleAction { onEndOfEpisode() } },
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                    buttonColors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                ) {
+                    Text(
+                        text = stringResource(R.string.feature_player_sleep_timer_end_of_episode),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+
+                AnimatedVisibility(visible = isActive) {
+                    EpisodiveButton(
+                        onClick = { onCancel() },
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                        buttonColors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    ) {
+                        Text(
+                            text = stringResource(R.string.feature_player_sleep_timer_cancel),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            EpisodiveSwipeDismissSnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
     }

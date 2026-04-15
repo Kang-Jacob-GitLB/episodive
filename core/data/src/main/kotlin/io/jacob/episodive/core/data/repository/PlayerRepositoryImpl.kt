@@ -98,6 +98,10 @@ class PlayerRepositoryImpl @Inject constructor(
         playerDataSource.setSpeed(speed)
     }
 
+    override fun setVolume(volume: Float) {
+        playerDataSource.setVolume(volume)
+    }
+
     override fun addTrack(episode: Episode, index: Int?) {
         playerDataSource.addTrack(episode, index)
     }
