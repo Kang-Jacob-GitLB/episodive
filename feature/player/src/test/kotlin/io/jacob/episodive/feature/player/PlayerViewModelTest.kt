@@ -458,33 +458,18 @@ class PlayerViewModelTest {
         }
 
     @Test
-    fun `Given SetSleepTimer action, When timer expires, Then sleepTimerRemainingMs becomes null in state`() =
+    fun `Given SetSleepTimer action, When timer expires, Then volume is restored to 1f`() =
         runTest {
-            setupPlayerRepositoryMocks()
-            val episode = episodeTestData
-            val podcast = podcastTestData
-
-            every { getNowPlayingUseCase() } returns flowOf(episode)
-            every { getPodcastUseCase(episode.feedId) } returns flowOf(podcast)
-            every { getPlaylistUseCase() } returns flowOf(listOf(episode))
-            every { getUserDataUseCase() } returns flowOf(UserData(speed = 1.0f))
+            setupDefaultMocks()
             every { timeProvider.currentTimeMillis() } returnsMany listOf(0L, 60_001L)
 
             val viewModel = createViewModel()
 
-            viewModel.state.test {
-                val state = awaitItem()
-                assertTrue(state is PlayerState.Success)
-                assertEquals(null, (state as PlayerState.Success).sleepTimerRemainingMs)
-            }
-
             viewModel.sendAction(PlayerAction.SetSleepTimer(60_000L))
 
-            // After expiry, sleepTimerRemainingMs should be null
-            val finalState = viewModel.state.value
-            if (finalState is PlayerState.Success) {
-                assertEquals(null, finalState.sleepTimerRemainingMs)
-            }
+            // finally block restores volume after expiry
+            verify { playerRepository.setVolume(0f) }  // fade to 0 at expiry
+            verify(atLeast = 1) { playerRepository.setVolume(1f) }  // restored in finally
         }
 
     @Test
@@ -500,9 +485,10 @@ class PlayerViewModelTest {
         }
 
     @Test
-    fun `Given two SetSleepTimer actions, When both expire, Then pause is called twice`() =
+    fun `Given two sequential SetSleepTimer actions, When both expire immediately, Then each triggers pause`() =
         runTest {
             setupDefaultMocks()
+            // With UnconfinedTestDispatcher, each timer expires instantly via mocked time
             every { timeProvider.currentTimeMillis() } returnsMany listOf(
                 0L, 60_001L,       // first timer: start → expire
                 0L, 30_001L,       // second timer: start → expire

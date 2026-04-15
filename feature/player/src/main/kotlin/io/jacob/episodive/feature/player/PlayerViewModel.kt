@@ -326,64 +326,74 @@ class PlayerViewModel @Inject constructor(
 
     private fun startSleepTimer(durationMs: Long) {
         sleepTimerJob?.cancel()
-        playerRepository.setVolume(1f)
         sleepTimerJob = viewModelScope.launch {
-            _sleepTimerRemainingMs.value = durationMs
-            val endTime = timeProvider.currentTimeMillis() + durationMs
-            while (isActive) {
-                val remaining = endTime - timeProvider.currentTimeMillis()
-                if (remaining <= 0) {
-                    playerRepository.setVolume(0f)
-                    playerRepository.pause()
-                    playerRepository.setVolume(1f)
-                    _sleepTimerRemainingMs.value = null
-                    _effect.emit(PlayerEffect.SleepTimerExpired)
-                    break
+            try {
+                playerRepository.setVolume(1f)
+                _sleepTimerRemainingMs.value = durationMs
+                val endTime = timeProvider.currentTimeMillis() + durationMs
+                while (isActive) {
+                    val remaining = endTime - timeProvider.currentTimeMillis()
+                    if (remaining <= 0) {
+                        playerRepository.setVolume(0f)
+                        playerRepository.pause()
+                        _effect.emit(PlayerEffect.SleepTimerExpired)
+                        break
+                    }
+                    if (remaining <= FADE_OUT_DURATION_MS) {
+                        val volume = remaining.toFloat() / FADE_OUT_DURATION_MS
+                        playerRepository.setVolume(volume)
+                    }
+                    _sleepTimerRemainingMs.value = remaining
+                    delay(1000)
                 }
-                if (remaining <= FADE_OUT_DURATION_MS) {
-                    val volume = remaining.toFloat() / FADE_OUT_DURATION_MS
-                    playerRepository.setVolume(volume)
-                }
-                _sleepTimerRemainingMs.value = remaining
-                delay(1000)
+            } finally {
+                playerRepository.setVolume(1f)
+                _sleepTimerRemainingMs.value = null
             }
         }
     }
 
     private fun startEndOfEpisodeTimer() {
         sleepTimerJob?.cancel()
-        playerRepository.setVolume(1f)
         sleepTimerJob = viewModelScope.launch {
-            val startEpisodeId = nowPlaying.value?.id ?: return@launch
-            val duration = playerRepository.progress.first().duration.inWholeMilliseconds
-            if (duration <= 0) return@launch
+            try {
+                playerRepository.setVolume(1f)
+                val startEpisodeId = nowPlaying.value?.id ?: return@launch
+                val duration = playerRepository.progress.first().duration.inWholeMilliseconds
+                if (duration <= 0) return@launch
 
-            combine(playerRepository.progress, nowPlaying) { progress, episode ->
-                progress to episode
-            }.takeWhile { (progress, episode) ->
-                val remaining = progress.duration.inWholeMilliseconds - progress.position.inWholeMilliseconds
-                val sameEpisode = episode?.id == startEpisodeId
-                _sleepTimerRemainingMs.value = remaining.coerceAtLeast(0)
-                if (remaining <= FADE_OUT_DURATION_MS) {
-                    val volume = remaining.toFloat() / FADE_OUT_DURATION_MS
-                    playerRepository.setVolume(volume.coerceIn(0f, 1f))
+                var timerExpired = false
+                combine(playerRepository.progress, nowPlaying) { progress, episode ->
+                    progress to episode
+                }.takeWhile { (progress, episode) ->
+                    val remaining = progress.duration.inWholeMilliseconds - progress.position.inWholeMilliseconds
+                    val sameEpisode = episode?.id == startEpisodeId
+                    if (!sameEpisode) return@takeWhile false
+                    _sleepTimerRemainingMs.value = remaining.coerceAtLeast(0)
+                    if (remaining <= FADE_OUT_DURATION_MS) {
+                        val volume = remaining.toFloat() / FADE_OUT_DURATION_MS
+                        playerRepository.setVolume(volume.coerceIn(0f, 1f))
+                    }
+                    val shouldContinue = remaining > 500
+                    if (!shouldContinue) timerExpired = true
+                    shouldContinue
+                }.collect {}
+
+                if (timerExpired) {
+                    playerRepository.setVolume(0f)
+                    playerRepository.pause()
+                    _effect.emit(PlayerEffect.SleepTimerExpired)
                 }
-                sameEpisode && remaining > 500
-            }.collect {}
-
-            playerRepository.setVolume(0f)
-            playerRepository.pause()
-            playerRepository.setVolume(1f)
-            _sleepTimerRemainingMs.value = null
-            _effect.emit(PlayerEffect.SleepTimerExpired)
+            } finally {
+                playerRepository.setVolume(1f)
+                _sleepTimerRemainingMs.value = null
+            }
         }
     }
 
     private fun cancelSleepTimer() {
         sleepTimerJob?.cancel()
         sleepTimerJob = null
-        _sleepTimerRemainingMs.value = null
-        playerRepository.setVolume(1f)
     }
 
     companion object {
