@@ -6,6 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import io.jacob.episodive.core.data.widget.WidgetUpdater
 import io.jacob.episodive.core.domain.usecase.episode.SyncNewEpisodesUseCase
 import timber.log.Timber
 
@@ -15,6 +16,7 @@ class EpisodeSyncWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val syncNewEpisodesUseCase: SyncNewEpisodesUseCase,
     private val notificationHelper: EpisodeSyncNotificationHelper,
+    private val widgetUpdater: WidgetUpdater,
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -22,6 +24,7 @@ class EpisodeSyncWorker @AssistedInject constructor(
             val results = syncNewEpisodesUseCase()
             if (results.isNotEmpty()) {
                 notificationHelper.showNewEpisodeNotification(results)
+                widgetUpdater.notifyRecentEpisodesChanged()
             }
             Result.success()
         } catch (e: Exception) {
