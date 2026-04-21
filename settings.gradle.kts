@@ -44,5 +44,6 @@ include(":feature:clip")
 include(":feature:channel")
 include(":feature:podcast")
 include(":feature:player")
+include(":feature:widget")
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

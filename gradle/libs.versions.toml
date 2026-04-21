@@ -44,6 +44,8 @@ leakcanary = "2.14"
 work = "2.10.1"
 hiltWork = "1.2.0"
 stabilityAnalyzer = "0.6.0"
+glance = "1.2.0-alpha01"
+tracing = "1.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -123,6 +125,9 @@ xerial-sqlite = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "xer
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
+androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
+androidx-tracing-ktx = { group = "androidx.tracing", name = "tracing-ktx", version.ref = "tracing" }
 
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
@@ -154,6 +159,7 @@ episodive-android-library = { id = "episodive.android.library" }
 episodive-android-library-compose = { id = "episodive.android.library.compose" }
 episodive-android-library-jacoco = { id = "episodive.android.library.jacoco" }
 episodive-android-feature = { id = "episodive.android.feature" }
+episodive-android-widget = { id = "episodive.android.widget", version = "unspecified" }
 episodive-android-test = { id = "episodive.android.test" }
 episodive-android-room = { id = "episodive.android.room" }
 episodive-hilt = { id = "episodive.hilt" }

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.episodive.android.library)
     alias(libs.plugins.episodive.android.library.jacoco)
+    alias(libs.plugins.episodive.hilt)
 }
 
 android {

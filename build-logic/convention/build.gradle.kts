@@ -61,6 +61,10 @@ gradlePlugin {
             id = libs.plugins.episodive.android.feature.get().pluginId
             implementationClass = "AndroidFeatureConventionPlugin"
         }
+        register("androidWidget") {
+            id = libs.plugins.episodive.android.widget.get().pluginId
+            implementationClass = "AndroidWidgetConventionPlugin"
+        }
         register("androidTest") {
             id = libs.plugins.episodive.android.test.get().pluginId
             implementationClass = "AndroidTestConventionPlugin"
