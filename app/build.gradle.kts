@@ -44,9 +44,11 @@ dependencies {
     implementation(projects.feature.channel)
     implementation(projects.feature.podcast)
     implementation(projects.feature.player)
+    implementation(projects.feature.widget)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.tracing.ktx)
     implementation(libs.kotlinx.serialization.json)
 
     //----- WorkManager

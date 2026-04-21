@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_widget_now_playing_label">Episodive — Now Playing</string>
+    <string name="feature_widget_now_playing_desc">Control the currently playing episode from your home screen.</string>
+    <string name="feature_widget_now_playing_empty">No episode playing</string>
+    <string name="feature_widget_now_playing_empty_hint">Tap to open Episodive</string>
+    <string name="feature_widget_now_playing_preview_title">Episodive</string>
+    <string name="feature_widget_now_playing_preview_subtitle">Your podcast, one tap away</string>
+    <string name="feature_widget_now_playing_artwork_desc">Episode artwork</string>
+    <string name="feature_widget_now_playing_play_desc">Play</string>
+    <string name="feature_widget_now_playing_pause_desc">Pause</string>
+    <string name="feature_widget_now_playing_seek_backward_desc">Seek backward</string>
+    <string name="feature_widget_now_playing_seek_forward_desc">Seek forward</string>
+    <string name="feature_widget_now_playing_open_app_desc">Open Episodive</string>
+    <string name="feature_widget_recent_episodes_label">Episodive — Recent Episodes</string>
+    <string name="feature_widget_recent_episodes_desc">See the latest episodes from your subscriptions at a glance.</string>
+    <string name="feature_widget_recent_episodes_header">Recent episodes</string>
+    <string name="feature_widget_recent_episodes_empty">No recent episodes</string>
+    <string name="feature_widget_recent_episodes_empty_hint">Tap to open Episodive</string>
+    <string name="feature_widget_recent_episodes_artwork_desc">Episode artwork</string>
+</resources>

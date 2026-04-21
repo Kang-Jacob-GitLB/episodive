@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.AndroidEntryPoint
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
+import io.jacob.episodive.core.data.widget.WidgetUpdater
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
@@ -46,6 +47,9 @@ class MediaNotificationService : MediaSessionService() {
     @Inject
     lateinit var toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase
 
+    @Inject
+    lateinit var widgetUpdater: WidgetUpdater
+
     private var mediaSession: MediaSession? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -55,6 +59,11 @@ class MediaNotificationService : MediaSessionService() {
     companion object {
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "episodive_playback_channel"
+
+        // ServiceActions.kt (:feature:widget) 에서 하드코딩된 복제본이 동기화되어야 함.
+        const val ACTION_WIDGET_PLAY_PAUSE = "io.jacob.episodive.action.WIDGET_PLAY_PAUSE"
+        const val ACTION_WIDGET_SEEK_FWD = "io.jacob.episodive.action.WIDGET_SEEK_FWD"
+        const val ACTION_WIDGET_SEEK_BWD = "io.jacob.episodive.action.WIDGET_SEEK_BWD"
     }
 
     override fun onCreate() {
@@ -81,8 +90,19 @@ class MediaNotificationService : MediaSessionService() {
             getNowPlayingUseCase().collectLatest { episode ->
                 episode?.let { nowPlaying = it }
                 updateCustomLayout(episode?.isLiked ?: false)
+                widgetUpdater.notifyNowPlayingChanged()
             }
         }
+    }
+
+    @UnstableApi
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when (intent?.action) {
+            ACTION_WIDGET_PLAY_PAUSE -> serviceScope.launch { playerRepository.playOrPause() }
+            ACTION_WIDGET_SEEK_FWD -> serviceScope.launch { playerRepository.seekForward() }
+            ACTION_WIDGET_SEEK_BWD -> serviceScope.launch { playerRepository.seekBackward() }
+        }
+        return super.onStartCommand(intent, flags, startId)
     }
 
     private fun updateCustomLayout(isLiked: Boolean) {
