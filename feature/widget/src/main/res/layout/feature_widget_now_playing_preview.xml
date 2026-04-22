@@ -1,48 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+  위젯 피커 / 초기 inflate preview.
+  4x2 상하 공간 활용 — 2줄 레이아웃:
+   행 1: 썸네일 + 제목/피드
+   행 2: 3개 재생 컨트롤 (중앙 정렬)
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="?android:attr/colorBackground"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    android:padding="12dp">
-
-    <ImageView
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:contentDescription="@string/feature_widget_now_playing_artwork_desc"
-        android:src="@drawable/feature_widget_ic_placeholder" />
+    android:layout_height="match_parent"
+    android:padding="4dp">
 
     <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/feature_widget_preview_card_surface"
+        android:orientation="vertical"
+        android:padding="14dp">
 
-        <TextView
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:contentDescription="@string/feature_widget_now_playing_artwork_desc"
+                android:scaleType="centerCrop"
+                android:src="@drawable/feature_widget_ic_placeholder" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:text="@string/feature_widget_now_playing_preview_title"
+                    android:textColor="#FF201A1A"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="@string/feature_widget_now_playing_preview_subtitle"
+                    android:textColor="#FF534341"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:text="@string/feature_widget_now_playing_preview_title"
-            android:textColor="?android:attr/textColorPrimary"
-            android:textStyle="bold" />
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:orientation="horizontal">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:text="@string/feature_widget_now_playing_preview_subtitle"
-            android:textColor="?android:attr/textColorSecondary"
-            android:textSize="12sp" />
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:contentDescription="@string/feature_widget_now_playing_seek_backward_desc"
+                android:padding="10dp"
+                android:src="@drawable/feature_widget_ic_rewind"
+                android:tint="#FF201A1A" />
+
+            <ImageView
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/feature_widget_preview_play_bg"
+                android:contentDescription="@string/feature_widget_now_playing_play_desc"
+                android:padding="14dp"
+                android:src="@drawable/feature_widget_ic_play"
+                android:tint="#FFFFFFFF" />
+
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="10dp"
+                android:contentDescription="@string/feature_widget_now_playing_seek_forward_desc"
+                android:padding="10dp"
+                android:src="@drawable/feature_widget_ic_fast_forward"
+                android:tint="#FF201A1A" />
+        </LinearLayout>
     </LinearLayout>
-
-    <ImageView
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_marginStart="8dp"
-        android:contentDescription="@string/feature_widget_now_playing_play_desc"
-        android:src="@drawable/feature_widget_ic_play" />
-</LinearLayout>
+</FrameLayout>

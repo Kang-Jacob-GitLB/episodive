@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 프리뷰용 Play 버튼 원형 배경. Episodive primary (#F5332C). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#FFF5332C" />
+</shape>

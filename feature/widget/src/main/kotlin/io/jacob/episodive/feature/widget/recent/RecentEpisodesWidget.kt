@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.os.SystemClock
 import android.util.Log
 import androidx.glance.GlanceId
-import androidx.glance.GlanceTheme
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.provideContent
 import androidx.tracing.trace
@@ -13,6 +12,7 @@ import dagger.hilt.android.EntryPointAccessors
 import io.jacob.episodive.core.domain.widget.EpisodeSnapshot
 import io.jacob.episodive.core.domain.widget.WidgetDataReaderEntryPoint
 import io.jacob.episodive.feature.widget.image.WidgetImageLoader
+import io.jacob.episodive.feature.widget.theme.EpisodiveGlanceTheme
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -42,7 +42,7 @@ class RecentEpisodesWidget : GlanceAppWidget() {
             val artworks = loadArtworks(context, snapshots)
 
             provideContent {
-                GlanceTheme {
+                EpisodiveGlanceTheme {
                     RecentEpisodesContent(snapshots, artworks)
                 }
             }

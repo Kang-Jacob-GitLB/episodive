@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 프리뷰용 최근 에피소드 아트워크 배경. primary 12% tint + 8dp round. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#24F5332C" />
+    <corners android:radius="8dp" />
+</shape>

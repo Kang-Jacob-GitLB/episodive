@@ -31,11 +31,20 @@ import androidx.glance.text.TextStyle
 import io.jacob.episodive.core.domain.widget.EpisodeSnapshot
 import io.jacob.episodive.feature.widget.R
 import io.jacob.episodive.feature.widget.nowplaying.OpenAppCallback
+import io.jacob.episodive.feature.widget.theme.WidgetSurfaceContainer
+import io.jacob.episodive.feature.widget.theme.WidgetSurfaceContainerLow
 
 /**
  * 최근 에피소드 위젯 콘텐츠.
  *
- * - snapshot 이 비어있으면 빈 상태 문구.
+ * Episodive 디자인 시스템 연결:
+ * - 루트: `surfaceContainer` 카드 (16dp 라운드, 12dp padding)
+ * - 헤더: `primary` 빨강 14sp Bold
+ * - 행: 44dp artwork (8dp 라운드) / title 13sp SemiBold / feed 11sp onSurfaceVariant
+ * - 행간 Spacer 6dp
+ *
+ * 규칙:
+ * - snapshot 이 비어있으면 빈 상태 카드.
  * - 채워진 상태는 상단 헤더 + 최대 [MAX_VISIBLE] 개의 행.
  * - 각 행 탭 → MainActivity 오픈 (episode 딥링크는 V2 이월).
  */
@@ -57,12 +66,28 @@ private fun EmptyRecentEpisodes() {
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.surface)
-            .padding(12.dp)
-            .clickable(actionRunCallback<OpenAppCallback>()),
-        contentAlignment = Alignment.CenterStart,
+            .padding(4.dp),
     ) {
-        Column(modifier = GlanceModifier.fillMaxWidth()) {
+        Column(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .background(WidgetSurfaceContainerLow)
+                .cornerRadius(16.dp)
+                .padding(14.dp)
+                .clickable(actionRunCallback<OpenAppCallback>()),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.Start,
+        ) {
+            Text(
+                text = context.getString(R.string.feature_widget_recent_episodes_header),
+                style = TextStyle(
+                    color = GlanceTheme.colors.primary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+                maxLines = 1,
+            )
+            Spacer(modifier = GlanceModifier.height(8.dp))
             Text(
                 text = context.getString(R.string.feature_widget_recent_episodes_empty),
                 style = TextStyle(
@@ -91,27 +116,34 @@ private fun FilledRecentEpisodes(
     artworks: Map<Long, Bitmap?>,
 ) {
     val context = LocalContext.current
-    Column(
+    Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.surface)
-            .padding(10.dp),
+            .padding(4.dp),
     ) {
-        Text(
-            text = context.getString(R.string.feature_widget_recent_episodes_header),
-            style = TextStyle(
-                color = GlanceTheme.colors.onSurface,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-            ),
-            maxLines = 1,
-        )
-        Spacer(modifier = GlanceModifier.height(6.dp))
-        snapshots.take(MAX_VISIBLE).forEachIndexed { index, snapshot ->
-            if (index > 0) {
-                Spacer(modifier = GlanceModifier.height(6.dp))
+        Column(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .background(WidgetSurfaceContainer)
+                .cornerRadius(16.dp)
+                .padding(12.dp),
+        ) {
+            Text(
+                text = context.getString(R.string.feature_widget_recent_episodes_header),
+                style = TextStyle(
+                    color = GlanceTheme.colors.primary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+                maxLines = 1,
+            )
+            Spacer(modifier = GlanceModifier.height(8.dp))
+            snapshots.take(MAX_VISIBLE).forEachIndexed { index, snapshot ->
+                if (index > 0) {
+                    Spacer(modifier = GlanceModifier.height(6.dp))
+                }
+                EpisodeRow(snapshot, artworks[snapshot.id])
             }
-            EpisodeRow(snapshot, artworks[snapshot.id])
         }
     }
 }
@@ -134,14 +166,14 @@ private fun EpisodeRow(
                 R.string.feature_widget_recent_episodes_artwork_desc,
             ),
         )
-        Spacer(modifier = GlanceModifier.width(8.dp))
+        Spacer(modifier = GlanceModifier.width(10.dp))
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
                 text = snapshot.title,
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurface,
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.Bold,
                 ),
                 maxLines = 1,
             )
@@ -172,8 +204,8 @@ private fun Artwork(bitmap: Bitmap?, contentDescription: String) {
         contentDescription = contentDescription,
         contentScale = ContentScale.Crop,
         modifier = GlanceModifier
-            .size(40.dp)
-            .cornerRadius(6.dp),
+            .size(44.dp)
+            .cornerRadius(8.dp),
     )
 }
 

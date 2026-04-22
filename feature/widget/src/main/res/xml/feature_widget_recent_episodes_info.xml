@@ -8,4 +8,5 @@
     android:updatePeriodMillis="0"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
+    android:initialLayout="@layout/feature_widget_recent_episodes_preview"
     android:previewLayout="@layout/feature_widget_recent_episodes_preview" />

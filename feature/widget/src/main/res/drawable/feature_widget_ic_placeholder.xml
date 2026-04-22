@@ -1,11 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  위젯 아트워크 placeholder (썸네일 스타일).
+  solid Episodive primary red + 흰색 Tabler Fountain 팟캐스트 아이콘 중앙 배치.
+  실제 에피소드 이미지 로드 실패 시에만 보인다.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="48dp"
-    android:height="48dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="?android:attr/textColorSecondary">
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- solid primary red 배경 (Artwork 이 cornerRadius 로 clipping) -->
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M12,3v10.55c-0.59,-0.34 -1.27,-0.55 -2,-0.55 -2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V7h4V3h-6z" />
+        android:fillColor="#F5332C"
+        android:pathData="M0,0 H48 V48 H0 Z" />
+    <!-- Tabler Fountain 라인 아이콘 (24x24 base → 48x48 에 2x scale, center 오프셋 12) -->
+    <group android:scaleX="1.6" android:scaleY="1.6" android:translateX="4.8" android:translateY="4.8">
+        <!-- left arc -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="2"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M9,16 V11 A2,2 0 1,0 5,11" />
+        <!-- right arc -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="2"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M15,16 V11 A2,2 0 1,1 19,11" />
+        <!-- center top arc -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="2"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M12,16 V6 A3,3 0 0,1 18,6" />
+        <!-- small left top arc -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="2"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M6,6 A3,3 0 0,1 12,6" />
+        <!-- bottom base -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="2"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M3,16 H21 V18 A3,3 0 0,1 18,21 H6 A3,3 0 0,1 3,18 Z" />
+    </group>
 </vector>

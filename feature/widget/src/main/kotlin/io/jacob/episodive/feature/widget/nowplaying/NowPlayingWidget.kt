@@ -4,13 +4,13 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 import androidx.glance.GlanceId
-import androidx.glance.GlanceTheme
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.provideContent
 import androidx.tracing.trace
 import dagger.hilt.android.EntryPointAccessors
 import io.jacob.episodive.core.domain.widget.WidgetDataReaderEntryPoint
 import io.jacob.episodive.feature.widget.image.WidgetImageLoader
+import io.jacob.episodive.feature.widget.theme.EpisodiveGlanceTheme
 
 /**
  * 현재 재생 중 위젯.
@@ -38,14 +38,22 @@ class NowPlayingWidget : GlanceAppWidget() {
                 WidgetImageLoader.loadWidgetBitmap(context, url)
             }
 
+            val deltaMs = SystemClock.uptimeMillis() - startMs
+            // provideContent 가 session 종료까지 suspend 하므로 반드시 그 *이전*에 로깅.
+            Log.d(
+                PERF_TAG,
+                "pre-render snapshot=${snapshot != null} " +
+                    "episode=${snapshot?.episodeId} " +
+                    "imageUrl=${snapshot?.imageUrl} " +
+                    "bitmap=${bitmap != null} " +
+                    "deltaMs=$deltaMs",
+            )
+
             provideContent {
-                GlanceTheme {
+                EpisodiveGlanceTheme {
                     NowPlayingContent(snapshot, bitmap)
                 }
             }
-
-            val deltaMs = SystemClock.uptimeMillis() - startMs
-            Log.d(PERF_TAG, "render snapshot=${snapshot != null} bitmap=${bitmap != null} deltaMs=$deltaMs")
         }
     }
 
