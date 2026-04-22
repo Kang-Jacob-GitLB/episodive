@@ -217,6 +217,37 @@ class MyDaoTest {
 
 **규칙:** 항상 테스트 데이터 팩토리 사용. Flow 테스트는 Turbine 사용. 인라인 테스트 객체 생성 금지.
 
+## CLI 도구 사용 가이드
+
+Android 관련 작업은 **`android` (Antigravity CLI, `/usr/local/bin/android`) 를 우선 사용**한다. low-level QEMU/SDK 옵션이 필요할 때만 native `emulator`/`adb`/`sdkmanager` 로 폴백.
+
+### 매핑 (선호 → 폴백)
+| 작업 | 우선 (`android`) | 폴백 (native) |
+|:----|:----|:----|
+| AVD 목록 | `android emulator list` | `emulator -list-avds` |
+| 에뮬 부팅 (준비 완료까지 대기 포함) | `android emulator start <AVD>` | `emulator -avd <AVD> [flags...] &` |
+| 에뮬 종료 | `android emulator stop <AVD>` | `adb emu kill` |
+| AVD 생성/삭제 | `android emulator create` / `remove` | `avdmanager create/delete avd` |
+| APK 배포·실행 | `android run --apks app.apk --activity=...` | `adb install -r app.apk && adb shell am start ...` |
+| 스크린샷 | `android screen capture -o /tmp/x.png` | `adb exec-out screencap -p > /tmp/x.png` |
+| UI 트리 inspect (스크린샷보다 빠름) | `android layout -p` | `adb shell uiautomator dump` |
+| SDK 패키지 관리 | `android sdk install/list/update` | `sdkmanager` |
+| 환경 정보 | `android info` | `echo $ANDROID_HOME` |
+| 공식 문서 검색 | `android docs search <keyword>` | (수동 web 검색) |
+
+### native 만 가능한 케이스 (폴백 필수)
+- 에뮬 audio/gpu/cpu/memory 등 QEMU 옵션 (`-no-audio`, `-gpu host`, `-cores`, `-memory`)
+- `-no-snapshot-load` 등 부팅 모드 세부 제어
+- `adb shell` 직접 명령 (`am broadcast`, `dumpsys`, `appwidget grantbind`, `settings put`, `input keyevent` 등)
+- `adb logcat` 스트리밍/필터
+- WorkManager/MediaSession 같은 시스템 서비스 dumpsys
+
+### 일반 원칙
+1. 일반 부팅·배포·스크린샷은 `android` 사용 (자동 대기 + 안전한 default)
+2. QEMU 플래그가 필요하면 그때만 `emulator -avd ...` 직접 실행
+3. ADB shell 시스템 명령은 `adb` 직접 (래퍼 없음)
+4. 에뮬을 `emulator -no-audio` 같은 플래그로 띄운 뒤에는 audio/animation 등 OS 레벨 동작 누락 가능 — 사운드/애니 검증 필요한 작업이면 `android emulator start` 로 깨끗이 부팅
+
 ## mccm:Commit Conventions
 
 - language: 한글
