@@ -130,6 +130,10 @@ class PlayerRepositoryImpl @Inject constructor(
         playerDataSource.release()
     }
 
+    override fun rehydrate(episode: Episode) {
+        playerDataSource.rehydrate(episode)
+    }
+
 
     override val nowPlaying: Flow<Episode?> = playerDataSource.nowPlaying
     override val playlist: Flow<List<Episode>> = playerDataSource.playlist

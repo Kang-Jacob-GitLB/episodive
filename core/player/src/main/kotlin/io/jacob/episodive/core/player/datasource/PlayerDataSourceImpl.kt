@@ -411,6 +411,13 @@ class PlayerDataSourceImpl @Inject constructor(
         player.removeListener(listener)
     }
 
+    override fun rehydrate(episode: Episode) {
+        // 같은 episode 면 무시 (불필요한 widget 갱신/depounce 방지).
+        if (_nowPlaying.value?.id == episode.id) return
+        _nowPlaying.value = episode
+        _isPlaying.value = player.isPlaying
+    }
+
     private val _nowPlaying = MutableStateFlow<Episode?>(null)
     override val nowPlaying: Flow<Episode?> = _nowPlaying
 

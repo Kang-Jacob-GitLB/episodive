@@ -38,6 +38,13 @@ interface PlayerRepository {
     fun clearPlayList()
     fun release()
 
+    /**
+     * process 재시작 직후 ExoPlayer 가 이전 세션을 이어 재생하지만 `_nowPlaying`
+     * StateFlow 는 null 인 상태에서, 마지막 재생 Episode 로 1회 동기화한다.
+     * `play(episode)` 와 달리 player 큐/재생 상태를 변경하지 않고 메타데이터만 hydrate.
+     */
+    fun rehydrate(episode: Episode)
+
     val nowPlaying: Flow<Episode?>
     val playlist: Flow<List<Episode>>
     val indexOfList: Flow<Int>

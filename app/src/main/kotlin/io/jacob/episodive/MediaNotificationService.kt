@@ -22,6 +22,7 @@ import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.data.widget.WidgetUpdater
 import io.jacob.episodive.core.domain.repository.PlayerRepository
+import io.jacob.episodive.core.domain.usecase.episode.GetMostRecentPlayedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.model.Episode
@@ -46,6 +47,9 @@ class MediaNotificationService : MediaSessionService() {
 
     @Inject
     lateinit var toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase
+
+    @Inject
+    lateinit var getMostRecentPlayedEpisodeUseCase: GetMostRecentPlayedEpisodeUseCase
 
     @Inject
     lateinit var widgetUpdater: WidgetUpdater
@@ -85,6 +89,12 @@ class MediaNotificationService : MediaSessionService() {
             .build()
 
         setMediaNotificationProvider(notificationProvider)
+
+        serviceScope.launch {
+            // process 재시작 후 ExoPlayer 가 이전 세션을 이어 재생하지만 _nowPlaying 은 null 인
+            // 케이스 보정: 마지막 재생 Episode 로 1회 hydrate. 같은 episode 면 내부적으로 무시됨.
+            getMostRecentPlayedEpisodeUseCase()?.let { playerRepository.rehydrate(it) }
+        }
 
         serviceScope.launch {
             getNowPlayingUseCase().collectLatest { episode ->

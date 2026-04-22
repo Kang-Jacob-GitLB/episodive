@@ -27,7 +27,8 @@ class WidgetDataReaderImpl @Inject constructor(
             podcastId = episode.feedId,
             title = episode.title,
             feedTitle = episode.feedTitle,
-            imageUrl = episode.image,
+            // 에피소드 자체 image 가 비어있으면 feed(팟캐스트) 이미지로 fallback.
+            imageUrl = episode.image.ifBlank { episode.feedImage }.ifBlank { null },
             isPlaying = isPlaying,
         )
     }
@@ -39,7 +40,7 @@ class WidgetDataReaderImpl @Inject constructor(
                 podcastId = episode.feedId,
                 title = episode.title,
                 feedTitle = episode.feedTitle,
-                imageUrl = episode.image,
+                imageUrl = episode.image.ifBlank { episode.feedImage }.ifBlank { null },
                 duration = episode.duration?.inWholeMilliseconds ?: 0L,
                 datePublished = episode.datePublished.toEpochMilliseconds(),
             )

@@ -36,6 +36,9 @@ interface PlayerDataSource {
     fun clearPlayList()
     fun release()
 
+    /** _nowPlaying / _isPlaying 을 외부 source 로 1회 동기화 (process restart hydration 용). */
+    fun rehydrate(episode: Episode)
+
     val nowPlaying: Flow<Episode?>
     val playlist: Flow<List<Episode>>
     val indexOfList: Flow<Int>
