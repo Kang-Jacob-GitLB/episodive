@@ -56,7 +56,7 @@ fun EpisodiveApp(
         if (isOffline) {
             snackbarHostState.showSnackbar(
                 message = notConnectedMessage,
-                duration = SnackbarDuration.Indefinite
+                duration = SnackbarDuration.Long
             )
         }
     }
