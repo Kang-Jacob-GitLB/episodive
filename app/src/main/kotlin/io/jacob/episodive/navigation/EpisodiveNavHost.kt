@@ -63,7 +63,7 @@ fun EpisodiveNavHost(
         )
     }
 
-    // 상태에 기대지 않으니 한 번만 만든다. 재구성마다 새 람다를 넘기면 NavDisplay 가 건너뛰지 못한다.
+    // 람다만 기억해 둔다. 탭/뒤로 판정은 스펙이 불릴 때마다 플래그를 읽어서 하므로 결과를 캐시하면 안 된다.
     val popTransitionSpec = remember(navigationState) {
         tabAwarePopTransitionSpec<NavKey> { navigationState.isTabNavigation }
     }

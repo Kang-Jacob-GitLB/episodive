@@ -14,10 +14,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavEntryDecorator
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.ui.defaultPopTransitionSpec
 
@@ -43,22 +42,21 @@ private val BackEasing = CubicBezierEasing(0.1f, 0.1f, 0f, 1f)
  * 방법에 따라 달랐다. 가장자리 쪽으로 미는 이동은 공유 요소 전환용 수치라 넣지 않는다. 그래서
  * 어느 가장자리에서 스와이프하든 같은 모양이다.
  */
-private fun backContentTransform(): ContentTransform {
-    val fadeOutMillis = (BACK_DURATION_MILLIS * BACK_FADE_THROUGH).toInt()
-    val scaleSpec = tween<Float>(BACK_DURATION_MILLIS, easing = BackEasing)
+private fun backContentTransform(): ContentTransform = BackEnterTransition togetherWith BackExitTransition
 
-    val enter = fadeIn(
-        tween(
-            durationMillis = BACK_DURATION_MILLIS - fadeOutMillis,
-            delayMillis = fadeOutMillis,
-            easing = LinearEasing,
-        ),
-    ) + scaleIn(scaleSpec, initialScale = 1.1f)
-    val exit = fadeOut(tween(fadeOutMillis, easing = LinearEasing)) +
-        scaleOut(scaleSpec, targetScale = 0.9f)
-
-    return enter togetherWith exit
-}
+// 전환 객체는 상수라 한 번만 만든다. ContentTransform 만은 호출마다 새로 만든다 — navigation3 가
+// 받아서 zIndex 를 고쳐 쓴다.
+private val BackFadeOutMillis = (BACK_DURATION_MILLIS * BACK_FADE_THROUGH).toInt()
+private val BackScaleSpec = tween<Float>(BACK_DURATION_MILLIS, easing = BackEasing)
+private val BackEnterTransition = fadeIn(
+    tween(
+        durationMillis = BACK_DURATION_MILLIS - BackFadeOutMillis,
+        delayMillis = BackFadeOutMillis,
+        easing = LinearEasing,
+    ),
+) + scaleIn(BackScaleSpec, initialScale = 1.1f)
+private val BackExitTransition = fadeOut(tween(BackFadeOutMillis, easing = LinearEasing)) +
+    scaleOut(BackScaleSpec, targetScale = 0.9f)
 
 /** 제스처 뒤로가기 미리보기. 스와이프 가장자리와 무관하게 [backContentTransform] 을 쓴다. */
 fun <T : Any> predictiveBackTransitionSpec(): AnimatedContentTransitionScope<Scene<T>>.(Int) -> ContentTransform =
@@ -88,15 +86,12 @@ fun <T : Any> tabAwarePopTransitionSpec(
  * 맞춘다 — 전환 중 드러나는 뒷배경과 같아야 경계가 보이지 않는다. 이미 배경이 있는 화면은
  * 그 위에 그려지니 보이는 것이 달라지지 않는다.
  */
-@Composable
-fun <T : Any> rememberOpaqueBackgroundNavEntryDecorator(): NavEntryDecorator<T> = remember {
-    NavEntryDecorator { entry ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-        ) {
-            entry.Content()
-        }
+val OpaqueBackgroundNavEntryDecorator = NavEntryDecorator<NavKey> { entry ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        entry.Content()
     }
 }

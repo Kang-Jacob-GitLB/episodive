@@ -56,6 +56,14 @@ class EpisodiveNavigatorTest {
     }
 
     @Test
+    fun reselectingTabAtItsRoot_leavesFlagUntouched() {
+        // 스택이 바뀌지 않는 조작은 전환이 없으니 플래그를 켜지 않는다.
+        navigator.navigateToTabRoot()
+
+        assertFalse(state.isTabNavigation)
+    }
+
+    @Test
     fun openingScreenAfterTabSelection_clearsTabNavigation() {
         navigator.navigate(SearchRoute)
 
@@ -66,10 +74,11 @@ class EpisodiveNavigatorTest {
 
     @Test
     fun goingBackAfterTabSelection_isNotTabNavigation() {
+        // 검색 탭에 상세를 쌓아 두고 떠났다가 탭으로 돌아온 직후 — 플래그가 켜진 채로 상세를 닫는다.
         navigator.navigate(SearchRoute)
         navigator.navigate(PodcastRoute(42L))
-        navigator.navigateToTabRoot()
-        navigator.navigate(PodcastRoute(42L))
+        navigator.navigate(HomeRoute)
+        navigator.navigate(SearchRoute)
 
         navigator.goBack()
 
