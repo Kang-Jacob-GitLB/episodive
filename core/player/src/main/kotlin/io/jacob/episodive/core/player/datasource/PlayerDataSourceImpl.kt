@@ -23,7 +23,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
@@ -197,6 +199,17 @@ class PlayerDataSourceImpl @Inject constructor(
         override fun onCues(cueGroup: CueGroup) {
             val currentText = cueGroup.cues.firstOrNull()?.text?.toString()
             _cue.value = currentText ?: ""
+        }
+
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int,
+        ) {
+            // 사용자가 옮긴 위치만 시크로 본다. 자동 전환·무음 건너뛰기 등은 자막을 비울 이유가 없다.
+            val isSeek = reason == Player.DISCONTINUITY_REASON_SEEK ||
+                    reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT
+            if (isSeek) _seeks.tryEmit(Unit)
         }
     }
 
@@ -715,6 +728,12 @@ class PlayerDataSourceImpl @Inject constructor(
 
     private val _cue = MutableStateFlow("")
     override val cue: Flow<String> = _cue
+
+    // 시크는 "일어났다" 는 사실만 있으면 되는 일회성 신호라 StateFlow 로 두지 않는다 — 컨플레이션이
+    // 일어나도 무방하도록(구독이 느려 놓쳐도 다음 tick 이 정상 상태이므로) extraBufferCapacity 로
+    // 여유를 두고 DROP_OLDEST 로 발행 스레드(플레이어 콜백)를 절대 suspend 시키지 않는다.
+    private val _seeks = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    override val seeks: Flow<Unit> = _seeks
 
     override val spectrum: Flow<Spectrum> = spectrumMonitor?.spectrum ?: flowOf(Spectrum.Silent)
 

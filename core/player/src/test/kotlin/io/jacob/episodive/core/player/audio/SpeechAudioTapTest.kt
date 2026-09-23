@@ -2,8 +2,10 @@ package io.jacob.episodive.core.player.audio
 
 import androidx.media3.common.C
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -185,6 +187,49 @@ class SpeechAudioTapTest {
         assertNotNull(chunk)
         assertEquals(1_000, chunk!!.samples.size)
         chunk.samples.forEach { assertEquals(0.3f, it, 1e-3f) }
+    }
+
+    @Test
+    fun `Given the ring buffer overruns, When polled, Then the chunk is marked as a continuation`() {
+        tap.startCapture()
+        tap.flush(10_000, 1, C.ENCODING_PCM_16BIT)
+
+        val ringSize = 1 shl 19
+        tap.handleBuffer(mono(ringSize + 1_000) { frame -> if (frame < ringSize) 0.1f else 0.6f })
+
+        val chunk = tap.poll()
+        assertNotNull(chunk)
+        // 오디오는 끊겼어도 재생 위치는 이어지므로 화면 자막을 비울 이유가 없다 — 엔진이 이
+        // 플래그로 stream 만 새로 열고 흘러가던 줄은 확정으로 남긴다(CLAUDE.md 라이브 자막 규약).
+        assertTrue("오버런으로 끊긴 구간은 이어지는 것으로 표시돼야 한다", chunk!!.isContinuation)
+    }
+
+    @Test
+    fun `Given a flush mid-utterance, When polled, Then the new segment is not marked as a continuation`() {
+        tap.startCapture()
+        tap.flush(10_000, 1, C.ENCODING_PCM_16BIT)
+        tap.handleBuffer(mono(700, 0.1f)) // 채 못 채운 구간
+
+        // 시크·EOS·리셋으로 부르는 flush — 오디오뿐 아니라 재생 위치 자체가 끊기므로 화면을
+        // 비워야 한다.
+        tap.flush(10_000, 1, C.ENCODING_PCM_16BIT)
+        tap.handleBuffer(mono(1_000, 0.2f))
+
+        val chunk = tap.poll()
+        assertNotNull(chunk)
+        assertFalse("flush(시크·EOS)로 연 구간은 이어지는 것으로 표시되면 안 된다", chunk!!.isContinuation)
+    }
+
+    @Test
+    fun `Given a fresh startCapture, When polled, Then the segment is not marked as a continuation`() {
+        tap.startCapture()
+        // startCapture 는 기본 샘플레이트(44_100)·채널(2)로 연다 — flush 없이도 rate/10 = 4_410
+        // 표본이면 청크가 채워진다. flush 를 부르지 않았으니 channelCount 는 기본값(2) 그대로다.
+        tap.handleBuffer(frameBuffer(4_410, 2) { _, _ -> 0.2f })
+
+        val chunk = tap.poll()
+        assertNotNull(chunk)
+        assertFalse("캡처를 새로 시작한 구간은 이어지는 것으로 표시되면 안 된다", chunk!!.isContinuation)
     }
 
     @Test

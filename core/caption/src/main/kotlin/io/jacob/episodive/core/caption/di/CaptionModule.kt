@@ -1,7 +1,6 @@
 package io.jacob.episodive.core.caption.di
 
 import android.content.Context
-import android.os.SystemClock
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,7 +9,6 @@ import dagger.hilt.components.SingletonComponent
 import io.jacob.episodive.core.caption.asset.CaptionModelDownloader
 import io.jacob.episodive.core.caption.asset.CaptionModelManager
 import io.jacob.episodive.core.caption.asset.CaptionModelStore
-import io.jacob.episodive.core.caption.engine.CaptionClock
 import io.jacob.episodive.core.caption.engine.CaptionThread
 import io.jacob.episodive.core.common.ApplicationScope
 import io.jacob.episodive.core.common.Dispatcher
@@ -60,17 +58,6 @@ object CaptionModule {
         Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable, "CaptionRecognition").apply { isDaemon = true }
         }.asCoroutineDispatcher()
-
-    /**
-     * `System.currentTimeMillis()` 대신 단조 시계를 쓴다. [CaptionPresenter][io.jacob.episodive.core.caption.engine.CaptionPresenter]
-     * 는 이 값을 "확정 줄을 띄운 뒤 얼마나 지났는지" 를 재는 데만 쓰고 어디에도 저장하거나
-     * 벽시계와 비교하지 않는다 — 그런 상대 시간 측정에는 사용자가 시계를 바꾸거나 NTP 로
-     * 보정되는 순간 시간이 거꾸로 흐를 수 있는 `currentTimeMillis` 보다 `elapsedRealtime` 이
-     * 맞다(재생 위치 저장처럼 다른 값과 비교·영속하는 값이 아니므로 부팅 이후로만 유효해도
-     * 무방하다).
-     */
-    @Provides
-    fun provideCaptionClock(): CaptionClock = CaptionClock { SystemClock.elapsedRealtime() }
 
     @Provides
     @Singleton

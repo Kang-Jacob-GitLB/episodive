@@ -21,9 +21,13 @@ interface SpeechPcmSource {
  *
  * @param segment 구간 식별자. 시크·EOS·오버런 등으로 구간이 바뀌면 증가한다.
  * @param sampleRateHz [samples] 의 샘플레이트.
+ * @param isContinuation 이 구간이 **오버런**(리더가 못 따라와 링이 넘침)으로 끊긴 것이면 true.
+ * 오디오는 끊겼어도 재생 위치는 이어지므로, 화면의 자막을 비울 이유는 없다. 시크·EOS·리셋
+ * (flush)이나 캡처 시작으로 열린 구간은 false.
  */
 class PcmChunk(
     val segment: Int,
     val sampleRateHz: Int,
     val samples: FloatArray,
+    val isContinuation: Boolean = false,
 )

@@ -2,6 +2,7 @@ package io.jacob.episodive.core.caption.engine
 
 import io.jacob.episodive.core.caption.asset.InstalledCaptionModel
 import io.jacob.episodive.core.caption.text.CaptionLineTracker
+import io.jacob.episodive.core.model.caption.CaptionLine
 import io.jacob.episodive.core.model.caption.CaptionSession
 import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.player.audio.SpeechPcmSource
@@ -33,7 +34,6 @@ class LiveCaptionEngine @Inject constructor(
     private val translators: CaptionTranslatorFactory,
     private val deviceLanguage: DeviceLanguageProvider,
     @CaptionThread private val dispatcher: CoroutineDispatcher,
-    private val clock: CaptionClock,
 ) {
     fun session(episodeId: Long, model: InstalledCaptionModel): Flow<CaptionSession> = channelFlow {
         pcm.startCapture()
@@ -72,7 +72,7 @@ class LiveCaptionEngine @Inject constructor(
                 translator?.let { t -> launch { t.prepare() } }
 
                 val tracker = CaptionLineTracker(model.language, model.maxLineChars)
-                val presenter = CaptionPresenter(clock)
+                val presenter = CaptionPresenter(episodeId, isTranslating = translator != null)
                 var stream: RecognitionStream? = null
                 var currentSegment: Int? = null
                 var lastSent: LiveCaption? = null
@@ -83,19 +83,16 @@ class LiveCaptionEngine @Inject constructor(
                     send(CaptionSession.Running(caption))
                 }
 
-                suspend fun translateAndPublish(line: LiveCaption) {
+                suspend fun translateAndPublish(line: CaptionLine) {
                     val t = translator ?: return
                     val translated = t.translate(line.text) ?: return
-                    publish(presenter.onTranslation(line.lineId, translated))
+                    publish(presenter.onTranslation(line.id, translated))
                 }
 
                 try {
                     while (isActive) {
                         val chunk = pcm.poll()
                         if (chunk == null) {
-                            // 청크가 없어도 확정 줄 유지 시간이 흐르는 중일 수 있다 — 시간이
-                            // 지났으면 보류해 둔 partial 을 여기서도 화면에 반영한다.
-                            publish(presenter.tick())
                             delay(PollDelayMillis)
                             continue
                         }
@@ -108,8 +105,17 @@ class LiveCaptionEngine @Inject constructor(
                             stream = activeRecognizer.createStream(chunk.sampleRateHz)
                             currentSegment = chunk.segment
                             tracker.reset()
-                            presenter.clear()
-                            publish(null)
+                            if (chunk.isContinuation) {
+                                // 오버런 — 오디오만 끊겼고 재생 위치는 이어진다. 화면을 비우면 커버
+                                // 전체가 페이드아웃했다 다시 차므로, 흘러가던 줄만 확정으로 남긴다.
+                                presenter.finalizePartial()?.let { line ->
+                                    publish(presenter.current())
+                                    launch { translateAndPublish(line) }
+                                }
+                            } else {
+                                presenter.clear()
+                                publish(null)
+                            }
                         }
                         val activeStream = stream ?: continue
 
@@ -117,22 +123,20 @@ class LiveCaptionEngine @Inject constructor(
                         activeStream.decodeAvailable()
 
                         val tokens = activeStream.tokens()
-                        val update = tracker.onTokens(episodeId, tokens)
+                        val update = tracker.onTokens(tokens)
                         update.finalized?.let { line ->
                             presenter.onFinalized(line)
                             launch { translateAndPublish(line) }
                         }
-                        presenter.onPartial(update.partial)
-                        publish(presenter.tick())
+                        publish(presenter.onPartial(update.partial))
 
                         if (activeStream.isEndpoint()) {
-                            val finalLine = tracker.onEndpoint(episodeId, tokens)
+                            val finalLine = tracker.onEndpoint(tokens)
                             if (finalLine != null) {
-                                presenter.onFinalized(finalLine)
+                                publish(presenter.onFinalized(finalLine))
                                 launch { translateAndPublish(finalLine) }
                             }
                             activeStream.resetUtterance()
-                            publish(presenter.tick())
                         }
                     }
                 } finally {

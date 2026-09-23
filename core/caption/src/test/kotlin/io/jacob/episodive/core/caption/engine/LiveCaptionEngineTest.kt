@@ -5,6 +5,7 @@ import io.jacob.episodive.core.model.caption.CaptionLanguage
 import io.jacob.episodive.core.model.caption.CaptionSession
 import io.jacob.episodive.core.player.audio.PcmChunk
 import io.jacob.episodive.core.player.audio.SpeechPcmSource
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -12,7 +13,6 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -57,8 +57,8 @@ class LiveCaptionEngineTest {
         }
     }
 
-    private fun chunk(segment: Int, rateHz: Int = 16_000, size: Int = 10) =
-        PcmChunk(segment = segment, sampleRateHz = rateHz, samples = FloatArray(size))
+    private fun chunk(segment: Int, rateHz: Int = 16_000, size: Int = 10, isContinuation: Boolean = false) =
+        PcmChunk(segment = segment, sampleRateHz = rateHz, samples = FloatArray(size), isContinuation = isContinuation)
 
     @Test
     fun `a segment change closes the previous stream and opens a new one, one rate per stream`() = runTest {
@@ -68,7 +68,7 @@ class LiveCaptionEngineTest {
         val recognizers = RecognizerCache(factory, dispatcher)
         val engine = LiveCaptionEngine(
             pcm, recognizers, FakeCaptionTranslatorFactory(null), DeviceLanguageProvider { "en" }, dispatcher,
-        ) { testScheduler.currentTime }
+        )
 
         val results = mutableListOf<CaptionSession>()
         backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
@@ -103,7 +103,7 @@ class LiveCaptionEngineTest {
         val translator = FakeCaptionTranslator(result = "안녕.")
         val engine = LiveCaptionEngine(
             pcm, recognizers, FakeCaptionTranslatorFactory(translator), DeviceLanguageProvider { "ko" }, dispatcher,
-        ) { testScheduler.currentTime }
+        )
 
         val results = mutableListOf<CaptionSession>()
         backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
@@ -120,10 +120,219 @@ class LiveCaptionEngineTest {
         assertTrue(translator.prepareCalled)
         assertEquals(listOf("Hello"), translator.translatedTexts)
         val running = results.filterIsInstance<CaptionSession.Running>().mapNotNull { it.caption }
-        val translated = running.lastOrNull { it.translation != null }
-        assertEquals("Hello", translated?.text)
-        assertEquals("안녕.", translated?.translation)
-        assertTrue("endpoint 는 확정 줄이어야 한다", translated?.isFinal == true)
+        val translated = running.lastOrNull { it.translations.isNotEmpty() }
+        assertEquals("Hello", translated?.lines?.lastOrNull()?.text)
+        assertEquals("안녕.", translated?.translations?.lastOrNull()?.text)
+        assertTrue("endpoint 는 확정 줄이어야 한다", translated?.lines?.lastOrNull()?.isFinal == true)
+    }
+
+    @Test
+    fun `a translation survives past a following finalized line until the next translation arrives`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val pcm = FakeSpeechPcmSource()
+        val factory = FakeEngineRecognizerFactory()
+        val recognizers = RecognizerCache(factory, dispatcher)
+        val translator = FakeCaptionTranslator(result = "안녕.")
+        val engine = LiveCaptionEngine(
+            pcm, recognizers, FakeCaptionTranslatorFactory(translator), DeviceLanguageProvider { "ko" }, dispatcher,
+        )
+
+        val results = mutableListOf<CaptionSession>()
+        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        pump()
+
+        pcm.enqueue(chunk(segment = 1))
+        pump()
+        val stream = factory.created.single().createdStreams.single()
+        stream.tokens = listOf(" hello")
+        stream.endpoint = true
+        pcm.enqueue(chunk(segment = 1))
+        pump(steps = 3)
+
+        val running = results.filterIsInstance<CaptionSession.Running>().mapNotNull { it.caption }
+        assertEquals("안녕.", running.last().translations.lastOrNull()?.text)
+
+        // 다음 발화가 partial 로 흘러가는 동안(아직 번역이 오지 않았다) 이전 번역이 사라지면 안 된다.
+        stream.tokens = listOf(" world")
+        pcm.enqueue(chunk(segment = 1))
+        pump(steps = 3)
+
+        val afterNextPartial = results.filterIsInstance<CaptionSession.Running>().mapNotNull { it.caption }.last()
+        assertEquals(
+            "이전 발화의 번역을 다음 번역이 올 때까지 유지해야 한다",
+            "안녕.",
+            afterNextPartial.translations.lastOrNull()?.text,
+        )
+    }
+
+    @Test
+    fun `a segment change clears both the lines and the translation`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val pcm = FakeSpeechPcmSource()
+        val factory = FakeEngineRecognizerFactory()
+        val recognizers = RecognizerCache(factory, dispatcher)
+        val translator = FakeCaptionTranslator(result = "안녕.")
+        val engine = LiveCaptionEngine(
+            pcm, recognizers, FakeCaptionTranslatorFactory(translator), DeviceLanguageProvider { "ko" }, dispatcher,
+        )
+
+        val results = mutableListOf<CaptionSession>()
+        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        pump()
+
+        pcm.enqueue(chunk(segment = 1))
+        pump()
+        val stream = factory.created.single().createdStreams.single()
+        stream.tokens = listOf(" hello")
+        stream.endpoint = true
+        pcm.enqueue(chunk(segment = 1))
+        pump(steps = 3)
+
+        val beforeSegmentChange = results.filterIsInstance<CaptionSession.Running>().mapNotNull { it.caption }
+        assertTrue(beforeSegmentChange.isNotEmpty())
+        val countBeforeSegmentChange = results.size
+
+        // 구간(시크)이 바뀐다 — clear() 직후 화면을 null 로 한 번 비운 뒤, 같은 청크로 새 스트림의
+        // (비어 있는) partial 을 이어 처리한다 — 그 partial·번역에는 이전 발화의 흔적이 없어야 한다.
+        pcm.enqueue(chunk(segment = 2))
+        pump()
+
+        val afterSegmentChange = results.drop(countBeforeSegmentChange).filterIsInstance<CaptionSession.Running>()
+        assertEquals("구간이 바뀌면 먼저 null 로 화면을 비워야 한다", null, afterSegmentChange.first().caption)
+        val latestCaption = afterSegmentChange.last().caption
+        assertEquals(
+            "새 구간의 번역이 이전 발화의 번역을 이어받으면 안 된다",
+            emptyList<Any>(),
+            latestCaption?.translations.orEmpty(),
+        )
+        assertTrue(
+            "새 구간의 줄에 이전 발화(hello)의 텍스트가 남아 있으면 안 된다",
+            latestCaption?.lines.orEmpty().none { it.text.contains("hello", ignoreCase = true) },
+        )
+    }
+
+    @Test
+    fun `an overrun segment change keeps the in-flight partial and finalizes it instead of clearing`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val pcm = FakeSpeechPcmSource()
+        val factory = FakeEngineRecognizerFactory()
+        val recognizers = RecognizerCache(factory, dispatcher)
+        val translator = FakeCaptionTranslator(result = "안녕.")
+        val engine = LiveCaptionEngine(
+            pcm, recognizers, FakeCaptionTranslatorFactory(translator), DeviceLanguageProvider { "ko" }, dispatcher,
+        )
+
+        val results = mutableListOf<CaptionSession>()
+        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        pump()
+
+        pcm.enqueue(chunk(segment = 1))
+        pump()
+        val stream = factory.created.single().createdStreams.single()
+        stream.tokens = listOf(" hello") // endpoint 를 세우지 않는다 — 아직 흘러가는 partial 이다.
+        pcm.enqueue(chunk(segment = 1))
+        pump()
+
+        val beforeOverrun = results.filterIsInstance<CaptionSession.Running>().mapNotNull { it.caption }.last()
+        assertEquals("Hello", beforeOverrun.lines.lastOrNull()?.text)
+        assertFalse("오버런 전에는 아직 확정되지 않은 partial 이어야 한다", beforeOverrun.lines.lastOrNull()?.isFinal == true)
+
+        // 오버런(PcmChunk.isContinuation=true) — 오디오만 끊겼고 재생 위치는 이어진다.
+        pcm.enqueue(chunk(segment = 2, isContinuation = true))
+        pump(steps = 3)
+
+        val recognizer = factory.created.single()
+        assertEquals("구간이 바뀌면 새 스트림을 열어야 한다", 2, recognizer.createdStreams.size)
+        assertTrue("이전 스트림은 닫아야 한다", recognizer.createdStreams[0].closed)
+
+        val afterOverrun = results.filterIsInstance<CaptionSession.Running>().mapNotNull { it.caption }.last()
+        assertEquals(
+            "흘러가던 줄이 사라지지 않고 그대로 화면에 남아야 한다",
+            "Hello",
+            afterOverrun.lines.lastOrNull()?.text,
+        )
+        assertTrue("오버런으로 확정된 줄이어야 한다", afterOverrun.lines.lastOrNull()?.isFinal == true)
+        assertEquals("확정된 줄도 번역해야 한다", listOf("Hello"), translator.translatedTexts)
+        assertEquals("안녕.", afterOverrun.translations.lastOrNull()?.text)
+    }
+
+    @Test
+    fun `a non-continuation segment change (seek or EOS) clears the in-flight partial instead of finalizing it`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val pcm = FakeSpeechPcmSource()
+            val factory = FakeEngineRecognizerFactory()
+            val recognizers = RecognizerCache(factory, dispatcher)
+            val translator = FakeCaptionTranslator(result = "안녕.")
+            val engine = LiveCaptionEngine(
+                pcm, recognizers, FakeCaptionTranslatorFactory(translator), DeviceLanguageProvider { "ko" }, dispatcher,
+            )
+
+            val results = mutableListOf<CaptionSession>()
+            backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+            pump()
+
+            pcm.enqueue(chunk(segment = 1))
+            pump()
+            val stream = factory.created.single().createdStreams.single()
+            stream.tokens = listOf(" hello") // 여전히 partial 상태
+            pcm.enqueue(chunk(segment = 1))
+            pump()
+
+            // 시크·EOS(isContinuation=false) — 재생 위치 자체가 끊기므로 화면을 비워야 한다.
+            pcm.enqueue(chunk(segment = 2, isContinuation = false))
+            pump(steps = 3)
+
+            val running = results.filterIsInstance<CaptionSession.Running>()
+            assertEquals("구간이 바뀌면 화면을 null 로 비워야 한다", null, running.last().caption)
+            assertTrue(
+                "시크·EOS 로 끊긴 partial 은 확정·번역 대상이 아니다",
+                translator.translatedTexts.isEmpty(),
+            )
+        }
+
+    @Test
+    fun `a translation still in flight when the segment changes is dropped`() = runTest {
+        // 엔진의 번역은 collectTranslatedCues(VTT 경로)와 달리 collectLatest 가 아니라 launch 로
+        // 띄운다 — 구간이 바뀌어도 그 자체로는 취소되지 않는다. 대신 presenter.clear() 가 남기는
+        // 번역 하한이, 뒤늦게 도착한 지난 구간의 번역을 새 구간 밑에 붙지 못하게 막아야 한다.
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val pcm = FakeSpeechPcmSource()
+        val factory = FakeEngineRecognizerFactory()
+        val recognizers = RecognizerCache(factory, dispatcher)
+        val translationStarted = CompletableDeferred<Unit>()
+        val releaseTranslation = CompletableDeferred<Unit>()
+        val translator = GatedCaptionTranslator(translationStarted, releaseTranslation, result = "안녕.")
+        val engine = LiveCaptionEngine(
+            pcm, recognizers, FakeCaptionTranslatorFactory(translator), DeviceLanguageProvider { "ko" }, dispatcher,
+        )
+
+        val results = mutableListOf<CaptionSession>()
+        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        pump()
+
+        pcm.enqueue(chunk(segment = 1))
+        pump()
+        val stream = factory.created.single().createdStreams.single()
+        stream.tokens = listOf(" hello")
+        stream.endpoint = true
+        pcm.enqueue(chunk(segment = 1))
+        pump(steps = 3)
+        translationStarted.await()
+
+        // 구간(시크)이 바뀐다 — 번역은 아직 끝나지 않았다.
+        pcm.enqueue(chunk(segment = 2))
+        pump()
+
+        // 이제야 지난 구간의 번역이 도착한다.
+        releaseTranslation.complete(Unit)
+        pump(steps = 3)
+
+        val latestCaption = results.filterIsInstance<CaptionSession.Running>().mapNotNull { it.caption }.last()
+        assertTrue(
+            "시크 전 발화의 번역이 시크 뒤에 도착해도 새 구간 밑에 붙으면 안 된다",
+            latestCaption.translations.isEmpty(),
+        )
     }
 
     @Test
@@ -135,7 +344,7 @@ class LiveCaptionEngineTest {
         val translatorFactory = FakeCaptionTranslatorFactory(FakeCaptionTranslator("이 값은 나오면 안 된다"))
         val engine = LiveCaptionEngine(
             pcm, recognizers, translatorFactory, DeviceLanguageProvider { "en" }, dispatcher,
-        ) { testScheduler.currentTime }
+        )
 
         val results = mutableListOf<CaptionSession>()
         backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
@@ -156,7 +365,7 @@ class LiveCaptionEngineTest {
         )
         val running = results.filterIsInstance<CaptionSession.Running>().mapNotNull { it.caption }
         assertTrue(running.isNotEmpty())
-        assertNull(running.last().translation)
+        assertTrue(running.last().translations.isEmpty())
     }
 
     @Test
@@ -167,7 +376,7 @@ class LiveCaptionEngineTest {
         val recognizers = RecognizerCache(factory, dispatcher, keepAliveMillis = 1_000)
         val engine = LiveCaptionEngine(
             pcm, recognizers, FakeCaptionTranslatorFactory(null), DeviceLanguageProvider { "en" }, dispatcher,
-        ) { testScheduler.currentTime }
+        )
 
         pcm.enqueue(chunk(segment = 1))
         val job = backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { } }
@@ -197,7 +406,7 @@ class LiveCaptionEngineTest {
         }
         val engine = LiveCaptionEngine(
             pcm, recognizers, throwingTranslatorFactory, DeviceLanguageProvider { "ko" }, dispatcher,
-        ) { testScheduler.currentTime }
+        )
 
         backgroundScope.launch(dispatcher) {
             // translators.create() 가 던지는 예외는 세션 안에서 잡지 않는다 — 여기서 삼켜
@@ -227,7 +436,7 @@ class LiveCaptionEngineTest {
         val recognizers = RecognizerCache(factory, dispatcher)
         val engine = LiveCaptionEngine(
             pcm, recognizers, FakeCaptionTranslatorFactory(null), DeviceLanguageProvider { "en" }, dispatcher,
-        ) { testScheduler.currentTime }
+        )
 
         val results = mutableListOf<CaptionSession>()
         engine.session(episodeId, model).collect { results.add(it) }
@@ -335,6 +544,23 @@ private class FakeCaptionTranslator(private val result: String?) : CaptionTransl
     override fun close() {
         closed = true
     }
+}
+
+/** `translate()` 가 [started] 를 완료해 시작을 알리고, [release] 가 완료될 때까지 매달린다. */
+private class GatedCaptionTranslator(
+    private val started: CompletableDeferred<Unit>,
+    private val release: CompletableDeferred<Unit>,
+    private val result: String?,
+) : CaptionTranslator {
+    override suspend fun prepare(): Boolean = true
+
+    override suspend fun translate(text: String): String? {
+        started.complete(Unit)
+        release.await()
+        return result
+    }
+
+    override fun close() = Unit
 }
 
 /** `sourceTag == targetTag` 면 실제 `CaptionTranslatorFactory` 계약대로 null 을 돌려준다. */

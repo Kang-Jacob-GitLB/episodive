@@ -1,7 +1,7 @@
 package io.jacob.episodive.core.caption.text
 
 import io.jacob.episodive.core.model.caption.CaptionLanguage
-import io.jacob.episodive.core.model.caption.LiveCaption
+import io.jacob.episodive.core.model.caption.CaptionLine
 
 /**
  * 발화(끝점 사이) 하나 안에서 흘러가는 토큰을 화면 줄로 쪼갠다.
@@ -30,7 +30,7 @@ class CaptionLineTracker(
      * @param finalized 이번 호출에서 줄 길이 초과로 새로 확정된 줄. 없으면 null.
      * @param partial 아직 흘러가는 나머지(확정되지 않은 부분). 빈 문자열일 수 있다.
      */
-    data class Update(val finalized: LiveCaption?, val partial: LiveCaption)
+    data class Update(val finalized: CaptionLine?, val partial: CaptionLine)
 
     /**
      * 디코드 한 번이 끝날 때마다 그 발화의 **처음부터 누적된** 토큰 전체(`stream.tokens()`)를
@@ -38,8 +38,8 @@ class CaptionLineTracker(
      * 그 안에 드는 마지막 단어 시작 토큰 앞에서 잘라 확정 줄로 내보낸다 — 단어 중간을 끊지
      * 않기 위해서다. stream 자체는 리셋하지 않는다(발화는 계속 이어진다).
      */
-    fun onTokens(episodeId: Long, tokens: List<String>): Update {
-        var finalized: LiveCaption? = null
+    fun onTokens(tokens: List<String>): Update {
+        var finalized: CaptionLine? = null
 
         val remaining = tokens.subList(committedTokenCount.coerceAtMost(tokens.size), tokens.size)
         val remainingText = normalizeRemaining(remaining)
@@ -48,16 +48,15 @@ class CaptionLineTracker(
             if (cutIndex > 0) {
                 val committedTokens = remaining.subList(0, cutIndex)
                 val text = normalize(committedTokens)
-                finalized = LiveCaption(episodeId = episodeId, lineId = lineId, text = text, isFinal = true)
+                finalized = CaptionLine(id = lineId, text = text, isFinal = true)
                 committedTokenCount += cutIndex
                 lineId++
             }
         }
 
         val stillRemaining = tokens.subList(committedTokenCount.coerceAtMost(tokens.size), tokens.size)
-        val partial = LiveCaption(
-            episodeId = episodeId,
-            lineId = lineId,
+        val partial = CaptionLine(
+            id = lineId,
             text = normalize(stillRemaining),
             isFinal = false,
         )
@@ -68,13 +67,13 @@ class CaptionLineTracker(
      * 발화가 endpoint 로 끝났다. 남은 전부를 확정 줄로 내보내고 다음 발화를 위해 리셋한다.
      * 남은 것이 없으면(빈 문자열) null.
      */
-    fun onEndpoint(episodeId: Long, tokens: List<String>): LiveCaption? {
+    fun onEndpoint(tokens: List<String>): CaptionLine? {
         val remaining = tokens.subList(committedTokenCount.coerceAtMost(tokens.size), tokens.size)
         val text = normalize(remaining)
         val result = if (text.isEmpty()) {
             null
         } else {
-            LiveCaption(episodeId = episodeId, lineId = lineId, text = text, isFinal = true)
+            CaptionLine(id = lineId, text = text, isFinal = true)
         }
         reset()
         return result

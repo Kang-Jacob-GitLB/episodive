@@ -7,18 +7,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CaptionLineTrackerTest {
-    private val episodeId = 5778530L
-
     @Test
     fun `remaining text within the limit only produces a partial line`() {
         val tracker = CaptionLineTracker(CaptionLanguage.ENGLISH, maxLineChars = 80)
 
-        val update = tracker.onTokens(episodeId, listOf(" hello", " world"))
+        val update = tracker.onTokens(listOf(" hello", " world"))
 
         assertNull(update.finalized)
         // 아직 아무것도 확정하지 않은, 이 발화의 진짜 시작이라 첫 글자가 대문자화된다.
         assertEquals("Hello world", update.partial.text)
-        assertEquals(0L, update.partial.lineId)
+        assertEquals(0L, update.partial.id)
         assertTrue(!update.partial.isFinal)
     }
 
@@ -29,13 +27,13 @@ class CaptionLineTrackerTest {
         val tracker = CaptionLineTracker(CaptionLanguage.KOREAN, maxLineChars = 10)
         val words = listOf(" 가나다", " 가나다", " 가나다", " 가나다")
 
-        val update = tracker.onTokens(episodeId, words)
+        val update = tracker.onTokens(words)
 
         assertEquals("가나다 가나다", update.finalized?.text)
         assertTrue(update.finalized!!.isFinal)
         // 확정하지 못한 나머지가 partial 로 남는다.
         assertEquals("가나다 가나다", update.partial.text)
-        assertEquals(update.finalized!!.lineId + 1, update.partial.lineId)
+        assertEquals(update.finalized!!.id + 1, update.partial.id)
     }
 
     @Test
@@ -46,7 +44,7 @@ class CaptionLineTrackerTest {
         val tracker = CaptionLineTracker(CaptionLanguage.ENGLISH, maxLineChars = 5)
         val tokens = listOf(" ab", " cd", " ", "ef", " gh")
 
-        val update = tracker.onTokens(episodeId, tokens)
+        val update = tracker.onTokens(tokens)
 
         assertEquals("Ab cd", update.finalized?.text)
         assertEquals("ef gh", update.partial.text)
@@ -56,7 +54,7 @@ class CaptionLineTrackerTest {
     fun `a single word longer than the limit is not force-cut`() {
         val tracker = CaptionLineTracker(CaptionLanguage.KOREAN, maxLineChars = 3)
 
-        val update = tracker.onTokens(episodeId, listOf(" 가나다라마"))
+        val update = tracker.onTokens(listOf(" 가나다라마"))
 
         assertNull("한 단어만으로 이미 넘으면 이번 호출에서는 자르지 않는다", update.finalized)
         assertEquals("가나다라마", update.partial.text)
@@ -65,12 +63,12 @@ class CaptionLineTrackerTest {
     @Test
     fun `already committed tokens are not re-emitted on later calls`() {
         val tracker = CaptionLineTracker(CaptionLanguage.KOREAN, maxLineChars = 10)
-        val firstCall = tracker.onTokens(episodeId, listOf(" 가나다", " 가나다", " 가나다"))
+        val firstCall = tracker.onTokens(listOf(" 가나다", " 가나다", " 가나다"))
         assertEquals("가나다 가나다", firstCall.finalized?.text)
 
         // 다음 decode 는 stream.tokens() 전체(발화 처음부터 누적)를 다시 넘긴다. 이미 확정한
         // 앞부분이 그대로 들어와도 finalized 로 다시 나오면 안 된다.
-        val secondCall = tracker.onTokens(episodeId, listOf(" 가나다", " 가나다", " 가나다", " 마"))
+        val secondCall = tracker.onTokens(listOf(" 가나다", " 가나다", " 가나다", " 마"))
 
         assertNull(secondCall.finalized)
         assertEquals("가나다 마", secondCall.partial.text)
@@ -79,9 +77,9 @@ class CaptionLineTrackerTest {
     @Test
     fun `endpoint finalizes everything remaining and resets for the next utterance`() {
         val tracker = CaptionLineTracker(CaptionLanguage.ENGLISH, maxLineChars = 80)
-        tracker.onTokens(episodeId, listOf(" hello"))
+        tracker.onTokens(listOf(" hello"))
 
-        val finalLine = tracker.onEndpoint(episodeId, listOf(" hello", " world"))
+        val finalLine = tracker.onEndpoint(listOf(" hello", " world"))
 
         // committedTokenCount 가 아직 0 이라(줄 길이 초과로 잘린 적이 없다) 이 발화의 진짜
         // 시작이라 첫 글자가 대문자화된다.
@@ -89,29 +87,29 @@ class CaptionLineTrackerTest {
         assertTrue(finalLine!!.isFinal)
 
         // 리셋됐으니 다음 발화는 다시 발화 시작(대문자화)부터 시작한다.
-        val nextUtterance = tracker.onTokens(episodeId, listOf(" next"))
+        val nextUtterance = tracker.onTokens(listOf(" next"))
         assertEquals("Next", nextUtterance.partial.text)
-        assertTrue(nextUtterance.partial.lineId > finalLine.lineId)
+        assertTrue(nextUtterance.partial.id > finalLine.id)
     }
 
     @Test
     fun `endpoint with nothing left emits no line`() {
         val tracker = CaptionLineTracker(CaptionLanguage.ENGLISH, maxLineChars = 80)
-        tracker.onTokens(episodeId, listOf(" hi"))
-        tracker.onEndpoint(episodeId, listOf(" hi"))
+        tracker.onTokens(listOf(" hi"))
+        tracker.onEndpoint(listOf(" hi"))
 
-        assertNull(tracker.onEndpoint(episodeId, emptyList()))
+        assertNull(tracker.onEndpoint(emptyList()))
     }
 
     @Test
     fun `segment reset also starts a new lineId without finalizing anything`() {
         val tracker = CaptionLineTracker(CaptionLanguage.ENGLISH, maxLineChars = 80)
-        val before = tracker.onTokens(episodeId, listOf(" partial"))
+        val before = tracker.onTokens(listOf(" partial"))
 
         tracker.reset()
-        val after = tracker.onTokens(episodeId, listOf(" fresh"))
+        val after = tracker.onTokens(listOf(" fresh"))
 
-        assertTrue(after.partial.lineId > before.partial.lineId)
+        assertTrue(after.partial.id > before.partial.id)
         assertEquals("Fresh", after.partial.text)
     }
 }

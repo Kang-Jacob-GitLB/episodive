@@ -37,6 +37,7 @@ class PlayerRepositoryTest {
         coVerify { playerDataSource.repeat }
         coVerify { playerDataSource.speed }
         coVerify { playerDataSource.cue }
+        coVerify { playerDataSource.seeks }
         coVerify { playerDataSource.spectrum }
         confirmVerified(playerDataSource)
     }

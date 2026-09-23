@@ -651,20 +651,15 @@ private fun angledGradientEndpoints(angleDegrees: Float, size: Size): Pair<Offse
 }
 
 /**
- * [PushUpCue] 한 번의 전환 대상 — 원문·번역이 함께 밀려 올라온다.
- *
- * `lineKey` 를 상태 안에 싣는 이유: `contentKey` 는 전환에 걸린 **각** 상태에 대해 불리므로
- * 그 상태 자신의 키를 돌려줘야 한다. 바깥 변수를 캡처하면 나가는 줄과 들어오는 줄이 같은
- * (현재) 키를 받아 줄이 바뀌어도 밀어올림이 일어나지 않는다.
+ * 커버 하단 자막 오버레이 — 자막 토글이 꺼져 있거나(= [liveCaption] 이 null) 라이브 자막이
+ * 없을 때(원문이 아직 비어 있을 때) 쓰는 단일 줄 표시. VTT transcript [cue] 처럼 새 텍스트가
+ * 오면 통째로 교체되는 콘텐츠에 맞다 — 최근 줄을 쌓아 보여줘야 하는 라이브 자막에는
+ * [RollingCaptionOverlay] 를 쓴다.
  */
-private data class PushUpCueContent(val title: String, val subtitle: String?, val lineKey: Any)
-
 @Composable
 fun PushUpCue(
     modifier: Modifier = Modifier,
     title: String,
-    subtitle: String? = null,
-    lineKey: Any = title,
 ) {
     val isVisible = title.isNotEmpty()
 
@@ -689,11 +684,10 @@ fun PushUpCue(
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // contentKey 를 따로 주지 않으면 targetState(title) 자신이 키가 된다 — cue 문자열이
+            // 바뀔 때만 밀어올림이 일어나고, 같은 문자열로 재구성될 때는 애니메이션이 없다.
             AnimatedContent(
-                targetState = PushUpCueContent(title, subtitle, lineKey),
-                // 같은 줄의 partial 갱신(lineKey 불변)은 contentKey 가 같아 애니메이션 없이
-                // 제자리에서 텍스트만 바뀐다. lineKey 가 바뀔 때만 밀어올림이 일어난다.
-                contentKey = { it.lineKey },
+                targetState = title,
                 transitionSpec = {
                     (slideInVertically(
                         initialOffsetY = { it }
@@ -703,46 +697,29 @@ fun PushUpCue(
                             ) + fadeOut())
                 },
                 label = "push_up"
-            ) { content ->
-                Column(
+            ) { text ->
+                Text(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 18.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = content.title,
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-
-                    if (content.subtitle != null) {
-                        Text(
-                            modifier = Modifier.padding(top = 2.dp),
-                            text = content.subtitle,
-                            color = Color.White.copy(alpha = 0.8f),
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
+                    text = text,
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
 }
 
 /**
- * 커버 하단 자막 오버레이. [liveCaption] 은 람다로만 읽어 재구성을 이 컴포저블 안에 가둔다 —
- * 값으로 풀어 상위에서 넘기면 매 단어(partial)마다 상위 트리까지 재구성된다.
+ * 커버 하단 자막 오버레이의 표시 방식을 고르는 한 자리. [liveCaption] 은 람다로만 읽어
+ * 재구성을 이 컴포저블 안에 가둔다 — 값으로 풀어 상위에서 넘기면 매 단어(partial)마다
+ * 상위 트리까지 재구성된다.
  *
- * [liveCaption] 이 있고 그 `episodeId` 가 [episodeId](= progress.episodeId)와 일치할 때만
- * 자막(원문+번역)을 그리고, 아니면 기존 transcript [cue] 를 그대로 보여준다. 두 경우 모두
- * [PushUpCue] 호출은 하나뿐이다 — if/else 로 두 번 부르면 AnimatedVisibility 상태가 리셋된다.
+ * [liveCaption] 이 있고 그 `episodeId` 가 [episodeId](= progress.episodeId)와 일치하며 원문
+ * 줄이 하나라도 있으면 [RollingCaptionOverlay] 로 커버 전체에 원문(과 번역)을 롤링하고, 그
+ * 외에는 기존 transcript [cue] 를 [PushUpCue] 로 보여준다(둘 다 비면 자연히 숨는다).
  */
 @Composable
 private fun CueOverlay(
@@ -751,14 +728,18 @@ private fun CueOverlay(
     liveCaption: () -> LiveCaption?,
     episodeId: Long?,
 ) {
-    val caption = liveCaption()
-    val matched = caption != null && caption.episodeId == episodeId
+    val caption = liveCaption()?.takeIf { it.episodeId == episodeId && it.lines.isNotEmpty() }
 
+    // 둘 다 분기 없이 늘 부른다 — if/else 로 번갈아 부르면 빠지는 쪽의 AnimatedVisibility 가
+    // 컴포지션에서 통째로 사라져 페이드아웃 없이 꺼지고, 들어오는 쪽은 visible=true 로 시작해
+    // 페이드인도 없다.
+    RollingCaptionOverlay(
+        modifier = modifier,
+        caption = caption,
+    )
     PushUpCue(
         modifier = modifier,
-        title = if (matched) caption!!.text else cue,
-        subtitle = if (matched) caption!!.translation else null,
-        lineKey = if (matched) caption!!.lineId else cue,
+        title = if (caption != null) "" else cue,
     )
 }
 

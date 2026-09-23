@@ -148,7 +148,12 @@ class SpeechAudioTap @Inject constructor() : TeeAudioProcessor.AudioBufferSink, 
             if (cursor - consumed >= RingSize) {
                 // 오버런: 리더가 못 따라왔다. 링을 덮어써 이어 붙이는 대신, 지금 지점에서
                 // 구간을 끊는다 — 중간이 빠진 오디오를 하나의 구간인 척 이어 붙이지 않는다.
-                seg = Segment(id = segmentIdGenerator.incrementAndGet(), startIndex = cursor, rateHz = rate)
+                seg = Segment(
+                    id = segmentIdGenerator.incrementAndGet(),
+                    startIndex = cursor,
+                    rateHz = rate,
+                    isContinuation = true,
+                )
                 segmentRef.set(seg)
                 consumed = cursor
             }
@@ -195,14 +200,25 @@ class SpeechAudioTap @Inject constructor() : TeeAudioProcessor.AudioBufferSink, 
         readCursor += chunkSize
         consumedCursor = readCursor
 
-        return PcmChunk(segment = seg.id, sampleRateHz = seg.rateHz, samples = out)
+        return PcmChunk(
+            segment = seg.id,
+            sampleRateHz = seg.rateHz,
+            samples = out,
+            isContinuation = seg.isContinuation,
+        )
     }
 
     /**
      * 한 구간의 시작 지점과 레이트. [AtomicReference] 한 칸으로 건너가므로 시작 지점과
      * 레이트가 어긋난 짝으로 읽히지 않는다.
      */
-    private data class Segment(val id: Int, val startIndex: Long, val rateHz: Int)
+    private data class Segment(
+        val id: Int,
+        val startIndex: Long,
+        val rateHz: Int,
+        /** 오버런으로 끊긴 구간인가. [PcmChunk.isContinuation] 참고. */
+        val isContinuation: Boolean = false,
+    )
 
     private companion object {
         /** 링버퍼 크기(표본 수). 2 의 거듭제곱이라 나눗셈 대신 마스킹으로 인덱스를 접는다. */
