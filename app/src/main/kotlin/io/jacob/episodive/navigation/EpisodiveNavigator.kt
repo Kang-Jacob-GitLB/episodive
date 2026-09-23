@@ -5,7 +5,8 @@ import androidx.navigation3.runtime.NavKey
 class EpisodiveNavigator(val state: EpisodiveNavigationState) {
 
     fun navigate(route: NavKey) {
-        if (route in state.backStacks.keys) {
+        state.isTabNavigation = route in state.backStacks.keys
+        if (state.isTabNavigation) {
             state.topLevelRoute = route
         } else {
             state.backStacks[state.topLevelRoute]?.add(route)
@@ -17,6 +18,7 @@ class EpisodiveNavigator(val state: EpisodiveNavigationState) {
             ?: error("Stack for ${state.topLevelRoute} not found")
         val currentRoute = currentStack.last()
 
+        state.isTabNavigation = false
         if (currentRoute == state.topLevelRoute) {
             state.topLevelRoute = state.startRoute
         } else {
@@ -26,6 +28,7 @@ class EpisodiveNavigator(val state: EpisodiveNavigationState) {
 
     fun navigateToTabRoot() {
         val currentStack = state.backStacks[state.topLevelRoute] ?: return
+        state.isTabNavigation = true
         while (currentStack.size > 1) {
             currentStack.removeLastOrNull()
         }

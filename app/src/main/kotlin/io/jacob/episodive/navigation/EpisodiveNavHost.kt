@@ -1,6 +1,7 @@
 package io.jacob.episodive.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -62,9 +63,17 @@ fun EpisodiveNavHost(
         )
     }
 
+    // 상태에 기대지 않으니 한 번만 만든다. 재구성마다 새 람다를 넘기면 NavDisplay 가 건너뛰지 못한다.
+    val popTransitionSpec = remember(navigationState) {
+        tabAwarePopTransitionSpec<NavKey> { navigationState.isTabNavigation }
+    }
+    val predictivePopTransitionSpec = remember { predictiveBackTransitionSpec<NavKey>() }
+
     NavDisplay(
         entries = navigationState.toDecoratedEntries(entryProvider),
         onBack = { navigator.goBack() },
+        popTransitionSpec = popTransitionSpec,
+        predictivePopTransitionSpec = predictivePopTransitionSpec,
         modifier = modifier,
     )
 }
