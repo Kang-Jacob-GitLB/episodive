@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.jacob.episodive.core.caption.text.CaptionTranslationCacheTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-09-23T07:40:29.207Z" hostname="MacBookPro" time="0.0">
+  <properties/>
+  <testcase name="miss returns null" classname="io.jacob.episodive.core.caption.text.CaptionTranslationCacheTest" time="0.0"/>
+  <testcase name="hit returns what was put" classname="io.jacob.episodive.core.caption.text.CaptionTranslationCacheTest" time="0.0"/>
+  <testcase name="reading an entry keeps it fresh against eviction" classname="io.jacob.episodive.core.caption.text.CaptionTranslationCacheTest" time="0.0"/>
+  <testcase name="oldest entry is evicted once over capacity" classname="io.jacob.episodive.core.caption.text.CaptionTranslationCacheTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

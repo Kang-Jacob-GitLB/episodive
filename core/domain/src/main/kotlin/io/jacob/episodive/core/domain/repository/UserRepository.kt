@@ -14,6 +14,7 @@ interface UserRepository {
     suspend fun toggleCategory(category: Category): Boolean
     fun getCategories(): Flow<List<Category>>
     suspend fun setSpeed(speed: Float)
+    suspend fun setCaptionEnabled(enabled: Boolean)
     fun getUserData(): Flow<UserData>
     suspend fun saveLastPlayState(episodeId: Long, index: Int, positionMs: Long, shuffle: Boolean, repeat: Repeat)
     suspend fun getLastPlayState(): LastPlayState?

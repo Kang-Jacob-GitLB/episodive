@@ -10,6 +10,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.caption)
     implementation(projects.core.common)
     implementation(projects.core.database)
     implementation(projects.core.datastore)

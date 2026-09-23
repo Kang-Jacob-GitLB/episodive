@@ -21,18 +21,35 @@ import dagger.hilt.components.SingletonComponent
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.player.audio.PlaybackSpectrumMonitor
+import io.jacob.episodive.core.player.audio.SpeechAudioTap
+import io.jacob.episodive.core.player.audio.SpeechPcmSource
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object PlayerModule {
+    /**
+     * `:core:caption` 은 구체 타입이 아니라 [SpeechPcmSource] 인터페이스만 알아야 한다.
+     * 아래 [provideMainExoPlayer] 가 붙이는 것과 **같은 인스턴스**를 돌려줘야 캡처가 실제로
+     * Main 플레이어의 오디오에 연결된다 — [SpeechAudioTap] 이 `@Singleton` 이라 Hilt 가
+     * 주입하는 인스턴스는 어디서 받든 항상 하나다.
+     */
+    @Provides
+    @Singleton
+    fun provideSpeechPcmSource(speechAudioTap: SpeechAudioTap): SpeechPcmSource = speechAudioTap
+
+    /**
+     * Main 플레이어에는 라이브 자막(STT)이 먹을 PCM 을 엿듣는 [SpeechAudioTap] 을 붙인다.
+     * 전체 에피소드를 듣는 화면이 Main 뿐이라 자막도 여기서만 필요하다.
+     */
     @Provides
     @Singleton
     @Player(EpisodivePlayers.Main)
     fun provideMainExoPlayer(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        speechAudioTap: SpeechAudioTap,
     ): ExoPlayer {
-        return createExoPlayer(context)
+        return createExoPlayer(context, speechAudioTap)
     }
 
     /**
@@ -52,7 +69,7 @@ object PlayerModule {
     @OptIn(UnstableApi::class)
     private fun createExoPlayer(
         context: Context,
-        spectrumSink: TeeAudioProcessor.AudioBufferSink? = null,
+        audioSink: TeeAudioProcessor.AudioBufferSink? = null,
     ): ExoPlayer {
         val audioAttributes = AudioAttributes.Builder()
             .setUsage(C.USAGE_MEDIA)
@@ -72,7 +89,7 @@ object PlayerModule {
             .setSeekBackIncrementMs(15_000L)
             .setSeekForwardIncrementMs(30_000L)
             .apply {
-                spectrumSink?.let { setRenderersFactory(tappedRenderersFactory(context, it)) }
+                audioSink?.let { setRenderersFactory(tappedRenderersFactory(context, it)) }
             }
             .build()
     }

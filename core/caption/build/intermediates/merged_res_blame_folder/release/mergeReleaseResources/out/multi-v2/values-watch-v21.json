@@ -1,0 +1,36 @@
+{
+    "logs": [
+        {
+            "outputFile": "io.jacob.episodive.core.caption-mergeReleaseResources-22:/values-watch-v21/values-watch-v21.xml",
+            "map": [
+                {
+                    "source": "/Users/minkyu/.gradle/caches/9.2.1/transforms/dd0a462e1bed2ba881fa87c4344ba8d0/transformed/appcompat-1.6.1/res/values-watch-v21/values-watch-v21.xml",
+                    "from": {
+                        "startLines": "2,6,10",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,271,499",
+                        "endLines": "5,9,13",
+                        "endColumns": "12,12,12",
+                        "endOffsets": "266,494,724"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "io.jacob.episodive.core.caption-release-24:/values-watch-v21/values-watch-v21.xml",
+            "map": [
+                {
+                    "source": "/Users/minkyu/.gradle/caches/9.2.1/transforms/dd0a462e1bed2ba881fa87c4344ba8d0/transformed/appcompat-1.6.1/res/values-watch-v21/values-watch-v21.xml",
+                    "from": {
+                        "startLines": "2,6,10",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,271,499",
+                        "endLines": "5,9,13",
+                        "endColumns": "12,12,12",
+                        "endOffsets": "266,494,724"
+                    }
+                }
+            ]
+        }
+    ]
+}

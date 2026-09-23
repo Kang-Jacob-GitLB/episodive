@@ -9,6 +9,7 @@ fun UserPreferences.toUserData(): UserData =
         language = language,
         categories = categories,
         speed = speed,
+        isCaptionEnabled = isCaptionEnabled,
     )
 
 fun UserData.toUserPreferences(): UserPreferences =
@@ -17,4 +18,5 @@ fun UserData.toUserPreferences(): UserPreferences =
         language = language,
         categories = categories,
         speed = speed,
+        isCaptionEnabled = isCaptionEnabled,
     )

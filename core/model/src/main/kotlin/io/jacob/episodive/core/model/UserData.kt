@@ -7,4 +7,5 @@ data class UserData(
     val language: String = Locale.getDefault().language,
     val categories: List<Category> = emptyList(),
     val speed: Float = 1f,
+    val isCaptionEnabled: Boolean = false,
 )

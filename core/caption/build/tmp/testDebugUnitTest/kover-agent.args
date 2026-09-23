@@ -1,0 +1,4 @@
+report.file=/Users/minkyu/project/Episodive/.claude/worktrees/live-captions/core/caption/build/kover/bin-reports/testDebugUnitTest.ic
+exclude=android.*
+exclude=com.android.*
+exclude=jdk.internal.*

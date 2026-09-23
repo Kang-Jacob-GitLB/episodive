@@ -17,6 +17,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://jitpack.io") {
+            content {
+                includeGroup("com.github.k2-fsa.sherpa-onnx")
+            }
+        }
     }
 }
 
@@ -24,6 +29,7 @@ rootProject.name = "Episodive"
 
 include(":app")
 
+include(":core:caption")
 include(":core:common")
 include(":core:data")
 include(":core:database")

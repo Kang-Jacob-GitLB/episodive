@@ -13,6 +13,7 @@ interface UserPreferencesDataSource {
     suspend fun removeCategory(category: Category)
     fun getCategories(): Flow<List<Category>>
     suspend fun setSpeed(speed: Float)
+    suspend fun setCaptionEnabled(enabled: Boolean)
     fun getUserPreferences(): Flow<UserPreferences>
     suspend fun saveLastPlayState(episodeId: Long, index: Int, positionMs: Long, shuffle: Boolean, repeat: Repeat)
     suspend fun getLastPlayState(): LastPlayState?

@@ -35,6 +35,10 @@ class UserPreferencesDataSourceImpl @Inject constructor(
         store.setSpeed(speed)
     }
 
+    override suspend fun setCaptionEnabled(enabled: Boolean) {
+        store.setCaptionEnabled(enabled)
+    }
+
     override fun getUserPreferences(): Flow<UserPreferences> {
         return store.getUserPreferences()
     }

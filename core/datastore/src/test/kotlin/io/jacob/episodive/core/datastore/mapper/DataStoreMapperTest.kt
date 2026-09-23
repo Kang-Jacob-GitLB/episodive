@@ -21,6 +21,7 @@ class DataStoreMapperTest {
             language = "en-US",
             categories = listOf(Category.ARTS, Category.BUSINESS, Category.COMEDY),
             speed = 1f,
+            isCaptionEnabled = false,
         )
 
         // When
@@ -35,6 +36,25 @@ class DataStoreMapperTest {
         assertEquals(Category.BUSINESS, userData.categories[1])
         assertEquals(Category.COMEDY, userData.categories[2])
         assertEquals(1f, userData.speed)
+        assertEquals(userPreferences.isCaptionEnabled, userData.isCaptionEnabled)
+    }
+
+    @Test
+    fun `toUserData converts isCaptionEnabled true correctly`() {
+        // Given
+        val userPreferences = UserPreferences(
+            isFirstLaunch = false,
+            language = "en-US",
+            categories = emptyList(),
+            speed = 1f,
+            isCaptionEnabled = true,
+        )
+
+        // When
+        val userData = userPreferences.toUserData()
+
+        // Then
+        assertEquals(true, userData.isCaptionEnabled)
     }
 
     @Test
@@ -45,6 +65,7 @@ class DataStoreMapperTest {
             language = "ko-KR",
             categories = listOf(Category.NEWS, Category.EDUCATION, Category.TECHNOLOGY),
             speed = 1f,
+            isCaptionEnabled = true,
         )
 
         // When
@@ -54,6 +75,7 @@ class DataStoreMapperTest {
         assertEquals(userData.isFirstLaunch, userPreferences.isFirstLaunch)
         assertEquals(userData.language, userPreferences.language)
         assertEquals(userData.categories, userPreferences.categories)
+        assertEquals(userData.isCaptionEnabled, userPreferences.isCaptionEnabled)
         assertEquals(3, userPreferences.categories.size)
         assertEquals(Category.NEWS, userPreferences.categories[0])
         assertEquals(Category.EDUCATION, userPreferences.categories[1])
@@ -69,6 +91,7 @@ class DataStoreMapperTest {
             language = "fr-FR",
             categories = emptyList(),
             speed = 1f,
+            isCaptionEnabled = false,
         )
 
         // When
@@ -185,6 +208,7 @@ class DataStoreMapperTest {
                 Category.SOCIAL
             ),
             speed = 1f,
+            isCaptionEnabled = false,
         )
 
         // When

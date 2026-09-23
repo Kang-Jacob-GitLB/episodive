@@ -25,10 +25,29 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
+      # app/build.gradle.kts 의 ABI split 이 app-<abi>-release(-unsigned).apk 를 ABI 마다 하나씩
+      # 만든다. 릴리즈 자산에서 어떤 기기용인지 바로 보이도록 이름에 버전과 ABI 를 싣는다.
+      - name: Rename APKs by ABI
+        run: |
+          mkdir -p dist
+          for apk in app/build/outputs/apk/release/*.apk; do
+            name=$(basename "$apk" .apk)
+            abi=${name#app-}
+            abi=${abi%-release*}
+            cp "$apk" "dist/episodive-${RELEASE_VERSION}-${abi}.apk"
+          done
+          ls -la dist
+          test "$(ls dist/*.apk | wc -l)" -eq 4
+
       - name: Publish APK
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           name: v${{ env.RELEASE_VERSION }}
           generate_release_notes: true
-          files: app/build/outputs/apk/release/*.apk
+          body: |
+            기기 CPU 에 맞는 APK 하나를 받으세요.
+            - `arm64-v8a` — 대부분의 최신 안드로이드 폰
+            - `armeabi-v7a` — 오래된 32비트 폰
+            - `x86_64` / `x86` — 에뮬레이터·일부 태블릿
+          files: dist/*.apk

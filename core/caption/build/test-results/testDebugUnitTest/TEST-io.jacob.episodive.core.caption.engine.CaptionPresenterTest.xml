@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.jacob.episodive.core.caption.engine.CaptionPresenterTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-09-23T07:40:29.131Z" hostname="MacBookPro" time="0.001">
+  <properties/>
+  <testcase name="a held partial surfaces once the hold window expires" classname="io.jacob.episodive.core.caption.engine.CaptionPresenterTest" time="0.0"/>
+  <testcase name="a finalized line replaces the screen immediately" classname="io.jacob.episodive.core.caption.engine.CaptionPresenterTest" time="0.0"/>
+  <testcase name="a partial after the hold window expires is shown right away" classname="io.jacob.episodive.core.caption.engine.CaptionPresenterTest" time="0.0"/>
+  <testcase name="a translation for a line that already scrolled past is discarded" classname="io.jacob.episodive.core.caption.engine.CaptionPresenterTest" time="0.001"/>
+  <testcase name="clear wipes the screen for a segment change" classname="io.jacob.episodive.core.caption.engine.CaptionPresenterTest" time="0.0"/>
+  <testcase name="partials arriving during the hold window are held back" classname="io.jacob.episodive.core.caption.engine.CaptionPresenterTest" time="0.0"/>
+  <testcase name="translation for the currently displayed line is attached" classname="io.jacob.episodive.core.caption.engine.CaptionPresenterTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

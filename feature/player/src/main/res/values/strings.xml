@@ -16,4 +16,13 @@
     <string name="feature_player_sleep_timer_requires_playback">Play an episode first to set a sleep timer</string>
     <string name="feature_player_playlist_title">Playlist</string>
     <string name="feature_player_playlist_queue_count">%d queued</string>
+    <string name="feature_player_caption_turn_on">Turn on captions</string>
+    <string name="feature_player_caption_turn_off">Turn off captions</string>
+    <string name="feature_player_caption_downloading">Downloading caption model</string>
+    <string name="feature_player_caption_download_started">Downloading caption model (%s)</string>
+    <string name="feature_player_caption_unsupported">Captions aren\'t supported for this episode\'s language</string>
+    <string name="feature_player_caption_download_failed_network">Couldn\'t download the caption model. Check your connection.</string>
+    <string name="feature_player_caption_download_failed_storage">Not enough storage to download the caption model.</string>
+    <string name="feature_player_caption_download_failed_corrupt">The caption model download was corrupted. Try again.</string>
+    <string name="feature_player_caption_download_failed_unloadable">Couldn\'t load the caption model.</string>
 </resources>

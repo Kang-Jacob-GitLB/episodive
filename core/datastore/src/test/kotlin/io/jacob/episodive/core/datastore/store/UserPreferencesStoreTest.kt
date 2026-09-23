@@ -174,6 +174,27 @@ class UserPreferencesStoreTest {
         assertTrue(result.isFirstLaunch)
         assertEquals(Locale.getDefault().language, result.language)
         assertTrue(result.categories.isEmpty())
+        assertFalse(result.isCaptionEnabled)
+    }
+
+    @Test
+    fun setCaptionEnabled_updatesCaptionEnabledPreference() = runTest {
+        userPreferencesStore.setCaptionEnabled(true)
+
+        val result = userPreferencesStore.getUserPreferences().first()
+        assertTrue(result.isCaptionEnabled)
+    }
+
+    @Test
+    @DisabledOnWindows
+    fun setCaptionEnabled_toFalse_updatesCorrectly() = runTest {
+        userPreferencesStore.setCaptionEnabled(true)
+        var result = userPreferencesStore.getUserPreferences().first()
+        assertTrue(result.isCaptionEnabled)
+
+        userPreferencesStore.setCaptionEnabled(false)
+        result = userPreferencesStore.getUserPreferences().first()
+        assertFalse(result.isCaptionEnabled)
     }
 
     @Test

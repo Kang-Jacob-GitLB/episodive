@@ -17,6 +17,31 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // 라이브 자막의 sherpa-onnx aar 가 네 ABI 의 onnxruntime 을 모두 싣고 있어(약 48MB)
+    // 하나의 APK 에 담으면 기기와 무관한 네이티브 라이브러리가 대부분을 차지한다.
+    // ABI 별로 APK 를 나눠 각자 자기 라이브러리만 싣게 하고, 릴리즈도 ABI 별로 올린다
+    // (.github/workflows/publish.yml). universal APK 는 만들지 않는다.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+            isUniversalApk = false
+        }
+    }
+
+    packaging {
+        jniLibs {
+            // sherpa-onnx aar 는 C/C++ API 용 .so 도 함께 싣지만, 코틀린 API 가 여는
+            // libsherpa-onnx-jni.so 는 libonnxruntime.so 만 NEEDED 로 가진다(readelf 확인).
+            // 아무도 열지 않는 두 파일이 ABI 마다 약 4.9MB 를 차지하므로 뺀다.
+            excludes += listOf(
+                "**/libsherpa-onnx-c-api.so",
+                "**/libsherpa-onnx-cxx-api.so",
+            )
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-09-23T07:40:28.019Z" hostname="MacBookPro" time="0.48">
+  <properties/>
+  <testcase name="네트워크 오류가 나면 파트 파일을 지우지 않는다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.337"/>
+  <testcase name="이어받기가 아니라 처음부터 다시 받으면 되돌림 델타를 흘려 이중 집계를 막는다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.021"/>
+  <testcase name="part 파일이 이미 목표 크기 이상이면 네트워크 없이 검증만 하고 rename 한다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.004"/>
+  <testcase name="크기는 넘지만 내용이 틀린 part 는 버리고 처음부터 다시 받는다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.006"/>
+  <testcase name="취소하면 part 파일이 남지 않는다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.081"/>
+  <testcase name="이미 완성된 파일은 다시 받지 않는다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.003"/>
+  <testcase name="서버가 416 을 주면 part 파일을 지운다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.005"/>
+  <testcase name="정상 응답은 최종 파일로 rename 된다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.005"/>
+  <testcase name="서버가 Range 를 무시하고 200 을 주면 처음부터 다시 받는다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.005"/>
+  <testcase name="크기는 같지만 내용이 다르면 CORRUPT 이고 최종 파일이 없다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.004"/>
+  <testcase name="크기가 다르면 CORRUPT 이고 최종 파일이 없다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.004"/>
+  <testcase name="이어받을 부분이 있으면 Range 헤더로 요청한다" classname="io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[Possibly running android unit test without robolectric
+java.lang.RuntimeException: Method isLoggable in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.isLoggable(Log.java)
+	at okhttp3.internal.platform.android.AndroidLog.enableLogging(AndroidLog.kt:132)
+	at okhttp3.internal.platform.android.AndroidLog.enable(AndroidLog.kt:109)
+	at okhttp3.internal.platform.PlatformRegistry.findPlatform(PlatformRegistry.kt:25)
+	at okhttp3.internal.platform.Platform$Companion.findPlatform(Platform.kt:225)
+	at okhttp3.internal.platform.Platform$Companion.access$findPlatform(Platform.kt:203)
+	at okhttp3.internal.platform.Platform.<clinit>(Platform.kt:204)
+	at okhttp3.OkHttpClient.<init>(OkHttpClient.kt:291)
+	at okhttp3.OkHttpClient$Builder.build(OkHttpClient.kt:1375)
+	at io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest.redirectingClient(CaptionModelDownloaderTest.kt:54)
+	at io.jacob.episodive.core.caption.asset.CaptionModelDownloaderTest.setUp(CaptionModelDownloaderTest.kt:62)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.RunBefores.invokeMethod(RunBefores.java:33)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:24)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at org.junit.rules.ExternalResource$1.evaluate(ExternalResource.java:54)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.runRequest(JUnitTestClassExecutor.java:176)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.execute(JUnitTestClassExecutor.java:84)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.execute(JUnitTestClassExecutor.java:45)
+	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestClassProcessor.processTestClass(AbstractJUnitTestClassProcessor.java:61)
+	at org.gradle.api.internal.tasks.testing.SuiteTestClassProcessor.processTestClass(SuiteTestClassProcessor.java:54)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.gradle.internal.dispatch.MethodInvocation.invokeOn(MethodInvocation.java:77)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:28)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:19)
+	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:88)
+	at jdk.proxy1/jdk.proxy1.$Proxy4.processTestClass(Unknown Source)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:177)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+]]></system-err>
+</testsuite>

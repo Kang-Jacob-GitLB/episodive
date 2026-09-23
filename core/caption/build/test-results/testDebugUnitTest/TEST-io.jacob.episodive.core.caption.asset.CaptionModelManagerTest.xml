@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.jacob.episodive.core.caption.asset.CaptionModelManagerTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-23T07:40:28.501Z" hostname="MacBookPro" time="0.61">
+  <properties/>
+  <testcase name="다운로드 진행률은 1퍼센트 단위로만 방출되고 단조 증가한다" classname="io.jacob.episodive.core.caption.asset.CaptionModelManagerTest" time="0.041"/>
+  <testcase name="이미 설치된 언어는 초기 상태가 Installed 다" classname="io.jacob.episodive.core.caption.asset.CaptionModelManagerTest" time="0.002"/>
+  <testcase name="reportUnloadable 은 설치본을 지우고 NotInstalled 로 되돌리며 실패를 알린다" classname="io.jacob.episodive.core.caption.asset.CaptionModelManagerTest" time="0.012"/>
+  <testcase name="취소 직후 시작한 새 job 은 이전 job 의 늦은 finally 에 지워지지 않는다" classname="io.jacob.episodive.core.caption.asset.CaptionModelManagerTest" time="0.522"/>
+  <testcase name="start 를 두 번 불러도 다운로드 요청은 한 번만 나간다" classname="io.jacob.episodive.core.caption.asset.CaptionModelManagerTest" time="0.026"/>
+  <testcase name="invalidate 는 설치본을 지우고 NotInstalled 로 되돌린다" classname="io.jacob.episodive.core.caption.asset.CaptionModelManagerTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[9월 23, 2026 4:40:28 오후 mockwebserver3.MockWebServer$SocketHandler handle
+경고: MockWebServer{port=55572} connection from /127.0.0.1 didn't make a request
+]]></system-err>
+</testsuite>

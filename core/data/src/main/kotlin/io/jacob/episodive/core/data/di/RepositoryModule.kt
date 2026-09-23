@@ -4,8 +4,16 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import io.jacob.episodive.core.caption.asset.CaptionModelManager
+import io.jacob.episodive.core.caption.engine.CaptionTranslatorFactory
+import io.jacob.episodive.core.caption.engine.DeviceLanguageProvider
+import io.jacob.episodive.core.caption.engine.LiveCaptionEngine
+import io.jacob.episodive.core.common.ApplicationScope
+import io.jacob.episodive.core.common.Dispatcher
+import io.jacob.episodive.core.common.EpisodiveDispatchers
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
+import io.jacob.episodive.core.data.repository.CaptionRepositoryImpl
 import io.jacob.episodive.core.data.repository.ChannelRepositoryImpl
 import io.jacob.episodive.core.data.repository.EpisodeRepositoryImpl
 import io.jacob.episodive.core.data.repository.PlayerRepositoryImpl
@@ -20,6 +28,7 @@ import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
 import io.jacob.episodive.core.database.datasource.RecentSearchLocalDataSource
 import io.jacob.episodive.core.database.datasource.SoundbiteLocalDataSource
 import io.jacob.episodive.core.datastore.datasource.UserPreferencesDataSource
+import io.jacob.episodive.core.domain.repository.CaptionRepository
 import io.jacob.episodive.core.domain.repository.ChannelRepository
 import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.PlayerRepository
@@ -33,6 +42,8 @@ import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import javax.inject.Singleton
 
 @Module
@@ -115,6 +126,26 @@ object RepositoryModule {
     ): PlayerRepository {
         return PlayerRepositoryImpl(
             playerDataSource = clipPlayerDataSource,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideCaptionRepository(
+        captionModelManager: dagger.Lazy<CaptionModelManager>,
+        liveCaptionEngine: LiveCaptionEngine,
+        captionTranslatorFactory: CaptionTranslatorFactory,
+        deviceLanguageProvider: DeviceLanguageProvider,
+        @ApplicationScope applicationScope: CoroutineScope,
+        @Dispatcher(EpisodiveDispatchers.IO) ioDispatcher: CoroutineDispatcher,
+    ): CaptionRepository {
+        return CaptionRepositoryImpl(
+            captionModelManager = captionModelManager,
+            liveCaptionEngine = liveCaptionEngine,
+            captionTranslatorFactory = captionTranslatorFactory,
+            deviceLanguageProvider = deviceLanguageProvider,
+            applicationScope = applicationScope,
+            ioDispatcher = ioDispatcher,
         )
     }
 

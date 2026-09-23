@@ -1,5 +1,6 @@
 package io.jacob.episodive.feature.player
 
+import android.text.format.Formatter
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -67,6 +68,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -99,6 +101,8 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
+import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
+import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.model.coverUrl
 import io.jacob.episodive.core.model.mapper.toHumanReadable
 import io.jacob.episodive.core.model.mapper.toLongMillis
@@ -165,12 +169,22 @@ fun PlayerBottomSheet(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // caption 은 시트가 열려 있을 때만 수집한다(PlayerBar 는 절대 수집하지 않는다) — 이 구독이
+    // 곧 인식 세션의 게이트다.
+    val captionState = viewModel.caption.collectAsStateWithLifecycle()
 
     val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
     val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
     val sleepTimerExpiredMessage = stringResource(R.string.feature_player_sleep_timer_expired)
     val shareFailedMessage = stringResource(uiR.string.core_ui_share_failed)
     val deepLinkErrorMessage = stringResource(R.string.feature_player_deep_link_not_found)
+    val captionDownloadStartedPattern = stringResource(R.string.feature_player_caption_download_started)
+    val captionUnsupportedMessage = stringResource(R.string.feature_player_caption_unsupported)
+    val captionFailedNetworkMessage = stringResource(R.string.feature_player_caption_download_failed_network)
+    val captionFailedStorageMessage = stringResource(R.string.feature_player_caption_download_failed_storage)
+    val captionFailedCorruptMessage = stringResource(R.string.feature_player_caption_download_failed_corrupt)
+    val captionFailedUnloadableMessage = stringResource(R.string.feature_player_caption_download_failed_unloadable)
+    val context = LocalContext.current
 
     val shareLauncher = rememberShareLauncher(
         onError = {
@@ -210,6 +224,36 @@ fun PlayerBottomSheet(
                 is PlayerEffect.ShowDeepLinkError -> {
                     snackbarHostState.showSnackbar(
                         message = deepLinkErrorMessage,
+                        duration = SnackbarDuration.Short,
+                    )
+                }
+
+                is PlayerEffect.CaptionDownloadStarted -> {
+                    snackbarHostState.showSnackbar(
+                        message = String.format(
+                            captionDownloadStartedPattern,
+                            Formatter.formatShortFileSize(context, effect.sizeBytes),
+                        ),
+                        duration = SnackbarDuration.Short,
+                    )
+                }
+
+                is PlayerEffect.CaptionUnsupported -> {
+                    snackbarHostState.showSnackbar(
+                        message = captionUnsupportedMessage,
+                        duration = SnackbarDuration.Short,
+                    )
+                }
+
+                is PlayerEffect.CaptionDownloadFailed -> {
+                    val message = when (effect.reason) {
+                        CaptionDownloadFailure.Reason.NETWORK -> captionFailedNetworkMessage
+                        CaptionDownloadFailure.Reason.STORAGE -> captionFailedStorageMessage
+                        CaptionDownloadFailure.Reason.CORRUPT -> captionFailedCorruptMessage
+                        CaptionDownloadFailure.Reason.UNLOADABLE -> captionFailedUnloadableMessage
+                    }
+                    snackbarHostState.showSnackbar(
+                        message = message,
                         duration = SnackbarDuration.Short,
                     )
                 }
@@ -301,6 +345,9 @@ fun PlayerBottomSheet(
             onSetSleepTimer = { viewModel.sendAction(PlayerAction.SetSleepTimer(it)) },
             onCancelSleepTimer = { viewModel.sendAction(PlayerAction.CancelSleepTimer) },
             onSleepTimerEndOfEpisode = { viewModel.sendAction(PlayerAction.SleepTimerEndOfEpisode) },
+            liveCaption = { captionState.value.caption },
+            captionButtonState = { captionState.value.toCaptionButtonState() },
+            onToggleCaption = { viewModel.sendAction(PlayerAction.ToggleCaption) },
         )
 
             EpisodiveSwipeDismissSnackbarHost(
@@ -345,6 +392,9 @@ internal fun PlayerScreen(
     onSetSleepTimer: (Long) -> Unit = {},
     onCancelSleepTimer: () -> Unit = {},
     onSleepTimerEndOfEpisode: () -> Unit = {},
+    liveCaption: () -> LiveCaption? = { null },
+    captionButtonState: () -> CaptionButtonState = { CaptionButtonState.Inactive },
+    onToggleCaption: () -> Unit = {},
 ) {
     val dimension = LocalDimensionTheme.current
     val listState = rememberLazyListState()
@@ -451,10 +501,12 @@ internal fun PlayerScreen(
                             onDominantColorExtracted = { dominantColor = it },
                         )
 
-                        PushUpCue(
+                        CueOverlay(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter),
-                            title = cue,
+                            cue = cue,
+                            liveCaption = liveCaption,
+                            episodeId = progress.episodeId,
                         )
                     }
 
@@ -516,6 +568,8 @@ internal fun PlayerScreen(
                         onList = { showPlaylistSheet = true },
                         onToggleSave = onToggleSave,
                         onShare = onShare,
+                        captionButtonState = captionButtonState,
+                        onToggleCaption = onToggleCaption,
                     )
                 }
             }
@@ -596,10 +650,21 @@ private fun angledGradientEndpoints(angleDegrees: Float, size: Size): Pair<Offse
     return Offset(centerX - dx, centerY + dy) to Offset(centerX + dx, centerY - dy)
 }
 
+/**
+ * [PushUpCue] 한 번의 전환 대상 — 원문·번역이 함께 밀려 올라온다.
+ *
+ * `lineKey` 를 상태 안에 싣는 이유: `contentKey` 는 전환에 걸린 **각** 상태에 대해 불리므로
+ * 그 상태 자신의 키를 돌려줘야 한다. 바깥 변수를 캡처하면 나가는 줄과 들어오는 줄이 같은
+ * (현재) 키를 받아 줄이 바뀌어도 밀어올림이 일어나지 않는다.
+ */
+private data class PushUpCueContent(val title: String, val subtitle: String?, val lineKey: Any)
+
 @Composable
 fun PushUpCue(
     modifier: Modifier = Modifier,
     title: String,
+    subtitle: String? = null,
+    lineKey: Any = title,
 ) {
     val isVisible = title.isNotEmpty()
 
@@ -625,7 +690,10 @@ fun PushUpCue(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             AnimatedContent(
-                targetState = title,
+                targetState = PushUpCueContent(title, subtitle, lineKey),
+                // 같은 줄의 partial 갱신(lineKey 불변)은 contentKey 가 같아 애니메이션 없이
+                // 제자리에서 텍스트만 바뀐다. lineKey 가 바뀔 때만 밀어올림이 일어난다.
+                contentKey = { it.lineKey },
                 transitionSpec = {
                     (slideInVertically(
                         initialOffsetY = { it }
@@ -635,7 +703,7 @@ fun PushUpCue(
                             ) + fadeOut())
                 },
                 label = "push_up"
-            ) { text ->
+            ) { content ->
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -643,14 +711,55 @@ fun PushUpCue(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = text,
+                        text = content.title,
                         color = Color.White,
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
+
+                    if (content.subtitle != null) {
+                        Text(
+                            modifier = Modifier.padding(top = 2.dp),
+                            text = content.subtitle,
+                            color = Color.White.copy(alpha = 0.8f),
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+/**
+ * 커버 하단 자막 오버레이. [liveCaption] 은 람다로만 읽어 재구성을 이 컴포저블 안에 가둔다 —
+ * 값으로 풀어 상위에서 넘기면 매 단어(partial)마다 상위 트리까지 재구성된다.
+ *
+ * [liveCaption] 이 있고 그 `episodeId` 가 [episodeId](= progress.episodeId)와 일치할 때만
+ * 자막(원문+번역)을 그리고, 아니면 기존 transcript [cue] 를 그대로 보여준다. 두 경우 모두
+ * [PushUpCue] 호출은 하나뿐이다 — if/else 로 두 번 부르면 AnimatedVisibility 상태가 리셋된다.
+ */
+@Composable
+private fun CueOverlay(
+    modifier: Modifier = Modifier,
+    cue: String,
+    liveCaption: () -> LiveCaption?,
+    episodeId: Long?,
+) {
+    val caption = liveCaption()
+    val matched = caption != null && caption.episodeId == episodeId
+
+    PushUpCue(
+        modifier = modifier,
+        title = if (matched) caption!!.text else cue,
+        subtitle = if (matched) caption!!.translation else null,
+        lineKey = if (matched) caption!!.lineId else cue,
+    )
 }
 
 @Composable
@@ -736,6 +845,8 @@ private fun ControlPanelBottom(
     onList: () -> Unit = {},
     onToggleSave: () -> Unit = {},
     onShare: () -> Unit,
+    captionButtonState: () -> CaptionButtonState = { CaptionButtonState.Inactive },
+    onToggleCaption: () -> Unit = {},
 ) {
     val dimension = LocalDimensionTheme.current
 
@@ -882,8 +993,14 @@ private fun ControlPanelBottom(
                     }
                 )
 
-                // 다섯 칸의 한가운데. 좌우 두 칸씩이 재생을 조절하는 것들이라, 성격이 다른
-                // 공유를 가장자리에 두면 목록·다운로드와 같은 줄로 읽힌다.
+                CaptionToggleButton(
+                    modifier = Modifier.weight(1f),
+                    buttonState = captionButtonState,
+                    onClick = onToggleCaption,
+                )
+
+                // 여섯 칸 가운데. 왼쪽 셋(배속·타이머·자막)은 듣는 방식을, 오른쪽 셋(공유·
+                // 다운로드·목록)은 에피소드를 다룬다 — 공유는 그 오른쪽 그룹의 첫 칸이다.
                 EpisodiveIconButton(
                     modifier = Modifier.weight(1f),
                     onClick = onShare,
@@ -964,6 +1081,82 @@ private fun ControlPanelBottom(
                 )
             }
         }
+    }
+}
+
+/**
+ * 컨트롤 바 자막 토글. [buttonState] 는 람다로만 읽는다 — [CaptionButtonState] 는 자막 텍스트가
+ * 아니라 켜짐 여부·가용성에만 좌우되지만, 같은 원본 `LiveCaptionState` 를 구독하는 이상 매
+ * partial 갱신마다 `.value` 읽기 자체가 재구성을 유발한다. 그 재구성을 이 버튼 하나로 가둔다.
+ */
+@Composable
+private fun CaptionToggleButton(
+    modifier: Modifier = Modifier,
+    buttonState: () -> CaptionButtonState,
+    onClick: () -> Unit,
+) {
+    val turnOnDescription = stringResource(R.string.feature_player_caption_turn_on)
+    val turnOffDescription = stringResource(R.string.feature_player_caption_turn_off)
+    val downloadingDescription = stringResource(R.string.feature_player_caption_downloading)
+
+    when (val state = buttonState()) {
+        is CaptionButtonState.Progress -> EpisodiveIconProgressButton(
+            modifier = modifier,
+            onClick = onClick,
+            size = PlayerDownloadRingSize,
+            isLoading = state.progress <= 0f,
+            progress = state.progress,
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.primary,
+            ),
+            icon = {
+                Icon(
+                    modifier = Modifier.size(21.dp),
+                    imageVector = EpisodiveIcons.Caption,
+                    contentDescription = downloadingDescription,
+                )
+            },
+        )
+
+        CaptionButtonState.Active -> EpisodiveIconButton(
+            modifier = modifier,
+            onClick = onClick,
+            icon = {
+                Icon(
+                    modifier = Modifier.size(21.dp),
+                    imageVector = EpisodiveIcons.Caption,
+                    contentDescription = turnOffDescription,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        )
+
+        CaptionButtonState.Dimmed -> EpisodiveIconButton(
+            modifier = modifier,
+            onClick = onClick,
+            icon = {
+                Icon(
+                    modifier = Modifier.size(21.dp),
+                    imageVector = EpisodiveIcons.Caption,
+                    contentDescription = turnOffDescription,
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+                )
+            }
+        )
+
+        CaptionButtonState.Inactive -> EpisodiveIconButton(
+            modifier = modifier,
+            onClick = onClick,
+            icon = {
+                Icon(
+                    modifier = Modifier.size(21.dp),
+                    imageVector = EpisodiveIcons.Caption,
+                    contentDescription = turnOnDescription,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        )
     }
 }
 

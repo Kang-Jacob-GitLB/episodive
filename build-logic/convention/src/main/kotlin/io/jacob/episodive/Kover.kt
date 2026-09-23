@@ -53,6 +53,8 @@ internal fun Project.configureKover() {
                     classes("*.database.migration.*")
                     // Download (Android system dependencies)
                     classes("*.download.*")
+                    // Caption 네이티브/외부 SDK 어댑터 (JVM 테스트 불가)
+                    classes("*.caption.sherpa.*", "*.caption.mlkit.*")
                     // Compose Screen/Bar
                     classes("*ScreenKt*", "*BarKt*")
                     // Navigation

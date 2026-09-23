@@ -1,6 +1,8 @@
 package io.jacob.episodive.feature.player
 
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -13,8 +15,10 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
+import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
+import io.jacob.episodive.core.testing.model.liveCaptionTestData
 import io.jacob.episodive.core.testing.model.podcastTestData
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -62,6 +66,9 @@ class PlayerScreenTest {
         onSpeedChange: (Float) -> Unit = {},
         onToggleFollowedPodcast: (Podcast) -> Unit = {},
         onShare: () -> Unit = {},
+        liveCaption: () -> LiveCaption? = { null },
+        captionButtonState: () -> CaptionButtonState = { CaptionButtonState.Inactive },
+        onToggleCaption: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             EpisodiveTheme {
@@ -92,6 +99,9 @@ class PlayerScreenTest {
                     onToggleFollowedPodcast = onToggleFollowedPodcast,
                     onToggleSave = onToggleSave,
                     cue = cue,
+                    liveCaption = liveCaption,
+                    captionButtonState = captionButtonState,
+                    onToggleCaption = onToggleCaption,
                 )
             }
         }
@@ -331,5 +341,74 @@ class PlayerScreenTest {
         setPlayerScreen(progress = Progress(0.seconds, 0.seconds, 3600.seconds))
 
         composeTestRule.onNodeWithText("1:00:00", substring = true).assertExists()
+    }
+
+    // --- New: Caption toggle button ---
+
+    @Test
+    fun inactiveCaptionButton_contentDescriptionIsTurnOn() {
+        setPlayerScreen(captionButtonState = { CaptionButtonState.Inactive })
+
+        composeTestRule.onNodeWithContentDescription("Turn on captions").assertExists()
+    }
+
+    @Test
+    fun activeCaptionButton_contentDescriptionIsTurnOff() {
+        setPlayerScreen(captionButtonState = { CaptionButtonState.Active })
+
+        composeTestRule.onNodeWithContentDescription("Turn off captions").assertExists()
+    }
+
+    @Test
+    fun captionButton_hasClickAction() {
+        // 컨트롤 바 아래쪽 버튼들(List/Save/Share 도 동일)은 이 테스트 하네스의 뷰포트에서
+        // 실측 터치 좌표가 0 크기로 잡혀 performClick() 제스처가 닿지 않는다 — 기존 List/Save/
+        // Share 도 클릭이 아니라 존재만 검증한다. 여기서도 같은 이유로 클릭 대신 클릭 액션
+        // 존재만 확인한다.
+        setPlayerScreen()
+
+        composeTestRule.onNode(hasScrollAction())
+            .performScrollToNode(hasContentDescription("Turn on captions"))
+        composeTestRule.onNodeWithContentDescription("Turn on captions").assertHasClickAction()
+    }
+
+    // --- New: Caption overlay vs. transcript cue ---
+
+    @Test
+    fun captionEpisodeIdMismatch_cueIsShownInstead() {
+        val caption = liveCaptionTestData.copy(episodeId = 999L)
+        setPlayerScreen(
+            progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
+            liveCaption = { caption },
+            cue = "test cue text",
+        )
+
+        composeTestRule.onNodeWithText("test cue text").assertExists()
+        composeTestRule.onNodeWithText(caption.text, substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun captionEpisodeIdMatches_captionTextIsShownInsteadOfCue() {
+        val caption = liveCaptionTestData.copy(episodeId = 111L)
+        setPlayerScreen(
+            progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
+            liveCaption = { caption },
+            cue = "test cue text",
+        )
+
+        composeTestRule.onNodeWithText(caption.text, substring = true).assertExists()
+        composeTestRule.onNodeWithText("test cue text").assertDoesNotExist()
+    }
+
+    @Test
+    fun captionEpisodeIdMatches_translationLineIsShown() {
+        val caption = liveCaptionTestData.copy(episodeId = 111L, translation = "번역된 자막")
+        setPlayerScreen(
+            progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
+            liveCaption = { caption },
+            cue = "test cue text",
+        )
+
+        composeTestRule.onNodeWithText("번역된 자막", substring = true).assertExists()
     }
 }
