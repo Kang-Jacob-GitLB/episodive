@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.jacob.episodive.core.caption.engine.LocaleDeviceLanguageProviderTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-09-23T07:40:29.194Z" hostname="MacBookPro" time="0.0">
-  <properties/>
-  <testcase name="Given default locale, When languageTag called, Then returns its BCP 47 tag" classname="io.jacob.episodive.core.caption.engine.LocaleDeviceLanguageProviderTest" time="0.0"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
