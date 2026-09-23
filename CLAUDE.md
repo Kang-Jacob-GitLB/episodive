@@ -4,7 +4,7 @@
 
 ## 프로젝트 개요
 
-Episodive는 Kotlin과 Jetpack Compose로 만든 Android 팟캐스트 앱으로, Podcast Index API를 사용합니다. Clean Architecture + MVI 패턴, Gradle 컨벤션 플러그인 기반 멀티모듈 구조(20개 모듈), Room DB 중심의 Offline-First 설계를 따릅니다.
+Episodive는 Kotlin과 Jetpack Compose로 만든 Android 팟캐스트 앱으로, Podcast Index API를 사용합니다. Clean Architecture + MVI 패턴, Gradle 컨벤션 플러그인 기반 멀티모듈 구조(21개 모듈), Room DB 중심의 Offline-First 설계를 따릅니다.
 
 ### 기술 스택
 
@@ -48,9 +48,9 @@ cp <repo-root>/local.properties <worktree-dir>/local.properties
 
 ## 아키텍처
 
-### 모듈 구조 (20개)
+### 모듈 구조 (21개)
 
-#### Core 모듈 (11개)
+#### Core 모듈 (12개)
 
 | 모듈 | 역할 |
 |:----|:----|
@@ -61,6 +61,7 @@ cp <repo-root>/local.properties <worktree-dir>/local.properties
 | `:core:database` | Room DB v8, Entity 12개, View 2개, DAO 5개 |
 | `:core:datastore` | DataStore Preferences 기반 사용자 설정 관리 |
 | `:core:player` | ExoPlayer 래퍼, @Player qualifier로 듀얼 플레이어(Main/Clip) |
+| `:core:caption` | 라이브 자막: sherpa-onnx 온디바이스 STT, ML Kit 번역, 모델 다운로드(HuggingFace) |
 | `:core:common` | 공유 유틸리티, EpisodiveDispatchers, EpisodivePlayers qualifier |
 | `:core:designsystem` | 재사용 Compose 컴포넌트 20개 이상, 테마 시스템 |
 | `:core:ui` | 도메인 특화 상위 레벨 UI 컴포넌트 |
@@ -215,6 +216,37 @@ Room 왕복과 `flowOn(IO)` 를 거쳐 `progress` 보다 늦게 도착한다. �
   같은 기준으로 가른다** — 애니메이션만 `currentPage` 로 가르면 그 값은 스와이프 50% 에서
   뒤집히는데 `progress` 는 페이지가 멎은 뒤 따라와, 넘기는 내내 둘이 서로 다른 말을 한다.
   `ClipScreenTest` 에 계약 테스트가 있다.
+
+### 라이브 자막 규약 (필수)
+
+플레이어 화면의 자막은 두 갈래다. 피드가 VTT transcript 를 주면 media3 텍스트 트랙(`cue`)을
+그대로 쓰고, 없으면 **Main 플레이어의 PCM 을 `SpeechAudioTap` 으로 엿들어 sherpa-onnx 로
+받아쓴다.** 자막 토글이 켜져 있으면 둘 다 기기 언어로 번역한 줄을 붙인다(ML Kit).
+
+- **에피소드 구분은 `progress.episodeId` 로만 한다.** 재생 위치 저장 규약과 같은 이유다.
+  `ObserveLiveCaptionUseCase` 는 `nowPlaying.id == progress.episodeId` 일 때만 세션을 열고,
+  화면은 `LiveCaption.episodeId == progress.episodeId` 일 때만 그린다.
+- **sherpa stream 하나에는 샘플레이트 하나만 넣는다.** 같은 stream 에 다른 레이트를 넣으면
+  네이티브가 `exit(-1)` 로 **프로세스를 죽인다**(예외가 아니다). 그래서 탭은 flush·오버런마다
+  구간(segment)을 끊고, 엔진은 구간이 바뀌면 stream 을 새로 만든다. `recognizer.reset` 으로
+  재사용하지 마라 — 내부 리샘플러가 리셋되지 않는다.
+- **표시 텍스트는 `result.tokens` 로 만든다. `result.text` 를 쓰지 마라.** 한국어 모델은
+  `text` 에서 띄어쓰기를 잃는다('걔는괜찮은척…'). 토큰의 선행 공백·`▁` 이 단어 경계다
+  (`CaptionTextNormalizer`).
+- **`decodingMethod` 는 `greedy_search` 로 고정한다.** 긴 줄 강제 확정(`CaptionLineTracker`)은
+  "이미 낸 토큰은 바뀌지 않는다" 에 기댄다. beam search 는 앞 토큰을 고친다.
+- **자막 StateFlow(`PlayerViewModel.caption`)는 플레이어 시트만 수집한다.** 10-arity `state` 에
+  끼우지 마라 — `PlayerBar` 가 `state` 를 늘 수집하므로 미니바만 보여도 인식이 돈다. 시트가
+  닫히면 `WhileSubscribed(5s)` 뒤 세션이 끝나고, `RecognizerCache` 가 30초 뒤 인식기(수백 MB)를
+  놓는다.
+- 꺼진 동안에도 `LiveCaptionState.availability` 는 계산한다. 토글이 이 값 하나로 "켜면서
+  바로 모델을 받을지" 를 정하므로, 꺼진 동안 `Unknown` 으로 뭉개면 두 번 눌러야 받기 시작한다.
+- 모델 다운로드는 **caption 전용 OkHttpClient** 로 한다. `:core:network` 클라이언트에는
+  Podcast Index 인증 인터셉터가 있어 키가 HuggingFace 로 샌다. 파일은 revision·sha256 고정
+  (`CaptionModelRegistry`), `.part` → 검증 → rename 이다.
+- 네이티브 `.so`(onnxruntime, ML Kit)는 APK 에 들어 있어야 한다. Play 는 스토어 밖에서 받은
+  실행 코드를 금지한다. 런타임에 받는 것은 모델(데이터)뿐이다. APK 는 ABI 별로 나눠
+  (`splits.abi`) 릴리즈도 ABI 별로 올린다(`publish.yml`).
 
 ## 중요 구현 세부사항
 

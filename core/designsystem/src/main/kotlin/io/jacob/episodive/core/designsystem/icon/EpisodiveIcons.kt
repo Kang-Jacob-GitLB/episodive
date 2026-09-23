@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.DownloadDone
 import io.jacob.episodive.core.designsystem.icon.tabler.ArrowLeft
 import io.jacob.episodive.core.designsystem.icon.tabler.ArrowsDiagonal
 import io.jacob.episodive.core.designsystem.icon.tabler.ArrowsDiagonalMinimize2
+import io.jacob.episodive.core.designsystem.icon.tabler.BadgeCc
 import io.jacob.episodive.core.designsystem.icon.tabler.Blob
 import io.jacob.episodive.core.designsystem.icon.tabler.BlobFilled
 import io.jacob.episodive.core.designsystem.icon.tabler.CalendarTime
@@ -56,6 +57,7 @@ object EpisodiveIcons {
     val ArrowBack = Tabler.ArrowLeft
     val CaretDown = Tabler.ChevronDown
     val CaretRight = Tabler.ChevronRight
+    val Caption = Tabler.BadgeCc
     val Check = Tabler.Check
     val Clip = Tabler.Container
     val ClipFilled = Tabler.ContainerFilled

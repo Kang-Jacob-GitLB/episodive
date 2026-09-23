@@ -16,4 +16,13 @@
     <string name="feature_player_sleep_timer_requires_playback">재생 중에만 슬립 타이머를 설정할 수 있습니다</string>
     <string name="feature_player_playlist_title">재생목록</string>
     <string name="feature_player_playlist_queue_count">%d개 대기 중</string>
+    <string name="feature_player_caption_turn_on">자막 켜기</string>
+    <string name="feature_player_caption_turn_off">자막 끄기</string>
+    <string name="feature_player_caption_downloading">자막 모델 받는 중</string>
+    <string name="feature_player_caption_download_started">자막 모델(%s)을 받는 중</string>
+    <string name="feature_player_caption_unsupported">이 에피소드 언어는 자막을 지원하지 않아요</string>
+    <string name="feature_player_caption_download_failed_network">자막 모델을 받지 못했어요. 연결을 확인해 주세요</string>
+    <string name="feature_player_caption_download_failed_storage">저장 공간이 부족해 자막 모델을 받지 못했어요</string>
+    <string name="feature_player_caption_download_failed_corrupt">자막 모델 파일이 손상됐어요. 다시 시도해 주세요</string>
+    <string name="feature_player_caption_download_failed_unloadable">자막 모델을 불러오지 못했어요</string>
 </resources>

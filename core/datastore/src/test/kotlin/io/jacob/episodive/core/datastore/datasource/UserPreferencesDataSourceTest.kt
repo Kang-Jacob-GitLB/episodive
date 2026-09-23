@@ -109,6 +109,19 @@ class UserPreferencesDataSourceTest {
         }
 
     @Test
+    fun `Given dependencies, When setCaptionEnabled, Then call store's method`() =
+        runTest {
+            // Given
+            coEvery { store.setCaptionEnabled(any()) } just Runs
+
+            // When
+            dataSource.setCaptionEnabled(true)
+
+            // Then
+            coVerify { store.setCaptionEnabled(true) }
+        }
+
+    @Test
     fun `Given dependencies, When getUserPreferences, Then call store's method`() =
         runTest {
             // Given

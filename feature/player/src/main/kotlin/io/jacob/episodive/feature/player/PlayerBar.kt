@@ -1,5 +1,6 @@
 package io.jacob.episodive.feature.player
 
+import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
@@ -35,6 +36,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -52,6 +54,7 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
+import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
 import io.jacob.episodive.core.model.coverUrl
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.podcastTestData
@@ -135,6 +138,13 @@ fun PlayerBar(
     val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
     val sleepTimerExpiredMessage = stringResource(R.string.feature_player_sleep_timer_expired)
     val deepLinkErrorMessage = stringResource(R.string.feature_player_deep_link_not_found)
+    val captionDownloadStartedPattern = stringResource(R.string.feature_player_caption_download_started)
+    val captionUnsupportedMessage = stringResource(R.string.feature_player_caption_unsupported)
+    val captionFailedNetworkMessage = stringResource(R.string.feature_player_caption_download_failed_network)
+    val captionFailedStorageMessage = stringResource(R.string.feature_player_caption_download_failed_storage)
+    val captionFailedCorruptMessage = stringResource(R.string.feature_player_caption_download_failed_corrupt)
+    val captionFailedUnloadableMessage = stringResource(R.string.feature_player_caption_download_failed_unloadable)
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -167,6 +177,32 @@ fun PlayerBar(
                 is PlayerEffect.SleepTimerExpired -> {
                     if (!isShowPlayer) {
                         onShowSnackbar(sleepTimerExpiredMessage, null)
+                    }
+                }
+
+                is PlayerEffect.CaptionDownloadStarted -> {
+                    if (!isShowPlayer) {
+                        val message = String.format(
+                            captionDownloadStartedPattern,
+                            Formatter.formatShortFileSize(context, effect.sizeBytes),
+                        )
+                        onShowSnackbar(message, null)
+                    }
+                }
+
+                is PlayerEffect.CaptionUnsupported -> {
+                    if (!isShowPlayer) onShowSnackbar(captionUnsupportedMessage, null)
+                }
+
+                is PlayerEffect.CaptionDownloadFailed -> {
+                    if (!isShowPlayer) {
+                        val message = when (effect.reason) {
+                            CaptionDownloadFailure.Reason.NETWORK -> captionFailedNetworkMessage
+                            CaptionDownloadFailure.Reason.STORAGE -> captionFailedStorageMessage
+                            CaptionDownloadFailure.Reason.CORRUPT -> captionFailedCorruptMessage
+                            CaptionDownloadFailure.Reason.UNLOADABLE -> captionFailedUnloadableMessage
+                        }
+                        onShowSnackbar(message, null)
                     }
                 }
             }

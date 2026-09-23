@@ -27,6 +27,7 @@ class UserPreferencesStore @Inject constructor(
         val isFirstLaunch = booleanPreferencesKey("is_first_launch")
         val categories = stringPreferencesKey("categories")
         val speed = floatPreferencesKey("speed")
+        val captionEnabled = booleanPreferencesKey("caption_enabled")
         val lastPlayingEpisodeId = longPreferencesKey("last_playing_episode_id")
         val lastPlayingIndex = intPreferencesKey("last_playing_index")
         val lastPlayingPositionMs = longPreferencesKey("last_playing_position_ms")
@@ -79,6 +80,10 @@ class UserPreferencesStore @Inject constructor(
         dataStore.edit { it[UserPreferencesKeys.speed] = speed }
     }
 
+    suspend fun setCaptionEnabled(enabled: Boolean) {
+        dataStore.edit { it[UserPreferencesKeys.captionEnabled] = enabled }
+    }
+
     fun getUserPreferences(): Flow<UserPreferences> =
         dataStore.data.map { preferences ->
             UserPreferences(
@@ -86,7 +91,8 @@ class UserPreferencesStore @Inject constructor(
                 language = Locale.getDefault().language,
                 categories = preferences[UserPreferencesKeys.categories]?.toCategories()
                     ?: emptyList(),
-                speed = preferences[UserPreferencesKeys.speed] ?: 1f
+                speed = preferences[UserPreferencesKeys.speed] ?: 1f,
+                isCaptionEnabled = preferences[UserPreferencesKeys.captionEnabled] ?: false,
             )
         }
 

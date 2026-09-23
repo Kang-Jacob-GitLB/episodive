@@ -3,6 +3,10 @@ package io.jacob.episodive.feature.player
 import app.cash.turbine.test
 import io.jacob.episodive.core.common.TimeProvider
 import io.jacob.episodive.core.domain.repository.PlayerRepository
+import io.jacob.episodive.core.domain.usecase.caption.CaptionToggleResult
+import io.jacob.episodive.core.domain.usecase.caption.ObserveCaptionDownloadFailuresUseCase
+import io.jacob.episodive.core.domain.usecase.caption.ObserveLiveCaptionUseCase
+import io.jacob.episodive.core.domain.usecase.caption.ToggleCaptionUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
 import io.jacob.episodive.core.domain.usecase.episode.RefreshEpisodeDescriptionUseCase
 import io.jacob.episodive.core.domain.usecase.episode.FetchEpisodeByIdUseCase
@@ -24,8 +28,12 @@ import io.jacob.episodive.core.model.Playback
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.model.UserData
+import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
+import io.jacob.episodive.core.model.caption.CaptionLanguage
+import io.jacob.episodive.core.model.caption.LiveCaptionState
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
+import io.jacob.episodive.core.testing.model.liveCaptionStateTestData
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
@@ -36,11 +44,15 @@ import io.mockk.mockk
 import io.mockk.verify
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -68,6 +80,9 @@ class PlayerViewModelTest {
     private val getEpisodeByIdUseCase = mockk<GetEpisodeByIdUseCase>(relaxed = true)
     private val fetchEpisodeByIdUseCase = mockk<FetchEpisodeByIdUseCase>(relaxed = true)
     private val playEpisodeUseCase = mockk<PlayEpisodeUseCase>(relaxed = true)
+    private val observeLiveCaptionUseCase = mockk<ObserveLiveCaptionUseCase>(relaxed = true)
+    private val toggleCaptionUseCase = mockk<ToggleCaptionUseCase>(relaxed = true)
+    private val observeCaptionDownloadFailuresUseCase = mockk<ObserveCaptionDownloadFailuresUseCase>(relaxed = true)
 
     private val progressFlow = MutableStateFlow(Progress(0.seconds, 0.seconds, 0.seconds))
     private val isPlayingFlow = MutableStateFlow(false)
@@ -88,6 +103,10 @@ class PlayerViewModelTest {
         every { playerRepository.isShuffle } returns isShuffleFlow
         every { playerRepository.repeat } returns repeatFlow
         every { playerRepository.nowPlaying } returns nowPlayingFlow
+        // caption 관련 유스케이스는 대부분 테스트에서 의미가 없어 기본값을 여기서 공통으로 깐다.
+        // 개별 caption 테스트는 필요한 mock 을 각자 다시 stub 한다.
+        every { observeLiveCaptionUseCase() } returns flowOf(LiveCaptionState.Initial)
+        every { observeCaptionDownloadFailuresUseCase() } returns MutableSharedFlow()
     }
 
     private fun setupDefaultMocks() {
@@ -119,6 +138,9 @@ class PlayerViewModelTest {
             fetchEpisodeByIdUseCase = fetchEpisodeByIdUseCase,
             playEpisodeUseCase = playEpisodeUseCase,
             timeProvider = timeProvider,
+            observeLiveCaptionUseCase = observeLiveCaptionUseCase,
+            toggleCaptionUseCase = toggleCaptionUseCase,
+            observeCaptionDownloadFailuresUseCase = observeCaptionDownloadFailuresUseCase,
         ).also { viewModelInstance = it }
     }
 
@@ -939,5 +961,135 @@ class PlayerViewModelTest {
             createViewModel()
 
             coVerify(exactly = 1) { refreshEpisodeDescriptionUseCase(episodeA.id) }
+        }
+
+    // --- 자막(caption) 테스트 ---
+
+    @Test
+    fun `Given only state is collected, When observing, Then the caption upstream is not collected`() =
+        runTest {
+            // caption 은 state 의 10-arity combine 에 끼우지 않는다. PlayerBar 는 state 를 늘
+            // 수집하므로, 여기에 자막 업스트림이 딸려 있으면 시트가 닫혀 있어도(미니바만 보여도)
+            // 인식이 계속 돈다 — 그 회귀를 잡는다.
+            setupDefaultMocks()
+            var collected = false
+            every { observeLiveCaptionUseCase() } returns flowOf(liveCaptionStateTestData)
+                .onStart { collected = true }
+
+            val viewModel = createViewModel()
+
+            viewModel.state.test {
+                awaitItem()
+                cancel()
+            }
+
+            assertFalse(collected)
+        }
+
+    @Test
+    fun `Given ToggleCaption action, When sent, Then toggleCaptionUseCase is invoked with the current caption value`() =
+        runTest {
+            setupDefaultMocks()
+            every { observeLiveCaptionUseCase() } returns flowOf(liveCaptionStateTestData)
+            coEvery { toggleCaptionUseCase(any()) } returns CaptionToggleResult.Enabled
+
+            val viewModel = createViewModel()
+
+            // caption StateFlow 를 실제로 흐르게 한다 — WhileSubscribed 라 구독자가 없으면
+            // 업스트림이 시작되지 않아 caption.value 가 Initial 에 머문다. awaitItem 이 실제
+            // 방출값을 받은 뒤에 토글을 보내야 caption.value 가 Initial 이 아님을 보장한다.
+            viewModel.caption.test {
+                assertEquals(liveCaptionStateTestData, awaitItem())
+
+                viewModel.sendAction(PlayerAction.ToggleCaption)
+
+                cancel()
+            }
+
+            coVerify { toggleCaptionUseCase(liveCaptionStateTestData) }
+        }
+
+    @Test
+    fun `Given the caption upstream throws once, When resubscribed, Then it retries with backoff and reflects the later value`() =
+        runTest {
+            // catch{emit(Initial)} 로 업스트림을 끝내면 저장값은 켜짐인데 화면은 Initial 로
+            // 굳어 토글이 죽는다(리뷰 지적). retryWhen 백오프 재구독으로 바꿨으니, 한 번
+            // 던져도 재구독되어 다음 값이 반영되는지 확인한다.
+            setupDefaultMocks()
+            var attempt = 0
+            every { observeLiveCaptionUseCase() } returns flow {
+                attempt++
+                if (attempt == 1) {
+                    throw RuntimeException("스트림 끊김")
+                }
+                emit(liveCaptionStateTestData)
+            }
+
+            val viewModel = createViewModel()
+
+            viewModel.caption.test {
+                // 첫 구독 직후엔 업스트림이 아직 던지기 전이라도 StateFlow 의 초기값(Initial)이
+                // 먼저 온다. 백오프 delay 는 viewModelScope(Main) 스케줄러 위에서 도는데,
+                // runTest 의 스케줄러와 별개라 명시적으로 시간을 밀어줘야 재구독이 일어난다.
+                assertEquals(LiveCaptionState.Initial, awaitItem())
+
+                mainDispatcherRule.testDispatcher.scheduler.advanceTimeBy(1_100)
+                mainDispatcherRule.testDispatcher.scheduler.runCurrent()
+
+                assertEquals(liveCaptionStateTestData, awaitItem())
+                cancel()
+            }
+
+            assertEquals(2, attempt)
+        }
+
+    @Test
+    fun `Given toggleCaptionUseCase returns DownloadStarted, When ToggleCaption is sent, Then CaptionDownloadStarted effect is emitted`() =
+        runTest {
+            setupDefaultMocks()
+            coEvery { toggleCaptionUseCase(any()) } returns CaptionToggleResult.DownloadStarted(132_000_000L)
+
+            val viewModel = createViewModel()
+
+            viewModel.effect.test {
+                viewModel.sendAction(PlayerAction.ToggleCaption)
+                assertEquals(PlayerEffect.CaptionDownloadStarted(132_000_000L), awaitItem())
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given toggleCaptionUseCase returns UnsupportedLanguage, When ToggleCaption is sent, Then CaptionUnsupported effect is emitted`() =
+        runTest {
+            setupDefaultMocks()
+            coEvery { toggleCaptionUseCase(any()) } returns CaptionToggleResult.UnsupportedLanguage
+
+            val viewModel = createViewModel()
+
+            viewModel.effect.test {
+                viewModel.sendAction(PlayerAction.ToggleCaption)
+                assertEquals(PlayerEffect.CaptionUnsupported, awaitItem())
+                cancel()
+            }
+        }
+
+    @Test
+    fun `Given the download failure stream emits, When collecting, Then CaptionDownloadFailed effect is emitted`() =
+        runTest {
+            setupDefaultMocks()
+            val failure = CaptionDownloadFailure(
+                language = CaptionLanguage.ENGLISH,
+                reason = CaptionDownloadFailure.Reason.NETWORK,
+            )
+            val failuresFlow = MutableSharedFlow<CaptionDownloadFailure>(extraBufferCapacity = 1)
+            every { observeCaptionDownloadFailuresUseCase() } returns failuresFlow
+
+            val viewModel = createViewModel()
+
+            viewModel.effect.test {
+                failuresFlow.emit(failure)
+                assertEquals(PlayerEffect.CaptionDownloadFailed(failure.reason), awaitItem())
+                cancel()
+            }
         }
 }

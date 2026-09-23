@@ -137,6 +137,19 @@ class UserRepositoryTest {
         }
 
     @Test
+    fun `Given dependencies, When setCaptionEnabled, Then call data source's method`() =
+        runTest {
+            // Given
+            coEvery { userPreferencesDataSource.setCaptionEnabled(any()) } just Runs
+
+            // When
+            repository.setCaptionEnabled(true)
+
+            // Then
+            coVerify { userPreferencesDataSource.setCaptionEnabled(true) }
+        }
+
+    @Test
     fun `Given dependencies, When getUserData, Then call data source's method`() =
         runTest {
             // Given

@@ -50,6 +50,10 @@ class UserRepositoryImpl @Inject constructor(
         userPreferencesDataSource.setSpeed(speed)
     }
 
+    override suspend fun setCaptionEnabled(enabled: Boolean) {
+        userPreferencesDataSource.setCaptionEnabled(enabled)
+    }
+
     override fun getUserData(): Flow<UserData> {
         return userPreferencesDataSource.getUserPreferences()
             .map { it.toUserData() }

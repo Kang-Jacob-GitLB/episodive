@@ -8,6 +8,10 @@ import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.common.TimeProvider
 import io.jacob.episodive.core.common.combine as combineTyped
 import io.jacob.episodive.core.domain.repository.PlayerRepository
+import io.jacob.episodive.core.domain.usecase.caption.CaptionToggleResult
+import io.jacob.episodive.core.domain.usecase.caption.ObserveCaptionDownloadFailuresUseCase
+import io.jacob.episodive.core.domain.usecase.caption.ObserveLiveCaptionUseCase
+import io.jacob.episodive.core.domain.usecase.caption.ToggleCaptionUseCase
 import io.jacob.episodive.core.domain.usecase.episode.FetchEpisodeByIdUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetChaptersUseCase
 import io.jacob.episodive.core.domain.usecase.episode.GetEpisodeByIdUseCase
@@ -29,6 +33,8 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.Repeat
+import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
+import io.jacob.episodive.core.model.caption.LiveCaptionState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -50,6 +56,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -75,6 +82,9 @@ class PlayerViewModel @Inject constructor(
     private val fetchEpisodeByIdUseCase: FetchEpisodeByIdUseCase,
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val timeProvider: TimeProvider,
+    observeLiveCaptionUseCase: ObserveLiveCaptionUseCase,
+    private val toggleCaptionUseCase: ToggleCaptionUseCase,
+    observeCaptionDownloadFailuresUseCase: ObserveCaptionDownloadFailuresUseCase,
 ) : ViewModel() {
     private val nowPlaying = getNowPlayingUseCase()
         .stateIn(
@@ -141,6 +151,27 @@ class PlayerViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = PlayerState.Loading
     )
+
+    // state(10-arity combine)에 끼우지 않는다 — PlayerBar 는 state 를 늘 수집하는데(미니바만
+    // 보여도) 여기에 자막을 섞으면 시트가 닫혀 있어도 인식이 계속 돈다. PlayerBottomSheet 만
+    // 이 StateFlow 를 수집한다.
+    val caption: StateFlow<LiveCaptionState> = observeLiveCaptionUseCase()
+        // catch 로 업스트림을 끝내면 토글이 죽는다: 저장값은 켜짐인데 화면은 Initial(꺼짐)로
+        // 굳고, 탭해도 이미 true 인 setCaptionEnabled(true) 라 아무 일도 안 일어난다. 시트를
+        // 닫았다 열어 재구독될 때까지(WhileSubscribed 5s) 이 상태가 이어진다. 대신 짧은
+        // 백오프로 재구독한다 — stateIn 이 재시도 대기 중에도 마지막 값을 들고 있어 화면은
+        // 끊기지 않는다.
+        .retryWhen { cause, attempt ->
+            Timber.w(cause, "자막 스트림이 끊겼다 - 재구독 시도 ${attempt + 1}")
+            val backoffMs = (1_000L shl attempt.toInt().coerceIn(0, 5)).coerceAtMost(30_000L)
+            delay(backoffMs)
+            true
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = LiveCaptionState.Initial,
+        )
 
     private val _action = MutableSharedFlow<PlayerAction>(extraBufferCapacity = 1)
 
@@ -246,6 +277,15 @@ class PlayerViewModel @Inject constructor(
                 .catch { Timber.w(it, "설명 보강 스트림이 끊겼다") }
                 .collect { }
         }
+        // 자막 모델 다운로드/로드 실패는 caption StateFlow 에 담기지 않는 일회성 이벤트라
+        // 여기서 직접 수집해 Effect 로 흘려보낸다.
+        viewModelScope.launch {
+            observeCaptionDownloadFailuresUseCase()
+                .catch { Timber.w(it, "자막 다운로드 실패 스트림이 끊겼다") }
+                .collect { failure ->
+                    _effect.emit(PlayerEffect.CaptionDownloadFailed(failure.reason))
+                }
+        }
     }
 
     private fun handleActions() = viewModelScope.launch {
@@ -275,6 +315,7 @@ class PlayerViewModel @Inject constructor(
                 is PlayerAction.SleepTimerEndOfEpisode -> startEndOfEpisodeTimer()
                 is PlayerAction.OpenDeepLink ->
                     openDeepLink(action.episodeId, action.startPositionMs)
+                is PlayerAction.ToggleCaption -> toggleCaption()
             }
         }
     }
@@ -482,6 +523,21 @@ class PlayerViewModel @Inject constructor(
         sleepTimerJob = null
     }
 
+    /** 컨트롤 바 자막 토글 버튼. 판정은 토글 상태표(설계 문서)를 그대로 따르는 유스케이스가 한다. */
+    private fun toggleCaption() = viewModelScope.launch {
+        when (val result = toggleCaptionUseCase(caption.value)) {
+            is CaptionToggleResult.DownloadStarted ->
+                _effect.emit(PlayerEffect.CaptionDownloadStarted(result.sizeBytes))
+
+            CaptionToggleResult.UnsupportedLanguage ->
+                _effect.emit(PlayerEffect.CaptionUnsupported)
+
+            CaptionToggleResult.Enabled,
+            CaptionToggleResult.Disabled,
+            CaptionToggleResult.DownloadCancelled -> {}
+        }
+    }
+
     companion object {
         internal const val FADE_OUT_DURATION_MS = 15_000L
     }
@@ -531,6 +587,9 @@ sealed interface PlayerAction {
 
     /** 공유받은 링크로 들어온 에피소드를 재생 큐에 올린다. */
     data class OpenDeepLink(val episodeId: Long, val startPositionMs: Long?) : PlayerAction
+
+    /** 컨트롤 바의 자막 토글 버튼. */
+    data object ToggleCaption : PlayerAction
 }
 
 sealed interface PlayerEffect {
@@ -542,6 +601,15 @@ sealed interface PlayerEffect {
 
     /** 공유받은 링크의 에피소드를 끝내 찾지 못했다. */
     data object ShowDeepLinkError : PlayerEffect
+
+    /** 자막 모델 다운로드를 시작했다. 스낵바에 크기를 함께 보여준다. */
+    data class CaptionDownloadStarted(val sizeBytes: Long) : PlayerEffect
+
+    /** 켜진 에피소드의 언어가 자막을 지원하지 않는다. */
+    data object CaptionUnsupported : PlayerEffect
+
+    /** 자막 모델 다운로드/로드가 실패했다. */
+    data class CaptionDownloadFailed(val reason: CaptionDownloadFailure.Reason) : PlayerEffect
 }
 
 private data class LastPlaySnapshot(
