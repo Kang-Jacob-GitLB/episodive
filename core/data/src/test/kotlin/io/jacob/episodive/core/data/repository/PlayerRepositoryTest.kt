@@ -33,6 +33,7 @@ class PlayerRepositoryTest {
         coVerify { playerDataSource.progress }
         coVerify { playerDataSource.playback }
         coVerify { playerDataSource.isPlaying }
+        coVerify { playerDataSource.isBuffering }
         coVerify { playerDataSource.isShuffle }
         coVerify { playerDataSource.repeat }
         coVerify { playerDataSource.speed }
@@ -351,6 +352,18 @@ class PlayerRepositoryTest {
 
             // Then
             coVerify(exactly = 1) { playerDataSource.isPlaying }
+        }
+
+    @Test
+    fun `Given dependencies, When accessing isBuffering, Then calls playerDataSource isBuffering`() =
+        runTest {
+            // When
+            repository.isBuffering.test {
+                awaitComplete()
+            }
+
+            // Then
+            coVerify(exactly = 1) { playerDataSource.isBuffering }
         }
 
     @Test

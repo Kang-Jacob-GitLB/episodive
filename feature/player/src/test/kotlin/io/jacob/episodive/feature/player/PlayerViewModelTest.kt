@@ -86,6 +86,7 @@ class PlayerViewModelTest {
 
     private val progressFlow = MutableStateFlow(Progress(0.seconds, 0.seconds, 0.seconds))
     private val isPlayingFlow = MutableStateFlow(false)
+    private val isBufferingFlow = MutableStateFlow(false)
     private val speedFlow = MutableStateFlow(1.0f)
     private val indexOfListFlow = MutableStateFlow(0)
     private val cueFlow = MutableStateFlow("")
@@ -96,6 +97,7 @@ class PlayerViewModelTest {
     private fun setupPlayerRepositoryMocks() {
         every { playerRepository.progress } returns progressFlow
         every { playerRepository.isPlaying } returns isPlayingFlow
+        every { playerRepository.isBuffering } returns isBufferingFlow
         every { playerRepository.speed } returns speedFlow
         every { playerRepository.indexOfList } returns indexOfListFlow
         every { playerRepository.cue } returns cueFlow
@@ -187,6 +189,35 @@ class PlayerViewModelTest {
                 assertEquals(podcast, success.podcast)
                 assertEquals(episode, success.nowPlaying)
                 assertEquals(playlist, success.playlist)
+            }
+        }
+
+    @Test
+    fun `Given playback is buffering, When collecting, Then state carries isBuffering`() =
+        runTest {
+            setupPlayerRepositoryMocks()
+            val episode = episodeTestData
+            every { getNowPlayingUseCase() } returns flowOf(episode)
+            every { getPodcastUseCase(episode.feedId) } returns flowOf(podcastTestData)
+            every { getPlaylistUseCase() } returns flowOf(episodeTestDataList.take(3))
+            every { getUserDataUseCase() } returns flowOf(UserData(speed = 1.0f))
+
+            val viewModel = createViewModel()
+
+            viewModel.state.test {
+                assertEquals(false, (awaitItem() as PlayerState.Success).isBuffering)
+
+                isBufferingFlow.value = true
+                val buffering = expectMostRecentItem() as PlayerState.Success
+                assertTrue(buffering.isBuffering)
+                assertEquals(false, buffering.isPlaying)
+
+                isBufferingFlow.value = false
+                isPlayingFlow.value = true
+                // 두 값이 한 칸으로 묶여 있어 중간 상태가 한 번 지나갈 수 있다. 마지막 값만 본다.
+                val playing = expectMostRecentItem() as PlayerState.Success
+                assertEquals(false, playing.isBuffering)
+                assertTrue(playing.isPlaying)
             }
         }
 

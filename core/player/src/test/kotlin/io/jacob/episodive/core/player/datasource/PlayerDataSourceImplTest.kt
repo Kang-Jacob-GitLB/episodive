@@ -272,6 +272,54 @@ class PlayerDataSourceImplTest {
     }
 
     @Test
+    fun `Given play requested, When playback state becomes buffering, Then isBuffering is true`() = runTest {
+        every { player.playWhenReady } returns true
+        every { player.playbackState } returns Player.STATE_BUFFERING
+
+        dataSource.isBuffering.test {
+            assertEquals(false, awaitItem())
+            listenerSlot.captured.onPlaybackStateChanged(Player.STATE_BUFFERING)
+            assertEquals(true, awaitItem())
+
+            every { player.playbackState } returns Player.STATE_READY
+            listenerSlot.captured.onPlaybackStateChanged(Player.STATE_READY)
+            assertEquals(false, awaitItem())
+        }
+    }
+
+    @Test
+    fun `Given paused, When playback state becomes buffering, Then isBuffering stays false`() = runTest {
+        // Given: 멈춘 채 시크해도 BUFFERING 이 된다. 이때 스피너를 돌리면 안 된다.
+        every { player.playWhenReady } returns false
+        every { player.playbackState } returns Player.STATE_BUFFERING
+
+        dataSource.isBuffering.test {
+            assertEquals(false, awaitItem())
+            listenerSlot.captured.onPlaybackStateChanged(Player.STATE_BUFFERING)
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `Given buffering to play, When play is withdrawn, Then isBuffering becomes false`() = runTest {
+        every { player.playWhenReady } returns true
+        every { player.playbackState } returns Player.STATE_BUFFERING
+
+        dataSource.isBuffering.test {
+            assertEquals(false, awaitItem())
+            listenerSlot.captured.onPlaybackStateChanged(Player.STATE_BUFFERING)
+            assertEquals(true, awaitItem())
+
+            every { player.playWhenReady } returns false
+            listenerSlot.captured.onPlayWhenReadyChanged(
+                false,
+                Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST,
+            )
+            assertEquals(false, awaitItem())
+        }
+    }
+
+    @Test
     fun `Given player is playing, When pause called, Then player pause invoked`() {
         // Given
         every { player.isPlaying } returns true

@@ -46,6 +46,9 @@ interface PlayerDataSource {
     val progress: Flow<Progress>
     val playback: Flow<Int>
     val isPlaying: Flow<Boolean>
+
+    /** 재생을 요청했지만 아직 준비(버퍼링) 중이라 소리가 나지 않는 동안 참. 멈춘 채 버퍼링하면 거짓. */
+    val isBuffering: Flow<Boolean>
     val isShuffle: Flow<Boolean>
     val repeat: Flow<Int>
     val speed: Flow<Float>
