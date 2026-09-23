@@ -19,6 +19,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -102,7 +103,7 @@ class ObserveLiveCaptionUseCaseTest {
                 assertEquals(null, state.caption)
                 awaitComplete()
             }
-            coVerify(exactly = 0) { captionRepository.translatedCues(any(), any(), any()) }
+            coVerify(exactly = 0) { captionRepository.translatedCues(any(), any(), any(), any()) }
         }
 
     @Test
@@ -151,8 +152,9 @@ class ObserveLiveCaptionUseCaseTest {
             every { playerRepository.progress } returns flowOf(Progress(0.seconds, 0.seconds, 0.seconds, episodeId = transcriptEpisode.id))
             every { playerRepository.nowPlaying } returns flowOf(transcriptEpisode)
             every { playerRepository.cue } returns flowOf("cue")
+            every { playerRepository.seeks } returns emptyFlow()
             every {
-                captionRepository.translatedCues(transcriptEpisode.id, transcriptEpisode.feedLanguage, any())
+                captionRepository.translatedCues(transcriptEpisode.id, transcriptEpisode.feedLanguage, any(), any())
             } returns flowOf(liveCaptionTestData)
 
             // When & Then
@@ -162,7 +164,7 @@ class ObserveLiveCaptionUseCaseTest {
                 assertEquals(liveCaptionTestData, state.caption)
                 cancelAndIgnoreRemainingEvents()
             }
-            coVerify(exactly = 1) { captionRepository.translatedCues(transcriptEpisode.id, transcriptEpisode.feedLanguage, any()) }
+            coVerify(exactly = 1) { captionRepository.translatedCues(transcriptEpisode.id, transcriptEpisode.feedLanguage, any(), any()) }
             coVerify(exactly = 0) { captionRepository.modelState(any()) }
             coVerify(exactly = 0) { captionRepository.liveCaptions(any(), any()) }
         }

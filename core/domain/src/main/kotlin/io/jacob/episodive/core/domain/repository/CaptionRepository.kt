@@ -18,11 +18,13 @@ interface CaptionRepository {
 
     /**
      * VTT cue 를 기기 언어로 번역한다. sourceLanguageTag = feedLanguage.
-     * 번역 불가(같은 언어/미지원)면 translation=null 로 그대로 흘린다. cue 빈 문자열이면 null 방출.
+     * 번역 불가(같은 언어/미지원)면 번역 없이 원문만 흘린다. 빈 cue(cue 사이 공백)는 무시하고
+     * 쌓아 둔 줄을 그대로 유지한다 — [seeks] 가 발행될 때만 롤링 history 를 통째로 비운다.
      */
     fun translatedCues(
         episodeId: Long,
         sourceLanguageTag: String,
         cues: Flow<String>,
+        seeks: Flow<Unit>,
     ): Flow<LiveCaption?>
 }

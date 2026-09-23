@@ -244,6 +244,24 @@ Room 왕복과 `flowOn(IO)` 를 거쳐 `progress` 보다 늦게 도착한다. �
 - 모델 다운로드는 **caption 전용 OkHttpClient** 로 한다. `:core:network` 클라이언트에는
   Podcast Index 인증 인터셉터가 있어 키가 HuggingFace 로 샌다. 파일은 revision·sha256 고정
   (`CaptionModelRegistry`), `.part` → 검증 → rename 이다.
+- **표시는 앨범아트 전체를 쓰는 롤링이다**(`RollingCaption.kt`). 번역 세션이면 위(원문)/아래(번역)로
+  반씩 나눈다. 나눌지는 `LiveCaption.isTranslating` 으로 정한다 — 번역 줄이 있는지로 정하면 첫
+  번역이 오는 순간 원문 영역이 반으로 줄며 튄다.
+  - 롤링 이동량은 **앵커 줄**(이전·현재에 모두 있는 가장 최근 줄)이 바닥에서 멀어진 거리로 잡고,
+    `Layout` 측정 단계에서 바로 반영한다. "콘텐츠 전체 높이가 늘면 애니메이션" 으로 되돌리지 마라 —
+    목록이 차서 맨 윗줄이 버려지는 만큼 높이가 빠져 새 줄이 제자리에서 툭 바뀐다. `LazyColumn` 도
+    쓰지 마라 — 뷰포트 밖 아이템을 즉시 dispose 해 윗줄이 한 프레임에 사라진다. 둘 다 실기기에서 겪었다.
+  - `CueOverlay` 는 롤링 오버레이와 `PushUpCue` 를 **분기 없이 늘 부른다.** if/else 로 번갈아
+    부르면 `AnimatedVisibility` 가 컴포지션에서 빠져 페이드가 사라진다.
+  - `CaptionPresenter.clear()` 는 지운 구간의 마지막 줄 id 를 번역 하한으로 남긴다. 번역은 따로
+    launch 된 코루틴이라 시크로 취소되지 않아, 하한이 없으면 시크 전 문장의 번역이 새 구간에 붙는다.
+    빈 partial 은 줄로 싣지 않는다(빈 `Text` 도 한 줄 높이를 차지한다).
+  - VTT 는 빈 cue(cue 사이 공백)로 비우지 않고 **시크(`PlayerRepository.seeks`)로만 비운다.** 빈
+    cue 로 비우면 cue 가 바뀔 때마다 커버 전체가 비었다 다시 찬다. cue 번역은 cue 마다 따로 띄운다
+    (`collectLatest` 로 앞 번역을 취소하면 원문은 남고 번역만 빠진다).
+  - STT 도 구간이 바뀔 때마다 비우지 않는다. **flush(시크·EOS·리셋)로 열린 구간만 비우고,
+    오버런(`PcmChunk.isContinuation`)은 stream·tracker 만 새로 열고 흘러가던 줄을 확정으로 남긴다.**
+    저사양 기기에서 인식이 실시간을 못 따라가면 링(약 11초)이 넘칠 때마다 커버 전체가 사라진다.
 - 네이티브 `.so`(onnxruntime, ML Kit)는 APK 에 들어 있어야 한다. Play 는 스토어 밖에서 받은
   실행 코드를 금지한다. 런타임에 받는 것은 모델(데이터)뿐이다. APK 는 ABI 별로 나눠
   (`splits.abi`) 릴리즈도 ABI 별로 올린다(`publish.yml`).

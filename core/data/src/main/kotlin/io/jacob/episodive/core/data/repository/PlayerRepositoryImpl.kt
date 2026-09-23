@@ -146,5 +146,6 @@ class PlayerRepositoryImpl @Inject constructor(
     override val repeat: Flow<Repeat> = playerDataSource.repeat.map { Repeat.fromValue(it) }
     override val speed: Flow<Float> = playerDataSource.speed
     override val cue: Flow<String> = playerDataSource.cue
+    override val seeks: Flow<Unit> = playerDataSource.seeks
     override val spectrum: Flow<Spectrum> = playerDataSource.spectrum
 }

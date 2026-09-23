@@ -932,6 +932,49 @@ class PlayerDataSourceImplTest {
     }
 
     @Test
+    fun `Given a seek discontinuity, When onPositionDiscontinuity invoked, Then seeks emits`() = runTest {
+        val oldPosition = mockk<Player.PositionInfo>(relaxed = true)
+        val newPosition = mockk<Player.PositionInfo>(relaxed = true)
+
+        dataSource.seeks.test {
+            listenerSlot.captured.onPositionDiscontinuity(oldPosition, newPosition, Player.DISCONTINUITY_REASON_SEEK)
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given a seek adjustment discontinuity, When onPositionDiscontinuity invoked, Then seeks emits`() = runTest {
+        val oldPosition = mockk<Player.PositionInfo>(relaxed = true)
+        val newPosition = mockk<Player.PositionInfo>(relaxed = true)
+
+        dataSource.seeks.test {
+            listenerSlot.captured.onPositionDiscontinuity(
+                oldPosition,
+                newPosition,
+                Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT,
+            )
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given a non-seek discontinuity, When onPositionDiscontinuity invoked, Then seeks does not emit`() = runTest {
+        val oldPosition = mockk<Player.PositionInfo>(relaxed = true)
+        val newPosition = mockk<Player.PositionInfo>(relaxed = true)
+
+        dataSource.seeks.test {
+            listenerSlot.captured.onPositionDiscontinuity(
+                oldPosition,
+                newPosition,
+                Player.DISCONTINUITY_REASON_AUTO_TRANSITION,
+            )
+            expectNoEvents()
+        }
+    }
+
+    @Test
     fun `Given media metadata, When onMediaMetadataChanged invoked, Then no exception thrown`() {
         // Given
         val metadata = MediaMetadata.Builder().setTitle("title").build()

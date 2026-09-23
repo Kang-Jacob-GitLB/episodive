@@ -58,6 +58,13 @@ interface PlayerRepository {
     val cue: Flow<String>
 
     /**
+     * 탐색(시크)이 일어난 순간을 알리는 신호. VTT 자막(`translatedCues`)이 시크로 롤링 history 를
+     * 비우는 데 쓴다 — 에피소드 구분과 마찬가지로 `progress.episodeId` 가 아니라 이 신호 자체가
+     * "구간이 바뀌었다" 는 근거다.
+     */
+    val seeks: Flow<Unit>
+
+    /**
      * 지금 나고 있는 소리를 주파수 대역 다섯 칸으로 나눈 세기(각 0..1). 분석을 붙이지 않은
      * 플레이어는 늘 잠잠하다. 실제로 귀에 닿는 소리보다 AudioTrack 버퍼만큼 앞선 값이다.
      */

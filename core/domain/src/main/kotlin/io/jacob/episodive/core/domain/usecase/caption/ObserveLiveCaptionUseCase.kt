@@ -81,7 +81,7 @@ class ObserveLiveCaptionUseCase @Inject constructor(
                 flowOf(LiveCaptionState(isEnabled = false, availability = CaptionAvailability.Transcript, caption = null))
             } else {
                 captionRepository
-                    .translatedCues(target.episodeId, target.feedLanguage, playerRepository.cue)
+                    .translatedCues(target.episodeId, target.feedLanguage, playerRepository.cue, playerRepository.seeks)
                     .map { caption -> LiveCaptionState(isEnabled = true, availability = CaptionAvailability.Transcript, caption = caption) }
             }
 

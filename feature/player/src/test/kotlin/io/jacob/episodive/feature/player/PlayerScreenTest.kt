@@ -1,5 +1,9 @@
 package io.jacob.episodive.feature.player
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
@@ -10,18 +14,21 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.text.TextLayoutResult
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.caption.LiveCaption
+import io.jacob.episodive.core.testing.model.captionLineTestData
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.liveCaptionTestData
 import io.jacob.episodive.core.testing.model.podcastTestData
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -384,7 +391,7 @@ class PlayerScreenTest {
         )
 
         composeTestRule.onNodeWithText("test cue text").assertExists()
-        composeTestRule.onNodeWithText(caption.text, substring = true).assertDoesNotExist()
+        composeTestRule.onNodeWithText(caption.lines.last().text, substring = true).assertDoesNotExist()
     }
 
     @Test
@@ -396,19 +403,88 @@ class PlayerScreenTest {
             cue = "test cue text",
         )
 
-        composeTestRule.onNodeWithText(caption.text, substring = true).assertExists()
+        composeTestRule.onNodeWithText(caption.lines.last().text, substring = true).assertExists()
         composeTestRule.onNodeWithText("test cue text").assertDoesNotExist()
     }
 
     @Test
     fun captionEpisodeIdMatches_translationLineIsShown() {
-        val caption = liveCaptionTestData.copy(episodeId = 111L, translation = "번역된 자막")
+        val caption = liveCaptionTestData.copy(episodeId = 111L, isTranslating = true)
         setPlayerScreen(
             progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
             liveCaption = { caption },
             cue = "test cue text",
         )
 
-        composeTestRule.onNodeWithText("번역된 자막", substring = true).assertExists()
+        composeTestRule.onNodeWithText(caption.translations.last().text, substring = true).assertExists()
+    }
+
+    @Test
+    fun captionIsTranslatingFalse_translationLineIsNotShown() {
+        val caption = liveCaptionTestData.copy(episodeId = 111L, isTranslating = false)
+        setPlayerScreen(
+            progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
+            liveCaption = { caption },
+            cue = "test cue text",
+        )
+
+        composeTestRule.onNodeWithText(caption.translations.last().text, substring = true).assertDoesNotExist()
+    }
+
+    // --- New: Rolling caption display ---
+
+    @Test
+    fun rollingCaption_recentLinesAreShown() {
+        val caption = liveCaptionTestData.copy(episodeId = 111L)
+        setPlayerScreen(
+            progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
+            liveCaption = { caption },
+        )
+
+        // 최근 두 줄(마지막 두 개)은 앨범아트 전체를 쓰는 롤링 영역 안에 항상 보여야 한다.
+        composeTestRule.onNodeWithText(caption.lines[1].text, substring = true).assertExists()
+        composeTestRule.onNodeWithText(caption.lines[2].text, substring = true).assertExists()
+    }
+
+    @Test
+    fun rollingCaption_translationPersistsAcrossNewLine() {
+        var caption by mutableStateOf(liveCaptionTestData.copy(episodeId = 111L))
+        setPlayerScreen(
+            progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
+            liveCaption = { caption },
+        )
+
+        val existingTranslation = caption.translations.last().text
+        composeTestRule.onNodeWithText(existingTranslation, substring = true).assertExists()
+
+        // 원문에 새 줄이 추가돼도(=lines 가 바뀌어도) translations 는 코어가 다음 번역이 올
+        // 때까지 유지해 주는 값이다 — 화면이 lines 변화에 맞춰 리셋하지 않는지 확인한다.
+        val newLine = captionLineTestData.copy(id = 4L, text = "A brand new line just arrived.", isFinal = false)
+        caption = caption.copy(lines = caption.lines + newLine)
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText(newLine.text, substring = true).assertExists()
+        composeTestRule.onNodeWithText(existingTranslation, substring = true).assertExists()
+    }
+
+    @Test
+    fun toggledOffLongCue_isNotTruncated() {
+        // 토글이 꺼진 기존 VTT 표시(PushUpCue)는 PR#116 이전처럼 줄 수 제한이 없어야 한다.
+        // Robolectric 의 텍스트 측정은 실기기 폰트 셰이핑과 달라 실제 줄바꿈 개수·픽셀
+        // 높이로는 잘림 여부를 신뢰성 있게 가를 수 없다(Ellipsis 는 의미 트리의 텍스트
+        // 자체도 지우지 않는다). 대신 `GetTextLayoutResult` 시맨틱스 액션으로 실제 Text 에
+        // 걸린 `maxLines` 설정값을 직접 읽어 제한이 없는지(Int.MAX_VALUE) 확인한다 — 이게
+        // PR#116 의 `maxLines = 2` 회귀를 직접 가리키는 값이다.
+        val longCue = "word ".repeat(60).trim()
+        setPlayerScreen(
+            liveCaption = { null },
+            cue = longCue,
+        )
+
+        val node = composeTestRule.onNodeWithText(longCue, substring = true).fetchSemanticsNode()
+        val results = mutableListOf<TextLayoutResult>()
+        node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(results)
+
+        assertEquals(Int.MAX_VALUE, results.first().layoutInput.maxLines)
     }
 }
