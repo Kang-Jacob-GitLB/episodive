@@ -25,6 +25,9 @@ class CaptionLineTracker(
     /** 화면에 그릴 줄의 식별자. 확정될 때마다(초과 컷·endpoint) 다음 줄로 넘어간다. */
     private var lineId = 0L
 
+    /** 지금 발화의 식별자 = 그 발화 첫 줄의 [lineId]. 초과 컷으로는 바뀌지 않고 [reset] 때만 바뀐다. */
+    private var utteranceId = 0L
+
     /**
      * [onTokens] 한 번의 결과.
      * @param finalized 이번 호출에서 줄 길이 초과로 새로 확정된 줄. 없으면 null.
@@ -48,7 +51,7 @@ class CaptionLineTracker(
             if (cutIndex > 0) {
                 val committedTokens = remaining.subList(0, cutIndex)
                 val text = normalize(committedTokens)
-                finalized = CaptionLine(id = lineId, text = text, isFinal = true)
+                finalized = CaptionLine(id = lineId, text = text, isFinal = true, utteranceId = utteranceId)
                 committedTokenCount += cutIndex
                 lineId++
             }
@@ -59,6 +62,7 @@ class CaptionLineTracker(
             id = lineId,
             text = normalize(stillRemaining),
             isFinal = false,
+            utteranceId = utteranceId,
         )
         return Update(finalized, partial)
     }
@@ -73,7 +77,7 @@ class CaptionLineTracker(
         val result = if (text.isEmpty()) {
             null
         } else {
-            CaptionLine(id = lineId, text = text, isFinal = true)
+            CaptionLine(id = lineId, text = text, isFinal = true, utteranceId = utteranceId)
         }
         reset()
         return result
@@ -83,6 +87,12 @@ class CaptionLineTracker(
     fun reset() {
         committedTokenCount = 0
         lineId++
+        utteranceId = lineId
+    }
+
+    private fun isPunctuationOnly(token: String): Boolean {
+        val piece = token.trimStart('▁', ' ')
+        return piece.isNotEmpty() && piece.all { it in SentencePunctuation }
     }
 
     private fun normalizeRemaining(remaining: List<String>): String = normalize(remaining)
@@ -107,10 +117,18 @@ class CaptionLineTracker(
         var cut = 0
         for (index in 1 until remaining.size) {
             if (!starts[index]) continue
+            // 구두점만인 토큰(" ." 등)은 선행 공백을 달고 와도 앞 단어에 붙는다 — 그 앞에서 자르면
+            // 화면이 조각을 공백으로 이을 때 "알겠지 . 다음" 이 된다.
+            if (isPunctuationOnly(remaining[index])) continue
             val candidateLength = normalize(remaining.subList(0, index)).length
             if (candidateLength > maxLineChars) break
             cut = index
         }
         return cut
+    }
+
+    private companion object {
+        /** 앞 단어에 붙는 문장 부호. 이것만으로 된 토큰 앞은 줄을 자르는 자리가 아니다. */
+        const val SentencePunctuation = ".,?!"
     }
 }

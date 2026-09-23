@@ -1,6 +1,6 @@
 package io.jacob.episodive.core.caption.engine
 
-import io.jacob.episodive.core.testing.model.captionLineTestData
+import io.jacob.episodive.core.testing.model.captionLineOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -9,8 +9,7 @@ import org.junit.Test
 class CaptionPresenterTest {
     private val presenter = CaptionPresenter(episodeId = 1L, maxLines = 3)
 
-    private fun line(id: Long, text: String, isFinal: Boolean) =
-        captionLineTestData.copy(id = id, text = text, isFinal = isFinal)
+    private fun line(id: Long, text: String, isFinal: Boolean) = captionLineOf(id, text, isFinal)
 
     @Test
     fun `a finalized line is added to the display immediately`() {
@@ -220,5 +219,23 @@ class CaptionPresenterTest {
 
         assertNull(finalized)
         assertNull(presenter.current())
+    }
+
+    @Test
+    fun `a translation line keeps the given utteranceId`() {
+        presenter.onFinalized(line(0, "Hello.", isFinal = true))
+
+        val shown = presenter.onTranslation(lineId = 0, text = "안녕.", utteranceId = 7L)
+
+        assertEquals(7L, shown?.translations?.single()?.utteranceId)
+    }
+
+    @Test
+    fun `a translation line's utteranceId defaults to the lineId`() {
+        presenter.onFinalized(line(0, "Hello.", isFinal = true))
+
+        val shown = presenter.onTranslation(lineId = 0, text = "안녕.")
+
+        assertEquals(0L, shown?.translations?.single()?.utteranceId)
     }
 }

@@ -86,7 +86,7 @@ class LiveCaptionEngine @Inject constructor(
                 suspend fun translateAndPublish(line: CaptionLine) {
                     val t = translator ?: return
                     val translated = t.translate(line.text) ?: return
-                    publish(presenter.onTranslation(line.id, translated))
+                    publish(presenter.onTranslation(line.id, translated, line.utteranceId))
                 }
 
                 try {
