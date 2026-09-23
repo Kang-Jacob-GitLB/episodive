@@ -6,11 +6,16 @@ package io.jacob.episodive.core.model.caption
  * @param id 줄 단위 식별자. 번역 줄은 원문 줄의 id 를 그대로 쓴다.
  * @param text 원문(정규화 완료) 또는 번역문.
  * @param isFinal 확정 줄이면 true, 아직 흘러가는 partial 이면 false. 번역 줄은 늘 true.
+ * @param utteranceId 이 줄이 속한 발화(endpoint 사이). 인식기는 긴 발화를 글자 수 상한에서
+ * 여러 줄로 끊어 내보내는데(번역을 발화 도중에 받기 위해서다), 화면은 같은 발화의 연속한 줄을
+ * **한 문단으로 이어** 그린다 — 줄바꿈은 영역 폭과 발화 경계에서만 일어나야 한다. 기본값은
+ * [id] 로, 줄 하나가 곧 발화 하나인 경우(VTT cue)다.
  */
 data class CaptionLine(
     val id: Long,
     val text: String,
     val isFinal: Boolean,
+    val utteranceId: Long = id,
 )
 
 /**

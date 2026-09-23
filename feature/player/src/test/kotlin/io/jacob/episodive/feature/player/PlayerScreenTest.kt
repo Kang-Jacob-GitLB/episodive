@@ -21,6 +21,7 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.caption.LiveCaption
+import io.jacob.episodive.core.testing.model.captionLineOf
 import io.jacob.episodive.core.testing.model.captionLineTestData
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
@@ -459,12 +460,32 @@ class PlayerScreenTest {
 
         // 원문에 새 줄이 추가돼도(=lines 가 바뀌어도) translations 는 코어가 다음 번역이 올
         // 때까지 유지해 주는 값이다 — 화면이 lines 변화에 맞춰 리셋하지 않는지 확인한다.
-        val newLine = captionLineTestData.copy(id = 4L, text = "A brand new line just arrived.", isFinal = false)
+        val newLine = captionLineOf(id = 4L, text = "A brand new line just arrived.", isFinal = false)
         caption = caption.copy(lines = caption.lines + newLine)
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText(newLine.text, substring = true).assertExists()
         composeTestRule.onNodeWithText(existingTranslation, substring = true).assertExists()
+    }
+
+    @Test
+    fun rollingCaption_linesSharingUtteranceIdAreJoinedIntoOneParagraph() {
+        // 강제 컷으로 나뉜 두 줄이 같은 발화(utteranceId)를 공유하면 화면은 이를 한 문단으로
+        // 이어 그린다(captionParagraphs) — 두 줄이 공백 하나로 이어붙은 텍스트가 한 노드로 있어야 한다.
+        val firstHalf = captionLineTestData.copy(id = 10L, utteranceId = 999L, text = "First half of the line")
+        val secondHalf = captionLineTestData.copy(id = 11L, utteranceId = 999L, text = "second half.", isFinal = false)
+        val caption = liveCaptionTestData.copy(
+            episodeId = 111L,
+            lines = listOf(firstHalf, secondHalf),
+            translations = emptyList(),
+            isTranslating = false,
+        )
+        setPlayerScreen(
+            progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
+            liveCaption = { caption },
+        )
+
+        composeTestRule.onNodeWithText("${firstHalf.text} ${secondHalf.text}", substring = true).assertExists()
     }
 
     @Test

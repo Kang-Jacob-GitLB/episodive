@@ -425,6 +425,61 @@ class LiveCaptionEngineTest {
     }
 
     @Test
+    fun `a forced split within one utterance keeps a shared utteranceId on the translated lines`() = runTest {
+        // maxLineChars 를 작게 잡아 한 발화 안에서 강제 컷(finalized + partial)이 먼저 일어나고,
+        // 그 뒤 endpoint 로 나머지가 확정되는 상황을 재현한다 — 화면은 이 둘을 한 문단으로
+        // 이어 그리므로(captionParagraphs) 둘의 utteranceId 가 같아야 하고, 번역도 그 값을
+        // 그대로 실어야 한다(LiveCaptionEngine.translateAndPublish 가 line.utteranceId 를 넘긴다).
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val pcm = FakeSpeechPcmSource()
+        val factory = FakeEngineRecognizerFactory()
+        val recognizers = RecognizerCache(factory, dispatcher)
+        val translator = FakeCaptionTranslator(result = "번역")
+        val engine = LiveCaptionEngine(
+            pcm, recognizers, FakeCaptionTranslatorFactory(translator), DeviceLanguageProvider { "en" }, dispatcher,
+        )
+        val koDir = tempFolder.newFolder("ko")
+        val koModel = InstalledCaptionModel(
+            language = CaptionLanguage.KOREAN,
+            encoderPath = File(koDir, "encoder.onnx").path,
+            decoderPath = File(koDir, "decoder.onnx").path,
+            joinerPath = File(koDir, "joiner.onnx").path,
+            tokensPath = File(koDir, "tokens.txt").path,
+            maxLineChars = 10,
+        )
+
+        val results = mutableListOf<CaptionSession>()
+        backgroundScope.launch(dispatcher) { engine.session(episodeId, koModel).collect { results.add(it) } }
+        pump()
+
+        pcm.enqueue(chunk(segment = 1))
+        pump()
+        val stream = factory.created.single().createdStreams.single()
+        // "가나다" 3자 * 4단어 = 12자 + 공백 3 = 15자, maxLineChars=10 이면 두 단어까지만 담겨
+        // 강제 컷이 일어난다(CaptionLineTrackerTest 의 같은 계산 참고).
+        stream.tokens = listOf(" 가나다", " 가나다", " 가나다", " 가나다")
+        pcm.enqueue(chunk(segment = 1))
+        pump(steps = 3)
+
+        stream.endpoint = true
+        pcm.enqueue(chunk(segment = 1))
+        pump(steps = 3)
+
+        val running = results.filterIsInstance<CaptionSession.Running>().mapNotNull { it.caption }
+        val sourceLineIds = running.flatMap { it.lines }.map { it.id }.distinct()
+        assertTrue("강제 컷이 실제로 일어나 줄이 둘 이상이어야 한다", sourceLineIds.size >= 2)
+        val sourceUtteranceIds = running.flatMap { it.lines }.map { it.utteranceId }.distinct()
+        assertEquals("강제 컷 줄과 endpoint 줄은 같은 발화여야 한다", 1, sourceUtteranceIds.size)
+
+        val translationUtteranceIds = running.flatMap { it.translations }.map { it.utteranceId }.distinct()
+        assertEquals(
+            "번역 줄도 원문과 같은 utteranceId 를 실어야 한다",
+            sourceUtteranceIds,
+            translationUtteranceIds,
+        )
+    }
+
+    @Test
     fun `인식기 로드가 일시 실패하면 Unloadable 을 보내지 않고 세션만 조용히 끝낸다`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val pcm = FakeSpeechPcmSource()

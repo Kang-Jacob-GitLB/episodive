@@ -10,7 +10,7 @@ import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
 import io.jacob.episodive.core.model.caption.CaptionLanguage
 import io.jacob.episodive.core.model.caption.CaptionModelState
 import io.jacob.episodive.core.model.caption.CaptionSession
-import io.jacob.episodive.core.testing.model.captionLineTestData
+import io.jacob.episodive.core.testing.model.captionLineOf
 import io.jacob.episodive.core.testing.model.liveCaptionTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
@@ -119,7 +119,7 @@ class CaptionRepositoryImplTest {
         )
         every { captionModelManager.installed(CaptionLanguage.ENGLISH) } returns model
         val running = CaptionSession.Running(
-            liveCaptionTestData.copy(episodeId = 1L, lines = listOf(captionLineTestData.copy(id = 0L, text = "hello", isFinal = false))),
+            liveCaptionTestData.copy(episodeId = 1L, lines = listOf(captionLineOf(id = 0L, text = "hello", isFinal = false))),
         )
         every { liveCaptionEngine.session(1L, model) } returns flowOf(CaptionSession.Loading, running)
 
@@ -162,7 +162,7 @@ class CaptionRepositoryImplTest {
                 assertEquals(
                     liveCaptionTestData.copy(
                         episodeId = 1L,
-                        lines = listOf(captionLineTestData.copy(id = 0L, text = "hello", isFinal = true)),
+                        lines = listOf(captionLineOf(id = 0L, text = "hello", isFinal = true)),
                         translations = emptyList(),
                         isTranslating = false,
                     ),
@@ -173,8 +173,8 @@ class CaptionRepositoryImplTest {
                     liveCaptionTestData.copy(
                         episodeId = 1L,
                         lines = listOf(
-                            captionLineTestData.copy(id = 0L, text = "hello", isFinal = true),
-                            captionLineTestData.copy(id = 1L, text = "world", isFinal = true),
+                            captionLineOf(id = 0L, text = "hello", isFinal = true),
+                            captionLineOf(id = 1L, text = "world", isFinal = true),
                         ),
                         translations = emptyList(),
                         isTranslating = false,
@@ -191,10 +191,10 @@ class CaptionRepositoryImplTest {
         val cues = flowOf("hello", "", "world")
 
         repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
-            assertEquals(listOf(captionLineTestData.copy(id = 0L, text = "hello", isFinal = true)), awaitItem()?.lines)
+            assertEquals(listOf(captionLineOf(id = 0L, text = "hello", isFinal = true)), awaitItem()?.lines)
             // 빈 cue 는 새 방출을 내지 않고 건너뛴다 — 그 다음 cue 가 앞줄 뒤에 그대로 이어붙는다.
             assertEquals(
-                listOf(captionLineTestData.copy(id = 0L, text = "hello", isFinal = true), captionLineTestData.copy(id = 1L, text = "world", isFinal = true)),
+                listOf(captionLineOf(id = 0L, text = "hello", isFinal = true), captionLineOf(id = 1L, text = "world", isFinal = true)),
                 awaitItem()?.lines,
             )
             awaitComplete()
@@ -209,11 +209,11 @@ class CaptionRepositoryImplTest {
 
             repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = flowOf("hello"), seeks = emptyFlow()).test {
                 val original = awaitItem()
-                assertEquals(listOf(captionLineTestData.copy(id = 0L, text = "hello", isFinal = true)), original?.lines)
+                assertEquals(listOf(captionLineOf(id = 0L, text = "hello", isFinal = true)), original?.lines)
                 assertTrue(original?.translations.orEmpty().isEmpty())
 
                 val translated = awaitItem()
-                assertEquals(listOf(captionLineTestData.copy(id = 0L, text = "hello-번역", isFinal = true)), translated?.translations)
+                assertEquals(listOf(captionLineOf(id = 0L, text = "hello-번역", isFinal = true)), translated?.translations)
 
                 awaitComplete()
             }
@@ -241,19 +241,19 @@ class CaptionRepositoryImplTest {
             repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
                 cues.emit("first")
                 val firstOriginal = awaitItem()
-                assertEquals(listOf(captionLineTestData.copy(id = 0L, text = "first", isFinal = true)), firstOriginal?.lines)
+                assertEquals(listOf(captionLineOf(id = 0L, text = "first", isFinal = true)), firstOriginal?.lines)
                 firstTranslationStarted.await()
 
                 cues.emit("second")
                 val secondOriginal = awaitItem()
                 assertEquals(
-                    listOf(captionLineTestData.copy(id = 0L, text = "first", isFinal = true), captionLineTestData.copy(id = 1L, text = "second", isFinal = true)),
+                    listOf(captionLineOf(id = 0L, text = "first", isFinal = true), captionLineOf(id = 1L, text = "second", isFinal = true)),
                     secondOriginal?.lines,
                 )
                 assertTrue("second 의 번역이 오기 전이니 아직 없다", secondOriginal?.translations.orEmpty().isEmpty())
 
                 val secondTranslated = awaitItem()
-                assertEquals(listOf(captionLineTestData.copy(id = 1L, text = "second-번역", isFinal = true)), secondTranslated?.translations)
+                assertEquals(listOf(captionLineOf(id = 1L, text = "second-번역", isFinal = true)), secondTranslated?.translations)
 
                 cancelAndIgnoreRemainingEvents()
             }
@@ -273,7 +273,7 @@ class CaptionRepositoryImplTest {
 
         repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = cues, seeks = seeks).test {
             cues.emit("hello")
-            assertEquals(listOf(captionLineTestData.copy(id = 0L, text = "hello", isFinal = true)), awaitItem()?.lines)
+            assertEquals(listOf(captionLineOf(id = 0L, text = "hello", isFinal = true)), awaitItem()?.lines)
 
             seeks.emit(Unit)
             assertNull("시크는 쌓인 줄을 통째로 비워야 한다", awaitItem())
@@ -298,7 +298,7 @@ class CaptionRepositoryImplTest {
             cues.emit("world")
             assertEquals(
                 "시크를 지나도 줄 번호는 계속 늘어야 번역 하한이 지난 구간을 정확히 가른다",
-                listOf(captionLineTestData.copy(id = 1L, text = "world", isFinal = true)),
+                listOf(captionLineOf(id = 1L, text = "world", isFinal = true)),
                 awaitItem()?.lines,
             )
 
@@ -370,7 +370,7 @@ class CaptionRepositoryImplTest {
                 val translated = awaitItem()
                 assertEquals(
                     "빈 cue 가 진행 중이던 번역을 취소하면 안 된다",
-                    listOf(captionLineTestData.copy(id = 0L, text = "hello-번역", isFinal = true)),
+                    listOf(captionLineOf(id = 0L, text = "hello-번역", isFinal = true)),
                     translated?.translations,
                 )
 
@@ -413,8 +413,8 @@ class CaptionRepositoryImplTest {
                 val worldOriginal = awaitItem()
                 assertEquals(
                     listOf(
-                        captionLineTestData.copy(id = 0L, text = "hello", isFinal = true),
-                        captionLineTestData.copy(id = 1L, text = "world", isFinal = true),
+                        captionLineOf(id = 0L, text = "hello", isFinal = true),
+                        captionLineOf(id = 1L, text = "world", isFinal = true),
                     ),
                     worldOriginal?.lines,
                 )
@@ -427,7 +427,7 @@ class CaptionRepositoryImplTest {
                 val afterHelloTranslated = awaitItem()
                 assertEquals(
                     "다음 cue(world) 가 왔다고 hello 의 번역이 취소되면 안 된다",
-                    listOf(captionLineTestData.copy(id = 0L, text = "hello-번역", isFinal = true)),
+                    listOf(captionLineOf(id = 0L, text = "hello-번역", isFinal = true)),
                     afterHelloTranslated?.translations,
                 )
 
@@ -435,8 +435,8 @@ class CaptionRepositoryImplTest {
                 val afterWorldTranslated = awaitItem()
                 assertEquals(
                     listOf(
-                        captionLineTestData.copy(id = 0L, text = "hello-번역", isFinal = true),
-                        captionLineTestData.copy(id = 1L, text = "world-번역", isFinal = true),
+                        captionLineOf(id = 0L, text = "hello-번역", isFinal = true),
+                        captionLineOf(id = 1L, text = "world-번역", isFinal = true),
                     ),
                     afterWorldTranslated?.translations,
                 )

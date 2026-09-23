@@ -38,6 +38,7 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -126,9 +127,11 @@ fun RollingCaptionOverlay(
 }
 
 /**
- * 롤링 영역 하나 — 부모가 정한 높이 안에, 줄([CaptionLine])마다 별도 [Text] 블록을 위→아래로
- * 쌓고 **맨 아래 줄을 영역 바닥에 붙인다.** 넘치는 윗줄은 clip 밖(위)으로 나간다. 한 Text 에
- * 이어붙인 뒤 앞을 잘라내는 방식은 줄바꿈 재계산으로 튀므로 쓰지 않는다.
+ * 롤링 영역 하나 — 부모가 정한 높이 안에, 발화 문단([captionParagraphs])마다 별도 [Text] 블록을
+ * 위→아래로 쌓고 **맨 아래 문단을 영역 바닥에 붙인다.** 넘치는 윗줄은 clip 밖(위)으로 나간다.
+ * 문단 끝에 이어붙이는 것은 괜찮지만(greedy 줄바꿈이라 앞 줄은 그대로다), 한 Text 에 이어붙인
+ * 뒤 앞을 잘라내는 방식은 줄바꿈 재계산으로 튀므로 쓰지 않는다. 발화 하나는 인식기 규칙상 20초를
+ * 넘지 않아 문단이 끝없이 자라지 않는다.
  *
  * 지나온 길 — 둘 다 실기기에서 깨졌다:
  * - `LazyColumn(reverseLayout = true)` + `animateItem()`: 뷰포트를 벗어난 아이템을 Lazy 가 즉시
@@ -151,10 +154,14 @@ private fun RollingCaptionLines(
     color: Color,
 ) {
     val scope = rememberCoroutineScope()
-    // 줄 id 는 에피소드(세션)마다 0 부터 다시 매겨진다. 앞 에피소드의 페이드아웃 중에 다음
+    // 발화 id 는 에피소드(세션)마다 0 부터 다시 매겨진다. 앞 에피소드의 페이드아웃 중에 다음
     // 에피소드 줄이 들어오면 같은 id 를 앵커로 잘못 잡으므로, 에피소드가 바뀌면 새로 시작한다.
     val rolling = remember(scope, episodeId) { RollingOffset(scope) }
     val lineSpacingPx = with(LocalDensity.current) { LineSpacing.roundToPx() }
+    val paragraphs = remember(lines) { captionParagraphs(lines) }
+    // 문단 끝에 글자가 붙을 때 앞 줄들의 줄바꿈이 다시 계산되지 않게 greedy 로 고정한다 —
+    // 균형 맞춤(Paragraph) 방식은 한 단어가 붙어도 윗줄 끝 단어를 끌어내려 문단 전체가 출렁인다.
+    val paragraphStyle = remember(style) { style.copy(lineBreak = LineBreak.Simple) }
 
     Layout(
         modifier = modifier
@@ -162,13 +169,13 @@ private fun RollingCaptionLines(
             .clipToBounds()
             .topEdgeFade(),
         content = {
-            lines.forEach { line ->
-                key(line.id) {
+            paragraphs.forEach { paragraph ->
+                key(paragraph.utteranceId) {
                     Text(
-                        modifier = Modifier.layoutId(line.id),
-                        text = line.text,
+                        modifier = Modifier.layoutId(paragraph.utteranceId),
+                        text = paragraph.text,
                         color = color,
-                        style = style,
+                        style = paragraphStyle,
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -190,7 +197,7 @@ private fun RollingCaptionLines(
             contentHeight += placeable.height
         }
 
-        // 줄 id → 그 줄 윗변이 콘텐츠 바닥에서 떨어진 거리(오래된 → 최신 순서 유지).
+        // 문단(발화) id → 그 문단 윗변이 콘텐츠 바닥에서 떨어진 거리(오래된 → 최신 순서 유지).
         val distances = LinkedHashMap<Long, Int>(measurables.size)
         measurables.forEachIndexed { index, measurable ->
             distances[measurable.layoutId as Long] = contentHeight - tops[index]

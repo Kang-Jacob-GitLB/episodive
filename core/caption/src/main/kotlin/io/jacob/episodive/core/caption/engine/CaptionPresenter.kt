@@ -81,11 +81,14 @@ class CaptionPresenter(
     /**
      * [lineId] 가 지금까지 받아들인 번역보다 최신이고 지난 구간의 줄이 아닐 때만 번역 줄로 얹는다.
      * 늦게 온 번역은 버린다.
+     *
+     * @param utteranceId 원문 줄이 속한 발화. 번역 영역도 원문처럼 같은 발화의 번역을 한 문단으로
+     * 이어 그린다. 기본값은 [lineId](줄 하나가 곧 발화 하나).
      */
-    fun onTranslation(lineId: Long, text: String): LiveCaption? {
+    fun onTranslation(lineId: Long, text: String, utteranceId: Long = lineId): LiveCaption? {
         val floor = listOfNotNull(translations.lastOrNull()?.id, translationFloor).maxOrNull()
         if (floor != null && lineId <= floor) return current()
-        translations.addBounded(CaptionLine(id = lineId, text = text, isFinal = true))
+        translations.addBounded(CaptionLine(id = lineId, text = text, isFinal = true, utteranceId = utteranceId))
         return current()
     }
 
@@ -115,8 +118,10 @@ class CaptionPresenter(
     companion object {
         /**
          * 폰 커버(가로 폭 정사각형)에 `bodyMedium` 이 대략 15~18 visual lines, 태블릿 세로는
-         * 30 줄 가까이 들어간다. 줄 하나가 최소 1 visual line 이므로 이만큼이면 큰 화면에서도
-         * 커버 전체를 넘친다 — 모자라면 아직 보이는 맨 윗줄이 슬라이드 없이 사라진다.
+         * 30 줄 가까이 들어간다. 화면은 같은 발화의 줄을 한 문단으로 이어 그리므로 "줄 하나 =
+         * visual line 하나" 가 아니라 글자 수로 따져야 한다: 강제 컷은 `maxLineChars`(EN 80 /
+         * KO 40) 근처에서 일어나고 짧은 발화도 섞이지만, 60줄이면 대략 수천 자라 큰 화면의 커버도
+         * 넘친다. 모자라면 아직 보이는 맨 위 문단이 앞 단어를 잃으며 제자리에서 다시 줄바꿈된다.
          */
         const val DefaultMaxLines = 60
     }
