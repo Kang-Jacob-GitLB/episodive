@@ -121,12 +121,13 @@ class PlayerViewModel @Inject constructor(
         getPlaylistUseCase(),
         playerRepository.indexOfList,
         playerRepository.progress,
-        playerRepository.isPlaying,
+        // combine 이 10-arity 까지라 재생 여부와 준비 여부를 한 칸에 묶는다.
+        combine(playerRepository.isPlaying, playerRepository.isBuffering, ::Pair),
         playerRepository.speed,
         chapters,
         playerRepository.cue,
         _sleepTimerRemainingMs,
-    ) { podcast, nowPlaying, playlist, indexOfList, progress, isPlaying, speed, chapters, cue, sleepTimerRemainingMs ->
+    ) { podcast, nowPlaying, playlist, indexOfList, progress, (isPlaying, isBuffering), speed, chapters, cue, sleepTimerRemainingMs ->
         if (podcast != null && nowPlaying != null) {
             PlayerState.Success(
                 podcast = podcast,
@@ -135,6 +136,7 @@ class PlayerViewModel @Inject constructor(
                 indexOfList = indexOfList,
                 progress = progress,
                 isPlaying = isPlaying,
+                isBuffering = isBuffering,
                 speed = speed,
                 chapters = chapters,
                 cue = cue,
@@ -552,6 +554,8 @@ sealed interface PlayerState {
         val indexOfList: Int,
         val progress: Progress,
         val isPlaying: Boolean,
+        /** 재생을 요청했지만 아직 준비 중. 재생 버튼이 재생 아이콘 대신 스피너를 그린다. */
+        val isBuffering: Boolean = false,
         val speed: Float,
         val chapters: List<Chapter>,
         val cue: String,

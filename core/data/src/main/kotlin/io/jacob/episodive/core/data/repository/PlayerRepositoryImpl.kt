@@ -142,6 +142,7 @@ class PlayerRepositoryImpl @Inject constructor(
     override val progress: Flow<Progress> = playerDataSource.progress
     override val playback: Flow<Playback> = playerDataSource.playback.map { Playback.fromValue(it) }
     override val isPlaying: Flow<Boolean> = playerDataSource.isPlaying
+    override val isBuffering: Flow<Boolean> = playerDataSource.isBuffering
     override val isShuffle: Flow<Boolean> = playerDataSource.isShuffle
     override val repeat: Flow<Repeat> = playerDataSource.repeat.map { Repeat.fromValue(it) }
     override val speed: Flow<Float> = playerDataSource.speed

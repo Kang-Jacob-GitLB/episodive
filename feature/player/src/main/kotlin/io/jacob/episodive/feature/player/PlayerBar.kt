@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +39,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -230,6 +233,7 @@ fun PlayerBar(
                 nowPlaying = s.nowPlaying,
                 progress = s.progress,
                 isPlaying = s.isPlaying,
+                isBuffering = s.isBuffering,
                 chapters = s.chapters,
                 onExpand = { viewModel.sendAction(PlayerAction.ExpandPlayer) },
                 onToggleLike = { viewModel.sendAction(PlayerAction.ToggleLike) },
@@ -253,6 +257,7 @@ internal fun PlayerBarContent(
     nowPlaying: Episode,
     progress: Progress,
     isPlaying: Boolean,
+    isBuffering: Boolean = false,
     chapters: List<Chapter>,
     onExpand: () -> Unit,
     onToggleLike: () -> Unit,
@@ -378,12 +383,24 @@ internal fun PlayerBarContent(
                         contentColor = Color.White,
                     ),
                     icon = {
-                        Icon(
-                            modifier = Modifier.size(18.dp),
-                            imageVector = EpisodiveIcons.Play,
-                            contentDescription = "Play",
-                            tint = Color.White
-                        )
+                        // 준비 중에는 isPlaying 이 거짓이라 이 자리가 그려진다. 재생 아이콘을 그대로
+                        // 두면 누른 재생이 먹히지 않은 것처럼 보인다.
+                        if (isBuffering) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .semantics { contentDescription = "Loading" },
+                                color = Color.White,
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Icon(
+                                modifier = Modifier.size(18.dp),
+                                imageVector = EpisodiveIcons.Play,
+                                contentDescription = "Play",
+                                tint = Color.White
+                            )
+                        }
                     },
                     checkedIcon = {
                         Icon(

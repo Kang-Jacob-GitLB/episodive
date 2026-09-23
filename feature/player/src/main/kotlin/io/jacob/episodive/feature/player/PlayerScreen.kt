@@ -39,8 +39,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
@@ -70,6 +72,8 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -301,6 +305,7 @@ fun PlayerBottomSheet(
             nowPlaying = s.nowPlaying,
             progress = s.progress,
             isPlaying = s.isPlaying,
+            isBuffering = s.isBuffering,
             onCollapse = { collapse() },
             onToggleLike = { viewModel.sendAction(PlayerAction.ToggleLike) },
             onShare = {
@@ -366,6 +371,7 @@ internal fun PlayerScreen(
     nowPlaying: Episode,
     progress: Progress,
     isPlaying: Boolean,
+    isBuffering: Boolean = false,
     onCollapse: () -> Unit,
     onToggleLike: () -> Unit,
     onShare: () -> Unit,
@@ -553,6 +559,7 @@ internal fun PlayerScreen(
 
                     ControlPanelBottom(
                         isPlaying = isPlaying,
+                        isBuffering = isBuffering,
                         isSaved = nowPlaying.isSaved,
                         isDownloading = nowPlaying.isDownloading,
                         downloadProgress = nowPlaying.downloadProgress,
@@ -811,6 +818,7 @@ private fun ControlPanelProgress(
 private fun ControlPanelBottom(
     modifier: Modifier = Modifier,
     isPlaying: Boolean,
+    isBuffering: Boolean = false,
     isSaved: Boolean = false,
     isDownloading: Boolean = false,
     downloadProgress: Float = 0f,
@@ -873,11 +881,23 @@ private fun ControlPanelBottom(
                 checked = isPlaying,
                 onCheckedChange = { onPlayOrPause() },
                 icon = {
-                    Icon(
-                        modifier = Modifier.size(34.dp),
-                        imageVector = EpisodiveIcons.Play,
-                        contentDescription = "Play",
-                    )
+                    // 준비 중에는 isPlaying 이 거짓이라 이 자리가 그려진다. 재생 아이콘을 그대로
+                    // 두면 누른 재생이 먹히지 않은 것처럼 보인다.
+                    if (isBuffering) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .semantics { contentDescription = "Loading" },
+                            color = LocalContentColor.current,
+                            strokeWidth = 3.dp,
+                        )
+                    } else {
+                        Icon(
+                            modifier = Modifier.size(34.dp),
+                            imageVector = EpisodiveIcons.Play,
+                            contentDescription = "Play",
+                        )
+                    }
                 },
                 checkedIcon = {
                     Icon(

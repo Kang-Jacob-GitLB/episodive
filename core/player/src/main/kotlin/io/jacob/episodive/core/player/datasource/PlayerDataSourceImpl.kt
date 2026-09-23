@@ -154,12 +154,17 @@ class PlayerDataSourceImpl @Inject constructor(
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             _playback.value = playbackState
+            _isBuffering.value = player.isBufferingToPlay()
             when (playbackState) {
                 Player.STATE_IDLE -> Timber.d("STATE_IDLE")
                 Player.STATE_BUFFERING -> Timber.d("STATE_BUFFERING")
                 Player.STATE_READY -> Timber.d("STATE_READY")
                 Player.STATE_ENDED -> Timber.d("STATE_ENDED")
             }
+        }
+
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            _isBuffering.value = player.isBufferingToPlay()
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -339,6 +344,13 @@ class PlayerDataSourceImpl @Inject constructor(
      */
     private fun MediaItem.isClipped(): Boolean =
         clippingConfiguration != MediaItem.ClippingConfiguration.UNSET
+
+    /**
+     * 재생을 요청했는데 아직 소리를 낼 만큼 받지 못한 상태. 멈춘 채 시크해도 BUFFERING 이
+     * 되므로 playbackState 만 보면 멈춘 플레이어에 스피너가 돈다 — playWhenReady 를 함께 본다.
+     */
+    private fun Player.isBufferingToPlay(): Boolean =
+        playWhenReady && playbackState == Player.STATE_BUFFERING
 
     override fun getPlayer(): Player {
         return player
@@ -716,6 +728,9 @@ class PlayerDataSourceImpl @Inject constructor(
 
     private val _isPlaying = MutableStateFlow(false)
     override val isPlaying: Flow<Boolean> = _isPlaying
+
+    private val _isBuffering = MutableStateFlow(false)
+    override val isBuffering: Flow<Boolean> = _isBuffering
 
     private val _isShuffle = MutableStateFlow(false)
     override val isShuffle: Flow<Boolean> = _isShuffle
