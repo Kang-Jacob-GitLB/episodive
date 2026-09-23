@@ -1,6 +1,7 @@
 package io.jacob.episodive.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -62,9 +63,17 @@ fun EpisodiveNavHost(
         )
     }
 
+    // 람다만 기억해 둔다. 탭/뒤로 판정은 스펙이 불릴 때마다 플래그를 읽어서 하므로 결과를 캐시하면 안 된다.
+    val popTransitionSpec = remember(navigationState) {
+        tabAwarePopTransitionSpec<NavKey> { navigationState.isTabNavigation }
+    }
+    val predictivePopTransitionSpec = remember { predictiveBackTransitionSpec<NavKey>() }
+
     NavDisplay(
         entries = navigationState.toDecoratedEntries(entryProvider),
         onBack = { navigator.goBack() },
+        popTransitionSpec = popTransitionSpec,
+        predictivePopTransitionSpec = predictivePopTransitionSpec,
         modifier = modifier,
     )
 }
