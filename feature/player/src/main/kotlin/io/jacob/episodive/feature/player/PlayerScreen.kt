@@ -54,6 +54,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -95,6 +97,9 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveTextButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveViewToggleHeader
 import io.jacob.episodive.core.designsystem.component.FadingEdgeText
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
+import io.jacob.episodive.core.designsystem.component.MorphIcon
+import io.jacob.episodive.core.designsystem.component.PlayPauseMorphIcon
+import io.jacob.episodive.core.designsystem.component.RotateSwapIcon
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveShapes
@@ -474,11 +479,15 @@ internal fun PlayerScreen(
                             modifier = Modifier.size(dimension.iconButtonSize),
                             onClick = onToggleLike,
                             icon = {
-                                Icon(
-                                    modifier = Modifier.size(22.dp),
-                                    imageVector = if (nowPlaying.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
-                                    contentDescription = "Like",
-                                )
+                                // 에피소드가 바뀌면 새 아이콘으로 시작한다. 이어 두면 다음 에피소드의
+                                // 좋아요 여부가 다를 때 누르지도 않은 좋아요/해제 모핑이 돈다.
+                                key(nowPlaying.id) {
+                                    MorphIcon(
+                                        modifier = Modifier.size(22.dp),
+                                        imageVector = if (nowPlaying.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
+                                        contentDescription = if (nowPlaying.isLiked) "Unlike" else "Like",
+                                    )
+                                }
                             }
                         )
                     }
@@ -881,30 +890,28 @@ private fun ControlPanelBottom(
                 checked = isPlaying,
                 onCheckedChange = { onPlayOrPause() },
                 icon = {
-                    // 준비 중에는 isPlaying 이 거짓이라 이 자리가 그려진다. 재생 아이콘을 그대로
-                    // 두면 누른 재생이 먹히지 않은 것처럼 보인다.
-                    if (isBuffering) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .semantics { contentDescription = "Loading" },
-                            color = LocalContentColor.current,
-                            strokeWidth = 3.dp,
-                        )
-                    } else {
-                        Icon(
-                            modifier = Modifier.size(34.dp),
-                            imageVector = EpisodiveIcons.Play,
-                            contentDescription = "Play",
-                        )
+                    // 준비 중에는 isPlaying 이 거짓이다. 재생 아이콘을 그대로 두면 누른 재생이
+                    // 먹히지 않은 것처럼 보여 스피너를 띄운다.
+                    val isLoading = !isPlaying && isBuffering
+                    Box(contentAlignment = Alignment.Center) {
+                        // 스피너가 아이콘 자리를 빼앗지 않고 위에 겹친다. 갈래를 나누면 준비를
+                        // 거쳐 재생이 시작될 때 아이콘이 새로 붙어 재생→일시정지가 움직이지 못한다.
+                        Box(modifier = if (isLoading) Modifier.hiddenWhileLoading() else Modifier) {
+                            PlayPauseMorphIcon(
+                                modifier = Modifier.size(34.dp),
+                                isPlaying = isPlaying,
+                            )
+                        }
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .semantics { contentDescription = "Loading" },
+                                color = LocalContentColor.current,
+                                strokeWidth = 3.dp,
+                            )
+                        }
                     }
-                },
-                checkedIcon = {
-                    Icon(
-                        modifier = Modifier.size(34.dp),
-                        imageVector = EpisodiveIcons.Pause,
-                        contentDescription = "Pause",
-                    )
                 },
                 colors = IconButtonDefaults.iconToggleButtonColors(
                     checkedContainerColor = MaterialTheme.colorScheme.onSurface,
@@ -1015,6 +1022,21 @@ private fun ControlPanelBottom(
                     }
                 )
 
+                // 다운로드 중(진행 링)과 아닐 때(토글)는 서로 다른 버튼이다. 아이콘을 그대로 두
+                // 갈래에 넣으면 버튼이 바뀔 때마다 새로 붙어, 다운로드가 끝나는 순간(화살표 →
+                // 완료)에 돌아가지 못한다. 옮겨 다닐 수 있는 콘텐츠로 묶어 상태를 이어 준다.
+                // 화살표와 완료 체크는 이어지는 모양이 아니라 돌려서 바꾼다. 색은 감싼 버튼이
+                // 상태에 맞게 내려준다(진행·완료 = primary).
+                val downloadIcon = remember {
+                    movableContentOf { imageVector: ImageVector, description: String ->
+                        RotateSwapIcon(
+                            modifier = Modifier.size(21.dp),
+                            imageVector = imageVector,
+                            contentDescription = description,
+                        )
+                    }
+                }
+
                 if (isDownloading) {
                     EpisodiveIconProgressButton(
                         modifier = Modifier.weight(1f),
@@ -1030,13 +1052,7 @@ private fun ControlPanelBottom(
                             containerColor = Color.Transparent,
                             contentColor = MaterialTheme.colorScheme.primary,
                         ),
-                        icon = {
-                            Icon(
-                                modifier = Modifier.size(21.dp),
-                                imageVector = EpisodiveIcons.Download,
-                                contentDescription = "Downloading",
-                            )
-                        },
+                        icon = { downloadIcon(EpisodiveIcons.Download, "Downloading") },
                     )
                 } else {
                     EpisodiveIconToggleButton(
@@ -1051,20 +1067,11 @@ private fun ControlPanelBottom(
                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
                         icon = {
-                            Icon(
-                                modifier = Modifier.size(21.dp),
-                                imageVector = EpisodiveIcons.Download,
-                                contentDescription = "Save",
+                            downloadIcon(
+                                if (isSaved) EpisodiveIcons.DownloadDone else EpisodiveIcons.Download,
+                                if (isSaved) "Unsave" else "Save",
                             )
                         },
-                        checkedIcon = {
-                            Icon(
-                                modifier = Modifier.size(21.dp),
-                                imageVector = EpisodiveIcons.DownloadDone,
-                                contentDescription = "Unsave",
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
                     )
                 }
 

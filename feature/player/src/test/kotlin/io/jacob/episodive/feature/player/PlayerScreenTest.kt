@@ -309,12 +309,14 @@ class PlayerScreenTest {
     // --- New: Liked episode still renders ---
 
     @Test
-    fun whenEpisodeIsLiked_likeActionStillExists() {
+    fun whenEpisodeIsLiked_likeActionReadsUnlike() {
         val likedEpisode = episodeTestData.copy(likedAt = Instant.fromEpochSeconds(1000L))
         setPlayerScreen(nowPlaying = likedEpisode)
 
-        // The action icon in the top bar always has "Like" content description
-        composeTestRule.onNodeWithContentDescription("Like").assertExists()
+        // 좋아요한 에피소드에서는 누르면 해제되므로 스크린리더도 "Unlike" 로 읽어야 한다.
+        // 미니 플레이어·에피소드 목록과 같은 규칙이다.
+        composeTestRule.onNodeWithContentDescription("Unlike").assertExists()
+        composeTestRule.onNodeWithContentDescription("Like").assertDoesNotExist()
     }
 
     // --- New: Control button existence ---

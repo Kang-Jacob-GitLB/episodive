@@ -92,7 +92,9 @@ fun EpisodiveTopAppBar(
 
             if (actionIcon != null && actionIconContentDescription != null) {
                 IconButton(onClick = onActionClick) {
-                    Icon(
+                    // 상태에 따라 아이콘을 바꿔 쓰는 자리(검색 ↔ 닫기)가 있다. 이어지는 모양이
+                    // 아니라 돌려서 바꾼다.
+                    RotateSwapIcon(
                         imageVector = actionIcon,
                         contentDescription = actionIconContentDescription,
                         tint = MaterialTheme.colorScheme.onSurface,
@@ -165,7 +167,9 @@ fun EpisodiveCenterTopAppBar(
                 onClick = onActionClick,
                 colors = iconButtonColors,
             ) {
-                Icon(
+                // 상태에 따라 아이콘을 바꿔 쓰는 자리(검색 ↔ 닫기)가 있다. 이어지는 모양이
+                // 아니라 돌려서 바꾼다.
+                RotateSwapIcon(
                     imageVector = actionIcon,
                     contentDescription = actionIconContentDescription,
                     tint = MaterialTheme.colorScheme.onSurface,

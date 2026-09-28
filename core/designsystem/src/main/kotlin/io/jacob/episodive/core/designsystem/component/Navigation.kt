@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -39,7 +38,6 @@ fun RowScope.EpisodiveNavigationBarItem(
     enabled: Boolean = true,
     alwaysShowLabel: Boolean = true,
     icon: @Composable () -> Unit,
-    selectedIcon: @Composable () -> Unit = icon,
     label: @Composable (() -> Unit)? = null,
 ) {
     val dimension = LocalDimensionTheme.current
@@ -81,7 +79,9 @@ fun RowScope.EpisodiveNavigationBarItem(
                 contentAlignment = Alignment.Center,
             ) {
                 CompositionLocalProvider(LocalContentColor provides contentColor) {
-                    if (selected) selectedIcon() else icon()
+                    // 선택용 아이콘을 따로 받지 않는다. 갈래를 나눠 부르면 선택이 바뀔 때마다
+                    // 아이콘이 새로 붙어, 모양을 이어 바꾸는 아이콘(MorphIcon)이 움직이지 못한다.
+                    icon()
                 }
             }
         }
@@ -147,14 +147,8 @@ private fun EpisodiveNavigationBarPreview() {
             items.forEachIndexed { index, item ->
                 EpisodiveNavigationBarItem(
                     icon = {
-                        Icon(
-                            imageVector = unselectedIcon[index],
-                            contentDescription = null
-                        )
-                    },
-                    selectedIcon = {
-                        Icon(
-                            imageVector = selectedIcons[index],
+                        MorphIcon(
+                            imageVector = if (index == 0) selectedIcons[index] else unselectedIcon[index],
                             contentDescription = null
                         )
                     },

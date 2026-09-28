@@ -53,6 +53,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveButtonDefaults
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
 import io.jacob.episodive.core.designsystem.component.FadeTopBarLayout
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
+import io.jacob.episodive.core.designsystem.component.MorphIcon
 import io.jacob.episodive.core.designsystem.component.SkeletonBox
 import io.jacob.episodive.core.designsystem.component.SkeletonContainer
 import io.jacob.episodive.core.designsystem.component.SkeletonCover
@@ -625,7 +626,7 @@ private fun PodcastHeader(
                 },
                 text = { Text(stringResource(if (isFollowed) uiR.string.core_ui_unfollow else uiR.string.core_ui_follow)) },
                 leadingIcon = {
-                    Icon(
+                    MorphIcon(
                         modifier = Modifier.size(19.dp),
                         imageVector = if (isFollowed) EpisodiveIcons.PersonRemove else EpisodiveIcons.PersonAdd,
                         contentDescription = null
