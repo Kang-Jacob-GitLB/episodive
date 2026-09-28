@@ -81,7 +81,15 @@ fun RowScope.EpisodiveNavigationBarItem(
                 contentAlignment = Alignment.Center,
             ) {
                 CompositionLocalProvider(LocalContentColor provides contentColor) {
-                    if (selected) selectedIcon() else icon()
+                    // 아이콘을 하나만 받았으면 갈래를 나누지 않는다. 다른 갈래에서 부르면 선택이
+                    // 바뀔 때마다 새로 붙어, 안에서 모양을 이어 바꾸는 아이콘이 움직이지 못한다.
+                    if (selectedIcon === icon) {
+                        icon()
+                    } else if (selected) {
+                        selectedIcon()
+                    } else {
+                        icon()
+                    }
                 }
             }
         }

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
@@ -57,7 +56,7 @@ fun EpisodiveViewToggleButton(
             expanded = expanded,
             text = if (expanded) expandedText else compactText,
             trailingIcon = {
-                Icon(
+                MorphIcon(
                     imageVector = if (expanded) EpisodiveIcons.Collapse else EpisodiveIcons.Expand,
                     contentDescription = null,
                     tint = contentColor,
@@ -102,7 +101,7 @@ fun EpisodiveViewToggleHeader(
             expanded = expanded,
             text = if (expanded) expandedText else compactText,
             trailingIcon = {
-                Icon(
+                MorphIcon(
                     imageVector = if (expanded) EpisodiveIcons.Collapse else EpisodiveIcons.Expand,
                     contentDescription = null,
                     tint = contentColor,

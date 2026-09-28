@@ -59,7 +59,15 @@ fun EpisodiveIconToggleButton(
         shape = shape,
         colors = colors,
     ) {
-        if (checked) checkedIcon() else icon()
+        // 아이콘을 하나만 받았으면 갈래를 나누지 않는다. 같은 람다라도 if/else 의 다른 갈래에서
+        // 부르면 상태가 바뀔 때마다 새로 붙어, 안에서 모양을 이어 바꾸는 아이콘이 움직이지 못한다.
+        if (checkedIcon === icon) {
+            icon()
+        } else if (checked) {
+            checkedIcon()
+        } else {
+            icon()
+        }
     }
 }
 

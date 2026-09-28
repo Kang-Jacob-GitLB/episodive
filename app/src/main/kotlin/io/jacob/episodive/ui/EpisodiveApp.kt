@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -44,6 +43,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveSwipeDismissSnack
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.component.EpisodiveNavigationBar
 import io.jacob.episodive.core.designsystem.component.EpisodiveNavigationBarItem
+import io.jacob.episodive.core.designsystem.component.MorphIcon
 import io.jacob.episodive.feature.onboarding.OnboardingRoute
 import io.jacob.episodive.core.ui.LocalIsPlaying
 import io.jacob.episodive.core.ui.LocalNowPlayingEpisodeId
@@ -175,14 +175,8 @@ fun EpisodiveApp(
 
                     EpisodiveNavigationBarItem(
                         icon = {
-                            Icon(
-                                imageVector = destination.unselectedIcon,
-                                contentDescription = text
-                            )
-                        },
-                        selectedIcon = {
-                            Icon(
-                                imageVector = destination.selectedIcon,
+                            MorphIcon(
+                                imageVector = if (selected) destination.selectedIcon else destination.unselectedIcon,
                                 contentDescription = text
                             )
                         },

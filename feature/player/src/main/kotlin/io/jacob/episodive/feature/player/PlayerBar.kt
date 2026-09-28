@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -46,6 +45,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.FadingEdgeText
+import io.jacob.episodive.core.designsystem.component.MorphIcon
+import io.jacob.episodive.core.designsystem.component.PlayPauseMorphIcon
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveShapes
@@ -354,21 +355,13 @@ internal fun PlayerBarContent(
                         contentColor = Color.White.copy(alpha = 0.85f),
                     ),
                     icon = {
-                        Icon(
+                        MorphIcon(
                             modifier = Modifier.size(21.dp),
-                            imageVector = EpisodiveIcons.Like,
-                            contentDescription = "Like",
+                            imageVector = if (nowPlaying.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
+                            contentDescription = if (nowPlaying.isLiked) "Unlike" else "Like",
                             tint = Color.White.copy(alpha = 0.85f)
                         )
                     },
-                    checkedIcon = {
-                        Icon(
-                            modifier = Modifier.size(21.dp),
-                            imageVector = EpisodiveIcons.LikeFilled,
-                            contentDescription = "Unlike",
-                            tint = Color.White.copy(alpha = 0.85f)
-                        )
-                    }
                 )
 
                 EpisodiveIconToggleButton(
@@ -383,9 +376,9 @@ internal fun PlayerBarContent(
                         contentColor = Color.White,
                     ),
                     icon = {
-                        // 준비 중에는 isPlaying 이 거짓이라 이 자리가 그려진다. 재생 아이콘을 그대로
-                        // 두면 누른 재생이 먹히지 않은 것처럼 보인다.
-                        if (isBuffering) {
+                        // 준비 중에는 isPlaying 이 거짓이다. 재생 아이콘을 그대로 두면 누른
+                        // 재생이 먹히지 않은 것처럼 보인다.
+                        if (!isPlaying && isBuffering) {
                             CircularProgressIndicator(
                                 modifier = Modifier
                                     .size(18.dp)
@@ -394,22 +387,13 @@ internal fun PlayerBarContent(
                                 strokeWidth = 2.dp,
                             )
                         } else {
-                            Icon(
+                            PlayPauseMorphIcon(
                                 modifier = Modifier.size(18.dp),
-                                imageVector = EpisodiveIcons.Play,
-                                contentDescription = "Play",
-                                tint = Color.White
+                                isPlaying = isPlaying,
+                                tint = Color.White,
                             )
                         }
                     },
-                    checkedIcon = {
-                        Icon(
-                            modifier = Modifier.size(18.dp),
-                            imageVector = EpisodiveIcons.Pause,
-                            contentDescription = "Pause",
-                            tint = Color.White
-                        )
-                    }
                 )
             }
 
