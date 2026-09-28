@@ -66,6 +66,8 @@ import io.jacob.episodive.core.designsystem.component.ClipAnimationIconText
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
+import io.jacob.episodive.core.designsystem.component.MorphIcon
+import io.jacob.episodive.core.designsystem.component.PlayPauseMorphIcon
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.SectionHeaderSkeleton
 import io.jacob.episodive.core.designsystem.component.SkeletonBox
@@ -419,21 +421,12 @@ fun EpisodeItem(
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
             icon = {
-                Icon(
+                MorphIcon(
                     modifier = Modifier.size(19.dp),
-                    imageVector = EpisodiveIcons.Like,
-                    contentDescription = "Like",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    imageVector = if (episode.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
+                    contentDescription = if (episode.isLiked) "Unlike" else "Like",
                 )
             },
-            checkedIcon = {
-                Icon(
-                    modifier = Modifier.size(19.dp),
-                    imageVector = EpisodiveIcons.LikeFilled,
-                    contentDescription = "Unlike",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
         )
     }
 }
@@ -1015,19 +1008,11 @@ fun EpisodeClipItem(
                         contentColor = Color.White,
                     ),
                     icon = {
-                        Icon(
-                            imageVector = EpisodiveIcons.Like,
-                            contentDescription = "Like",
-                            tint = Color.White
+                        MorphIcon(
+                            imageVector = if (episode.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
+                            contentDescription = if (episode.isLiked) "Unlike" else "Like",
                         )
                     },
-                    checkedIcon = {
-                        Icon(
-                            imageVector = EpisodiveIcons.LikeFilled,
-                            contentDescription = "Unlike",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
                 )
 
                 EpisodiveIconToggleButton(
@@ -1040,19 +1025,11 @@ fun EpisodeClipItem(
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                     ),
                     icon = {
-                        Icon(
-                            imageVector = EpisodiveIcons.Play,
-                            contentDescription = "Play",
-                            tint = MaterialTheme.colorScheme.onPrimary
+                        PlayPauseMorphIcon(
+                            isPlaying = isPlaying,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                         )
                     },
-                    checkedIcon = {
-                        Icon(
-                            imageVector = EpisodiveIcons.Pause,
-                            contentDescription = "Pause",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
                 )
             }
         }

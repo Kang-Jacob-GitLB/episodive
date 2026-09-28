@@ -39,6 +39,7 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveIconText
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveOutlinedButton
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
+import io.jacob.episodive.core.designsystem.component.MorphIcon
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.SectionHeaderSkeleton
 import io.jacob.episodive.core.designsystem.component.SkeletonBox
@@ -324,16 +325,9 @@ fun PodcastDetailItem(
                     onCheckedChange = { onToggleFollowed() },
                     size = DetailItemFollowButtonSize,
                     icon = {
-                        Icon(
+                        MorphIcon(
                             modifier = Modifier.size(DetailItemFollowIconSize),
-                            imageVector = EpisodiveIcons.PersonAdd,
-                            contentDescription = podcast.title,
-                        )
-                    },
-                    checkedIcon = {
-                        Icon(
-                            modifier = Modifier.size(DetailItemFollowIconSize),
-                            imageVector = EpisodiveIcons.PersonRemove,
+                            imageVector = if (isFollowed) EpisodiveIcons.PersonRemove else EpisodiveIcons.PersonAdd,
                             contentDescription = podcast.title,
                         )
                     },

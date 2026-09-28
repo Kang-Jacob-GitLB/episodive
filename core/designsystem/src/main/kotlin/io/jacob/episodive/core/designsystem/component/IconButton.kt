@@ -27,6 +27,13 @@ import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.ThemePreviews
 
+/**
+ * 켜짐/꺼짐 원형 아이콘 버튼.
+ *
+ * 아이콘은 [icon] 하나로만 받는다. 상태마다 다른 아이콘을 그리려면 그 안에서 [checked] 로
+ * 모양을 고른다(보통 [MorphIcon]). 켜짐용 아이콘을 따로 받아 갈래를 나눠 부르면 상태가 바뀔
+ * 때마다 아이콘이 새로 붙어, 모양을 이어 바꾸는 아이콘이 움직이지 못한다.
+ */
 @Composable
 fun EpisodiveIconToggleButton(
     checked: Boolean,
@@ -49,7 +56,6 @@ fun EpisodiveIconToggleButton(
         },
     ),
     icon: @Composable () -> Unit,
-    checkedIcon: @Composable () -> Unit = icon,
 ) {
     FilledIconToggleButton(
         checked = checked,
@@ -59,7 +65,7 @@ fun EpisodiveIconToggleButton(
         shape = shape,
         colors = colors,
     ) {
-        if (checked) checkedIcon() else icon()
+        icon()
     }
 }
 
@@ -185,38 +191,18 @@ private fun EpisodiveIconToggleButtonPreview() {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            EpisodiveIconToggleButton(
-                checked = true,
-                onCheckedChange = { },
-                icon = {
-                    Icon(
-                        imageVector = EpisodiveIcons.Add,
-                        contentDescription = null,
-                    )
-                },
-                checkedIcon = {
-                    Icon(
-                        imageVector = EpisodiveIcons.Check,
-                        contentDescription = null,
-                    )
-                },
-            )
-            EpisodiveIconToggleButton(
-                checked = false,
-                onCheckedChange = { },
-                icon = {
-                    Icon(
-                        imageVector = EpisodiveIcons.Add,
-                        contentDescription = null,
-                    )
-                },
-                checkedIcon = {
-                    Icon(
-                        imageVector = EpisodiveIcons.Check,
-                        contentDescription = null,
-                    )
-                },
-            )
+            listOf(true, false).forEach { checked ->
+                EpisodiveIconToggleButton(
+                    checked = checked,
+                    onCheckedChange = { },
+                    icon = {
+                        MorphIcon(
+                            imageVector = if (checked) EpisodiveIcons.Check else EpisodiveIcons.Add,
+                            contentDescription = null,
+                        )
+                    },
+                )
+            }
         }
     }
 }
