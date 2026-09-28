@@ -79,6 +79,7 @@ import io.jacob.episodive.core.ui.pagingAppendState
 import io.jacob.episodive.core.ui.pagingRefreshState
 import io.jacob.episodive.core.ui.share.rememberShareLauncher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import io.jacob.episodive.core.ui.R as uiR
@@ -107,8 +108,12 @@ internal fun PodcastRoute(
     val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
     val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
 
+    // collect 가 아니라 collectLatest 다. onShowSnackbar 는 스낵바가 닫힐 때까지 돌아오지 않아,
+    // collect 로 받으면 팔로우를 연타한 만큼 스낵바가 줄을 서서 하나씩 뜬다. 새 이펙트가 오면
+    // 앞의 호출을 취소하고, 취소된 showSnackbar 는 그 스낵바를 바로 거둔다. 토글은 마지막
+    // 상태가 전부라 앞 스낵바의 되돌리기가 사라져도 잃는 것이 없다.
     LaunchedEffect(Unit) {
-        viewModel.effect.collect { effect ->
+        viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is PodcastEffect.ShowFollowSnackbar -> {
                     val message = if (effect.isFollowed) followedMessage else unfollowedMessage
