@@ -14,10 +14,12 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -210,6 +212,38 @@ class PodcastViewModelTest {
             coVerify {
                 playEpisodeUseCase(playEpisode = unknownEpisode, episodes = visibleEpisodes)
             }
+        }
+
+    @Test
+    fun `Given rapid ToggleFollowed actions where first call is slow, When sent, Then effects are emitted in the order they were sent`() =
+        runTest {
+            every { getPodcastUseCase(1L) } returns flowOf(podcastTestData)
+            every { getEpisodesByPodcastIdPagingUseCase(any()) } returns flowOf(PagingData.empty())
+
+            // 첫 호출만 느리게(100ms) 끝나고 둘째 호출은 즉시 끝나도록 만든다. followMutex 가
+            // 없으면 둘째 launch 가 먼저 use case 를 완료해 이펙트 순서가 뒤바뀐다.
+            var callCount = 0
+            coEvery { toggleFollowedUseCase(1L) } coAnswers {
+                callCount++
+                if (callCount == 1) {
+                    delay(100)
+                    true
+                } else {
+                    false
+                }
+            }
+
+            val viewModel = createViewModel()
+
+            viewModel.effect.test {
+                viewModel.sendAction(PodcastAction.ToggleFollowed)
+                viewModel.sendAction(PodcastAction.ToggleFollowed)
+
+                assertEquals(PodcastEffect.ShowFollowSnackbar(true), awaitItem())
+                assertEquals(PodcastEffect.ShowFollowSnackbar(false), awaitItem())
+            }
+
+            coVerify(exactly = 2) { toggleFollowedUseCase(1L) }
         }
 
     @Test
