@@ -108,6 +108,17 @@ internal fun ImageVector.toMorphShape(): MorphShape = synchronized(shapeCache) {
     }
 }
 
+private val planCache = HashMap<Pair<ImageVector, ImageVector>, MorphPlan?>()
+
+/**
+ * 멈춘 아이콘끼리의 모핑 계획. 같은 쌍이면 결과가 늘 같아 한 번 만든 것을 다시 쓴다(좋아요를
+ * 켰다 껐다 할 때마다 짝짓기를 새로 하지 않는다). 아이콘은 싱글턴이라 쌍의 수가 정해져 있다.
+ */
+internal fun cachedMorphPlan(from: ImageVector, to: ImageVector): MorphPlan? =
+    synchronized(planCache) {
+        planCache.getOrPut(from to to) { morphPlan(from.toMorphShape(), to.toMorphShape()) }
+    }
+
 /** 두 모양을 이을 수 없으면(어느 한쪽이 비었으면) null. */
 internal fun morphPlan(from: MorphShape, to: MorphShape): MorphPlan? {
     if (from.contours.isEmpty() || to.contours.isEmpty()) return null
@@ -208,9 +219,7 @@ private fun sample(path: AndroidPath, scaleX: Float, scaleY: Float): List<RawCon
  * 합성 결과의 방향 규칙에 기대지 않는다 — 직접 맞춰야 짝지은 두 윤곽의 방향이 늘 같다.
  */
 private fun classify(raw: List<RawContour>): List<MorphContour> = raw.mapIndexed { index, contour ->
-    val depth = raw.indices.count { other ->
-        other != index && contains(raw[other], contour.xs[0], contour.ys[0])
-    }
+    val depth = raw.indices.count { other -> other != index && liesInside(contour, raw[other]) }
     val isHole = depth % 2 == 1
     val positive = signedArea(contour.xs, contour.ys) > 0f
     if (positive == !isHole) {
@@ -218,6 +227,23 @@ private fun classify(raw: List<RawContour>): List<MorphContour> = raw.mapIndexed
     } else {
         MorphContour(contour.xs.reversedArray(), contour.ys.reversedArray(), isHole)
     }
+}
+
+/** 한 점만 보지 않고 둘레의 여러 점에 물어 과반으로 정한 표본 수. */
+private const val InsideVotes = 9
+
+/**
+ * [inner] 가 [outer] 안에 있는가. 합성 뒤의 윤곽은 서로 가로지르지 않지만 한 점에서 맞닿을 수는
+ * 있다. 윤곽 위의 한 점만 물으면 그 점이 마침 맞닿은 자리일 때 답이 멋대로 나와, 채움이 구멍으로
+ * 뒤집혀 모핑 도중 그 자리가 비어 보인다. 둘레에 고르게 흩어진 점들의 과반으로 정한다.
+ */
+private fun liesInside(inner: RawContour, outer: RawContour): Boolean {
+    val step = inner.xs.size / InsideVotes
+    val inside = (0 until InsideVotes).count { vote ->
+        val i = vote * step
+        contains(outer, inner.xs[i], inner.ys[i])
+    }
+    return inside * 2 > InsideVotes
 }
 
 /** 짝수-홀수 규칙의 점 포함 판정. */

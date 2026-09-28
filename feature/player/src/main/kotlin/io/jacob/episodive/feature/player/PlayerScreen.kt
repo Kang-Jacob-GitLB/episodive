@@ -54,6 +54,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -478,11 +479,15 @@ internal fun PlayerScreen(
                             modifier = Modifier.size(dimension.iconButtonSize),
                             onClick = onToggleLike,
                             icon = {
-                                MorphIcon(
-                                    modifier = Modifier.size(22.dp),
-                                    imageVector = if (nowPlaying.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
-                                    contentDescription = "Like",
-                                )
+                                // 에피소드가 바뀌면 새 아이콘으로 시작한다. 이어 두면 다음 에피소드의
+                                // 좋아요 여부가 다를 때 누르지도 않은 좋아요/해제 모핑이 돈다.
+                                key(nowPlaying.id) {
+                                    MorphIcon(
+                                        modifier = Modifier.size(22.dp),
+                                        imageVector = if (nowPlaying.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
+                                        contentDescription = if (nowPlaying.isLiked) "Unlike" else "Like",
+                                    )
+                                }
                             }
                         )
                     }
@@ -886,20 +891,26 @@ private fun ControlPanelBottom(
                 onCheckedChange = { onPlayOrPause() },
                 icon = {
                     // 준비 중에는 isPlaying 이 거짓이다. 재생 아이콘을 그대로 두면 누른 재생이
-                    // 먹히지 않은 것처럼 보인다.
-                    if (!isPlaying && isBuffering) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .semantics { contentDescription = "Loading" },
-                            color = LocalContentColor.current,
-                            strokeWidth = 3.dp,
-                        )
-                    } else {
-                        PlayPauseMorphIcon(
-                            modifier = Modifier.size(34.dp),
-                            isPlaying = isPlaying,
-                        )
+                    // 먹히지 않은 것처럼 보여 스피너를 띄운다.
+                    val isLoading = !isPlaying && isBuffering
+                    Box(contentAlignment = Alignment.Center) {
+                        // 스피너가 아이콘 자리를 빼앗지 않고 위에 겹친다. 갈래를 나누면 준비를
+                        // 거쳐 재생이 시작될 때 아이콘이 새로 붙어 재생→일시정지가 움직이지 못한다.
+                        Box(modifier = if (isLoading) Modifier.hiddenWhileLoading() else Modifier) {
+                            PlayPauseMorphIcon(
+                                modifier = Modifier.size(34.dp),
+                                isPlaying = isPlaying,
+                            )
+                        }
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .semantics { contentDescription = "Loading" },
+                                color = LocalContentColor.current,
+                                strokeWidth = 3.dp,
+                            )
+                        }
                     }
                 },
                 colors = IconButtonDefaults.iconToggleButtonColors(

@@ -425,11 +425,6 @@ fun EpisodeItem(
                     modifier = Modifier.size(19.dp),
                     imageVector = if (episode.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
                     contentDescription = if (episode.isLiked) "Unlike" else "Like",
-                    tint = if (episode.isLiked) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
                 )
             },
         )
@@ -1016,7 +1011,6 @@ fun EpisodeClipItem(
                         MorphIcon(
                             imageVector = if (episode.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
                             contentDescription = if (episode.isLiked) "Unlike" else "Like",
-                            tint = if (episode.isLiked) MaterialTheme.colorScheme.primary else Color.White,
                         )
                     },
                 )

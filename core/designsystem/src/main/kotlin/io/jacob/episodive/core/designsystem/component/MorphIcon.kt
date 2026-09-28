@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.ThemePreviews
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** 모양이 바뀌는 데 걸리는 시간. */
 private const val MorphDurationMs = 250
@@ -80,10 +82,7 @@ fun PlayPauseMorphIcon(
     // 기존 Icon 과 같은 설명을 단다. 테스트와 스크린리더가 이 문자열로 버튼을 찾는다.
     Canvas(
         modifier = modifier
-            .semantics {
-                contentDescription = if (isPlaying) "Pause" else "Play"
-                role = Role.Image
-            }
+            .iconSemantics(if (isPlaying) "Pause" else "Play")
             .size(MorphDefaultIconSize)
     ) {
         // progress 는 그리기 단계에서만 읽는다 — 애니메이션 동안 재구성 없이 다시 그리기만 돈다.
@@ -194,19 +193,38 @@ private class MorphIconState(initial: ImageVector) {
     val progress = Animatable(1f)
 
     suspend fun morphTo(next: ImageVector) {
-        if (next == target) return
-
-        // 전환 도중이면 지금 보이는 모양에서 출발한다. 이전 목표에서 출발하면 모양이 튄다.
-        val from = plan?.shapeAt(progress.value) ?: target.toMorphShape()
-        target = next
-        // 이을 수 없으면(경로 연산이 안 되는 환경) 새 아이콘을 바로 그린다.
-        plan = morphPlan(from, next.toMorphShape())
-        if (plan == null) {
-            progress.snapTo(1f)
+        if (next == target) {
+            // 같은 목표로 가던 전환이 도중에 취소됐으면(목표가 잠깐 다른 것으로 바뀌었다 돌아오면)
+            // 반쯤 섞인 모양에 멈춰 있다. 거기서 마저 간다.
+            if (plan != null) finish()
             return
         }
 
+        val current = plan?.let { it to progress.value }
+        val rest = target
+        // 모양 풀기(경로 합성)와 짝짓기는 가볍지 않아 메인 스레드 밖에서 한다. [target] 은 계획이
+        // 나온 뒤에 함께 바꾼다 — 먼저 바꾸면 멈춰 있던 아이콘이 그 사이 한 프레임 새 모양으로 튄다.
+        val nextPlan = withContext(Dispatchers.Default) {
+            if (current == null) {
+                // 멈춘 모양끼리의 전환은 늘 같은 결과라 아이콘 쌍마다 한 번만 만든다.
+                cachedMorphPlan(from = rest, to = next)
+            } else {
+                // 전환 도중이면 지금 보이는 모양에서 출발한다. 이전 목표에서 출발하면 모양이 튄다.
+                morphPlan(current.first.shapeAt(current.second), next.toMorphShape())
+            }
+        }
+        target = next
+        plan = nextPlan
+        // 이을 수 없으면(경로 연산이 안 되는 환경) 새 아이콘을 바로 그린다.
+        if (nextPlan == null) {
+            progress.snapTo(1f)
+            return
+        }
         progress.snapTo(0f)
+        finish()
+    }
+
+    private suspend fun finish() {
         progress.animateTo(1f, tween(MorphDurationMs, easing = FastOutSlowInEasing))
         // 다 옮겨 갔으면 원본을 그린다. 도중에 취소되면(목표가 또 바뀌면) 여기 오지 않고, 다음
         // morphTo 가 이 plan 의 현재 모양에서 이어 간다.
@@ -233,7 +251,7 @@ fun RotateSwapIcon(
     LaunchedEffect(imageVector) { state.swapTo(imageVector) }
 
     val fromPainter = rememberVectorPainter(state.from)
-    val targetPainter = rememberVectorPainter(state.target)
+    val toPainter = rememberVectorPainter(state.to)
 
     Canvas(modifier = modifier.iconSemantics(contentDescription).iconSize(imageVector)) {
         val progress = state.progress.value
@@ -241,7 +259,7 @@ fun RotateSwapIcon(
         val half = if (isFirstHalf) progress * 2f else (progress - 0.5f) * 2f
         val angle = if (isFirstHalf) 90f * half else -90f * (1f - half)
         val scale = if (isFirstHalf) lerp(1f, RotateSwapMinScale, half) else lerp(RotateSwapMinScale, 1f, half)
-        val painter = if (isFirstHalf) fromPainter else targetPainter
+        val painter = if (isFirstHalf) fromPainter else toPainter
 
         withTransform({
             rotate(angle)
@@ -255,22 +273,50 @@ fun RotateSwapIcon(
 /** 바뀌는 순간의 크기. 가장 작을 때 갈아 끼워 교체가 눈에 덜 띈다. */
 private const val RotateSwapMinScale = 0.5f
 
+/**
+ * progress 가 0.5 보다 작으면 [from] 을, 크면 [to] 를 그린다. 멈춰 있을 때는 늘 progress 1 에
+ * [to] 가 보인다.
+ */
 @Stable
 private class RotateSwapState(initial: ImageVector) {
     var from by mutableStateOf(initial)
         private set
-    var target by mutableStateOf(initial)
+    var to by mutableStateOf(initial)
         private set
 
     val progress = Animatable(1f)
 
     suspend fun swapTo(next: ImageVector) {
-        if (next == target) return
-        // 전환 도중이면 지금 보이는 쪽에서 다시 돈다.
-        from = if (progress.value < 0.5f) from else target
-        target = next
-        progress.snapTo(0f)
-        progress.animateTo(1f, tween(MorphDurationMs, easing = FastOutSlowInEasing))
+        val p = progress.value
+        if (p >= 1f) {
+            if (next == to) return
+            // 멈춘 상태에서는 늘 시계 방향으로 돈다.
+            from = to
+            to = next
+            progress.snapTo(0f)
+            animate(1f)
+            return
+        }
+
+        // 전환 도중에 목표가 바뀌었다. 지금 보이는 쪽은 그대로 두고 **안 보이는 쪽**을 새 목표로
+        // 바꿔 그쪽으로 이어 돈다. 처음부터 다시 돌리면 보이던 각도·크기에서 제자리로 툭 튄다.
+        if (p < 0.5f) {
+            if (next != from) to = next
+            animate(if (next == from) 0f else 1f)
+        } else {
+            if (next != to) from = next
+            animate(if (next == to) 1f else 0f)
+        }
+    }
+
+    private suspend fun animate(end: Float) {
+        progress.animateTo(end, tween(MorphDurationMs, easing = FastOutSlowInEasing))
+        // 거꾸로 돌아 0 에서 멈췄으면 [from] 이 제자리에 서 있다. 멈춘 상태의 약속(1 에서 [to])으로
+        // 옮겨 둔다 — 그리는 모양은 같다(0 과 1 모두 회전 0°, 크기 1).
+        if (end == 0f) {
+            to = from
+            progress.snapTo(1f)
+        }
     }
 }
 
