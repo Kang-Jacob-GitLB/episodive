@@ -29,6 +29,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 
 @HiltViewModel(assistedFactory = PodcastViewModel.Factory::class)
@@ -95,9 +97,18 @@ class PodcastViewModel @AssistedInject constructor(
         _action.emit(action)
     }
 
+    /**
+     * 연타한 토글을 누른 순서대로 처리한다. 토글마다 따로 띄운 코루틴이 제각각 끝나면 이펙트가
+     * 뒤바뀌어 도착할 수 있고, 화면은 마지막 이펙트의 스낵바만 남기므로(PodcastRoute) 실제 상태와
+     * 반대로 말하는 스낵바가 남는다. 그 되돌리기는 엉뚱한 방향으로 토글한다.
+     */
+    private val followMutex = Mutex()
+
     private fun toggleFollowed() = viewModelScope.launch {
-        val isFollowedNow = toggleFollowedUseCase(id)
-        _effect.emit(PodcastEffect.ShowFollowSnackbar(isFollowedNow))
+        followMutex.withLock {
+            val isFollowedNow = toggleFollowedUseCase(id)
+            _effect.emit(PodcastEffect.ShowFollowSnackbar(isFollowedNow))
+        }
     }
 
     private fun playEpisode(episode: Episode, visibleEpisodes: List<Episode>) =
