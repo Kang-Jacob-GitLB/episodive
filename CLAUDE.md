@@ -58,7 +58,7 @@ cp <repo-root>/local.properties <worktree-dir>/local.properties
 | `:core:domain` | Repository 인터페이스 + 40개 이상의 Use Case |
 | `:core:data` | Repository 구현체, RemoteUpdater 캐싱 패턴 |
 | `:core:network` | Retrofit API 인터페이스 5개, EpisodiveInterceptor (SHA-1 인증) |
-| `:core:database` | Room DB v8, Entity 12개, View 2개, DAO 5개 |
+| `:core:database` | Room DB v13, Entity 15개, View 2개, DAO 6개 |
 | `:core:datastore` | DataStore Preferences 기반 사용자 설정 관리 |
 | `:core:player` | ExoPlayer 래퍼, @Player qualifier로 듀얼 플레이어(Main/Clip) |
 | `:core:caption` | 라이브 자막: sherpa-onnx 온디바이스 STT, ML Kit 번역, 모델 다운로드(HuggingFace) |
@@ -296,15 +296,15 @@ Room TypeConverter도 `value`로 저장:
 
 **이유**: API는 소문자(`"podcast"`)를 반환하지만 enum name은 대문자(`PODCAST`)입니다. `valueOf()`를 쓰면 예외가 발생합니다.
 
-### 2. 데이터베이스 스키마 (Room v12)
+### 2. 데이터베이스 스키마 (Room v13)
 
-**Entity (13개):** PodcastEntity, EpisodeEntity, FeedEntity, SoundbiteEntity, FollowedPodcastEntity, LikedEpisodeEntity, PlayedEpisodeEntity, SavedEpisodeEntity, PodcastGroupEntity, EpisodeGroupEntity, PodcastFtsEntity, EpisodeFtsEntity, RecentSearchEntity
+**Entity (15개):** PodcastEntity, EpisodeEntity, FeedEntity, SoundbiteEntity, FollowedPodcastEntity, LikedEpisodeEntity, PlayedEpisodeEntity, SavedEpisodeEntity, PodcastGroupEntity, EpisodeGroupEntity, PodcastFtsEntity, EpisodeFtsEntity, RecentSearchEntity, FavoriteStationEntity, RecentStationEntity
 
 **View (2개):** PodcastWithExtrasView, EpisodeWithExtrasView
 
-**DAO (5개):** PodcastDao, EpisodeDao, FeedDao, SoundbiteDao, RecentSearchDao
+**DAO (6개):** PodcastDao, EpisodeDao, FeedDao, SoundbiteDao, RecentSearchDao, StationDao
 
-**마이그레이션:** 1→8은 auto-migration(필요 시 spec 클래스), 8→12는 `migration/` 의 수동
+**마이그레이션:** 1→8은 auto-migration(필요 시 spec 클래스), 8→13은 `migration/` 의 수동
 `Migration` 객체이며 `DatabaseModule` 에서 `addMigrations` 로 등록합니다.
 
 **캐시 표의 정렬:** `feeds`·`soundbites` 는 원격이 준 순위를 `sortOrder` 에 담고 모든 쿼리가
@@ -312,7 +312,9 @@ Room TypeConverter도 `value`로 저장:
 때도 `ORDER BY` 를 빠뜨리지 않습니다. `feeds` 의 기본키는 `(id, groupKey)` 복합키로, 같은 피드가
 여러 목록에 동시에 속할 수 있습니다.
 
-모든 Entity에는 캐시 무효화를 위한 `cachedAt: Instant`와 그룹 키가 있습니다.
+원격 캐시 Entity에는 캐시 무효화를 위한 `cachedAt: Instant`와 그룹 키가 있습니다. 사용자 데이터 표(`followed_podcasts`,
+`liked_episodes`, `favorite_stations`, `recent_stations` 등)에는 없고 `followedAt` 같은 사용자 행동 시각만 둡니다.
+`favorite_stations`·`recent_stations` 는 카탈로그 slug(`Station.id`)만 저장하며 **스트림 URL 은 저장하지 않습니다**(토큰 만료).
 
 **스키마를 바꾼 뒤에는** `./gradlew :core:database:kspDebugKotlin` 으로 `schemas/…/<버전>.json` 을
 내보내고, 그 `createSql` 을 그대로 옮겨 마이그레이션을 씁니다. `Migration11to12Test` 가 그 방식의

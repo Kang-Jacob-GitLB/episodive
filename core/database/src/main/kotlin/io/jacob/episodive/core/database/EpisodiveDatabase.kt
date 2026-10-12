@@ -9,6 +9,7 @@ import io.jacob.episodive.core.database.dao.FeedDao
 import io.jacob.episodive.core.database.dao.PodcastDao
 import io.jacob.episodive.core.database.dao.RecentSearchDao
 import io.jacob.episodive.core.database.dao.SoundbiteDao
+import io.jacob.episodive.core.database.dao.StationDao
 import io.jacob.episodive.core.database.migration.AutoMigration2to3
 import io.jacob.episodive.core.database.migration.AutoMigration3to4
 import io.jacob.episodive.core.database.migration.AutoMigration4to5
@@ -18,6 +19,7 @@ import io.jacob.episodive.core.database.model.EpisodeEntity
 import io.jacob.episodive.core.database.model.EpisodeFtsEntity
 import io.jacob.episodive.core.database.model.EpisodeGroupEntity
 import io.jacob.episodive.core.database.model.EpisodeWithExtrasView
+import io.jacob.episodive.core.database.model.FavoriteStationEntity
 import io.jacob.episodive.core.database.model.FeedEntity
 import io.jacob.episodive.core.database.model.FollowedPodcastEntity
 import io.jacob.episodive.core.database.model.LikedEpisodeEntity
@@ -27,6 +29,7 @@ import io.jacob.episodive.core.database.model.PodcastFtsEntity
 import io.jacob.episodive.core.database.model.PodcastGroupEntity
 import io.jacob.episodive.core.database.model.PodcastWithExtrasView
 import io.jacob.episodive.core.database.model.RecentSearchEntity
+import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.database.model.SavedEpisodeEntity
 import io.jacob.episodive.core.database.model.SoundbiteEntity
 import io.jacob.episodive.core.database.util.CategoryConverter
@@ -52,12 +55,14 @@ import io.jacob.episodive.core.database.util.RecentSearchTypeConverter
         SoundbiteEntity::class,
         RecentSearchEntity::class,
         SavedEpisodeEntity::class,
+        FavoriteStationEntity::class,
+        RecentStationEntity::class,
     ],
     views = [
         PodcastWithExtrasView::class,
         EpisodeWithExtrasView::class,
     ],
-    version = 12,
+    version = 13,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3, spec = AutoMigration2to3::class),
@@ -84,4 +89,5 @@ abstract class EpisodiveDatabase : RoomDatabase() {
     abstract fun feedDao(): FeedDao
     abstract fun soundbiteDao(): SoundbiteDao
     abstract fun recentSearchDao(): RecentSearchDao
+    abstract fun stationDao(): StationDao
 }
