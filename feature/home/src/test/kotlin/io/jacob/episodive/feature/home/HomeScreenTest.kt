@@ -18,10 +18,12 @@ import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.DataError
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
+import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.testing.model.channelTestDataList
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.liveEpisodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestDataList
+import io.jacob.episodive.core.testing.model.radioStationsTestData
 import io.jacob.episodive.feature.home.navigation.HomeSection
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -47,6 +49,8 @@ class HomeScreenTest {
         foreignTrendingPodcasts: List<Podcast> = podcastTestDataList,
         liveEpisodes: List<Episode> = liveEpisodeTestDataList,
         channels: List<Channel> = channelTestDataList,
+        radio: List<Station> = emptyList(),
+        onRadioMore: () -> Unit = {},
         onPlayEpisode: (Episode) -> Unit = {},
         onResumeEpisode: (Episode) -> Unit = {},
         onToggleLikedEpisode: (Episode) -> Unit = {},
@@ -84,6 +88,8 @@ class HomeScreenTest {
                     foreignTrendingPodcasts = SectionState.Success(foreignTrendingPodcasts),
                     liveEpisodes = SectionState.Success(liveEpisodes),
                     channels = SectionState.Success(channels),
+                    radio = SectionState.Success(radio),
+                    onRadioMore = onRadioMore,
                     onPlayEpisode = onPlayEpisode,
                     onResumeEpisode = onResumeEpisode,
                     onToggleLikedEpisode = onToggleLikedEpisode,
@@ -284,6 +290,36 @@ class HomeScreenTest {
         )
 
         composeTestRule.onNodeWithText("Followed podcasts").assertExists()
+    }
+
+    @Test
+    fun whenRadioPresent_moreActionOpensRadio() {
+        var radioMoreCount = 0
+        setHomeScreen(
+            userRecentPodcasts = emptyList(),
+            randomEpisodes = emptyList(),
+            userTrendingPodcasts = emptyList(),
+            followedPodcasts = emptyList(),
+            localTrendingPodcasts = emptyList(),
+            foreignTrendingPodcasts = emptyList(),
+            liveEpisodes = emptyList(),
+            channels = emptyList(),
+            radio = radioStationsTestData,
+            onRadioMore = { radioMoreCount++ },
+        )
+
+        composeTestRule.onNodeWithText("Radio").assertExists()
+        composeTestRule.onNodeWithContentDescription("See all Radio").performClick()
+
+        assertEquals(1, radioMoreCount)
+    }
+
+    @Test
+    fun whenRadioAbsent_radioSectionIsNotShownAndOtherSectionsKeepTheirKeys() {
+        setHomeScreen()
+
+        composeTestRule.onNodeWithText("Radio").assertDoesNotExist()
+        composeTestRule.onNodeWithText("My recent published").assertExists()
     }
 
     @Test

@@ -1,0 +1,163 @@
+package io.jacob.episodive.feature.home
+
+import app.cash.turbine.test
+import io.jacob.episodive.core.domain.repository.PlayerRepository
+import io.jacob.episodive.core.domain.station.StationPlaybackController
+import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
+import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.testing.model.radioStationTestData
+import io.jacob.episodive.core.testing.util.MainDispatcherRule
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+
+class HomeRadioViewModelTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private val getStationsUseCase = mockk<GetStationsUseCase>()
+    private val getFavoriteStationsUseCase = mockk<GetFavoriteStationsUseCase>()
+    private val getRecentStationsUseCase = mockk<GetRecentStationsUseCase>()
+    private val stationPlaybackController = mockk<StationPlaybackController>(relaxed = true)
+    private val playerRepository = mockk<PlayerRepository>(relaxed = true)
+
+    private val nowPlayingStation = MutableStateFlow<Station?>(null)
+    private val pendingStationId = MutableStateFlow<String?>(null)
+
+    private fun station(index: Int) = radioStationTestData.copy(id = "s$index", name = "방송 $index")
+
+    private fun createViewModel(
+        favorites: List<Station> = emptyList(),
+        recents: List<Station> = emptyList(),
+        catalog: List<Station> = (0 until 12).map(::station),
+    ): HomeRadioViewModel {
+        every { getFavoriteStationsUseCase() } returns flowOf(favorites)
+        every { getRecentStationsUseCase(any()) } returns flowOf(recents)
+        every { getStationsUseCase(StationKind.RADIO) } returns flowOf(catalog)
+        every { playerRepository.nowPlayingStation } returns nowPlayingStation
+        every { playerRepository.isPlaying } returns MutableStateFlow(false)
+        every { playerRepository.isBuffering } returns MutableStateFlow(false)
+        every { stationPlaybackController.pendingStationId } returns pendingStationId
+
+        return HomeRadioViewModel(
+            getStationsUseCase = getStationsUseCase,
+            getFavoriteStationsUseCase = getFavoriteStationsUseCase,
+            getRecentStationsUseCase = getRecentStationsUseCase,
+            stationPlaybackController = stationPlaybackController,
+            playerRepository = playerRepository,
+        )
+    }
+
+    private fun TestScope.subscribe(viewModel: HomeRadioViewModel) {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.state.collect {}
+        }
+    }
+
+    @Test
+    fun `Given 즐겨찾기와 최근이 겹침, Then 즐겨찾기가 앞서고 중복 없이 합친 뒤 카탈로그로 여덟 개까지 채운다`() = runTest {
+        val viewModel = createViewModel(
+            favorites = listOf(station(1), station(2)),
+            recents = listOf(station(2), station(3)),
+        )
+
+        viewModel.state.test {
+            assertEquals(
+                listOf("s1", "s2", "s3", "s0", "s4", "s5", "s6", "s7"),
+                (expectMostRecentItem() as HomeRadioState.Success).stations.map { it.id },
+            )
+        }
+    }
+
+    @Test
+    fun `Given 최근 하나뿐, Then 그 하나가 앞서고 나머지는 카탈로그로 채운다`() = runTest {
+        val viewModel = createViewModel(recents = listOf(station(5)))
+
+        viewModel.state.test {
+            val ids = (expectMostRecentItem() as HomeRadioState.Success).stations.map { it.id }
+            assertEquals(8, ids.size)
+            assertEquals("s5", ids.first())
+            assertEquals(ids.size, ids.toSet().size)
+        }
+    }
+
+    @Test
+    fun `Given 열 개를 넘음, Then 열 개로 자른다`() = runTest {
+        val viewModel = createViewModel(
+            favorites = (0 until 8).map(::station),
+            recents = (8 until 15).map(::station),
+        )
+
+        viewModel.state.test {
+            assertEquals(10, (expectMostRecentItem() as HomeRadioState.Success).stations.size)
+        }
+    }
+
+    @Test
+    fun `Given 즐겨찾기와 최근이 모두 비어 있음, Then 카탈로그 앞 여덟 개`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            assertEquals((0 until 8).map { "s$it" }, (expectMostRecentItem() as HomeRadioState.Success).stations.map { it.id })
+        }
+    }
+
+    @Test
+    fun `Given 아직 오지 않음, Then 초기 상태는 Loading 이다`() = runTest {
+        val viewModel = createViewModel()
+
+        assertEquals(HomeRadioState.Loading, viewModel.state.value)
+    }
+
+    @Test
+    fun `Given 목록을 읽다 실패, Then Error 상태다`() = runTest {
+        val viewModel = createViewModel()
+        every { getStationsUseCase(StationKind.RADIO) } returns flow { throw IllegalStateException("boom") }
+        val failing = HomeRadioViewModel(
+            getStationsUseCase = getStationsUseCase,
+            getFavoriteStationsUseCase = getFavoriteStationsUseCase,
+            getRecentStationsUseCase = getRecentStationsUseCase,
+            stationPlaybackController = stationPlaybackController,
+            playerRepository = playerRepository,
+        )
+
+        failing.state.test {
+            assertTrue(expectMostRecentItem() is HomeRadioState.Error)
+        }
+        assertEquals(HomeRadioState.Loading, viewModel.state.value)
+    }
+
+    @Test
+    fun `Given 스테이션 클릭, Then 컨트롤러에 위임한다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.sendAction(HomeRadioAction.ClickStation(station(0)))
+
+        verify(exactly = 1) { stationPlaybackController.play("s0") }
+    }
+
+    @Test
+    fun `Given 컨트롤러가 받는 중, Then pendingStationId 가 상태에 반영된다`() = runTest {
+        val viewModel = createViewModel()
+        subscribe(viewModel)
+
+        pendingStationId.value = "s1"
+
+        assertEquals("s1", (viewModel.state.value as HomeRadioState.Success).pendingStationId)
+    }
+}

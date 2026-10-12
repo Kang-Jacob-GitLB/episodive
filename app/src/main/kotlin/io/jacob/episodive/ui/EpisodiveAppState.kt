@@ -11,6 +11,7 @@ import io.jacob.episodive.core.data.util.NetworkMonitor
 import io.jacob.episodive.core.model.share.EpisodiveDeepLink
 import io.jacob.episodive.feature.home.navigation.HomeRoute
 import io.jacob.episodive.feature.podcast.navigation.PodcastRoute
+import io.jacob.episodive.feature.radio.navigation.RadioRoute
 import io.jacob.episodive.feature.search.navigation.SearchRoute
 import io.jacob.episodive.navigation.BottomBarDestination
 import io.jacob.episodive.navigation.EpisodiveNavigationState
@@ -97,6 +98,10 @@ class EpisodiveAppState(
 
     fun navigateToPodcast(podcastId: Long) {
         navigator.navigate(PodcastRoute(podcastId))
+    }
+
+    fun navigateToRadio() {
+        navigator.navigateInStartStack(RadioRoute)
     }
 
     /** 홈의 검색 바로가기. 검색 탭으로 옮기면서 "바로 입력할 참이다"는 신호를 같이 켠다. */

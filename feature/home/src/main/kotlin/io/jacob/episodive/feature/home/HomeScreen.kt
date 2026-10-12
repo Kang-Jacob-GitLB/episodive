@@ -80,6 +80,7 @@ import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Channel
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
+import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.coverUrl
 import io.jacob.episodive.core.model.isRetryable
 import io.jacob.episodive.core.model.mapper.toHumanReadable
@@ -96,9 +97,16 @@ import io.jacob.episodive.core.ui.LocalIsPlaying
 import io.jacob.episodive.core.ui.LocalNowPlayingEpisodeId
 import io.jacob.episodive.core.ui.PodcastsSection
 import io.jacob.episodive.core.ui.PodcastsSectionSkeleton
+import io.jacob.episodive.core.ui.StationCardStatus
+import io.jacob.episodive.core.ui.StationsSection
+import io.jacob.episodive.core.ui.StationsSectionSkeleton
 import io.jacob.episodive.core.ui.asUiMessage
+import io.jacob.episodive.core.ui.stationCardStatus
 import io.jacob.episodive.feature.home.navigation.HomeSection
 
+
+/** 라디오 섹션의 목록 키. [HomeSection] 이 아니라 따로 둔다 — 그 enum 은 '더 보기' 목적지다. */
+private const val HomeRadioSectionKey = "radio"
 
 @Composable
 internal fun HomeRoute(
@@ -107,10 +115,13 @@ internal fun HomeRoute(
     onPodcastClick: (Long) -> Unit,
     onChannelClick: (Long) -> Unit,
     onMoreClick: (HomeSection) -> Unit,
+    onRadioClick: () -> Unit,
     onSearchClick: () -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
+    radioViewModel: HomeRadioViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val radio by radioViewModel.state.collectAsStateWithLifecycle()
 
     val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
     val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
@@ -144,6 +155,24 @@ internal fun HomeRoute(
             foreignTrendingPodcasts = s.foreignTrendingPodcasts,
             liveEpisodes = s.liveEpisodes,
             channels = s.channels,
+            // 오류는 빈 응답과 똑같이 섹션을 건너뛴다(SectionState.Error 의 관례).
+            radio = when (val r = radio) {
+                is HomeRadioState.Loading -> SectionState.Loading
+                is HomeRadioState.Success -> SectionState.Success(r.stations)
+                is HomeRadioState.Error -> SectionState.Error(r.error)
+            },
+            radioStatusOf = { station ->
+                val r = radio as? HomeRadioState.Success
+                stationCardStatus(
+                    id = station.id,
+                    nowPlayingId = r?.nowPlayingStationId,
+                    isPlaying = r?.isPlaying == true,
+                    isBuffering = r?.isBuffering == true,
+                    pendingId = r?.pendingStationId,
+                )
+            },
+            onStationClick = { radioViewModel.sendAction(HomeRadioAction.ClickStation(it)) },
+            onRadioMore = onRadioClick,
             onPlayEpisode = { viewModel.sendAction(HomeAction.PlayEpisode(it)) },
             onResumeEpisode = { viewModel.sendAction(HomeAction.ResumeEpisode(it)) },
             onToggleLikedEpisode = { viewModel.sendAction(HomeAction.ToggleLikedEpisode(it)) },
@@ -178,6 +207,11 @@ internal fun HomeScreen(
     foreignTrendingPodcasts: SectionState<Podcast>,
     liveEpisodes: SectionState<Episode>,
     channels: SectionState<Channel>,
+    // 기본값은 "섹션 없음" 이다. 라디오를 모르는 호출부는 이 섹션이 아예 보이지 않는다.
+    radio: SectionState<Station> = SectionState.Success(emptyList()),
+    radioStatusOf: (Station) -> StationCardStatus = { StationCardStatus.Idle },
+    onStationClick: (Station) -> Unit = {},
+    onRadioMore: () -> Unit = {},
     onPlayEpisode: (Episode) -> Unit,
     onResumeEpisode: (Episode) -> Unit,
     onToggleLikedEpisode: (Episode) -> Unit,
@@ -271,7 +305,7 @@ internal fun HomeScreen(
                         // 선이 겹치지 않고, 마지막 섹션 뒤에 선이 남지도 않는다.
                         var sectionRendered = false
                         fun <T> section(
-                            section: HomeSection,
+                            key: String,
                             state: SectionState<T>,
                             skeleton: @Composable LazyItemScope.() -> Unit,
                             content: @Composable LazyItemScope.(List<T>) -> Unit,
@@ -296,18 +330,18 @@ internal fun HomeScreen(
                             // 캐러셀 안의 rememberLazyListState 가 엉뚱한 섹션에 적용돼 절반쯤
                             // 넘겨 둔 스크롤이 다른 줄에 나타난다.
                             if (sectionRendered) {
-                                item(key = "divider:${section.name}") {
+                                item(key = "divider:$key") {
                                     HorizontalDivider(modifier = Modifier.padding(16.dp))
                                 }
                             }
                             sectionRendered = true
-                            item(key = "section:${section.name}") {
+                            item(key = "section:$key") {
                                 if (items == null) skeleton() else content(items)
                             }
                         }
 
                         section(
-                            section = HomeSection.MyRecentPodcasts,
+                            key = HomeSection.MyRecentPodcasts.name,
                             state = userRecentPodcasts,
                             skeleton = { PodcastsSectionSkeleton(hasAction = true) },
                         ) { items ->
@@ -323,7 +357,7 @@ internal fun HomeScreen(
                         }
 
                         section(
-                            section = HomeSection.RandomEpisodes,
+                            key = HomeSection.RandomEpisodes.name,
                             state = randomEpisodes,
                             skeleton = {
                                 EpisodesSectionSkeleton(
@@ -343,7 +377,7 @@ internal fun HomeScreen(
                         }
 
                         section(
-                            section = HomeSection.MyTrendingPodcasts,
+                            key = HomeSection.MyTrendingPodcasts.name,
                             state = userTrendingPodcasts,
                             skeleton = { PodcastsSectionSkeleton(hasAction = true) },
                         ) { items ->
@@ -359,7 +393,7 @@ internal fun HomeScreen(
                         }
 
                         section(
-                            section = HomeSection.FollowedPodcasts,
+                            key = HomeSection.FollowedPodcasts.name,
                             state = followedPodcasts,
                             skeleton = { PodcastsSectionSkeleton(hasAction = true) },
                         ) { items ->
@@ -374,7 +408,21 @@ internal fun HomeScreen(
                         }
 
                         section(
-                            section = HomeSection.LocalTrendingPodcasts,
+                            key = HomeRadioSectionKey,
+                            state = radio,
+                            skeleton = { StationsSectionSkeleton(hasAction = true) },
+                        ) { items ->
+                            StationsSection(
+                                title = stringResource(R.string.feature_home_section_radio),
+                                stations = items,
+                                statusOf = radioStatusOf,
+                                onStationClick = onStationClick,
+                                onMore = onRadioMore,
+                            )
+                        }
+
+                        section(
+                            key = HomeSection.LocalTrendingPodcasts.name,
                             state = localTrendingPodcasts,
                             skeleton = { PodcastsSectionSkeleton(hasAction = true) },
                         ) { items ->
@@ -390,7 +438,7 @@ internal fun HomeScreen(
                         }
 
                         section(
-                            section = HomeSection.ForeignTrendingPodcasts,
+                            key = HomeSection.ForeignTrendingPodcasts.name,
                             state = foreignTrendingPodcasts,
                             skeleton = { PodcastsSectionSkeleton(hasAction = true) },
                         ) { items ->
@@ -406,7 +454,7 @@ internal fun HomeScreen(
                         }
 
                         section(
-                            section = HomeSection.LiveEpisodes,
+                            key = HomeSection.LiveEpisodes.name,
                             state = liveEpisodes,
                             skeleton = {
                                 EpisodesSectionSkeleton(
@@ -426,7 +474,7 @@ internal fun HomeScreen(
                         }
 
                         section(
-                            section = HomeSection.Channels,
+                            key = HomeSection.Channels.name,
                             state = channels,
                             skeleton = { ChannelSectionSkeleton(hasAction = true) },
                         ) { items ->

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_radio_title">라디오</string>
+    <string name="feature_radio_section_favorites">즐겨찾기</string>
+    <string name="feature_radio_section_recent">최근 들은 방송</string>
+    <string name="feature_radio_section_nationwide">전국 방송</string>
+    <string name="feature_radio_section_regional">지역·공동체 방송</string>
+    <string name="feature_radio_snackbar_favorited">즐겨찾기에 추가했어요</string>
+    <string name="feature_radio_snackbar_unfavorited">즐겨찾기에서 삭제했어요</string>
+    <!-- %1$s 는 방송 이름 -->
+    <string name="feature_radio_unplayable_format">%1$s 연결이 끊겨 재생을 멈췄어요</string>
+    <string name="feature_radio_stop">정지</string>
+</resources>

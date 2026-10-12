@@ -67,6 +67,7 @@ dependencies {
     implementation(projects.feature.library)
     implementation(projects.feature.clip)
     implementation(projects.feature.channel)
+    implementation(projects.feature.radio)
     implementation(projects.feature.podcast)
     implementation(projects.feature.player)
     implementation(projects.feature.widget)

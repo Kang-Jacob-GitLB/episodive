@@ -37,11 +37,14 @@ import io.jacob.episodive.core.designsystem.icon.tabler.PlayerPause
 import io.jacob.episodive.core.designsystem.icon.tabler.PlayerPlay
 import io.jacob.episodive.core.designsystem.icon.tabler.PlayerSkipBack
 import io.jacob.episodive.core.designsystem.icon.tabler.PlayerSkipForward
+import io.jacob.episodive.core.designsystem.icon.tabler.PlayerStop
 import io.jacob.episodive.core.designsystem.icon.tabler.PlaylistX
 import io.jacob.episodive.core.designsystem.icon.tabler.Plus
 import io.jacob.episodive.core.designsystem.icon.tabler.RewindBackward15
 import io.jacob.episodive.core.designsystem.icon.tabler.RewindForward30
 import io.jacob.episodive.core.designsystem.icon.tabler.Share
+import io.jacob.episodive.core.designsystem.icon.tabler.Star
+import io.jacob.episodive.core.designsystem.icon.tabler.StarFilled
 import io.jacob.episodive.core.designsystem.icon.tabler.Tabler
 import io.jacob.episodive.core.designsystem.icon.tabler.Transfer
 import io.jacob.episodive.core.designsystem.icon.tabler.TransitionTop
@@ -68,6 +71,8 @@ object EpisodiveIcons {
     val Error = Tabler.PhotoExclamation
     val Expand = Tabler.ArrowsDiagonal
     val Export = Tabler.FileExport
+    val Favorite = Tabler.Star
+    val FavoriteFilled = Tabler.StarFilled
     val Forward30 = Tabler.RewindForward30
     val History = Tabler.History
     val Home = Tabler.Blob
@@ -104,6 +109,7 @@ object EpisodiveIcons {
     val Share = Tabler.Share
     val SkipNext = Tabler.PlayerSkipForward
     val SkipPrevious = Tabler.PlayerSkipBack
+    val Stop = Tabler.PlayerStop
 
     /**
      * 구독 목록을 파일로 주고받는 자리(OPML). 방향이 하나로 정해지지 않은 진입점이라

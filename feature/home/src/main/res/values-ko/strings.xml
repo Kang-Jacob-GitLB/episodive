@@ -2,6 +2,7 @@
 <resources>
     <string name="feature_home_title">홈</string>
     <string name="feature_home_search">검색</string>
+    <string name="feature_home_section_radio">라디오</string>
     <string name="feature_home_section_my_recent_feeds">나의 최신 피드</string>
     <string name="feature_home_section_random_episodes">랜덤 에피소드</string>
     <string name="feature_home_section_my_trending_feeds">나의 인기 피드</string>

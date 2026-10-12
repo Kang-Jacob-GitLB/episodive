@@ -21,6 +21,39 @@ val regionalRadioStationTestData = Station(
     region = "부산",
 )
 
+/** 같은 방송사(KBS)의 전국 방송 두 개. 방송사 안 이니셜·색 규칙을 보는 테스트가 쓴다. */
+val kbsFirstRadioStationTestData = Station(
+    id = "test-kbs-1",
+    name = "KBS 1라디오",
+    broadcaster = "KBS",
+    kind = StationKind.RADIO,
+    region = null,
+)
+
+val kbsHappyRadioStationTestData = Station(
+    id = "test-kbs-happy",
+    name = "KBS 해피FM",
+    broadcaster = "KBS",
+    kind = StationKind.RADIO,
+    region = null,
+)
+
+val seoulRegionalRadioStationTestData = Station(
+    id = "test-regional-seoul",
+    name = "마포FM",
+    broadcaster = "마포FM",
+    kind = StationKind.RADIO,
+    region = "서울",
+)
+
+val daeguRegionalRadioStationTestData = Station(
+    id = "test-regional-daegu",
+    name = "성서공동체FM",
+    broadcaster = "성서공동체FM",
+    kind = StationKind.RADIO,
+    region = "대구",
+)
+
 val tvStationTestData = Station(
     id = "test-tv",
     name = "테스트 TV",
@@ -33,6 +66,16 @@ val stationTestData = listOf(
     radioStationTestData,
     tvStationTestData,
     regionalRadioStationTestData,
+)
+
+/** 전국 3개 + 지역 3개의 라디오 목록. 카탈로그 순서를 흉내 낸다. */
+val radioStationsTestData = listOf(
+    radioStationTestData,
+    kbsFirstRadioStationTestData,
+    kbsHappyRadioStationTestData,
+    regionalRadioStationTestData,
+    seoulRegionalRadioStationTestData,
+    daeguRegionalRadioStationTestData,
 )
 
 val hlsStreamTestData = StationStream(

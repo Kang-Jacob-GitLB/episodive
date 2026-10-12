@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,9 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -32,30 +28,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.FadingEdgeText
+import io.jacob.episodive.core.designsystem.component.MiniBarContainer
+import io.jacob.episodive.core.designsystem.component.MiniBarPlayPauseButton
 import io.jacob.episodive.core.designsystem.component.MorphIcon
-import io.jacob.episodive.core.designsystem.component.PlayPauseMorphIcon
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
-import io.jacob.episodive.core.designsystem.theme.EpisodiveShapes
-import io.jacob.episodive.core.designsystem.theme.surfaceContainerHighDark
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
+import io.jacob.episodive.core.designsystem.theme.surfaceContainerHighDark
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
@@ -69,16 +58,6 @@ import io.jacob.episodive.core.model.share.EpisodiveDeepLink
 import io.jacob.episodive.core.ui.R as uiR
 import kotlin.time.Duration.Companion.seconds
 
-/**
- * 미니플레이어 틴트의 바탕이 되는 표면색. 전경(제목·부제·좋아요·진행바 트랙)이 전부
- * 흰색이라 라이트/다크 어느 테마에서도 어두워야 한다 — 다크 스킴 값으로 고정한다.
- */
-private val PlayerBarTintSurface = surfaceContainerHighDark
-
-/** 커버 추출색을 미니플레이어 표면색 쪽으로 섞는 비율 (0 = 추출색 그대로). */
-private const val PlayerBarTintStartBlend = 0.45f
-private const val PlayerBarTintEndBlend = 0.9f
-
 @Composable
 fun PlayerBar(
     modifier: Modifier = Modifier,
@@ -91,6 +70,7 @@ fun PlayerBar(
     onPendingEpisodeHandled: () -> Unit = {},
     onNowPlayingChange: (Long?) -> Unit = {},
     onIsPlayingChange: (Boolean) -> Unit = {},
+    suppressed: Boolean = false,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -112,8 +92,10 @@ fun PlayerBar(
     // 일회성 effect 대신 상태 기반이라 콜드 스타트 타이밍에도 유실되지 않는다.
     // state 가 아직 Success 가 아니면 시트는 비어 있다가 복원 완료 시 채워진다.
     // (시트 접힘은 sheetState 애니메이션을 위해 PlayerBottomSheet 가 collapseSignal 로 직접 처리한다.)
+    // 라디오 미니바가 자리를 차지한 동안(suppressed)에는 펼치지 않는다. 위젯 탭이 isShowPlayer 만
+    // 참으로 남기면 스테이션이 멈춘 뒤 아무 에피소드나 재생하는 순간 전체 플레이어가 튀어나온다.
     LaunchedEffect(expandSignal) {
-        if (expandSignal > 0) {
+        if (expandSignal > 0 && !suppressed) {
             isShowPlayer = true
         }
     }
@@ -218,7 +200,7 @@ fun PlayerBar(
 
     Box(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(
-            visible = state is PlayerState.Success,
+            visible = isPlayerBarVisible(state is PlayerState.Success, suppressed),
             modifier = Modifier.align(Alignment.BottomCenter), // 위치 유지
             enter = slideInVertically(
                 initialOffsetY = { it }, // 자기 키만큼 아래에서 등장
@@ -268,162 +250,101 @@ internal fun PlayerBarContent(
     onPlayOrPause: () -> Unit,
 ) {
     val dimension = LocalDimensionTheme.current
-    // 미니플레이어는 콘텐츠 위에 떠 있는 어두운 틴트 칩이고 전경이 전부 흰색이다.
-    // 블렌드 대상을 테마 표면색으로 두면 라이트 테마에서 배경이 근백색이 되어 글자가
-    // 사라지므로, 테마와 무관한 다크 표면색으로 고정한다.
-    val surfaceColor = PlayerBarTintSurface
 
     // 미니플레이어 배경은 지금 재생 중인 커버에서 뽑은 색으로 흐른다. 팔레트가 준비되기
-    // 전에는 그 표면색을 써서 색이 튀지 않게 한다. 추출색을 그대로 깔지 않고 표면색 쪽으로
-    // 눌러 쓰는 이유는, 밝은 커버에서 뽑힌 색 위에서는 흰 제목이 묻히기 때문이다.
-    var dominantColor by remember { mutableStateOf(surfaceColor) }
-    val barGradient = remember(dominantColor, surfaceColor) {
-        Brush.linearGradient(
-            colors = listOf(
-                lerp(dominantColor, surfaceColor, PlayerBarTintStartBlend),
-                lerp(dominantColor, surfaceColor, PlayerBarTintEndBlend),
-            ),
-            start = Offset.Zero,
-            end = Offset(1000f, 176f),
-        )
-    }
+    // 전에는 표면색을 써서 색이 튀지 않게 한다.
+    var dominantColor by remember { mutableStateOf(surfaceContainerHighDark) }
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(dimension.playerBarHeight)
-            .padding(horizontal = dimension.playerBarMargin),
-        shape = EpisodiveShapes.miniPlayer,
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent,
-        ),
-        elevation = CardDefaults.cardElevation(0.dp),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.06f)),
-        onClick = onExpand
+    MiniBarContainer(
+        modifier = modifier,
+        accent = dominantColor,
+        onClick = onExpand,
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxSize()
-                .background(barGradient)
+                .padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
+            StateImage(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(11.dp)),
+                imageUrl = nowPlaying.coverUrl,
+                contentDescription = nowPlaying.title,
+                onDominantColorExtracted = { dominantColor = it },
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                StateImage(
+                FadingEdgeText(
                     modifier = Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(11.dp)),
-                    imageUrl = nowPlaying.coverUrl,
-                    contentDescription = nowPlaying.title,
-                    onDominantColorExtracted = { dominantColor = it },
+                        .fillMaxWidth(),
+                    text = nowPlaying.title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.White,
+                    maxLines = 1,
                 )
 
-                Column(
+                FadingEdgeText(
                     modifier = Modifier
-                        .weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    FadingEdgeText(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        text = nowPlaying.title,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Color.White,
-                        maxLines = 1,
-                    )
-
-                    FadingEdgeText(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        text = podcast.title,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.72f),
-                        maxLines = 1,
-                    )
-                }
-
-                EpisodiveIconToggleButton(
-                    modifier = Modifier
-                        .size(21.dp),
-                    checked = nowPlaying.isLiked,
-                    onCheckedChange = { onToggleLike() },
-                    colors = IconButtonDefaults.iconToggleButtonColors(
-                        checkedContainerColor = Color.Transparent,
-                        checkedContentColor = Color.White.copy(alpha = 0.85f),
-                        containerColor = Color.Transparent,
-                        contentColor = Color.White.copy(alpha = 0.85f),
-                    ),
-                    icon = {
-                        // 에피소드가 바뀌면 새 아이콘으로 시작한다. 이어 두면 다음 에피소드의 좋아요
-                        // 여부가 다를 때 누르지도 않은 좋아요/해제 모핑이 돈다.
-                        key(nowPlaying.id) {
-                            MorphIcon(
-                                modifier = Modifier.size(21.dp),
-                                imageVector = if (nowPlaying.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
-                                contentDescription = if (nowPlaying.isLiked) "Unlike" else "Like",
-                                tint = Color.White.copy(alpha = 0.85f)
-                            )
-                        }
-                    },
-                )
-
-                EpisodiveIconToggleButton(
-                    modifier = Modifier
-                        .size(38.dp),
-                    checked = isPlaying,
-                    onCheckedChange = { onPlayOrPause() },
-                    colors = IconButtonDefaults.iconToggleButtonColors(
-                        checkedContainerColor = MaterialTheme.colorScheme.primary,
-                        checkedContentColor = Color.White,
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = Color.White,
-                    ),
-                    icon = {
-                        // 준비 중에는 isPlaying 이 거짓이다. 재생 아이콘을 그대로 두면 누른
-                        // 재생이 먹히지 않은 것처럼 보여 스피너를 띄운다.
-                        val isLoading = !isPlaying && isBuffering
-                        Box(contentAlignment = Alignment.Center) {
-                            // 스피너가 아이콘 자리를 빼앗지 않고 위에 겹친다. 갈래를 나누면 준비를
-                            // 거쳐 재생이 시작될 때 아이콘이 새로 붙어 재생→일시정지가 움직이지 못한다.
-                            Box(modifier = if (isLoading) Modifier.hiddenWhileLoading() else Modifier) {
-                                PlayPauseMorphIcon(
-                                    modifier = Modifier.size(18.dp),
-                                    isPlaying = isPlaying,
-                                    tint = Color.White,
-                                )
-                            }
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .semantics { contentDescription = "Loading" },
-                                    color = Color.White,
-                                    strokeWidth = 2.dp,
-                                )
-                            }
-                        }
-                    },
+                        .fillMaxWidth(),
+                    text = podcast.title,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.72f),
+                    maxLines = 1,
                 )
             }
 
+            EpisodiveIconToggleButton(
+                modifier = Modifier
+                    .size(21.dp),
+                checked = nowPlaying.isLiked,
+                onCheckedChange = { onToggleLike() },
+                colors = IconButtonDefaults.iconToggleButtonColors(
+                    checkedContainerColor = Color.Transparent,
+                    checkedContentColor = Color.White.copy(alpha = 0.85f),
+                    containerColor = Color.Transparent,
+                    contentColor = Color.White.copy(alpha = 0.85f),
+                ),
+                icon = {
+                    // 에피소드가 바뀌면 새 아이콘으로 시작한다. 이어 두면 다음 에피소드의 좋아요
+                    // 여부가 다를 때 누르지도 않은 좋아요/해제 모핑이 돈다.
+                    key(nowPlaying.id) {
+                        MorphIcon(
+                            modifier = Modifier.size(21.dp),
+                            imageVector = if (nowPlaying.isLiked) EpisodiveIcons.LikeFilled else EpisodiveIcons.Like,
+                            contentDescription = if (nowPlaying.isLiked) "Unlike" else "Like",
+                            tint = Color.White.copy(alpha = 0.85f)
+                        )
+                    }
+                },
+            )
+
+            MiniBarPlayPauseButton(
+                isPlaying = isPlaying,
+                isBuffering = isBuffering,
+                onClick = onPlayOrPause,
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(dimension.progressThicknessThin)
+                .align(Alignment.BottomCenter)
+                .background(Color.White.copy(alpha = 0.2f))
+        ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(dimension.progressThicknessThin)
-                    .align(Alignment.BottomCenter)
-                    .background(Color.White.copy(alpha = 0.2f))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(progress.positionRatio)
-                        .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-            }
+                    .fillMaxWidth(progress.positionRatio)
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.primary)
+            )
         }
     }
 }
@@ -452,8 +373,10 @@ private fun PlayerBarPreview() {
         )
     }
 }
+
 /**
- * 재생 준비 중 스피너 밑에 깔린 재생 아이콘을 감춘다. 보이지만 않게 하는 것이 아니라 접근성
- * 트리에서도 뺀다 — 남겨 두면 스크린리더가 "Loading" 과 "Play" 를 함께 읽는다.
+ * 에피소드 미니바를 보일지. 라디오 미니바가 떠 있는 동안([suppressed])에는 둘이 한 자리를 다투므로 숨긴다.
+ * PlayerBar 자체는 계속 컴포즈된다 — 복원·재생 위치 저장 수집기가 그 ViewModel 에 있다.
  */
-internal fun Modifier.hiddenWhileLoading(): Modifier = alpha(0f).clearAndSetSemantics {}
+internal fun isPlayerBarVisible(hasEpisode: Boolean, suppressed: Boolean): Boolean =
+    hasEpisode && !suppressed

@@ -2,6 +2,7 @@
 <resources>
     <string name="feature_home_title">Home</string>
     <string name="feature_home_search">Search</string>
+    <string name="feature_home_section_radio">Radio</string>
     <string name="feature_home_section_my_recent_feeds">My recent published</string>
     <string name="feature_home_section_random_episodes">Random episodes</string>
     <string name="feature_home_section_my_trending_feeds">My trending feeds</string>
