@@ -35,6 +35,9 @@ class RestoreLastPlayStateUseCase @Inject constructor(
         } else {
             dbPositionMs
         }
+        // 위의 DB 읽기(suspend)를 기다리는 사이 사용자가 스테이션 등을 올렸을 수 있다. 호출자의 확인은
+        // 그 전의 것이므로 prepare 직전에 다시 본다. 둘 다 메인이라 이 확인과 prepare 사이엔 끼어들 수 없다.
+        if (playerRepository.hasMediaItem()) return false
         playerRepository.prepare(playlist, index, positionMs)
         playerRepository.setShuffle(lastState.shuffle)
         playerRepository.setRepeat(lastState.repeat)

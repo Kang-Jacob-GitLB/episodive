@@ -309,6 +309,25 @@ Room 왕복과 `flowOn(IO)` 를 거쳐 `progress` 보다 늦게 도착한다. �
   실행이 캐시로 건너뛰어진다). 새 http 항목을 더하면 호스트도 함께 허용한다.
 - **스테이션을 멈추거나 포기할 때는 항목을 비운다**(`stopStation`). `hasMediaItem()` 이 참인 동안은 앱
   재시작 시 마지막 에피소드 복원이 막히므로, 멈추기만 하고 항목을 남기면 죽은 스트림이 플레이어를 붙든다.
+- **복구는 `LiveStreamSupervisor` 하나가 한다**(`:core:data` `radio/`). `failures` 를 받아 `nowPlayingStation` 의
+  현재 스테이션과 `stationId` 가 같을 때만 움직인다 — 에피소드 실패(`stationId == null`)와 지나간 스테이션의
+  실패는 무시한다. 스테이션이 바뀌면 진행 중인 복구 Job 을 취소하고 예산을 되돌린다.
+  - **세션은 `playRequestCount` 로 가른다.** id 가 같아도 사용자가 다시 틀었으면 새 세션이다 — 실패를 받을 때와
+    다시 올리기 직전에 비교해, 달라졌으면 진행 중 복구를 버리고 예산·`excluded` 를 비운다. 낡은 복구가 새
+    스트림을 건드리지 못하게 하는 것이다. 우리가 교체한 주소가 아닌 옛 `streamUrl` 의 지연 실패도 무시한다.
+  - 예산: 주소 재요청 3회(Expired·Gone 공유), Network·Ended·Other 재연결 5회(1·2·4·8·16초), BehindLiveWindow
+    3회, Expired 재시도 1회(두 번째부터 Gone 취급). `Other` 는 기기 쪽 사정이라 주소를 제외하지 않고 같은
+    주소로 재연결한다. 오프라인이면 횟수를 쓰지 않고 온라인을 기다린다(횟수는 온라인 복귀 뒤에 센다).
+    온라인 판정은 INTERNET capability 만 봐서 포털 Wi-Fi 에선 5회 소진 후 포기한다(알려진 한계).
+    **토큰 URL 은 매번 새 문자열이라 `excluded` 만으로는 루프가 안 끊긴다** — 3회 상한이 끊는다. 상한을 빼지 마라.
+  - 예산은 **READY 가 30초 이어진 뒤에만** 되돌린다. 곧바로 다시 끊기는 스트림이 매번 예산을 되찾아 무한
+    재연결하는 것을 막는다. `excluded` 는 안정 재생으로 비우지 않는다.
+  - 포기하면 반드시 `stopStation` 으로 항목을 비운 뒤 `unplayable` 로 알린다(`stopStation` 이 false 면 알리지
+    않는다 — 이미 다른 것이 올라 있다).
+  - 감독자는 `PlayStationUseCase` 가 처음 `start()` 한다. Application.onCreate 에서 주입하면 WorkManager 로 깬
+    프로세스에서도 ExoPlayer 가 만들어지기 때문이다. `PlayStationUseCase` 는 **메인에서 호출한다**(`playRequestCount`·
+    `playStation` 이 플레이어 스레드 전용). 주소를 받는 사이 사용자가 다른 것을 틀었으면(`playRequestCount` 변화)
+    `Superseded` 를 돌려주고 올리지 않는다. 연타의 직렬화(이전 Job 취소)는 호출 측 몫이다.
 
 ## 중요 구현 세부사항
 

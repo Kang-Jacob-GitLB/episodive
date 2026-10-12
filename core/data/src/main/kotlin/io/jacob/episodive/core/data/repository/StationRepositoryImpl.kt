@@ -69,7 +69,12 @@ class StationRepositoryImpl internal constructor(
         return mapNotNull { stationsById[it]?.station }
     }
 
-    override suspend fun resolveStreamUrl(stationId: String): StationStream? = withContext(ioDispatcher) {
+    override fun getStation(stationId: String): Station? = stationsById[stationId]?.station
+
+    override suspend fun resolveStreamUrl(
+        stationId: String,
+        excluding: Set<String>,
+    ): StationStream? = withContext(ioDispatcher) {
         val entry = stationsById[stationId] ?: return@withContext null
 
         // 후보마다 OkHttp 의 callTimeout 이 걸려 있어도 후보가 여럿이면 합이 길어진다. 재생 버튼을
@@ -77,7 +82,9 @@ class StationRepositoryImpl internal constructor(
         val resolved = withTimeoutOrNull(RESOLVE_TIMEOUT_MILLIS) {
             for (uuid in entry.radioBrowserIds) {
                 try {
-                    remoteDataSource.resolveStreamUrl(uuid)?.let { return@withTimeoutOrNull it }
+                    remoteDataSource.resolveStreamUrl(uuid)
+                        ?.takeIf { it !in excluding }
+                        ?.let { return@withTimeoutOrNull it }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -87,7 +94,7 @@ class StationRepositoryImpl internal constructor(
             null
         }
 
-        (resolved ?: entry.fallbackUrl)?.let { StationStream(url = it, isHls = entry.isHls) }
+        (resolved ?: entry.fallbackUrl?.takeIf { it !in excluding })?.let { StationStream(url = it, isHls = entry.isHls) }
     }
 
     private companion object {
