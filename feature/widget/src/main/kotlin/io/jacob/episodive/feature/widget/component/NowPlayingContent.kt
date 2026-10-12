@@ -81,7 +81,8 @@ internal fun NowPlayingContent(
                         GlanceModifier.fillMaxSize()
                     }
                     ).clickable(
-                        // 재생 정보가 있으면 해당 에피소드 플레이어 화면(open_player), 없으면 앱만 연다.
+                        // 재생 정보가 있으면 플레이어 화면(open_player), 없으면 앱만 연다. 스테이션이어도
+                        // open_player 를 싣는다 — 앱의 딥링크 처리가 스테이션이 올라 있으면 라디오 화면으로 보낸다.
                         actionStartActivity(
                             component,
                             if (snapshot != null) {
@@ -121,13 +122,17 @@ private fun NowPlayingHeader(
         modifier = modifier.padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        WidgetThumbnail(
-            bitmap = artwork,
-            contentDescription = context.getString(
-                R.string.feature_widget_now_playing_artwork_desc,
-            ),
-            sizeDp = thumbDp,
-        )
+        val contentDescription = context.getString(R.string.feature_widget_now_playing_artwork_desc)
+        val stationArt = snapshot?.stationArt
+        if (stationArt != null) {
+            StationThumbnail(art = stationArt, sizeDp = thumbDp)
+        } else {
+            WidgetThumbnail(
+                bitmap = artwork,
+                contentDescription = contentDescription,
+                sizeDp = thumbDp,
+            )
+        }
         Spacer(modifier = GlanceModifier.width(12.dp))
         // 높이를 가득 채워, 제목은 위·컨트롤은 아래로 고정(아래 weight Spacer)한다.
         Column(modifier = GlanceModifier.defaultWeight().fillMaxHeight()) {
@@ -178,26 +183,29 @@ private fun NowPlayingControlsRow(snapshot: NowPlayingSnapshot) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(modifier = GlanceModifier.defaultWeight())
-        WidgetSeekButton(
-            iconRes = R.drawable.feature_widget_ic_rewind,
-            contentDescription = context.getString(
-                R.string.feature_widget_now_playing_seek_backward_desc,
-            ),
-            control = PlaybackControl.SEEK_BWD,
-            sizeDp = 34,
-            paddingDp = 6,
-        )
-        Spacer(modifier = GlanceModifier.width(4.dp))
-        WidgetSeekButton(
-            iconRes = R.drawable.feature_widget_ic_fast_forward,
-            contentDescription = context.getString(
-                R.string.feature_widget_now_playing_seek_forward_desc,
-            ),
-            control = PlaybackControl.SEEK_FWD,
-            sizeDp = 34,
-            paddingDp = 6,
-        )
-        Spacer(modifier = GlanceModifier.width(10.dp))
+        // 라이브 스테이션은 탐색할 수 없다.
+        if (!snapshot.isStation) {
+            WidgetSeekButton(
+                iconRes = R.drawable.feature_widget_ic_rewind,
+                contentDescription = context.getString(
+                    R.string.feature_widget_now_playing_seek_backward_desc,
+                ),
+                control = PlaybackControl.SEEK_BWD,
+                sizeDp = 34,
+                paddingDp = 6,
+            )
+            Spacer(modifier = GlanceModifier.width(4.dp))
+            WidgetSeekButton(
+                iconRes = R.drawable.feature_widget_ic_fast_forward,
+                contentDescription = context.getString(
+                    R.string.feature_widget_now_playing_seek_forward_desc,
+                ),
+                control = PlaybackControl.SEEK_FWD,
+                sizeDp = 34,
+                paddingDp = 6,
+            )
+            Spacer(modifier = GlanceModifier.width(10.dp))
+        }
         WidgetPlayPauseButton(
             isPlaying = snapshot.isPlaying,
             contentDescription = context.getString(

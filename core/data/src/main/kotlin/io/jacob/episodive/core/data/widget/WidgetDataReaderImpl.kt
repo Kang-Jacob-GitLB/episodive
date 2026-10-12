@@ -11,6 +11,8 @@ import io.jacob.episodive.core.domain.usecase.podcast.GetUserRecentPodcastsUseCa
 import io.jacob.episodive.core.domain.widget.NowPlayingSnapshot
 import io.jacob.episodive.core.domain.widget.PodcastSnapshot
 import io.jacob.episodive.core.domain.widget.WidgetDataReader
+import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.model.coverUrl
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -41,7 +43,22 @@ class WidgetDataReaderImpl @Inject constructor(
         userRepository.getLastPlayState()?.episodeId
             ?.let { episodeRepository.getEpisodeById(it).first() }
 
+    private fun Station.toSnapshot(isPlaying: Boolean) = NowPlayingSnapshot(
+        episodeId = null,
+        podcastId = null,
+        title = name,
+        feedTitle = broadcaster,
+        imageUrl = null,
+        isPlaying = isPlaying,
+        stationId = id,
+        stationArt = art,
+    )
+
     override suspend fun snapshotNowPlaying(): NowPlayingSnapshot? {
+        // nowPlayingFlow 와 같은 판정이다 — 스테이션 여부는 nowPlayingStation 하나로만 가른다.
+        playerRepository.nowPlayingStation.first()?.let { station ->
+            return station.toSnapshot(playerRepository.isPlaying.first())
+        }
         val active = getNowPlaying().first()
         val episode = active ?: lastPlayedEpisode() ?: return null
         // 폴백(마지막 재생)일 때는 일시정지 상태로 표시.
@@ -61,6 +78,24 @@ class WidgetDataReaderImpl @Inject constructor(
     }
 
     override fun nowPlayingFlow(): Flow<NowPlayingSnapshot?> =
+        // 스테이션 여부는 nowPlayingStation 하나로만 판정한다(nowPlaying 과 combine 하지 않는다).
+        playerRepository.nowPlayingStation.flatMapLatest { station ->
+            if (station != null) {
+                // streamTitle 은 싣지 않는다. 곡마다 스냅샷이 바뀌어 위젯 갱신이 폭주한다.
+                playerRepository.isPlaying.map { station.toSnapshot(it) }
+            } else {
+                episodeNowPlayingFlow()
+            }
+        }.distinctUntilChanged { old, new ->
+            // 재생 위치(progress) 재방출 폭주 차단: 에피소드/스테이션/재생상태/팟캐스트명이 같으면 무시.
+            // feedTitle 은 팟캐스트 비동기 로드로 뒤늦게 채워질 수 있으므로 비교에 포함한다.
+            old?.episodeId == new?.episodeId &&
+                old?.stationId == new?.stationId &&
+                old?.isPlaying == new?.isPlaying &&
+                old?.feedTitle == new?.feedTitle
+        }
+
+    private fun episodeNowPlayingFlow(): Flow<NowPlayingSnapshot?> =
         getNowPlaying().flatMapLatest { active ->
             // 활성 재생이 없으면 마지막 재생 에피소드로 폴백(미니플레이어처럼, 일시정지 상태로 표시).
             val episode = active ?: lastPlayedEpisode()
@@ -79,12 +114,6 @@ class WidgetDataReaderImpl @Inject constructor(
                     )
                 }
             }
-        }.distinctUntilChanged { old, new ->
-            // 재생 위치(progress) 재방출 폭주 차단: 에피소드/재생상태/팟캐스트명이 같으면 무시.
-            // feedTitle 은 팟캐스트 비동기 로드로 뒤늦게 채워질 수 있으므로 비교에 포함한다.
-            old?.episodeId == new?.episodeId &&
-                old?.isPlaying == new?.isPlaying &&
-                old?.feedTitle == new?.feedTitle
         }
 
     override fun userRecentPodcastsFlow(max: Int): Flow<List<PodcastSnapshot>> =

@@ -93,4 +93,13 @@ class StationArtTest {
         assertEquals(7, colors.toSet().size)
         assertNotEquals(colors[0], colors[2])
     }
+
+    @Test
+    fun `Given 이니셜 길이, Then 글자 비율이 길수록 작아진다`() {
+        val color = 0
+        assertEquals(0.44f, StationArt("클", color).textRatio, 0f)
+        assertEquals(0.36f, StationArt("1라", color).textRatio, 0f)
+        assertEquals(0.30f, StationArt("KBS", color).textRatio, 0f)
+        assertEquals(0.25f, StationArt("ABCD", color).textRatio, 0f)
+    }
 }

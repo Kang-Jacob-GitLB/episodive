@@ -70,7 +70,13 @@ class EpisodiveWidget : GlanceAppWidget() {
             // (로드 실패로 비트맵이 null 이어도 key 는 일치하므로 무한 스피너가 되지 않는다.)
             val artUrl = snapshot?.imageUrl?.takeIf { it.isNotBlank() }
             val artKey = artUrl to nowPlayingPx
-            val artworkLoaded by produceState<ArtworkResult?>(null, artUrl, nowPlayingPx) {
+            val isStation = snapshot?.isStation == true
+            val artworkLoaded by produceState<ArtworkResult?>(null, artUrl, nowPlayingPx, isStation) {
+                // 스테이션은 비트맵도 Palette 추출도 없다. 배경은 아래에서 이니셜 아트 색으로 정한다.
+                if (isStation) {
+                    value = null
+                    return@produceState
+                }
                 val bitmap = artUrl?.let {
                     WidgetImageLoader.loadWidgetBitmap(context, it, nowPlayingPx)
                 }
@@ -81,7 +87,13 @@ class EpisodiveWidget : GlanceAppWidget() {
             }
             val readyArtwork = artworkLoaded?.takeIf { it.key == artKey }
             val artwork = readyArtwork?.bitmap
-            val background = readyArtwork?.colors ?: WidgetColorExtractor.colors(null)
+            // 스테이션은 이니셜 아트 색을 어둡게 한 톤이 배경이다. 썸네일이 아트 색 그대로라 경계가 보인다.
+            val stationColor = snapshot?.stationArt?.colorArgb
+            val background = if (stationColor != null) {
+                WidgetColorExtractor.fromColor(WidgetColorExtractor.feedBackgroundColor(stationColor))
+            } else {
+                readyArtwork?.colors ?: WidgetColorExtractor.colors(null)
+            }
             val backgroundColor = background.background
             val feedBackgroundColor = background.feed
 

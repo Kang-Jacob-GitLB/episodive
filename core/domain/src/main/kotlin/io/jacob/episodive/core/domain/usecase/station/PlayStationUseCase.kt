@@ -41,6 +41,17 @@ class PlayStationUseCase @Inject constructor(
 
         val requestCount = playerRepository.playRequestCount()
         val stream = stationRepository.resolveStreamUrl(stationId)
+        // 알림 아트를 IO 에서 미리 그린다(메인에서 그리지 않게). 이 대기도 끼어듦 판정에 들어가도록 아래 확인보다 앞에 둔다. 실패해도 재생은 막지 않는다 —
+        // playStation 이 메인에서 그리는 폴백을 가진다.
+        if (stream != null) {
+            try {
+                playerRepository.prepareStationArtwork(station)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "prepareStationArtwork failed. stationId: $stationId")
+            }
+        }
         // 해석 결과가 null 이어도 먼저 본다. 사용자가 이미 다른 것을 골랐다면 이 요청의 실패는 보여 줄 가치가 없다.
         if (playerRepository.playRequestCount() != requestCount) return PlayStationResult.Superseded
         if (stream == null) return PlayStationResult.Unavailable

@@ -50,6 +50,12 @@ interface PlayerDataSource {
      */
     fun hasMediaItem(): Boolean
 
+    /**
+     * 알림용 이니셜 아트를 IO 에서 미리 그려 캐시에 넣는다. [playStation] 이 캐시 히트로 메인 스레드에서
+     * 비트맵을 만들지 않게 한다. 어느 스레드에서 불러도 된다.
+     */
+    suspend fun prepareStationArtwork(station: Station)
+
     /** 스테이션의 스트림을 올려 바로 튼다. 에피소드 재생과 같은 사용자 의도 경로다. */
     fun playStation(station: Station, stream: StationStream)
 

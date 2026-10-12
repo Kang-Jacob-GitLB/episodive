@@ -10,7 +10,16 @@ package io.jacob.episodive.core.model
 data class StationArt(
     val initials: String,
     val colorArgb: Int,
-)
+) {
+    /** 정사각형 한 변 대비 글자 크기 비율. Compose·Canvas·Glance 가 모두 이 값만 쓴다. */
+    val textRatio: Float
+        get() = when (initials.length) {
+            1 -> 0.44f
+            2 -> 0.36f
+            3 -> 0.30f
+            else -> 0.25f
+        }
+}
 
 val Station.art: StationArt
     get() = StationArt(

@@ -37,6 +37,7 @@ class PlayStationUseCaseTest {
         every { supervisor.start() } just Runs
         every { playerRepository.playRequestCount() } returns 7L
         every { playerRepository.playStation(any(), any()) } just Runs
+        coEvery { playerRepository.prepareStationArtwork(any()) } just Runs
         every { stationRepository.getStation(station.id) } returns station
         coEvery { stationRepository.resolveStreamUrl(station.id) } returns stream
         coEvery { stationRepository.markPlayed(any()) } just Runs
@@ -50,9 +51,20 @@ class PlayStationUseCaseTest {
         coVerifyOrder {
             supervisor.start()
             stationRepository.resolveStreamUrl(station.id)
+            playerRepository.prepareStationArtwork(station)
             playerRepository.playStation(station, stream)
             stationRepository.markPlayed(station.id)
         }
+    }
+
+    @Test
+    fun `Given artwork preparation fails, When invoke, Then still plays`() = runTest {
+        coEvery { playerRepository.prepareStationArtwork(any()) } throws IllegalStateException("render")
+
+        val result = useCase(station.id)
+
+        assertEquals(PlayStationResult.Started, result)
+        verify { playerRepository.playStation(station, stream) }
     }
 
     @Test
@@ -63,6 +75,7 @@ class PlayStationUseCaseTest {
 
         assertEquals(PlayStationResult.Unavailable, result)
         verify(exactly = 0) { playerRepository.playStation(any(), any()) }
+        coVerify(exactly = 0) { playerRepository.prepareStationArtwork(any()) }
     }
 
     @Test
