@@ -135,6 +135,10 @@ class PlayerRepositoryImpl @Inject constructor(
         playerDataSource.rehydrate(episode)
     }
 
+    override fun hasMediaItem(): Boolean {
+        return playerDataSource.hasMediaItem()
+    }
+
 
     override val nowPlaying: Flow<Episode?> = playerDataSource.nowPlaying
     override val playlist: Flow<List<Episode>> = playerDataSource.playlist

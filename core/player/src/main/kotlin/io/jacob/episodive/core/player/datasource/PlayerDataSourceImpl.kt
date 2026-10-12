@@ -641,11 +641,15 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     override fun rehydrate(episode: Episode) {
-        // 플레이어가 이미 다른 에피소드를 들고 있으면 그쪽이 진실이다.
+        // 플레이어가 이미 다른 항목을 들고 있으면 그쪽이 진실이다.
         // 이 가드가 없으면 서비스의 비동기 DB 읽기가 늦게 도착해 _nowPlaying 을 되돌리고,
         // UI 는 A 를 보여주면서 B 를 재생하는 상태가 된다.
-        val playingEpisode = currentEpisode()
-        if (playingEpisode != null && playingEpisode.id != episode.id) return
+        // 태그가 있으면 "다른 에피소드" 가 아니라 "다른 항목" 으로 가른다. 에피소드가 아닌 항목
+        // (라이브 스트림)은 currentEpisode() 가 null 이라, 에피소드끼리만 견주면 그대로 통과해 덮어쓴다.
+        // 태그가 아예 없는 항목은 예전처럼 통과시킨다. 외부 컨트롤러가 IPC 로 넘긴 항목은 태그를 잃고
+        // 오므로, 그것까지 막으면 rehydrate 가 메우려던 빈 nowPlaying 이 그대로 남는다.
+        val currentTag = player.currentMediaItem?.localConfiguration?.tag
+        if (currentTag != null && (currentTag as? Episode)?.id != episode.id) return
         // 같은 episode 면 무시 (불필요한 widget 갱신/depounce 방지).
         if (_nowPlaying.value?.id == episode.id) return
         _nowPlaying.value = episode
@@ -655,6 +659,8 @@ class PlayerDataSourceImpl @Inject constructor(
         // 아직 듣지도 않은 위치로 이어듣기 지점이 덮어써진다.
         // progress 는 progressUpdater 나 transition 콜백이 실제 값으로 채운다.
     }
+
+    override fun hasMediaItem(): Boolean = player.currentMediaItem != null
 
     /**
      * 지금 플레이어에 올라 있는 에피소드. 재생 위치의 주인을 판별하는 유일한 근거다.

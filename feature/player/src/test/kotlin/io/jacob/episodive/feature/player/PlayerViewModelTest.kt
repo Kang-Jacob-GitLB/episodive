@@ -591,6 +591,24 @@ class PlayerViewModelTest {
         }
 
     @Test
+    fun `Given player holds a non-episode item, When ViewModel is created, Then restoreLastPlayState is not called`() =
+        runTest {
+            // 계약: nowPlaying 은 에피소드만 싣는다. 라이브 스트림 재생 중에는 null 이지만
+            // 플레이어는 비어 있지 않다. 이때 복원하면 액티비티 재생성마다 재생 중인 스트림을
+            // 지난 에피소드 목록으로 덮어쓴다.
+            setupPlayerRepositoryMocks()
+            nowPlayingFlow.value = null
+            every { playerRepository.hasMediaItem() } returns true
+            every { getNowPlayingUseCase() } returns flowOf(null)
+            every { getPlaylistUseCase() } returns flowOf(emptyList())
+            every { getUserDataUseCase() } returns flowOf(UserData(speed = 1.0f))
+
+            createViewModel()
+
+            coVerify(exactly = 0) { restoreLastPlayStateUseCase() }
+        }
+
+    @Test
     fun `Given current episode exists, When ViewModel is created, Then restoreLastPlayState is not called`() =
         runTest {
             setupPlayerRepositoryMocks()
