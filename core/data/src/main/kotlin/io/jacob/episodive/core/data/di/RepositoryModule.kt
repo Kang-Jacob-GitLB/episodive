@@ -13,12 +13,14 @@ import io.jacob.episodive.core.common.Dispatcher
 import io.jacob.episodive.core.common.EpisodiveDispatchers
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
+import io.jacob.episodive.core.data.radio.KoreanStationCatalog
 import io.jacob.episodive.core.data.repository.CaptionRepositoryImpl
 import io.jacob.episodive.core.data.repository.ChannelRepositoryImpl
 import io.jacob.episodive.core.data.repository.EpisodeRepositoryImpl
 import io.jacob.episodive.core.data.repository.PlayerRepositoryImpl
 import io.jacob.episodive.core.data.repository.PodcastRepositoryImpl
 import io.jacob.episodive.core.data.repository.RecentSearchRepositoryImpl
+import io.jacob.episodive.core.data.repository.StationRepositoryImpl
 import io.jacob.episodive.core.data.repository.UserRepositoryImpl
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
@@ -34,6 +36,7 @@ import io.jacob.episodive.core.domain.repository.EpisodeRepository
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.domain.repository.RecentSearchRepository
+import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.domain.repository.UserRepository
 import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
@@ -41,6 +44,7 @@ import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
+import io.jacob.episodive.core.network.datasource.StationRemoteDataSource
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -156,6 +160,19 @@ object RepositoryModule {
     ): RecentSearchRepository {
         return RecentSearchRepositoryImpl(
             recentSearchLocalDataSource = recentSearchLocalDataSource,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideStationRepository(
+        stationRemoteDataSource: StationRemoteDataSource,
+        @Dispatcher(EpisodiveDispatchers.IO) ioDispatcher: CoroutineDispatcher,
+    ): StationRepository {
+        return StationRepositoryImpl(
+            remoteDataSource = stationRemoteDataSource,
+            catalog = KoreanStationCatalog.entries,
+            ioDispatcher = ioDispatcher,
         )
     }
 }

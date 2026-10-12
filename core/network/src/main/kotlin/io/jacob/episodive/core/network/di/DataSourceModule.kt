@@ -12,6 +12,7 @@ import io.jacob.episodive.core.network.api.ChapterApi
 import io.jacob.episodive.core.network.api.EpisodeApi
 import io.jacob.episodive.core.network.api.FeedApi
 import io.jacob.episodive.core.network.api.PodcastApi
+import io.jacob.episodive.core.network.api.RadioBrowserApi
 import io.jacob.episodive.core.network.api.SoundbiteApi
 import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSourceImpl
@@ -25,6 +26,8 @@ import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSourceImpl
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSourceImpl
+import io.jacob.episodive.core.network.datasource.StationRemoteDataSource
+import io.jacob.episodive.core.network.datasource.StationRemoteDataSourceImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Singleton
 
@@ -78,6 +81,16 @@ object DataSourceModule {
     ): ChapterRemoteDataSource {
         return ChapterRemoteDataSourceImpl(
             chapterApi = chapterApi,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideStationRemoteDataSource(
+        radioBrowserApi: RadioBrowserApi,
+    ): StationRemoteDataSource {
+        return StationRemoteDataSourceImpl(
+            radioBrowserApi = radioBrowserApi,
         )
     }
 
