@@ -1,23 +1,38 @@
 package io.jacob.episodive.core.player.datasource
 
 import android.net.Uri
+import android.os.SystemClock
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Metadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.Tracks
 import androidx.media3.common.text.Cue
 import androidx.media3.common.text.CueGroup
+import androidx.media3.datasource.DataSpec
+import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.extractor.metadata.icy.IcyInfo
+import androidx.media3.extractor.metadata.id3.TextInformationFrame
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.download.EpisodeDownloader
+import com.google.common.collect.ImmutableList
 import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.PlaybackFailure
+import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.model.mapper.toDurationMillis
 import io.jacob.episodive.core.player.audio.PlaybackSpectrumMonitor
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
+import io.jacob.episodive.core.testing.model.hlsStreamTestData
+import io.jacob.episodive.core.testing.model.icecastStreamTestData
+import io.jacob.episodive.core.testing.model.radioStationTestData
+import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
 import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.every
@@ -27,9 +42,14 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkStatic
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -54,6 +74,9 @@ class PlayerDataSourceImplTest {
     @Before
     fun setUp() {
         mockkStatic(Uri::class)
+        // PlaybackException 이 생성 시각을 SystemClock 에서 읽는다.
+        mockkStatic(SystemClock::class)
+        every { SystemClock.elapsedRealtime() } returns 0L
         every { Uri.parse(any()) } returns mockk(relaxed = true)
         every { Uri.fromFile(any()) } returns mockk(relaxed = true)
 
@@ -66,6 +89,7 @@ class PlayerDataSourceImplTest {
     fun tearDown() {
         dataSource.release()
         unmockkStatic(Uri::class)
+        unmockkStatic(SystemClock::class)
     }
 
     // ---------------------------------------------------------------------
@@ -1767,4 +1791,538 @@ class PlayerDataSourceImplTest {
                 assertEquals(episode.id, progress.episodeId)
             }
         }
+
+    // ---------------------------------------------------------------------
+    // 라이브 스테이션
+    // ---------------------------------------------------------------------
+
+    private val station = radioStationTestData
+    private val hlsStream = hlsStreamTestData
+    private val icecastStream = icecastStreamTestData
+
+    private fun stationItem(target: Station = station, url: Uri = mockk(relaxed = true)): MediaItem =
+        MediaItem.Builder()
+            .setMediaId("station:${target.id}")
+            .setUri(url)
+            .setTag(target)
+            .build()
+
+    private fun episodeItem(target: Episode = episode): MediaItem =
+        MediaItem.Builder()
+            .setMediaId(target.id.toString())
+            .setUri(mockk<Uri>(relaxed = true))
+            .setTag(target)
+            .build()
+
+    private fun transitionTo(item: MediaItem?) {
+        listenerSlot.captured.onMediaItemTransition(
+            item,
+            Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED,
+        )
+    }
+
+    private fun playStationAndCapture(stream: StationStream = hlsStream): MediaItem {
+        val captured = slot<MediaItem>()
+        every { player.setMediaItem(capture(captured)) } just Runs
+        dataSource.playStation(station, stream)
+        return captured.captured
+    }
+
+    @Test
+    fun `Given station and stream, When playStation called, Then station item is loaded and played`() {
+        // When
+        val item = playStationAndCapture()
+
+        // Then
+        verify {
+            player.setMediaItem(any())
+            player.prepare()
+            player.playWhenReady = true
+        }
+        assertEquals("station:${station.id}", item.mediaId)
+        assertEquals(station, item.localConfiguration?.tag)
+    }
+
+    @Test
+    fun `Given hls stream, When playStation called, Then mime type is m3u8`() {
+        assertEquals(MimeTypes.APPLICATION_M3U8, playStationAndCapture(hlsStream).localConfiguration?.mimeType)
+    }
+
+    @Test
+    fun `Given icecast stream, When playStation called, Then mime type is left unset`() {
+        assertEquals(null, playStationAndCapture(icecastStream).localConfiguration?.mimeType)
+    }
+
+    @Test
+    fun `Given station, When playStation called, Then metadata describes a radio station without artwork or clipping`() {
+        // When
+        val item = playStationAndCapture()
+
+        // Then
+        val metadata = item.mediaMetadata
+        assertEquals(MediaMetadata.MEDIA_TYPE_RADIO_STATION, metadata.mediaType)
+        assertEquals(station.name, metadata.title)
+        assertEquals(station.name, metadata.displayTitle)
+        assertEquals(station.broadcaster, metadata.artist)
+        assertEquals(null, metadata.artworkUri)
+        assertEquals(true, metadata.isPlayable)
+        assertEquals(MediaItem.ClippingConfiguration.UNSET, item.clippingConfiguration)
+    }
+
+    @Test
+    fun `Given episode then station transition, Then nowPlaying and nowPlayingStation are exclusive`() = runTest {
+        // When / Then
+        transitionTo(episodeItem())
+        dataSource.nowPlaying.test { assertEquals(episode, awaitItem()) }
+        dataSource.nowPlayingStation.test { assertEquals(null, awaitItem()) }
+
+        transitionTo(stationItem())
+        dataSource.nowPlaying.test { assertEquals(null, awaitItem()) }
+        dataSource.nowPlayingStation.test { assertEquals(station, awaitItem()) }
+
+        transitionTo(episodeItem())
+        dataSource.nowPlaying.test { assertEquals(episode, awaitItem()) }
+        dataSource.nowPlayingStation.test { assertEquals(null, awaitItem()) }
+    }
+
+    @Test
+    fun `Given station transition, Then progress has no episodeId and zero duration`() = runTest {
+        // 계약: 스테이션은 재생 위치 저장 경로(progress.episodeId 키)에 아무것도 흘리지 않는다.
+        // 이 값이 깨지면 스테이션을 듣는 동안 에피소드의 이어듣기 지점이 덮어써진다.
+        transitionTo(stationItem())
+
+        dataSource.progress.test {
+            val progress = awaitItem()
+            assertEquals(null, progress.episodeId)
+            assertEquals(Duration.ZERO, progress.duration)
+        }
+    }
+
+    /**
+     * 진행 갱신 코루틴을 테스트 스케줄러 위에서 돌리는 데이터 소스를 만들어 [block] 을 실행한다.
+     * 갱신은 재생 중이거나 ENDED 일 때 Main 을 찾는다. 이 파일의 나머지 테스트는 IO 범위를 쓰고 Main 을
+     * 세우지 않으므로, 그 상태를 만드는 테스트만 범위와 Main 을 같은 스케줄러에 묶는다 — `runCurrent()` 로
+     * 갱신이 끝난 자리를 결정적으로 정할 수 있고, 끝나면 범위를 닫은 뒤 Main 을 내리므로 예외가 새지 않는다.
+     */
+    private fun runWithTestScope(
+        block: suspend TestScope.(PlayerDataSourceImpl, Player.Listener, ExoPlayer) -> Unit,
+    ) = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        val scopedPlayer = mockk<ExoPlayer>(relaxed = true)
+        val scopedListener = slot<Player.Listener>()
+        every { scopedPlayer.addListener(capture(scopedListener)) } just Runs
+        val scoped = PlayerDataSourceImpl(
+            player = scopedPlayer,
+            episodeDownloader = episodeDownloader,
+            scope = CoroutineScope(SupervisorJob() + dispatcher),
+        )
+        try {
+            block(scoped, scopedListener.captured, scopedPlayer)
+        } finally {
+            scoped.release()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `Given station playing, When progressUpdater ticks with positive duration, Then episodeId stays null`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            // 계약: progressUpdater 에 스테이션 분기를 넣지 않아도 currentEpisodeId() 가 null 이라 안전하다.
+            // HLS 라이브는 player.duration 이 라이브 창 길이(양수)라 실제로 이 경로를 탄다.
+            every { scopedPlayer.currentMediaItem } returns stationItem()
+            every { scopedPlayer.duration } returns 10_000L
+            every { scopedPlayer.currentPosition } returns 2_000L
+            scopedListener.onMediaItemTransition(
+                stationItem(),
+                Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED,
+            )
+
+            scoped.progress.test {
+                awaitItem() // 전환이 발행한 값
+                scopedListener.onIsPlayingChanged(true)
+                runCurrent()
+                val tick = awaitItem()
+                assertEquals(10_000L.toDurationMillis(), tick.duration)
+                assertEquals(null, tick.episodeId)
+                scopedListener.onIsPlayingChanged(false)
+                runCurrent()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `Given station transition, Then playback speed is forced to 1x`() {
+        transitionTo(stationItem())
+
+        verify { player.setPlaybackSpeed(1f) }
+    }
+
+    @Test
+    fun `Given user speed 1_5 then station then episode, Then the user speed is restored by the episode transition`() = runTest {
+        // Given
+        dataSource.setSpeed(1.5f)
+        clearMocks(player, answers = false, recordedCalls = true)
+
+        // When
+        transitionTo(stationItem())
+        verify { player.setPlaybackSpeed(1f) }
+        transitionTo(episodeItem())
+
+        // Then
+        verify { player.setPlaybackSpeed(1.5f) }
+        dataSource.speed.test { assertEquals(1.5f, awaitItem()) }
+    }
+
+    @Test
+    fun `Given station loaded, When setSpeed called, Then only the stored value changes and the player speed is untouched`() = runTest {
+        // 계약: PlayerViewModel 이 생성될 때마다 사용자 배속을 setSpeed 로 보낸다. 여기서 막지 않으면
+        // 라이브 스트림이 배속으로 돈다.
+        every { player.currentMediaItem } returns stationItem()
+        clearMocks(player, answers = false, recordedCalls = true)
+
+        dataSource.setSpeed(2f)
+
+        verify(exactly = 0) { player.setPlaybackSpeed(any()) }
+        dataSource.speed.test { assertEquals(2f, awaitItem()) }
+    }
+
+    private fun metadataOf(vararg entries: Metadata.Entry) = Metadata(*entries)
+
+    @Test
+    fun `Given station, When icy metadata arrives, Then streamTitle holds the trimmed title`() = runTest {
+        every { player.currentMediaItem } returns stationItem()
+
+        listenerSlot.captured.onMetadata(metadataOf(IcyInfo(ByteArray(0), "  아티스트 - 곡  ", null)))
+
+        dataSource.streamTitle.test { assertEquals("아티스트 - 곡", awaitItem()) }
+    }
+
+    @Test
+    fun `Given station, When id3 TIT2 frame arrives, Then streamTitle holds its first value`() = runTest {
+        every { player.currentMediaItem } returns stationItem()
+
+        listenerSlot.captured.onMetadata(
+            metadataOf(
+                TextInformationFrame("TPE1", null, ImmutableList.of("가수")),
+                TextInformationFrame("TIT2", null, ImmutableList.of("곡명")),
+            )
+        )
+
+        dataSource.streamTitle.test { assertEquals("곡명", awaitItem()) }
+    }
+
+    @Test
+    fun `Given a title is showing, When a blank icy title arrives, Then streamTitle is cleared`() = runTest {
+        // 곡 사이 멘트·광고 구간은 빈 StreamTitle 을 보낸다. 남겨 두면 지난 곡이 계속 떠 있다.
+        every { player.currentMediaItem } returns stationItem()
+        listenerSlot.captured.onMetadata(metadataOf(IcyInfo(ByteArray(0), "곡", null)))
+
+        listenerSlot.captured.onMetadata(metadataOf(IcyInfo(ByteArray(0), "   ", null)))
+
+        dataSource.streamTitle.test { assertEquals(null, awaitItem()) }
+    }
+
+    @Test
+    fun `Given raw icy bytes in EUC-KR, When metadata arrives, Then streamTitle is decoded from the raw bytes`() = runTest {
+        // media3 가 푼 title 은 Latin-1 로 깨져 있다. 원문 바이트를 직접 읽어야 한글이 산다.
+        every { player.currentMediaItem } returns stationItem()
+        val raw = "StreamTitle='".toByteArray() + "한글 곡".toByteArray(charset("EUC-KR")) + "';".toByteArray()
+
+        listenerSlot.captured.onMetadata(metadataOf(IcyInfo(raw, "깨진 제목", null)))
+
+        dataSource.streamTitle.test { assertEquals("한글 곡", awaitItem()) }
+    }
+
+    @Test
+    fun `Given episode playing, When icy metadata arrives, Then it is ignored`() = runTest {
+        every { player.currentMediaItem } returns episodeItem()
+
+        listenerSlot.captured.onMetadata(metadataOf(IcyInfo(ByteArray(0), "곡", null)))
+
+        dataSource.streamTitle.test { assertEquals(null, awaitItem()) }
+    }
+
+    @Test
+    fun `Given streamTitle set, When a new item transition happens, Then streamTitle resets to null`() = runTest {
+        every { player.currentMediaItem } returns stationItem()
+        listenerSlot.captured.onMetadata(metadataOf(IcyInfo(ByteArray(0), "곡", null)))
+
+        transitionTo(stationItem(regionalRadioStationTestData))
+
+        dataSource.streamTitle.test { assertEquals(null, awaitItem()) }
+    }
+
+    private fun httpError(code: Int, errorCode: Int = PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS) =
+        PlaybackException(
+            "http $code",
+            HttpDataSource.InvalidResponseCodeException(
+                code,
+                null,
+                null,
+                emptyMap(),
+                mockk<DataSpec>(relaxed = true),
+                ByteArray(0),
+            ),
+            errorCode,
+        )
+
+    private fun failureFor(error: PlaybackException, item: MediaItem?): PlaybackFailure = runBlocking {
+        every { player.currentMediaItem } returns item
+        var failure: PlaybackFailure? = null
+        dataSource.failures.test {
+            listenerSlot.captured.onPlayerError(error)
+            failure = awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+        failure!!
+    }
+
+    @Test
+    fun `Given 401 403 410 on a station, When onPlayerError invoked, Then failure is Expired with station and url`() {
+        val uri = mockk<Uri>(relaxed = true)
+        every { uri.toString() } returns "https://example.com/live/playlist.m3u8"
+
+        listOf(401, 403, 410).forEach { code ->
+            val failure = failureFor(httpError(code), stationItem(url = uri))
+
+            assertEquals(PlaybackFailure.Cause.Expired, failure.cause)
+            assertEquals(station.id, failure.stationId)
+            assertEquals("https://example.com/live/playlist.m3u8", failure.streamUrl)
+        }
+    }
+
+    @Test
+    fun `Given other http statuses, When onPlayerError invoked, Then 404 is Gone and 5xx is Network`() {
+        assertEquals(PlaybackFailure.Cause.Gone, failureFor(httpError(404), stationItem()).cause)
+        assertEquals(PlaybackFailure.Cause.Gone, failureFor(httpError(400), stationItem()).cause)
+        assertEquals(PlaybackFailure.Cause.Network, failureFor(httpError(503), stationItem()).cause)
+        assertEquals(PlaybackFailure.Cause.Network, failureFor(httpError(500), stationItem()).cause)
+    }
+
+    @Test
+    fun `Given plain error codes, When onPlayerError invoked, Then they map to the matching cause`() {
+        val expected = mapOf(
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED to PlaybackFailure.Cause.Network,
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT to PlaybackFailure.Cause.Network,
+            PlaybackException.ERROR_CODE_IO_UNSPECIFIED to PlaybackFailure.Cause.Network,
+            PlaybackException.ERROR_CODE_TIMEOUT to PlaybackFailure.Cause.Network,
+            PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW to PlaybackFailure.Cause.BehindLiveWindow,
+            PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED to PlaybackFailure.Cause.Gone,
+            PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED to PlaybackFailure.Cause.Gone,
+            PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND to PlaybackFailure.Cause.Gone,
+            PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED to PlaybackFailure.Cause.Gone,
+            PlaybackException.ERROR_CODE_REMOTE_ERROR to PlaybackFailure.Cause.Other,
+        )
+
+        expected.forEach { (code, cause) ->
+            val failure = failureFor(PlaybackException("code $code", null, code), stationItem())
+            assertEquals("errorCode $code", cause, failure.cause)
+        }
+    }
+
+    @Test
+    fun `Given an episode, When onPlayerError invoked, Then failure carries no stationId`() {
+        val failure = failureFor(httpError(403), episodeItem())
+
+        assertEquals(PlaybackFailure.Cause.Expired, failure.cause)
+        assertEquals(null, failure.stationId)
+    }
+
+    @Test
+    fun `Given station reaching STATE_ENDED, Then Ended failure is emitted`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns stationItem()
+
+            scoped.failures.test {
+                scopedListener.onPlaybackStateChanged(Player.STATE_ENDED)
+                runCurrent()
+                val failure = awaitItem()
+                assertEquals(PlaybackFailure.Cause.Ended, failure.cause)
+                assertEquals(station.id, failure.stationId)
+            }
+        }
+
+    @Test
+    fun `Given episode reaching STATE_ENDED, Then no failure is emitted`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns episodeItem()
+
+            scoped.failures.test {
+                scopedListener.onPlaybackStateChanged(Player.STATE_ENDED)
+                runCurrent()
+                expectNoEvents()
+            }
+        }
+
+    @Test
+    fun `Given a failure emitted before subscription, When subscribed later, Then it is not replayed`() = runTest {
+        // 계약: replay 를 두면 같은 스테이션을 다시 틀 때 지난 실패가 재생되어 멀쩡한 세션에 복구가 돈다.
+        every { player.currentMediaItem } returns stationItem()
+        listenerSlot.captured.onPlayerError(PlaybackException("late", null, PlaybackException.ERROR_CODE_IO_UNSPECIFIED))
+
+        dataSource.failures.test { expectNoEvents() }
+    }
+
+    @Test
+    fun `Given another station is loaded, When restartStation or stopStation called, Then nothing happens`() {
+        every { player.currentMediaItem } returns stationItem()
+
+        assertEquals(false, dataSource.restartStation("other", hlsStream))
+        assertEquals(false, dataSource.stopStation("other"))
+
+        verify(exactly = 0) { player.setMediaItem(any()) }
+        verify(exactly = 0) { player.stop() }
+    }
+
+    @Test
+    fun `Given an episode is loaded, When restartStation or stopStation called, Then nothing happens`() {
+        every { player.currentMediaItem } returns episodeItem()
+
+        assertEquals(false, dataSource.restartStation(station.id))
+        assertEquals(false, dataSource.stopStation(station.id))
+
+        verify(exactly = 0) { player.setMediaItem(any()) }
+        verify(exactly = 0) { player.stop() }
+    }
+
+    @Test
+    fun `Given the same station is loaded, When restartStation called with a new stream, Then the new url is loaded without touching playWhenReady`() {
+        // Given
+        val newUri = mockk<Uri>(relaxed = true)
+        every { Uri.parse(icecastStream.url) } returns newUri
+        every { player.currentMediaItem } returns stationItem()
+        val captured = slot<MediaItem>()
+        every { player.setMediaItem(capture(captured)) } just Runs
+
+        // When
+        val result = dataSource.restartStation(station.id, icecastStream)
+
+        // Then
+        assertEquals(true, result)
+        assertEquals(newUri, captured.captured.localConfiguration?.uri)
+        assertEquals(station, captured.captured.localConfiguration?.tag)
+        verify { player.prepare() }
+        verify(exactly = 0) { player.playWhenReady = any() }
+    }
+
+    @Test
+    fun `Given the same station is loaded, When restartStation called without a stream, Then the same item is reloaded`() {
+        val current = stationItem()
+        every { player.currentMediaItem } returns current
+
+        assertEquals(true, dataSource.restartStation(station.id))
+
+        verify { player.setMediaItem(current) }
+        verify(exactly = 0) { player.playWhenReady = any() }
+    }
+
+    @Test
+    fun `Given the same station is loaded, When stopStation called, Then the player is stopped and cleared`() {
+        every { player.currentMediaItem } returns stationItem()
+
+        assertEquals(true, dataSource.stopStation(station.id))
+
+        verify {
+            player.stop()
+            player.clearMediaItems()
+        }
+    }
+
+    @Test
+    fun `Given user paths, When called, Then playRequestCount increases for each`() {
+        every { player.mediaItemCount } returns 2
+        every { player.hasNextMediaItem() } returns true
+        every { player.hasPreviousMediaItem() } returns true
+        val episodes = listOf(episode, episode.copy(id = 999L))
+        val paths = listOf<() -> Unit>(
+            { dataSource.play(episode) },
+            { dataSource.play(episodes, 1) },
+            { dataSource.playClip(episode) },
+            { dataSource.playClips(episodes, 1) },
+            { dataSource.playIndex(1) },
+            { dataSource.next() },
+            { dataSource.previous() },
+            { dataSource.stop() },
+            { dataSource.playStation(station, hlsStream) },
+        )
+
+        paths.forEachIndexed { index, call ->
+            val before = dataSource.playRequestCount()
+            call()
+            assertEquals("path #$index", before + 1, dataSource.playRequestCount())
+        }
+    }
+
+    @Test
+    fun `Given restore and recovery paths, When called, Then playRequestCount stays`() {
+        every { player.currentMediaItem } returns stationItem()
+        val before = dataSource.playRequestCount()
+
+        dataSource.prepare(listOf(episode), indexToPlay = 0, positionMs = 1000L)
+        every { player.currentMediaItem } returns stationItem()
+        dataSource.restartStation(station.id)
+        dataSource.stopStation(station.id)
+        dataSource.addTrack(episode)
+
+        assertEquals(before, dataSource.playRequestCount())
+    }
+
+    @Test
+    fun `Given player holds a station, When rehydrate called, Then nowPlaying stays null`() = runTest {
+        every { player.isPlaying } returns true
+        every { player.currentMediaItem } returns stationItem()
+
+        dataSource.rehydrate(episode)
+
+        dataSource.nowPlaying.test { assertEquals(null, awaitItem()) }
+    }
+
+    @Test
+    fun `Given user repeat ALL then station then episode, Then repeat is forced OFF for the station and restored afterwards`() = runTest {
+        // 계약: 반복이 켜진 채로 스테이션을 틀면 스트림이 끊겨도 ENDED 가 아니라 REPEAT 재연결 루프가 되어
+        // Ended 실패가 나지 않는다. 사용자 값은 보존했다가 에피소드로 돌아올 때 되돌린다.
+        dataSource.setRepeat(Player.REPEAT_MODE_ALL)
+        listenerSlot.captured.onRepeatModeChanged(Player.REPEAT_MODE_ALL)
+        clearMocks(player, answers = false, recordedCalls = true)
+
+        every { player.currentMediaItem } returns stationItem()
+        transitionTo(stationItem())
+        verify { player.repeatMode = Player.REPEAT_MODE_OFF }
+        // 플레이어가 OFF 로 바뀌었다고 알려 와도 사용자 값은 덮이지 않는다.
+        listenerSlot.captured.onRepeatModeChanged(Player.REPEAT_MODE_OFF)
+        dataSource.repeat.test { assertEquals(Player.REPEAT_MODE_ALL, awaitItem()) }
+
+        every { player.currentMediaItem } returns episodeItem()
+        transitionTo(episodeItem())
+        verify { player.repeatMode = Player.REPEAT_MODE_ALL }
+    }
+
+    @Test
+    fun `Given station loaded, When setRepeat or changeRepeat called, Then only the stored value changes`() = runTest {
+        every { player.currentMediaItem } returns stationItem()
+        every { player.repeatMode } returns Player.REPEAT_MODE_OFF
+        clearMocks(player, answers = false, recordedCalls = true)
+
+        dataSource.setRepeat(Player.REPEAT_MODE_ONE)
+        dataSource.repeat.test { assertEquals(Player.REPEAT_MODE_ONE, awaitItem()) }
+        dataSource.changeRepeat()
+        dataSource.repeat.test { assertEquals(Player.REPEAT_MODE_ALL, awaitItem()) }
+
+        verify(exactly = 0) { player.repeatMode = any() }
+    }
+
+    @Test
+    fun `Given episode to episode transitions, Then playback speed and repeat are left alone`() {
+        // MediaSession(Android Auto 등)이 플레이어에 직접 건 배속이 저장값으로 되돌아가면 안 된다.
+        dataSource.setSpeed(1.5f)
+        transitionTo(episodeItem())
+        clearMocks(player, answers = false, recordedCalls = true)
+
+        transitionTo(episodeItem(episode.copy(id = 999L)))
+        transitionTo(null)
+
+        verify(exactly = 0) { player.setPlaybackSpeed(any()) }
+        verify(exactly = 0) { player.repeatMode = any() }
+    }
 }

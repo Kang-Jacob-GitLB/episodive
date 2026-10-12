@@ -6,5 +6,21 @@
         <domain includeSubdomains="true">folkhour.com</domain>
         <domain includeSubdomains="true">stream.podhome.fm</domain>
         <domain includeSubdomains="true">file.ssenhosting.com</domain>
+        <!--
+            라디오 스테이션 http fallback 스트림 호스트. KoreanStationCatalogTest 가 카탈로그의
+            http 호스트가 여기 모두 있는지 지킨다.
+            live.streamtheworld.com 은 번호 호스트(18533.live...)로 리다이렉트되므로 하위 도메인까지 연다.
+            115.85.182.39 는 IP 리터럴이라 domain-config 매칭이 되는지 기기 확인이 필요하다.
+            막히면 base-config 를 전역 허용하지 말고 해당 카탈로그 항목(seongseo-fm·sone-fm)을 뺀다.
+        -->
+        <domain includeSubdomains="true">mlive2.febc.net</domain>
+        <domain includeSubdomains="true">radio2.tbn.or.kr</domain>
+        <domain includeSubdomains="true">amdlive.ctnd.com.edgesuite.net</domain>
+        <domain includeSubdomains="true">live.streamtheworld.com</domain>
+        <domain includeSubdomains="true">andong.webcasting.co.kr</domain>
+        <domain includeSubdomains="true">befm905.live.smilecdn.com</domain>
+        <domain includeSubdomains="true">radiostream.communityradio.kr</domain>
+        <domain includeSubdomains="true">onair.mapofm.net</domain>
+        <domain includeSubdomains="true">115.85.182.39</domain>
     </domain-config>
 </network-security-config>

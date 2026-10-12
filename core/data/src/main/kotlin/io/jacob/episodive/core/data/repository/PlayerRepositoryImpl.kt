@@ -4,9 +4,12 @@ import androidx.media3.common.Player
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Playback
+import io.jacob.episodive.core.model.PlaybackFailure
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.model.Spectrum
+import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -139,8 +142,26 @@ class PlayerRepositoryImpl @Inject constructor(
         return playerDataSource.hasMediaItem()
     }
 
+    override fun playStation(station: Station, stream: StationStream) {
+        playerDataSource.playStation(station, stream)
+    }
+
+    override fun restartStation(stationId: String, stream: StationStream?): Boolean {
+        return playerDataSource.restartStation(stationId, stream)
+    }
+
+    override fun stopStation(stationId: String): Boolean {
+        return playerDataSource.stopStation(stationId)
+    }
+
+    override fun playRequestCount(): Long {
+        return playerDataSource.playRequestCount()
+    }
 
     override val nowPlaying: Flow<Episode?> = playerDataSource.nowPlaying
+    override val nowPlayingStation: Flow<Station?> = playerDataSource.nowPlayingStation
+    override val streamTitle: Flow<String?> = playerDataSource.streamTitle
+    override val failures: Flow<PlaybackFailure> = playerDataSource.failures
     override val playlist: Flow<List<Episode>> = playerDataSource.playlist
     override val indexOfList: Flow<Int> = playerDataSource.indexOfList
     override val progress: Flow<Progress> = playerDataSource.progress

@@ -2,10 +2,13 @@ package io.jacob.episodive.core.domain.repository
 
 import androidx.media3.common.Player
 import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.PlaybackFailure
 import io.jacob.episodive.core.model.Playback
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.model.Spectrum
+import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationStream
 import kotlinx.coroutines.flow.Flow
 
 interface PlayerRepository {
@@ -53,7 +56,34 @@ interface PlayerRepository {
      */
     fun hasMediaItem(): Boolean
 
+    /** 스테이션의 스트림을 올려 바로 튼다. */
+    fun playStation(station: Station, stream: StationStream)
+
+    /**
+     * 지금 올라 있는 스테이션이 [stationId] 일 때만 같은(또는 [stream]) 항목을 다시 올린다. 했으면 true.
+     * 재생 여부는 건드리지 않는다.
+     */
+    fun restartStation(stationId: String, stream: StationStream? = null): Boolean
+
+    /** 지금 올라 있는 스테이션이 [stationId] 일 때만 멈추고 항목을 비운다. 했으면 true. */
+    fun stopStation(stationId: String): Boolean
+
+    /**
+     * 사용자 의도로 현재 항목을 바꾼 호출 수. 복원·[restartStation] 은 세지 않는다.
+     * 플레이어 스레드(메인)에서만 호출할 것.
+     */
+    fun playRequestCount(): Long
+
     val nowPlaying: Flow<Episode?>
+
+    /** 지금 올라 있는 스테이션. [nowPlaying] 과 배타이며, 둘을 combine 해 판별하지 말 것. */
+    val nowPlayingStation: Flow<Station?>
+
+    /** 스트림이 싣고 오는 "지금 나오는 곡" 정보. 스테이션이 아니거나 항목이 바뀌면 null. */
+    val streamTitle: Flow<String?>
+
+    /** 재생 실패. 지난 실패를 다시 보내지 않는다(replay 없음). */
+    val failures: Flow<PlaybackFailure>
     val playlist: Flow<List<Episode>>
     val indexOfList: Flow<Int>
     val progress: Flow<Progress>

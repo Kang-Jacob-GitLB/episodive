@@ -4,12 +4,16 @@ import app.cash.turbine.test
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import io.jacob.episodive.core.testing.model.episodeTestData
+import io.jacob.episodive.core.testing.model.icecastStreamTestData
+import io.jacob.episodive.core.testing.model.playbackFailureTestData
+import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -31,6 +35,9 @@ class PlayerRepositoryTest {
     @After
     fun teardown() {
         coVerify { playerDataSource.nowPlaying }
+        coVerify { playerDataSource.nowPlayingStation }
+        coVerify { playerDataSource.streamTitle }
+        coVerify { playerDataSource.failures }
         coVerify { playerDataSource.playlist }
         coVerify { playerDataSource.indexOfList }
         coVerify { playerDataSource.progress }
@@ -429,5 +436,64 @@ class PlayerRepositoryTest {
         // Then
         assertEquals(false, result)
         verify { playerDataSource.hasMediaItem() }
+    }
+
+    @Test
+    fun `Given station and stream, When playStation is called, Then calls playerDataSource playStation`() {
+        // When
+        repository.playStation(radioStationTestData, icecastStreamTestData)
+
+        // Then
+        verify { playerDataSource.playStation(radioStationTestData, icecastStreamTestData) }
+    }
+
+    @Test
+    fun `Given playerDataSource result, When restartStation is called, Then passes the arguments and result through`() {
+        // Given
+        every { playerDataSource.restartStation("test-radio", icecastStreamTestData) } returns true
+        every { playerDataSource.restartStation("other", null) } returns false
+
+        // When / Then
+        assertEquals(true, repository.restartStation("test-radio", icecastStreamTestData))
+        assertEquals(false, repository.restartStation("other"))
+        verify {
+            playerDataSource.restartStation("test-radio", icecastStreamTestData)
+            playerDataSource.restartStation("other", null)
+        }
+    }
+
+    @Test
+    fun `Given playerDataSource result, When stopStation is called, Then passes the result through`() {
+        // Given
+        every { playerDataSource.stopStation("test-radio") } returns true
+
+        // When / Then
+        assertEquals(true, repository.stopStation("test-radio"))
+        verify { playerDataSource.stopStation("test-radio") }
+    }
+
+    @Test
+    fun `Given playerDataSource count, When playRequestCount is called, Then returns it`() {
+        // Given
+        every { playerDataSource.playRequestCount() } returns 7L
+
+        // When / Then
+        assertEquals(7L, repository.playRequestCount())
+        verify { playerDataSource.playRequestCount() }
+    }
+
+    @Test
+    fun `Given dependencies, When accessing station flows, Then exposes the playerDataSource flows`() = runTest {
+        // Given
+        every { playerDataSource.nowPlayingStation } returns flowOf(radioStationTestData)
+        every { playerDataSource.streamTitle } returns flowOf("곡")
+        val failure = playbackFailureTestData
+        every { playerDataSource.failures } returns flowOf(failure)
+        val repository = PlayerRepositoryImpl(playerDataSource)
+
+        // When / Then
+        repository.nowPlayingStation.test { assertEquals(radioStationTestData, awaitItem()); awaitComplete() }
+        repository.streamTitle.test { assertEquals("곡", awaitItem()); awaitComplete() }
+        repository.failures.test { assertEquals(failure, awaitItem()); awaitComplete() }
     }
 }
