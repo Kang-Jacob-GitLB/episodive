@@ -246,6 +246,8 @@ class PlayerDataSourceImpl @Inject constructor(
             _failures.tryEmit(error.toFailure(player.currentMediaItem))
         }
 
+        // IcyInfo.rawMetadata·TextInformationFrame 은 @UnstableApi 다. CI 의 lint 가 opt-in 누락을 오류로 잡는다.
+        @OptIn(UnstableApi::class)
         override fun onMetadata(metadata: Metadata) {
             if (currentStation() == null) return
             for (i in 0 until metadata.length()) {
