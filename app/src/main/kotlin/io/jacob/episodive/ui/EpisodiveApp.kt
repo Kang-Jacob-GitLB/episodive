@@ -140,6 +140,11 @@ fun EpisodiveApp(
     // 스스로 닫는다. 시트는 별도 창이라 전역 스낵바를 가리므로 시트 안 호스트를 따로 둔다.
     var showStationPlayer by rememberSaveable { mutableStateOf(false) }
     val stationSheetSnackbarHostState = remember { SnackbarHostState() }
+    // 시트가 닫히면 호스트도 컴포지션에서 빠져 showSnackbar 가 끝나지 못한 채 남는다. 남겨 두면 시트를 다시 열 때
+    // 지난 안내가 되살아난다(PlayerBar 의 ShowDeepLinkError 주석과 같은 함정). 닫는 순간 비운다.
+    LaunchedEffect(showStationPlayer) {
+        if (!showStationPlayer) stationSheetSnackbarHostState.currentSnackbarData?.dismiss()
+    }
     val onShowStationSheetSnackbar: suspend (String, String?) -> Boolean = remember {
         { message: String, action: String? ->
             stationSheetSnackbarHostState.showSnackbar(

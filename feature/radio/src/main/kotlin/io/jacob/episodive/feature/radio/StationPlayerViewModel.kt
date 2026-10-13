@@ -77,7 +77,9 @@ class StationPlayerViewModel @Inject constructor(
         }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
+        // replay 를 바로 비운다. 구독이 끊긴 사이 낡은 Hidden 이 남아 있으면 시트를 다시 열자마자 그 값을 읽고
+        // 닫아 버린다 — 새 값은 Room 왕복 뒤에야 온다. 끊긴 동안은 Loading 으로 돌아가 새 값을 기다린다.
+        started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000, replayExpirationMillis = 0),
         initialValue = StationPlayerState.Loading,
     )
 

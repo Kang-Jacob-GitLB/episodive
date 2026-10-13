@@ -150,6 +150,23 @@ class StationPlayerViewModelTest {
     }
 
     @Test
+    fun `Given 구독이 끊겼다 다시 붙음, Then 낡은 Hidden 이 아니라 Loading 에서 시작한다`() = runTest {
+        // 낡은 Hidden 이 남으면 시트가 다시 열리자마자 닫힌다. 그 사이 스테이션이 새로 올라와 있어도 마찬가지다.
+        val viewModel = createViewModel()
+        val first = launchCollect(viewModel)
+        assertEquals(StationPlayerState.Hidden, viewModel.state.value)
+        first.cancel()
+        // 구독 유예(5초)가 지나 업스트림이 멈춘 뒤 스테이션이 올라온다.
+        testScheduler.advanceTimeBy(6_000)
+        nowPlayingStation.value = a
+
+        assertEquals(StationPlayerState.Loading, viewModel.state.value)
+        val second = launchCollect(viewModel)
+        assertEquals(a, viewModel.activeState().station)
+        second.cancel()
+    }
+
+    @Test
     fun `Given 받는 중, When PlayOrPause, Then 무시한다`() = runTest {
         nowPlayingStation.value = a
         pendingStationId.value = b.id

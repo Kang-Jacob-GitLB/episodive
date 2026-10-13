@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -134,6 +135,9 @@ fun PlayerBar(
     val captionFailedCorruptMessage = stringResource(R.string.feature_player_caption_download_failed_corrupt)
     val captionFailedUnloadableMessage = stringResource(R.string.feature_player_caption_download_failed_unloadable)
     val context = LocalContext.current
+    // 수집은 한 번만 시작하므로 suppressed 를 그대로 읽으면 첫 컴포지션의 값에 갇힌다. 스테이션이 올라오거나
+    // 내려가도 만료 안내가 중복되거나 빠지지 않게 읽는 시점의 값을 쓴다.
+    val currentSuppressed by rememberUpdatedState(suppressed)
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -165,7 +169,7 @@ fun PlayerBar(
 
                 is PlayerEffect.SleepTimerExpired -> {
                     // 타이머가 앱 수명이라 스테이션 재생 중 만료도 여기로 온다. 그 안내는 StationBar 가 띄운다.
-                    if (!isShowPlayer && !suppressed) {
+                    if (!isShowPlayer && !currentSuppressed) {
                         onShowSnackbar(sleepTimerExpiredMessage, null)
                     }
                 }

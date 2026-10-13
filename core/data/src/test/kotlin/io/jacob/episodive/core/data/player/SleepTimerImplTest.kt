@@ -159,13 +159,16 @@ class SleepTimerImplTest {
     }
 
     @Test
-    fun `Given 타이머 실행 중, When 재생이 정지되어도, Then 만료 시 크래시하지 않는다`() = runTest {
-        // 시트가 닫히고 스테이션이 정지돼도 타이머는 앱 수명으로 남는다. 정지 뒤 만료가 던지면 안 된다.
+    fun `Given 재생이 정지된 뒤 건 타이머, When 만료되면, Then 화면과 무관하게 expired 를 내보낸다`() = runTest {
+        // 타이머는 앱 수명이다. 시트가 닫히고 스테이션이 정지돼도 만료 신호는 구독자에게 도달해야 한다.
         every { timeProvider.currentTimeMillis() } returnsMany listOf(0L, 60_001L)
         val timer = createTimer()
         playerRepository.stop()
 
-        timer.start(60_000L)
+        timer.expired.test {
+            timer.start(60_000L)
+            awaitItem()
+        }
 
         assertNull(timer.remainingMs.value)
     }
