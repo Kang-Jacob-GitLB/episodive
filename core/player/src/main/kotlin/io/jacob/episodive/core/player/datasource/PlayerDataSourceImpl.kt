@@ -75,6 +75,11 @@ class PlayerDataSourceImpl @Inject constructor(
     // IO 의 선렌더([prepareStationArtwork])와 메인의 폴백 렌더가 함께 만지므로 동시 접근에 안전해야 한다.
     private val stationArtworkCache = ConcurrentHashMap<StationArt, ByteArray>()
 
+    // 지금 스테이션의 소리가 한 번이라도 멎었는지(일시정지·포커스 일시 상실 등). 다시 흐를 때 라이브로
+    // 다시 붙을지를 가른다. 다른 스테이션으로 바뀔 때만 푼다 — 멈춘 채 복구(restartStation)가 같은
+    // 항목을 다시 올려도 transition 이 나므로, 그때 풀면 재개 시 복구 시점의 버퍼부터 흐른다.
+    private var stationStale = false
+
     private val listener = object : Player.Listener {
         override fun onTimelineChanged(timeline: Timeline, reason: Int) {
             Timber.d(
@@ -125,6 +130,7 @@ class PlayerDataSourceImpl @Inject constructor(
             val station = mediaItem?.stationTag()
             _nowPlaying.value = episode
             // 에피소드와 스테이션은 한 항목이 가질 수 있는 둘 중 하나라 같은 자리에서 함께 바꾼다.
+            if (station?.id != _nowPlayingStation.value?.id) stationStale = false
             _nowPlayingStation.value = station
             _streamTitle.value = null
             // 스테이션은 배속·반복을 적용하지 않는다. 라이브는 1x 가 아니면 버퍼가 마르고, 반복 모드가
@@ -222,6 +228,12 @@ class PlayerDataSourceImpl @Inject constructor(
 
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
             _isBuffering.value = player.isBufferingToPlay()
+            rejoinLiveIfStale()
+        }
+
+        // 전화 같은 포커스 일시 상실은 playWhenReady 를 끄지 않고 재생만 억제한다. 일시정지와 같이 다룬다.
+        override fun onPlaybackSuppressionReasonChanged(playbackSuppressionReason: Int) {
+            rejoinLiveIfStale()
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -400,6 +412,36 @@ class PlayerDataSourceImpl @Inject constructor(
         val art = station.art
         if (stationArtworkCache.containsKey(art)) return
         withContext(Dispatchers.IO) { art.cachedArtwork() }
+    }
+
+    /**
+     * 멎었던 스테이션이 다시 흐를 때 지금 방송으로 다시 붙는다.
+     *
+     * 라이브는 멈춘 자리에서 이어 들을 이유가 없다. 그대로 두면 멎기 전에 받아 둔 버퍼부터 흘러 방송보다
+     * 멎은 시간만큼 늦게 들리고, HLS 는 그 지점이 창 밖으로 밀려 BehindLiveWindow 가 난다. 재생으로
+     * 돌아오는 경로가 여럿(미니바·알림·위젯·MediaSession·포커스 복귀)이라 각 함수가 아니라 플레이어
+     * 콜백 한 자리에서 처리한다.
+     *
+     * 멈추고(소스 해제) → 기본 위치로 옮기고 → 다시 준비한다. 셋 다 필요하다.
+     * - 탐색만 하면 안 된다: 탐색이 안 되는 ICY 는 기본 위치가 0 이라, 0 에서 멎었다면 같은 위치로의
+     *   탐색을 media3 가 건너뛰어 재연결이 일어나지 않는다. 멈춰서 소스를 놓아야 새 연결로 시작한다.
+     * - 멈추고 다시 준비만 해도 안 된다: `stop()` 은 위치를 남겨 두고, 멈춘 동안에도 HLS 재생목록은
+     *   갱신되므로 다시 준비하면 정지했던 그 방송 시점으로 돌아간다. IDLE 에서의 `seekToDefaultPosition`
+     *   이 남은 위치를 지워야 새 타임라인의 기본 위치(라이브 끝)에서 시작한다.
+     * 항목을 바꾸지 않으므로 transition 은 나지 않는다.
+     */
+    private fun rejoinLiveIfStale() {
+        if (currentStation() == null) return
+        val flowing = player.playWhenReady &&
+            player.playbackSuppressionReason == Player.PLAYBACK_SUPPRESSION_REASON_NONE
+        if (!flowing) {
+            stationStale = true
+        } else if (stationStale) {
+            stationStale = false
+            player.stop()
+            player.seekToDefaultPosition()
+            player.prepare()
+        }
     }
 
     /**
@@ -650,6 +692,10 @@ class PlayerDataSourceImpl @Inject constructor(
         player.setMediaItem(station.toMediaItem(stream))
         player.prepare()
         player.playWhenReady = true
+        // 막 새로 연결했으니 멎은 적이 없다. 같은 스테이션을 멈춰 둔 채 다시 고르면 플래그가 남아 있어
+        // 위의 playWhenReady 콜백이 한 번 더 연결한다. 다만 통화처럼 재생이 억제된 채 골랐다면 그동안
+        // 받은 버퍼가 늦으므로 억제가 풀릴 때 다시 붙도록 남긴다.
+        stationStale = player.playbackSuppressionReason != Player.PLAYBACK_SUPPRESSION_REASON_NONE
     }
 
     override fun restartStation(stationId: String, stream: StationStream?): Boolean {
