@@ -6,6 +6,7 @@ import io.jacob.episodive.core.model.Feed
 import io.jacob.episodive.core.model.Medium
 import io.jacob.episodive.core.model.RecentSearchType
 import io.jacob.episodive.core.model.RecentFeed
+import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.TrendingFeed
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
@@ -146,6 +147,8 @@ fun Duration.toMediaTime(): String {
 
 fun String.toMedium(): Medium? = Medium.entries.find { it.value == this }
 fun Medium.toValue(): String = value
+
+fun String.toStationKind(): StationKind? = StationKind.entries.find { it.value == this }
 
 fun String.toRecentSearchType(): RecentSearchType? = RecentSearchType.entries.find { it.value == this }
 fun RecentSearchType.toValue(): String = value
