@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +54,7 @@ import io.jacob.episodive.feature.player.PlayerBar
 import io.jacob.episodive.feature.radio.StationBar
 import io.jacob.episodive.feature.radio.StationBarState
 import io.jacob.episodive.feature.radio.StationBarViewModel
+import io.jacob.episodive.feature.radio.StationPlayerSheet
 import io.jacob.episodive.navigation.EpisodiveNavHost
 
 @Composable
@@ -134,6 +136,20 @@ fun EpisodiveApp(
     var expandPlayerSignal by remember { mutableIntStateOf(0) }
     var collapsePlayerSignal by remember { mutableIntStateOf(0) }
 
+    // 라디오 플레이어 시트의 열림 상태. 회전·프로세스 복원에서도 유지하고, 스테이션이 이미 사라졌다면 시트가
+    // 스스로 닫는다. 시트는 별도 창이라 전역 스낵바를 가리므로 시트 안 호스트를 따로 둔다.
+    var showStationPlayer by rememberSaveable { mutableStateOf(false) }
+    val stationSheetSnackbarHostState = remember { SnackbarHostState() }
+    val onShowStationSheetSnackbar: suspend (String, String?) -> Boolean = remember {
+        { message: String, action: String? ->
+            stationSheetSnackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = action,
+                duration = if (action != null) SnackbarDuration.Long else SnackbarDuration.Short,
+            ) == SnackbarResult.ActionPerformed
+        }
+    }
+
     // Deep link handling
     LaunchedEffect(Unit) {
         appState.viewModel.deepLinkEvent.collect { event ->
@@ -146,13 +162,12 @@ fun EpisodiveApp(
                 }
 
                 is DeepLinkEvent.Player -> {
-                    // 스테이션이 올라 있으면 펼칠 에피소드 플레이어가 없다. 라디오 화면으로 간다.
+                    // 스테이션이 올라 있으면 펼칠 에피소드 플레이어가 없다. 라디오 플레이어 시트를 연다.
                     // 구독 상태(stationBar)는 새 Activity 첫 프레임에 아직 초기값 Hidden 이라 오판한다.
                     // 플레이어의 현재 값을 직접 읽는다.
-                    if (stationBarViewModel.isStationActive()) {
-                        appState.navigateToRadio()
-                    } else {
-                        expandPlayerSignal++
+                    when (playerDeepLinkTarget(stationBarViewModel.isStationActive())) {
+                        PlayerDeepLinkTarget.StationSheet -> showStationPlayer = true
+                        PlayerDeepLinkTarget.EpisodeSheet -> expandPlayerSignal++
                     }
                     appState.viewModel.consumeDeepLink()
                 }
@@ -289,11 +304,21 @@ fun EpisodiveApp(
                                 .padding(bottom = dimension.playerBarBottomMargin),
                             state = stationBar,
                             viewModel = stationBarViewModel,
-                            onClick = { appState.navigateToRadio() },
-                            onShowSnackbar = onShowSnackbar,
+                            onClick = { showStationPlayer = true },
+                            // 시트가 열려 있으면 시트 안 호스트로 보낸다. 전역 호스트는 시트 창 뒤에 가려진다.
+                            onShowSnackbar = if (showStationPlayer) onShowStationSheetSnackbar else onShowSnackbar,
                         )
                     },
                 )
+
+                if (showStationPlayer) {
+                    StationPlayerSheet(
+                        collapseSignal = collapsePlayerSignal,
+                        snackbarHostState = stationSheetSnackbarHostState,
+                        onDismiss = { showStationPlayer = false },
+                        onOpenStationList = { appState.navigateToRadio() },
+                    )
+                }
             }
         }
     }
@@ -312,3 +337,10 @@ internal fun BoxScope.MiniBars(
     playerBar(isStationActive)
     stationBar()
 }
+
+/** 위젯 now-playing 딥링크가 열 플레이어 시트. */
+internal enum class PlayerDeepLinkTarget { StationSheet, EpisodeSheet }
+
+/** 스테이션이 올라 있으면 에피소드 플레이어가 아니라 라디오 시트를 연다. */
+internal fun playerDeepLinkTarget(isStationActive: Boolean): PlayerDeepLinkTarget =
+    if (isStationActive) PlayerDeepLinkTarget.StationSheet else PlayerDeepLinkTarget.EpisodeSheet

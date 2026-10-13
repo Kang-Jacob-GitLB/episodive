@@ -115,7 +115,8 @@ fun StationArt(
     }
 }
 
-private val StationArtMaxSide = 240.dp
+// 플레이어 시트의 큰 커버까지 비율대로 키울 수 있게 넉넉히 둔다. 무한 제약에서 폰트가 발산하는 것만 막으면 된다.
+private val StationArtMaxSide = 480.dp
 
 /** 아트 위에 상태를 얹은 정사각형. 상태가 [StationCardStatus.Idle] 이면 아트만 보인다. */
 @Composable
