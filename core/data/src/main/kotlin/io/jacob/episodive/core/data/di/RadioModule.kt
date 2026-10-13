@@ -8,10 +8,13 @@ import io.jacob.episodive.core.common.ApplicationScope
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.data.radio.LiveStreamSupervisorImpl
+import io.jacob.episodive.core.data.radio.StationPlaybackControllerImpl
 import io.jacob.episodive.core.data.util.NetworkMonitor
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.domain.station.LiveStreamSupervisor
+import io.jacob.episodive.core.domain.station.StationPlaybackController
+import io.jacob.episodive.core.domain.usecase.station.PlayStationUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import javax.inject.Singleton
@@ -35,6 +38,23 @@ object RadioModule {
             playerRepository = playerRepository,
             stationRepository = stationRepository,
             networkMonitor = networkMonitor,
+            scope = scope,
+            mainDispatcher = Dispatchers.Main.immediate,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideStationPlaybackController(
+        playStationUseCase: PlayStationUseCase,
+        @Player(EpisodivePlayers.Main) playerRepository: PlayerRepository,
+        stationRepository: StationRepository,
+        @ApplicationScope scope: CoroutineScope,
+    ): StationPlaybackController {
+        return StationPlaybackControllerImpl(
+            playStationUseCase = playStationUseCase,
+            playerRepository = playerRepository,
+            stationRepository = stationRepository,
             scope = scope,
             mainDispatcher = Dispatchers.Main.immediate,
         )

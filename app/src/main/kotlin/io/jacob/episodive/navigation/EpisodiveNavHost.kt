@@ -14,6 +14,8 @@ import io.jacob.episodive.feature.home.navigation.homeEntries
 import io.jacob.episodive.feature.library.navigation.libraryEntries
 import io.jacob.episodive.feature.podcast.navigation.PodcastRoute
 import io.jacob.episodive.feature.podcast.navigation.podcastEntries
+import io.jacob.episodive.feature.radio.navigation.RadioRoute
+import io.jacob.episodive.feature.radio.navigation.radioEntries
 import io.jacob.episodive.feature.search.navigation.searchEntries
 
 @Composable
@@ -33,6 +35,7 @@ fun EpisodiveNavHost(
             onPodcastClick = { navigator.navigate(PodcastRoute(it)) },
             onChannelClick = { navigator.navigate(ChannelRoute(it)) },
             onMoreClick = { navigator.navigate(HomeMoreRoute(it)) },
+            onRadioClick = { navigator.navigateInStartStack(RadioRoute) },
             onBackClick = { navigator.goBack() },
             // 탭 전환에 포커스 신호까지 얹어야 해서 navigator 를 직접 부르지 않는다.
             onSearchClick = onSearchShortcutClick,
@@ -53,6 +56,10 @@ fun EpisodiveNavHost(
             onShowSnackbar = onShowSnackbar,
         )
         podcastEntries(
+            onBackClick = { navigator.goBack() },
+            onShowSnackbar = onShowSnackbar,
+        )
+        radioEntries(
             onBackClick = { navigator.goBack() },
             onShowSnackbar = onShowSnackbar,
         )

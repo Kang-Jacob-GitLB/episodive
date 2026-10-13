@@ -19,6 +19,7 @@ fun EntryProviderScope<NavKey>.homeEntries(
     onPodcastClick: (Long) -> Unit,
     onChannelClick: (Long) -> Unit,
     onMoreClick: (HomeSection) -> Unit,
+    onRadioClick: () -> Unit,
     onBackClick: () -> Unit,
     onSearchClick: () -> Unit,
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
@@ -28,6 +29,7 @@ fun EntryProviderScope<NavKey>.homeEntries(
             onPodcastClick = onPodcastClick,
             onChannelClick = onChannelClick,
             onMoreClick = onMoreClick,
+            onRadioClick = onRadioClick,
             onSearchClick = onSearchClick,
             onShowSnackbar = onShowSnackbar,
         )

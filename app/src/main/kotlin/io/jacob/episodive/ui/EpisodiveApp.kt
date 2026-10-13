@@ -1,6 +1,7 @@
 package io.jacob.episodive.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.DeepLinkEvent
 import io.jacob.episodive.R
@@ -48,6 +50,9 @@ import io.jacob.episodive.feature.onboarding.OnboardingRoute
 import io.jacob.episodive.core.ui.LocalIsPlaying
 import io.jacob.episodive.core.ui.LocalNowPlayingEpisodeId
 import io.jacob.episodive.feature.player.PlayerBar
+import io.jacob.episodive.feature.radio.StationBar
+import io.jacob.episodive.feature.radio.StationBarState
+import io.jacob.episodive.feature.radio.StationBarViewModel
 import io.jacob.episodive.navigation.EpisodiveNavHost
 
 @Composable
@@ -118,6 +123,12 @@ fun EpisodiveApp(
         appState.discardSearchAutoFocusIfTabLeft()
     }
 
+    // 라디오 미니바의 판정 상태를 여기서 쥔다. 에피소드 미니바와 한 자리를 다투므로 같은 프레임에
+    // 둘을 정해야 하고, 각자 따로 판정하면 한 프레임 겹쳐 보인다.
+    val stationBarViewModel: StationBarViewModel = hiltViewModel()
+    val stationBar by stationBarViewModel.state.collectAsStateWithLifecycle()
+    val isStationActive = stationBar is StationBarState.Active
+
     // 위젯 딥링크 → 플레이어 시트 펼침/접힘 신호. 콜드(fresh onCreate) 타이밍에 일회성 effect 가
     // PlayerBar 구독 전 emit 되어 유실되지 않도록, 상태(시그널) 로 PlayerBar 에 전달한다.
     var expandPlayerSignal by remember { mutableIntStateOf(0) }
@@ -135,7 +146,14 @@ fun EpisodiveApp(
                 }
 
                 is DeepLinkEvent.Player -> {
-                    expandPlayerSignal++
+                    // 스테이션이 올라 있으면 펼칠 에피소드 플레이어가 없다. 라디오 화면으로 간다.
+                    // 구독 상태(stationBar)는 새 Activity 첫 프레임에 아직 초기값 Hidden 이라 오판한다.
+                    // 플레이어의 현재 값을 직접 읽는다.
+                    if (stationBarViewModel.isStationActive()) {
+                        appState.navigateToRadio()
+                    } else {
+                        expandPlayerSignal++
+                    }
                     appState.viewModel.consumeDeepLink()
                 }
 
@@ -244,22 +262,53 @@ fun EpisodiveApp(
                     onSearchAutoFocusHandled = appState::consumeSearchAutoFocus,
                 )
 
-                PlayerBar(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = dimension.playerBarBottomMargin),
-                    onPodcastClick = { appState.navigateToPodcast(it) },
-                    onShowSnackbar = onShowSnackbar,
-                    expandSignal = expandPlayerSignal,
-                    collapseSignal = collapsePlayerSignal,
-                    // 값이 아니라 읽는 함수로 넘긴다 — entryProvider 가 처음 캡처한 값에
-                    // 갇히는 것과 같은 이유다(EpisodiveNavHost 주석 참고).
-                    pendingEpisode = { appState.pendingEpisodeDeepLink },
-                    onPendingEpisodeHandled = appState::consumeEpisodeDeepLink,
-                    onNowPlayingChange = { nowPlayingEpisodeId = it },
-                    onIsPlayingChange = { isPlaying = it },
+                MiniBars(
+                    isStationActive = isStationActive,
+                    playerBar = { suppressed ->
+                        PlayerBar(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = dimension.playerBarBottomMargin),
+                            onPodcastClick = { appState.navigateToPodcast(it) },
+                            onShowSnackbar = onShowSnackbar,
+                            expandSignal = expandPlayerSignal,
+                            collapseSignal = collapsePlayerSignal,
+                            // 값이 아니라 읽는 함수로 넘긴다 — entryProvider 가 처음 캡처한 값에
+                            // 갇히는 것과 같은 이유다(EpisodiveNavHost 주석 참고).
+                            pendingEpisode = { appState.pendingEpisodeDeepLink },
+                            onPendingEpisodeHandled = appState::consumeEpisodeDeepLink,
+                            onNowPlayingChange = { nowPlayingEpisodeId = it },
+                            onIsPlayingChange = { isPlaying = it },
+                            suppressed = suppressed,
+                        )
+                    },
+                    stationBar = {
+                        StationBar(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = dimension.playerBarBottomMargin),
+                            state = stationBar,
+                            viewModel = stationBarViewModel,
+                            onClick = { appState.navigateToRadio() },
+                            onShowSnackbar = onShowSnackbar,
+                        )
+                    },
                 )
             }
         }
     }
+}
+
+/**
+ * 에피소드·라디오 미니바 슬롯. 스테이션이 올라 있으면 에피소드 바를 같은 프레임에 숨긴다
+ * (`suppressed`). 에피소드 바는 계속 컴포즈된다 — 복원·재생 위치 저장 수집기가 그 ViewModel 에 있다.
+ */
+@Composable
+internal fun BoxScope.MiniBars(
+    isStationActive: Boolean,
+    playerBar: @Composable BoxScope.(suppressed: Boolean) -> Unit,
+    stationBar: @Composable BoxScope.() -> Unit,
+) {
+    playerBar(isStationActive)
+    stationBar()
 }

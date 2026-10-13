@@ -101,6 +101,7 @@ import io.jacob.episodive.core.designsystem.component.MorphIcon
 import io.jacob.episodive.core.designsystem.component.PlayPauseMorphIcon
 import io.jacob.episodive.core.designsystem.component.RotateSwapIcon
 import io.jacob.episodive.core.designsystem.component.StateImage
+import io.jacob.episodive.core.designsystem.component.hiddenWhileLoading
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveShapes
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme

@@ -1,0 +1,138 @@
+package io.jacob.episodive.feature.radio
+
+import app.cash.turbine.test
+import io.jacob.episodive.core.domain.repository.PlayerRepository
+import io.jacob.episodive.core.domain.station.StationPlaybackController
+import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
+import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
+import io.jacob.episodive.core.testing.model.radioStationTestData
+import io.jacob.episodive.core.testing.model.radioStationsTestData
+import io.jacob.episodive.core.testing.util.MainDispatcherRule
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+
+class RadioViewModelTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private val getStationsUseCase = mockk<GetStationsUseCase>()
+    private val getFavoriteStationsUseCase = mockk<GetFavoriteStationsUseCase>()
+    private val getRecentStationsUseCase = mockk<GetRecentStationsUseCase>()
+    private val toggleFavoriteStationUseCase = mockk<ToggleFavoriteStationUseCase>()
+    private val stationPlaybackController = mockk<StationPlaybackController>(relaxed = true)
+    private val playerRepository = mockk<PlayerRepository>(relaxed = true)
+
+    private val nowPlayingStation = MutableStateFlow<Station?>(null)
+    private val isPlaying = MutableStateFlow(false)
+    private val isBuffering = MutableStateFlow(false)
+    private val pendingStationId = MutableStateFlow<String?>(null)
+
+    private val a = radioStationTestData
+    private val b = kbsFirstRadioStationTestData
+
+    private fun createViewModel(
+        favorites: List<Station> = emptyList(),
+        recents: List<Station> = emptyList(),
+    ): RadioViewModel {
+        every { getStationsUseCase(StationKind.RADIO) } returns flowOf(radioStationsTestData)
+        every { getFavoriteStationsUseCase() } returns flowOf(favorites)
+        every { getRecentStationsUseCase(any()) } returns flowOf(recents)
+        every { playerRepository.nowPlayingStation } returns nowPlayingStation
+        every { playerRepository.isPlaying } returns isPlaying
+        every { playerRepository.isBuffering } returns isBuffering
+        every { stationPlaybackController.pendingStationId } returns pendingStationId
+
+        return RadioViewModel(
+            getStationsUseCase = getStationsUseCase,
+            getFavoriteStationsUseCase = getFavoriteStationsUseCase,
+            getRecentStationsUseCase = getRecentStationsUseCase,
+            toggleFavoriteStationUseCase = toggleFavoriteStationUseCase,
+            stationPlaybackController = stationPlaybackController,
+            playerRepository = playerRepository,
+        )
+    }
+
+    /** state 는 WhileSubscribed 라 구독이 있어야 값이 흐른다. 클릭 판정이 state.value 를 읽는다. */
+    private fun TestScope.subscribe(viewModel: RadioViewModel) {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.state.collect {}
+        }
+    }
+
+    private fun success(viewModel: RadioViewModel) = viewModel.state.value as RadioState.Success
+
+    @Test
+    fun `Given 전국과 지역 방송, When 상태를 만들면, Then 둘로 나뉘고 favoriteIds 는 즐겨찾기에서 파생된다`() = runTest {
+        val viewModel = createViewModel(favorites = listOf(a))
+
+        viewModel.state.test {
+            val state = expectMostRecentItem() as RadioState.Success
+
+            assertTrue(state.nationwide.all { it.region == null })
+            assertTrue(state.regional.all { it.region != null })
+            assertEquals(radioStationsTestData.size, state.nationwide.size + state.regional.size)
+            assertEquals(setOf(a.id), state.favoriteIds)
+        }
+    }
+
+    @Test
+    fun `Given 스테이션 클릭, Then 컨트롤러에 위임한다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.sendAction(RadioAction.ClickStation(a))
+
+        verify(exactly = 1) { stationPlaybackController.play(a.id) }
+    }
+
+    @Test
+    fun `Given 컨트롤러가 받는 중, Then pendingStationId 가 상태에 반영된다`() = runTest {
+        val viewModel = createViewModel()
+        subscribe(viewModel)
+
+        pendingStationId.value = b.id
+
+        assertEquals(b.id, success(viewModel).pendingStationId)
+    }
+
+    @Test
+    fun `Given 첫 토글이 느림, When 연타하면, Then 이펙트는 누른 순서대로 나온다`() = runTest {
+        var callCount = 0
+        coEvery { toggleFavoriteStationUseCase(a.id) } coAnswers {
+            callCount++
+            if (callCount == 1) {
+                delay(100)
+                true
+            } else {
+                false
+            }
+        }
+        val viewModel = createViewModel()
+
+        viewModel.effect.test {
+            viewModel.sendAction(RadioAction.ToggleFavorite(a.id))
+            viewModel.sendAction(RadioAction.ToggleFavorite(a.id))
+
+            assertEquals(RadioEffect.ShowFavoriteSnackbar(a.id, true), awaitItem())
+            assertEquals(RadioEffect.ShowFavoriteSnackbar(a.id, false), awaitItem())
+        }
+    }
+}

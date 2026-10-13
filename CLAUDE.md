@@ -4,7 +4,7 @@
 
 ## 프로젝트 개요
 
-Episodive는 Kotlin과 Jetpack Compose로 만든 Android 팟캐스트 앱으로, Podcast Index API를 사용합니다. Clean Architecture + MVI 패턴, Gradle 컨벤션 플러그인 기반 멀티모듈 구조(21개 모듈), Room DB 중심의 Offline-First 설계를 따릅니다.
+Episodive는 Kotlin과 Jetpack Compose로 만든 Android 팟캐스트 앱으로, Podcast Index API를 사용합니다. Clean Architecture + MVI 패턴, Gradle 컨벤션 플러그인 기반 멀티모듈 구조(22개 모듈), Room DB 중심의 Offline-First 설계를 따릅니다.
 
 ### 기술 스택
 
@@ -48,7 +48,7 @@ cp <repo-root>/local.properties <worktree-dir>/local.properties
 
 ## 아키텍처
 
-### 모듈 구조 (21개)
+### 모듈 구조 (22개)
 
 #### Core 모듈 (12개)
 
@@ -67,7 +67,7 @@ cp <repo-root>/local.properties <worktree-dir>/local.properties
 | `:core:ui` | 도메인 특화 상위 레벨 UI 컴포넌트 |
 | `:core:testing` | 테스트 데이터 팩토리, MainDispatcherRule, RoomDatabaseRule |
 
-#### Feature 모듈 (8개)
+#### Feature 모듈 (9개)
 
 모든 feature 모듈은 `episodive.android.feature` 컨벤션 플러그인을 사용하며, core:common/domain/designsystem/model/ui/testing과 Compose/Paging/Hilt/Navigation이 자동으로 포함됩니다.
 
@@ -81,6 +81,7 @@ cp <repo-root>/local.properties <worktree-dir>/local.properties
 | `:feature:player` | 오디오 플레이어 UI |
 | `:feature:clip` | 사운드바이트 및 클립 탐색 |
 | `:feature:channel` | 채널/카테고리 탐색 |
+| `:feature:radio` | 라디오 화면(즐겨찾기·최근·전체 방송)과 앱 전역 스테이션 미니바 |
 
 ### 컨벤션 플러그인 (build-logic/convention/)
 
@@ -328,6 +329,40 @@ Room 왕복과 `flowOn(IO)` 를 거쳐 `progress` 보다 늦게 도착한다. �
     프로세스에서도 ExoPlayer 가 만들어지기 때문이다. `PlayStationUseCase` 는 **메인에서 호출한다**(`playRequestCount`·
     `playStation` 이 플레이어 스레드 전용). 주소를 받는 사이 사용자가 다른 것을 틀었으면(`playRequestCount` 변화)
     `Superseded` 를 돌려주고 올리지 않는다. 연타의 직렬화(이전 Job 취소)는 호출 측 몫이다.
+
+**UI 규약 (`:feature:radio`, 홈 라디오 섹션)**
+
+- **에피소드 미니바와 스테이션 미니바는 한 자리를 다투고, 판정은 `nowPlayingStation` 하나로만 한다.**
+  `StationBarViewModel` 의 상태를 `EpisodiveApp` 이 쥐고 같은 프레임에 둘을 정한다(`MiniBars`).
+  `PlayerBar` 는 `suppressed` 일 때도 계속 컴포즈한다 — 복원·재생 위치 저장 수집기가 그 ViewModel 에 있다.
+  `suppressed` 면 `expandSignal` 도 무시한다(위젯 탭이 `isShowPlayer` 만 남겨 나중에 전체 플레이어가 튀는
+  것을 막는다). 딥링크 `Player` 는 스테이션이 올라 있으면 라디오 화면으로 간다.
+- **사용자의 정지는 `stopStation` 이 아니라 `playerRepository.stop()` 이다.** `stop()` 만 `playRequestCount`
+  를 올려, 주소를 받는 중인 `PlayStationUseCase` 가 `Superseded` 로 걸러진다. A 를 듣다 B 를 눌러 받는 중에
+  정지했는데 `stopStation(A)` 를 쓰면 카운트가 그대로라 정지한 뒤 B 가 울린다.
+- **`RadioRoute` 는 홈 탭 스택에만 올린다**(`EpisodiveNavigator.navigateInStartStack`). 화면은 홈 스택과 현재
+  탭 스택을 이어 그리므로 두 스택에 같은 data object 키가 있으면 중복 키로 크래시할 수 있다.
+- **`unplayable` 은 `StationBarViewModel` 하나만 수집한다.** 라디오 화면 ViewModel 까지 받으면 그 화면에서
+  스낵바가 두 번 뜨고, 다른 탭에서는 알릴 곳이 없다. 수집 `LaunchedEffect` 는 `AnimatedVisibility` 밖에
+  둔다 — 감독자가 `stopStation` 으로 바를 걷은 뒤에 알리므로 이펙트는 바가 사라지는 순간 도착한다.
+- **스테이션 재생 요청은 `StationPlaybackController` 하나로 한다**(`:core:data` `radio/`, 싱글턴). 화면·
+  ViewModel 은 `play(id)`·`stop()`·`pendingStationId`·`unavailable` 만 쓰고 자체 Job/pending 을 들지 마라.
+  `play` 규칙: 재생 중 스테이션이고 pending 이 없으면 `playOrPause()`; 재생 중 스테이션인데 다른 스테이션
+  pending 이 있으면 pending 만 취소(재생 상태는 그대로); 같은 pending 은 무시; 그 외엔 앞 Job 취소 → pending
+  → `PlayStationUseCase`. 취소된 앞 Job 의 정리가 뒤 요청의 pending 을 지우지 않게 `job === playJob` 일 때만
+  비운다. 주소를 받는 최대 15초 동안 `isBuffering` 은 거짓이라 카드의 준비 중 표시는 이 토큰이 낸다
+  (`stationCardStatus`). 사용자의 정지도 `controller.stop()`(pending 취소 + `PlayerRepository.stop()`)이다.
+- **`unavailable` 도 `unplayable` 처럼 `StationBarViewModel` 하나만 수집한다**(최신 스낵바 하나만 남긴다).
+  화면이 컴포즈되지 않은 사이에도, 어느 탭에서든 보여야 하기 때문이다. 문자열은 `:core:ui` 에 하나뿐이다.
+- **딥링크 `Player` 의 스테이션 판정은 `StationBarViewModel.isStationActive()`(플레이어 현재 값)로 한다.**
+  `state` 는 구독 전 초기값이 Hidden 이라 새 Activity 의 첫 프레임에 오판한다.
+- **홈 라디오 섹션은 `HomeViewModel` 의 state combine 에 넣지 않는다.** 늘 내용이 있어 오프라인 오류 화면
+  판정이 영영 켜지지 않는다. 별도 `HomeRadioViewModel` 이다.
+- 이니셜 아트의 규칙은 `:core:model` 의 `Station.art` 한 곳이다(Compose·Canvas·Glance 공유). 색은 해시만 쓰지
+  않고 주요 방송사를 명시한다(해시만이면 KBS·SBS·CBS 가 같은 색).
+- 알려진 한계: UI 없이 서비스만
+  살아 있을 때 감독자가 포기하면 알림이 없다. 스테이션 정지 후 직전 에피소드 미니바는 앱을 다시 시작하기
+  전까지 보이지 않는다.
 
 ## 중요 구현 세부사항
 

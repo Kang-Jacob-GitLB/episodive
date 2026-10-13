@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.data.radio
 
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.art
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -49,6 +50,38 @@ class KoreanStationCatalogTest {
     @Test
     fun `Given catalog, Then every station is radio`() {
         assertTrue(entries.all { it.station.kind == StationKind.RADIO })
+    }
+
+    @Test
+    fun `Given catalog, Then 이니셜이 정해 둔 값과 같다`() {
+        val expected = mapOf(
+            "kbs-1radio" to "1라", "kbs-happyfm" to "해", "kbs-classicfm" to "클", "kbs-coolfm" to "쿨",
+            "mbc-sfm" to "표", "mbc-fm4u" to "FM4U", "mbc-allthatmusic" to "올",
+            "sbs-powerfm" to "파", "sbs-lovefm" to "러",
+            "cbs-sfm" to "표", "cbs-musicfm" to "음", "cbs-joy4u" to "JOY",
+            "ebs-fm" to "EBS", "ytn-radio" to "YTN", "tbs-fm" to "TBS", "tbs-efm" to "eFM",
+            "gugak-fm" to "국", "kookbang-fm" to "국", "cpbc-radio" to "가", "febc-seoul" to "서",
+            "febc-jeju" to "제", "ifm" to "경", "obs-radio" to "OBS", "tbn-gyeongin" to "경",
+            "tbn-ulsan" to "울", "arirang-radio" to "아", "afn-humphreys" to "험",
+            "mbc-chungbuk-sfm" to "표", "mbc-chungbuk-fm4u" to "FM4U",
+            "andong-mbc-am" to "표", "andong-mbc-fm4u" to "FM4U",
+            "befm" to "부", "jeonju-fm" to "전", "mapo-fm" to "마", "seongseo-fm" to "성", "sone-fm" to "수",
+        )
+        assertEquals(expected.keys, entries.map { it.station.id }.toSet())
+        entries.forEach { assertEquals(it.station.id, expected[it.station.id], it.station.art.initials) }
+    }
+
+    @Test
+    fun `Given catalog, Then 한 방송사 안에서 이니셜이 겹치지 않는다`() {
+        entries.map { it.station }.groupBy { it.broadcaster }.forEach { (broadcaster, stations) ->
+            val initials = stations.map { it.art.initials }
+            assertEquals(broadcaster, initials.size, initials.toSet().size)
+        }
+    }
+
+    @Test
+    fun `Given catalog, Then 이니셜은 1~4자다`() {
+        entries.forEach { assertTrue(it.station.id, it.station.art.initials.length in 1..4) }
     }
 
     @Test

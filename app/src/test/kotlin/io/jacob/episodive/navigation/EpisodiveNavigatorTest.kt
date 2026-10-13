@@ -5,6 +5,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import io.jacob.episodive.feature.home.navigation.HomeRoute
 import io.jacob.episodive.feature.podcast.navigation.PodcastRoute
+import io.jacob.episodive.feature.radio.navigation.RadioRoute
 import io.jacob.episodive.feature.search.navigation.SearchRoute
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -95,5 +96,45 @@ class EpisodiveNavigatorTest {
 
         assertEquals(HomeRoute, state.topLevelRoute)
         assertFalse(state.isTabNavigation)
+    }
+
+    private fun homeStack() = state.backStacks.getValue(HomeRoute).toList()
+
+    @Test
+    fun navigateInStartStack_fromOtherTab_switchesToHomeAndTopsRadio() {
+        navigator.navigate(SearchRoute)
+
+        navigator.navigateInStartStack(RadioRoute)
+
+        assertEquals(HomeRoute, state.topLevelRoute)
+        assertTrue(state.isTabNavigation)
+        assertEquals(listOf(HomeRoute, RadioRoute), homeStack())
+    }
+
+    @Test
+    fun navigateInStartStack_twice_doesNotDuplicate() {
+        navigator.navigateInStartStack(RadioRoute)
+        navigator.navigateInStartStack(RadioRoute)
+
+        assertEquals(listOf(HomeRoute, RadioRoute), homeStack())
+    }
+
+    @Test
+    fun navigateInStartStack_whenRadioIsBuried_popsAboveIt() {
+        navigator.navigateInStartStack(RadioRoute)
+        navigator.navigate(PodcastRoute(42L))
+
+        navigator.navigateInStartStack(RadioRoute)
+
+        assertEquals(listOf(HomeRoute, RadioRoute), homeStack())
+    }
+
+    @Test
+    fun navigateInStartStack_doesNotTouchOtherStacks() {
+        navigator.navigate(SearchRoute)
+
+        navigator.navigateInStartStack(RadioRoute)
+
+        assertEquals(listOf<NavKey>(SearchRoute), state.backStacks.getValue(SearchRoute).toList())
     }
 }
