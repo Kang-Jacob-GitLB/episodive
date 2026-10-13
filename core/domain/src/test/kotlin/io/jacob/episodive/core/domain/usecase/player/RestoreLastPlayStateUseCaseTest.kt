@@ -7,6 +7,7 @@ import io.jacob.episodive.core.model.GroupKey
 import io.jacob.episodive.core.model.LastPlayState
 import io.jacob.episodive.core.model.Repeat
 import io.jacob.episodive.core.testing.model.episodeTestDataList
+import io.jacob.episodive.core.testing.model.lastPlayStateTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -112,6 +113,7 @@ class RestoreLastPlayStateUseCaseTest {
             coVerifySequence {
                 userRepository.getLastPlayState()
                 episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
+                playerRepository.hasMediaItem()
                 playerRepository.prepare(playlist, 1, 5000L)
                 playerRepository.setShuffle(false)
                 playerRepository.setRepeat(Repeat.OFF)
@@ -150,6 +152,7 @@ class RestoreLastPlayStateUseCaseTest {
             coVerifySequence {
                 userRepository.getLastPlayState()
                 episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
+                playerRepository.hasMediaItem()
                 playerRepository.prepare(playlist, 2, 0L)
                 playerRepository.setShuffle(false)
                 playerRepository.setRepeat(Repeat.OFF)
@@ -188,6 +191,7 @@ class RestoreLastPlayStateUseCaseTest {
             coVerifySequence {
                 userRepository.getLastPlayState()
                 episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
+                playerRepository.hasMediaItem()
                 playerRepository.prepare(playlist, 1, 13_000L)
                 playerRepository.setShuffle(false)
                 playerRepository.setRepeat(Repeat.OFF)
@@ -226,6 +230,7 @@ class RestoreLastPlayStateUseCaseTest {
             coVerifySequence {
                 userRepository.getLastPlayState()
                 episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
+                playerRepository.hasMediaItem()
                 playerRepository.prepare(playlist, 1, 20_000L)
                 playerRepository.setShuffle(false)
                 playerRepository.setRepeat(Repeat.OFF)
@@ -265,6 +270,7 @@ class RestoreLastPlayStateUseCaseTest {
             coVerifySequence {
                 userRepository.getLastPlayState()
                 episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
+                playerRepository.hasMediaItem()
                 playerRepository.prepare(playlist, 2, 42_000L)
                 playerRepository.setShuffle(false)
                 playerRepository.setRepeat(Repeat.OFF)
@@ -298,6 +304,7 @@ class RestoreLastPlayStateUseCaseTest {
             coVerifySequence {
                 userRepository.getLastPlayState()
                 episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
+                playerRepository.hasMediaItem()
                 playerRepository.prepare(playlist, 0, 0L)
                 playerRepository.setShuffle(true)
                 playerRepository.setRepeat(Repeat.OFF)
@@ -331,9 +338,35 @@ class RestoreLastPlayStateUseCaseTest {
             coVerifySequence {
                 userRepository.getLastPlayState()
                 episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
+                playerRepository.hasMediaItem()
                 playerRepository.prepare(playlist, 0, 0L)
                 playerRepository.setShuffle(false)
                 playerRepository.setRepeat(Repeat.ALL)
+            }
+        }
+
+    // VM 의 확인은 DB 를 읽기 전의 것이다. 읽는 사이 스테이션이 올라갔다면 prepare 가 그것을 덮어쓴다.
+    @Test
+    fun `Given media item loaded while reading db, When invoke, Then does not prepare and returns false`() =
+        runTest {
+            // Given
+            val playlist = episodeTestDataList.take(3)
+            coEvery { userRepository.getLastPlayState() } returns
+                lastPlayStateTestData.copy(episodeId = playlist[0].id)
+            coEvery {
+                episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
+            } returns playlist
+            every { playerRepository.hasMediaItem() } returns true
+
+            // When
+            val result = useCase()
+
+            // Then
+            assertFalse(result)
+            coVerifySequence {
+                userRepository.getLastPlayState()
+                episodeRepository.getEpisodesByGroupKey(GroupKey.PLAYLIST.toString())
+                playerRepository.hasMediaItem()
             }
         }
 }

@@ -8,8 +8,18 @@ import kotlinx.coroutines.flow.Flow
 interface StationRepository {
     fun getStations(kind: StationKind): Flow<List<Station>>
 
-    /** 재생 직전에 부른다. 알 수 없는 방송국이거나 주소를 못 얻으면 null. */
-    suspend fun resolveStreamUrl(stationId: String): StationStream?
+    /** 카탈로그에 있는 스테이션. 메모리에서 바로 답한다. 모르는 id 면 null. */
+    fun getStation(stationId: String): Station?
+
+    /**
+     * 재생 직전에 부른다. 알 수 없는 방송국이거나 주소를 못 얻으면 null.
+     *
+     * @param excluding 이미 실패한 주소. 후보가 여기 있으면 건너뛰고 다음 후보로 간다(fallback 도 마찬가지).
+     */
+    suspend fun resolveStreamUrl(
+        stationId: String,
+        excluding: Set<String> = emptySet(),
+    ): StationStream?
 
     /** 즐겨찾기한 순서의 역순(최신순). 카탈로그에서 빠진 스테이션은 제외된다. */
     fun getFavoriteStations(): Flow<List<Station>>

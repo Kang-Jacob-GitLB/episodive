@@ -8,6 +8,7 @@ import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.network.datasource.StationRemoteDataSource
+import io.jacob.episodive.core.testing.model.icecastStreamTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
 import io.jacob.episodive.core.testing.model.tvStationTestData
@@ -126,6 +127,40 @@ class StationRepositoryImplTest {
         advanceTimeBy(2_000)
 
         assertEquals(StationStream("https://fallback/a", isHls = false), stream.await())
+    }
+
+    @Test
+    fun `Given first candidate excluded, When resolveStreamUrl, Then second candidate used`() = runTest {
+        coEvery { remoteDataSource.resolveStreamUrl("a") } returns "https://live/a"
+        coEvery { remoteDataSource.resolveStreamUrl("b") } returns "https://live/b"
+
+        assertEquals(
+            icecastStreamTestData.copy(url = "https://live/b"),
+            repository.resolveStreamUrl(radioStationTestData.id, excluding = setOf("https://live/a")),
+        )
+    }
+
+    @Test
+    fun `Given every candidate and fallback excluded, When resolveStreamUrl, Then null`() = runTest {
+        coEvery { remoteDataSource.resolveStreamUrl("a") } returns "https://live/a"
+        coEvery { remoteDataSource.resolveStreamUrl("b") } returns "https://live/b"
+
+        assertNull(
+            repository.resolveStreamUrl(
+                stationId = radioStationTestData.id,
+                excluding = setOf("https://live/a", "https://live/b", "https://fallback/a"),
+            )
+        )
+    }
+
+    @Test
+    fun `Given known id, When getStation, Then catalog station`() {
+        assertEquals(radioStationTestData, repository.getStation(radioStationTestData.id))
+    }
+
+    @Test
+    fun `Given unknown id, When getStation, Then null`() {
+        assertNull(repository.getStation("unknown"))
     }
 
     @Test
