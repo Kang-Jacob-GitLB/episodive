@@ -730,6 +730,8 @@ class PlayerDataSourceImplTest {
         // coroutine (see PlayerDataSourceImplTest class doc / task notes: progressUpdater is
         // intentionally not exercised here).
         every { player.isPlaying } returns false
+        // 빈 플레이어. relaxed mock 은 currentMediaItem 에 태그 없는 가짜 항목을 돌려주므로 명시한다.
+        every { player.currentMediaItem } returns null
 
         // When / Then
         dataSource.nowPlaying.test {
@@ -746,6 +748,7 @@ class PlayerDataSourceImplTest {
     fun `Given same episode already playing, When rehydrate called, Then nowPlaying flow not re-emitted`() = runTest {
         // Given
         every { player.isPlaying } returns false
+        every { player.currentMediaItem } returns null
         dataSource.rehydrate(episode)
 
         // When / Then: emits once for the first rehydrate, calling again with same id should not add new emission
@@ -1137,6 +1140,7 @@ class PlayerDataSourceImplTest {
         // Given: C3 회귀 방지. rehydrate 의 가드(player.currentMediaItem 기준)가 없으면
         // 비동기 DB 복원값(A)이 실제로 재생 중인 B 를 밀어내고 nowPlaying 을 오염시킨다.
         every { player.isPlaying } returns false
+        every { player.currentMediaItem } returns null
         val otherEpisode = episode.copy(id = 999L)
 
         // player.currentMediaItem 이 아직 비어 있는 상태에서 B 를 먼저 rehydrate 해
@@ -1161,6 +1165,82 @@ class PlayerDataSourceImplTest {
     }
 
     @Test
+    fun `Given player holds a non-episode item, When rehydrate called, Then nowPlaying stays null`() = runTest {
+        // Given: 라이브 스트림처럼 Episode 가 아닌 태그를 단 항목. currentEpisode() 가 null 이라
+        // "다른 에피소드인가" 로만 가르면 가드를 통과해, 서비스의 비동기 복원값이
+        // 스트림 재생 중에 nowPlaying 을 지난 에피소드로 덮어쓴다.
+        every { player.isPlaying } returns true
+        val streamItem = MediaItem.Builder()
+            .setMediaId("station")
+            .setUri(mockk<Uri>(relaxed = true))
+            .setTag("station")
+            .build()
+        every { player.currentMediaItem } returns streamItem
+
+        // When
+        dataSource.rehydrate(episode)
+
+        // Then
+        dataSource.nowPlaying.test {
+            assertEquals(null, awaitItem())
+        }
+    }
+
+    @Test
+    fun `Given player holds an untagged item, When rehydrate called, Then nowPlaying is hydrated`() = runTest {
+        // Given: 외부 컨트롤러가 IPC 로 넘긴 항목은 태그를 잃는다. 이런 항목까지 막으면
+        // rehydrate 가 메우려던 빈 nowPlaying 이 세션 내내 남는다.
+        every { player.isPlaying } returns false
+        every { player.currentMediaItem } returns MediaItem.Builder()
+            .setMediaId(episode.id.toString())
+            .setUri(mockk<Uri>(relaxed = true))
+            .build()
+
+        // When
+        dataSource.rehydrate(episode)
+
+        // Then
+        dataSource.nowPlaying.test {
+            assertEquals(episode, awaitItem())
+        }
+    }
+
+    @Test
+    fun `Given player holds the same episode, When rehydrate called, Then nowPlaying is hydrated`() = runTest {
+        // Given: 프로세스 재시작 직후 플레이어는 그 에피소드를 들고 있지만 _nowPlaying 은 비어 있다.
+        // rehydrate 가 원래 고치려던 상황이므로 가드에 막히면 안 된다.
+        every { player.isPlaying } returns false
+        val mediaItem = MediaItem.Builder()
+            .setMediaId(episode.id.toString())
+            .setUri(mockk<Uri>(relaxed = true))
+            .setTag(episode)
+            .build()
+        every { player.currentMediaItem } returns mediaItem
+
+        // When
+        dataSource.rehydrate(episode)
+
+        // Then
+        dataSource.nowPlaying.test {
+            assertEquals(episode, awaitItem())
+        }
+    }
+
+    @Test
+    fun `Given player current media item, When hasMediaItem called, Then reflects whether any item is loaded`() {
+        // Given / When / Then: 에피소드가 아닌 항목도 "올라 있다" 로 친다.
+        every { player.currentMediaItem } returns null
+        assertEquals(false, dataSource.hasMediaItem())
+
+        every { player.currentMediaItem } returns MediaItem.Builder()
+            .setMediaId("station")
+            .setUri(mockk<Uri>(relaxed = true))
+            .setTag("station")
+            .build()
+        assertEquals(true, dataSource.hasMediaItem())
+    }
+
+    @Test
     fun `Given nowPlaying rehydrated to A while player already holds B, When seekTo called, Then progress episodeId follows the player not nowPlaying`() = runTest {
         // Given: C3 회귀 방지(교차 오염). rehydrate(A) 는 player.currentMediaItem 이 아직 비어
         // 있을 때 허용되므로(가드를 통과) _nowPlaying 이 A 로 세팅될 수 있다. 그 직후 player 가
@@ -1173,6 +1253,7 @@ class PlayerDataSourceImplTest {
         val otherEpisode = episode.copy(id = 999L)
 
         // player.currentMediaItem 이 아직 비어 있는 상태에서 A 를 rehydrate 해 nowPlaying=A.
+        every { player.currentMediaItem } returns null
         dataSource.rehydrate(episode)
 
         // 실제로는 player 가 B 를 들고 있는 상태로 어긋난다(_nowPlaying 갱신 전).

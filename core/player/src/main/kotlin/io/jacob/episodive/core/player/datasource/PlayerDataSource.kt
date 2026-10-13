@@ -40,6 +40,13 @@ interface PlayerDataSource {
     /** _nowPlaying / _isPlaying 을 외부 source 로 1회 동기화 (process restart hydration 용). */
     fun rehydrate(episode: Episode)
 
+    /**
+     * 플레이어에 지금 올라 있는 항목이 있는지. 에피소드가 아닌 항목(라이브 스트림 등)도 포함한다.
+     * `nowPlaying` 은 에피소드만 싣기 때문에 null 이어도 플레이어가 비어 있다는 뜻은 아니다.
+     * 플레이어를 직접 읽으므로 플레이어 스레드(메인)에서만 호출할 것.
+     */
+    fun hasMediaItem(): Boolean
+
     val nowPlaying: Flow<Episode?>
     val playlist: Flow<List<Episode>>
     val indexOfList: Flow<Int>

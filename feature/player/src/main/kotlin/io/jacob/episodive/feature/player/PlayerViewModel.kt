@@ -207,8 +207,11 @@ class PlayerViewModel @Inject constructor(
                 }
         }
         restoreLastPlayJob = viewModelScope.launch {
+            // nowPlaying 은 에피소드만 싣는다. null 이어도 플레이어가 라이브 스트림 같은
+            // 다른 항목을 재생 중일 수 있으니, 플레이어가 비어 있을 때만 복원한다.
+            // 그렇지 않으면 액티비티 재생성 때 재생 중인 항목을 지난 에피소드 목록으로 덮어쓴다.
             val currentEpisode = playerRepository.nowPlaying.first()
-            if (currentEpisode == null) {
+            if (currentEpisode == null && !playerRepository.hasMediaItem()) {
                 restoreLastPlayStateUseCase()
             }
         }

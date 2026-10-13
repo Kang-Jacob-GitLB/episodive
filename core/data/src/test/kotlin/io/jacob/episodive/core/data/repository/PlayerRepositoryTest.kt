@@ -7,9 +7,12 @@ import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coVerify
 import io.mockk.confirmVerified
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
@@ -401,4 +404,30 @@ class PlayerRepositoryTest {
             // Then
             coVerify(exactly = 1) { playerDataSource.speed }
         }
+
+    @Test
+    fun `Given playerDataSource holds an item, When hasMediaItem is called, Then returns true`() {
+        // Given
+        every { playerDataSource.hasMediaItem() } returns true
+
+        // When
+        val result = repository.hasMediaItem()
+
+        // Then
+        assertEquals(true, result)
+        verify { playerDataSource.hasMediaItem() }
+    }
+
+    @Test
+    fun `Given playerDataSource is empty, When hasMediaItem is called, Then returns false`() {
+        // Given
+        every { playerDataSource.hasMediaItem() } returns false
+
+        // When
+        val result = repository.hasMediaItem()
+
+        // Then
+        assertEquals(false, result)
+        verify { playerDataSource.hasMediaItem() }
+    }
 }
