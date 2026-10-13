@@ -42,6 +42,7 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkStatic
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -1826,6 +1827,124 @@ class PlayerDataSourceImplTest {
         every { player.setMediaItem(capture(captured)) } just Runs
         dataSource.playStation(station, stream)
         return captured.captured
+    }
+
+    private fun playWhenReadyChanged(playWhenReady: Boolean) {
+        every { player.playWhenReady } returns playWhenReady
+        listenerSlot.captured.onPlayWhenReadyChanged(
+            playWhenReady,
+            Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST,
+        )
+    }
+
+    private fun suppressionChanged(reason: Int) {
+        every { player.playbackSuppressionReason } returns reason
+        listenerSlot.captured.onPlaybackSuppressionReasonChanged(reason)
+    }
+
+    private fun onStation(item: MediaItem = stationItem()) {
+        every { player.currentMediaItem } returns item
+        transitionTo(item)
+    }
+
+    private fun verifyRejoined(times: Int) {
+        verify(exactly = times) { player.stop() }
+    }
+
+    @Test
+    fun `Given paused station, When playback resumes, Then releases, resets position and re-prepares`() {
+        onStation()
+
+        playWhenReadyChanged(false)
+        playWhenReadyChanged(true)
+
+        // 기본 위치로 옮기지 않으면 stop() 이 남긴 위치로 다시 준비돼 HLS 가 정지 시점부터 흐른다.
+        verifyOrder {
+            player.stop()
+            player.seekToDefaultPosition()
+            player.prepare()
+        }
+    }
+
+    @Test
+    fun `Given paused station, When the same station is played again, Then connects only once`() {
+        onStation()
+        playWhenReadyChanged(false)
+
+        val item = stationItem()
+        every { player.setMediaItem(any()) } answers { onStation(item) }
+        dataSource.playStation(station, hlsStream)
+        playWhenReadyChanged(true)
+
+        verifyRejoined(0)
+    }
+
+    @Test
+    fun `Given playback suppressed, When station is played, Then rejoins live once suppression ends`() {
+        every { player.playbackSuppressionReason } returns
+            Player.PLAYBACK_SUPPRESSION_REASON_TRANSIENT_AUDIO_FOCUS_LOSS
+        every { player.setMediaItem(any()) } answers { onStation() }
+        dataSource.playStation(station, hlsStream)
+        every { player.playWhenReady } returns true
+
+        suppressionChanged(Player.PLAYBACK_SUPPRESSION_REASON_NONE)
+
+        verifyRejoined(1)
+    }
+
+    @Test
+    fun `Given station started without pause, When playWhenReady becomes true, Then does not re-prepare`() {
+        onStation()
+
+        playWhenReadyChanged(true)
+
+        verifyRejoined(0)
+    }
+
+    @Test
+    fun `Given transient focus loss on station, When suppression ends, Then rejoins live`() {
+        onStation()
+        playWhenReadyChanged(true)
+
+        suppressionChanged(Player.PLAYBACK_SUPPRESSION_REASON_TRANSIENT_AUDIO_FOCUS_LOSS)
+        suppressionChanged(Player.PLAYBACK_SUPPRESSION_REASON_NONE)
+
+        verifyRejoined(1)
+    }
+
+    @Test
+    fun `Given paused station restarted by recovery, When playback resumes, Then still rejoins live`() {
+        onStation()
+        playWhenReadyChanged(false)
+
+        // 복구가 같은 스테이션을 다시 올리면 transition 이 한 번 더 난다.
+        onStation()
+        playWhenReadyChanged(true)
+
+        verifyRejoined(1)
+    }
+
+    @Test
+    fun `Given paused station replaced by another station, When playback starts, Then does not re-prepare`() {
+        onStation()
+        playWhenReadyChanged(false)
+
+        onStation(stationItem(regionalRadioStationTestData))
+        playWhenReadyChanged(true)
+
+        verifyRejoined(0)
+    }
+
+    @Test
+    fun `Given paused episode, When playback resumes, Then keeps position`() {
+        val item = episodeItem()
+        every { player.currentMediaItem } returns item
+        transitionTo(item)
+
+        playWhenReadyChanged(false)
+        playWhenReadyChanged(true)
+
+        verifyRejoined(0)
     }
 
     @Test
