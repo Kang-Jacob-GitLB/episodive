@@ -1,23 +1,29 @@
 package io.jacob.episodive.feature.radio
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -30,6 +36,8 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveScaffold
 import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.SkeletonContainer
 import io.jacob.episodive.core.designsystem.component.SkeletonLine
+import io.jacob.episodive.core.designsystem.component.scrollbar.DraggableScrollbar
+import io.jacob.episodive.core.designsystem.component.scrollbar.scrollbarState
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.screen.ErrorScreen
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
@@ -106,6 +114,9 @@ internal fun RadioScreen(
         modifier = modifier,
         title = stringResource(R.string.feature_radio_title),
         titleStyle = MaterialTheme.typography.titleMedium,
+        // 스테이션 행이 길게 이어지는 화면이라 홈 "더 보기" 와 같이 내려가는 동안 제목을 비킨다.
+        // 뒤로가기는 계속 남는다.
+        hideTitleOnScroll = true,
         navigationIcon = EpisodiveIcons.ArrowBack,
         navigationIconContentDescription = "Back",
         onNavigationClick = onBackClick,
@@ -125,6 +136,7 @@ internal fun RadioScreen(
             )
 
             is RadioState.Error -> ErrorScreen(
+                modifier = Modifier.padding(paddingValues),
                 message = state.error.asUiMessage(),
                 onRetry = if (state.error.isRetryable) onRetry else null,
             )
@@ -151,62 +163,94 @@ private fun RadioList(
         )
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(nestedScrollConnection),
-        contentPadding = paddingValues.asContentPadding(),
-        verticalArrangement = Arrangement.spacedBy(dimension.sectionSpacing),
-    ) {
-        // 같은 스테이션이 즐겨찾기·최근·전체에 함께 나온다. 키에 섹션 접두어를 붙여 겹치지 않게 한다.
-        if (state.favorites.isNotEmpty()) {
-            item(key = "fav", contentType = "carousel") {
-                StationsSection(
-                    title = stringResource(R.string.feature_radio_section_favorites),
-                    stations = state.favorites,
-                    statusOf = statusOf,
-                    onStationClick = onStationClick,
-                )
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    // 아래 LazyColumn 이 내보내는 항목 수와 같아야 스크롤바 위치가 맞는다. 섹션을 더하거나 빼면
+    // 여기도 함께 고친다.
+    val itemCount = (if (state.favorites.isNotEmpty()) 1 else 0) +
+        (if (state.recents.isNotEmpty()) 1 else 0) +
+        state.nationwide.groupItemCount() +
+        state.regional.groupItemCount() +
+        1
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(nestedScrollConnection),
+            state = listState,
+            contentPadding = paddingValues.asContentPadding(),
+            verticalArrangement = Arrangement.spacedBy(dimension.sectionSpacing),
+        ) {
+            // 같은 스테이션이 즐겨찾기·최근·전체에 함께 나온다. 키에 섹션 접두어를 붙여 겹치지 않게 한다.
+            if (state.favorites.isNotEmpty()) {
+                item(key = "fav", contentType = "carousel") {
+                    StationsSection(
+                        title = stringResource(R.string.feature_radio_section_favorites),
+                        stations = state.favorites,
+                        statusOf = statusOf,
+                        onStationClick = onStationClick,
+                    )
+                }
+            }
+
+            if (state.recents.isNotEmpty()) {
+                item(key = "recent", contentType = "carousel") {
+                    StationsSection(
+                        title = stringResource(R.string.feature_radio_section_recent),
+                        stations = state.recents,
+                        statusOf = statusOf,
+                        onStationClick = onStationClick,
+                    )
+                }
+            }
+
+            stationGroup(
+                headerKey = "header:nationwide",
+                title = R.string.feature_radio_section_nationwide,
+                stations = state.nationwide,
+                state = state,
+                statusOf = statusOf,
+                onStationClick = onStationClick,
+                onToggleFavorite = onToggleFavorite,
+            )
+
+            stationGroup(
+                headerKey = "header:regional",
+                title = R.string.feature_radio_section_regional,
+                stations = state.regional,
+                state = state,
+                statusOf = statusOf,
+                onStationClick = onStationClick,
+                onToggleFavorite = onToggleFavorite,
+            )
+
+            item(key = "space") {
+                // 미니플레이어 높이 + 마진만큼 비워야 마지막 항목이 가리지 않는다.
+                Spacer(modifier = Modifier.height(dimension.playerBarSpace))
             }
         }
 
-        if (state.recents.isNotEmpty()) {
-            item(key = "recent", contentType = "carousel") {
-                StationsSection(
-                    title = stringResource(R.string.feature_radio_section_recent),
-                    stations = state.recents,
-                    statusOf = statusOf,
-                    onStationClick = onStationClick,
-                )
-            }
-        }
-
-        stationGroup(
-            headerKey = "header:nationwide",
-            title = R.string.feature_radio_section_nationwide,
-            stations = state.nationwide,
-            state = state,
-            statusOf = statusOf,
-            onStationClick = onStationClick,
-            onToggleFavorite = onToggleFavorite,
+        listState.DraggableScrollbar(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(vertical = 12.dp)
+                .padding(top = paddingValues.calculateTopPadding())
+                .align(Alignment.TopEnd),
+            state = listState.scrollbarState(itemsAvailable = itemCount),
+            orientation = Orientation.Vertical,
+            onThumbMoved = { thumbPosition ->
+                scope.launch {
+                    val itemIndex = (thumbPosition * itemCount).toInt().coerceIn(0, itemCount - 1)
+                    listState.scrollToItem(itemIndex)
+                }
+            },
         )
-
-        stationGroup(
-            headerKey = "header:regional",
-            title = R.string.feature_radio_section_regional,
-            stations = state.regional,
-            state = state,
-            statusOf = statusOf,
-            onStationClick = onStationClick,
-            onToggleFavorite = onToggleFavorite,
-        )
-
-        item(key = "space") {
-            // 미니플레이어 높이 + 마진만큼 비워야 마지막 항목이 가리지 않는다.
-            Spacer(modifier = Modifier.height(dimension.playerBarSpace))
-        }
     }
 }
+
+/** [stationGroup] 이 내보내는 항목 수 — 비어 있으면 헤더도 없다. */
+private fun List<Station>.groupItemCount(): Int = if (isEmpty()) 0 else size + 1
 
 private fun LazyListScope.stationGroup(
     headerKey: String,
