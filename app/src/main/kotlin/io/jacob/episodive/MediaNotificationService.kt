@@ -26,6 +26,7 @@ import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.episode.GetMostRecentPlayedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
+import io.jacob.episodive.core.domain.usecase.player.WidgetPlayPauseUseCase
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Station
 import kotlinx.coroutines.CoroutineScope
@@ -33,9 +34,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @UnstableApi
@@ -54,6 +57,9 @@ class MediaNotificationService : MediaSessionService() {
 
     @Inject
     lateinit var getMostRecentPlayedEpisodeUseCase: GetMostRecentPlayedEpisodeUseCase
+
+    @Inject
+    lateinit var widgetPlayPauseUseCase: WidgetPlayPauseUseCase
 
     @Inject
     lateinit var widgetUpdater: WidgetUpdater
@@ -116,23 +122,27 @@ class MediaNotificationService : MediaSessionService() {
             }
         }
 
-        // 위젯 갱신은 "에피소드 변경 또는 재생/일시정지" 시에만 트리거한다.
+        // 위젯 갱신은 "에피소드·스테이션 변경 또는 재생/일시정지" 시에만 트리거한다.
         // getNowPlayingUseCase 는 재생 progress 가 DB 에 저장될 때마다 재emit(초당 수십 회)되는데,
         // 그대로 notify 하면 updateAll 폭주로 provideGlance 가 완주 못 해 위젯이 옛 화면에 고정된다.
         serviceScope.launch {
-            combine(
-                getNowPlayingUseCase(),
-                playerRepository.isPlaying,
-            ) { episode, playing -> episode?.id to playing }
-                .distinctUntilChanged()
-                .collectLatest { widgetUpdater.notifyNowPlayingChanged() }
+            // 트리거일 뿐 판정이 아니다 — 위젯 쪽 리더가 nowPlayingStation 하나로 에피소드/스테이션을 가른다.
+            // 어느 쪽이 바뀌어도 WidgetUpdater 의 debounce 가 묶어 한 번만 갱신한다.
+            merge(
+                getNowPlayingUseCase().map { it?.id }.distinctUntilChanged(),
+                playerRepository.nowPlayingStation.map { it?.id }.distinctUntilChanged(),
+                playerRepository.isPlaying.distinctUntilChanged(),
+            ).collectLatest { widgetUpdater.notifyNowPlayingChanged() }
         }
     }
 
     @UnstableApi
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_WIDGET_PLAY_PAUSE -> serviceScope.launch { playerRepository.playOrPause() }
+            // 플레이어가 비어 있으면(스테이션 정지 직후 등) 마지막 재생 상태를 올린 뒤 튼다.
+            ACTION_WIDGET_PLAY_PAUSE -> serviceScope.launch {
+                if (!widgetPlayPauseUseCase()) Timber.d("Widget play ignored: nothing to play or restore")
+            }
             ACTION_WIDGET_SEEK_FWD -> if (currentControls().showCustomButtons) {
                 serviceScope.launch { playerRepository.seekForward() }
             }
@@ -247,7 +257,7 @@ class MediaNotificationService : MediaSessionService() {
         ): ListenableFuture<SessionResult> {
             // 레이아웃을 비워 두어도 이미 그려진 알림이나 외부 컨트롤러가 명령을 보낼 수 있다.
             // 무시한 것을 성공으로 답하면 컨트롤러는 처리된 줄 안다 — 지원하지 않는다고 답한다.
-            // (홈 화면 위젯의 ±탐색 버튼을 스테이션일 때 숨기는 것은 PR5 범위다.)
+            // (홈 화면 위젯은 스테이션이면 ±탐색 버튼을 그리지 않는다.)
             if (!currentControls().showCustomButtons) {
                 return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
             }

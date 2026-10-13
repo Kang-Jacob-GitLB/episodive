@@ -23,7 +23,9 @@ import io.jacob.episodive.core.model.PlaybackFailure
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.Spectrum
 import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationArt
 import io.jacob.episodive.core.model.StationStream
+import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.player.audio.PlaybackSpectrumMonitor
 import io.jacob.episodive.core.model.coverUrl
 import io.jacob.episodive.core.model.mapper.toDurationMillis
@@ -43,6 +45,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import kotlin.time.Duration
 
@@ -67,6 +70,10 @@ class PlayerDataSourceImpl @Inject constructor(
     // 매번 저장값을 되돌려 놓으면 MediaSession(Android Auto 등)으로 플레이어에 직접 건 값이 낡은 저장값으로
     // 덮인다.
     private var wasStation = false
+
+    // 이니셜 아트 → 알림 아트 PNG. 같은 아트면 같은 그림이라 스테이션 id 가 아니라 아트로 키를 삼는다.
+    // IO 의 선렌더([prepareStationArtwork])와 메인의 폴백 렌더가 함께 만지므로 동시 접근에 안전해야 한다.
+    private val stationArtworkCache = ConcurrentHashMap<StationArt, ByteArray>()
 
     // 지금 스테이션의 소리가 한 번이라도 멎었는지(일시정지·포커스 일시 상실 등). 다시 흐를 때 라이브로
     // 다시 붙을지를 가른다. 다른 스테이션으로 바뀔 때만 푼다 — 멈춘 채 복구(restartStation)가 같은
@@ -368,7 +375,11 @@ class PlayerDataSourceImpl @Inject constructor(
     /**
      * 스테이션을 올릴 아이템. 클리핑·자막은 걸지 않는다.
      *
-     * 미디어 id 에 접두어를 붙여 에피소드의 숫자 id 와 겹치지 않게 한다. 아트는 싣지 않는다.
+     * 미디어 id 에 접두어를 붙여 에피소드의 숫자 id 와 겹치지 않게 한다.
+     *
+     * 아트는 이니셜 PNG 를 바이트로 실어 알림·잠금화면이 바로 쓰게 한다. 비동기로 나중에 갈아끼우면
+     * transition 콜백이 다시 돌아 재생 위치 규약이 흔들리므로 **여기서 동기로** 싣는다. 보통은
+     * [prepareStationArtwork] 가 IO 에서 캐시를 채워 둬 히트하고, 미스일 때만 메인에서 그린다(폴백).
      */
     private fun Station.toMediaItem(stream: StationStream): MediaItem {
         val mediaMetadata = MediaMetadata.Builder()
@@ -377,6 +388,7 @@ class PlayerDataSourceImpl @Inject constructor(
             .setArtist(broadcaster)
             .setMediaType(MediaMetadata.MEDIA_TYPE_RADIO_STATION)
             .setIsPlayable(true)
+            .setArtworkData(stationArtwork(), MediaMetadata.PICTURE_TYPE_FRONT_COVER)
             .build()
 
         return MediaItem.Builder()
@@ -386,6 +398,20 @@ class PlayerDataSourceImpl @Inject constructor(
             .setTag(this)
             .setMediaMetadata(mediaMetadata)
             .build()
+    }
+
+    private fun StationArt.cachedArtwork(): ByteArray =
+        stationArtworkCache[this] ?: StationArtworkRenderer.render(this).also {
+            if (stationArtworkCache.size >= StationArtworkCacheMax) stationArtworkCache.clear()
+            stationArtworkCache[this] = it
+        }
+
+    private fun Station.stationArtwork(): ByteArray = art.cachedArtwork()
+
+    override suspend fun prepareStationArtwork(station: Station) {
+        val art = station.art
+        if (stationArtworkCache.containsKey(art)) return
+        withContext(Dispatchers.IO) { art.cachedArtwork() }
     }
 
     /**
@@ -1071,3 +1097,6 @@ class PlayerDataSourceImpl @Inject constructor(
         progressUpdater.launchIn(scope)
     }
 }
+
+/** 알림 아트 캐시의 상한. 카탈로그 크기(36) 안팎이라 넘지 않는 안전장치다. */
+private const val StationArtworkCacheMax = 36

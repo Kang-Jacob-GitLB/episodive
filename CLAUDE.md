@@ -360,6 +360,16 @@ Room 왕복과 `flowOn(IO)` 를 거쳐 `progress` 보다 늦게 도착한다. �
   판정이 영영 켜지지 않는다. 별도 `HomeRadioViewModel` 이다.
 - 이니셜 아트의 규칙은 `:core:model` 의 `Station.art` 한 곳이다(Compose·Canvas·Glance 공유). 색은 해시만 쓰지
   않고 주요 방송사를 명시한다(해시만이면 KBS·SBS·CBS 가 같은 색).
+- **위젯 스냅샷(`NowPlayingSnapshot`)은 스테이션이면 `stationId`·`stationArt` 를 싣고 `episodeId` 는 null 이다.**
+  리더(`WidgetDataReaderImpl`)는 `nowPlayingStation.flatMapLatest` 하나로 가른다. **`streamTitle`(곡 제목)은
+  싣지 마라** — 곡마다 스냅샷이 바뀌어 `updateAll` 이 폭주하고 `provideGlance` 가 완주 못 해 위젯이 옛
+  화면에 고정된다. 위젯은 스테이션이면 ±탐색을 그리지 않는다. 헤더 탭은 에피소드와 같이 `open_player` 를 싣는다 — 딥링크 `Player`
+  가 `isStationActive()` 면 라디오 화면으로 보내므로, 빼면 마지막 탭에 떨어진다. 배경은 이니셜 아트 색을 어둡게 한
+  톤, 썸네일은 아트 색 그대로다. 글자는 글꼴 배율로 나눠 dp 고정 크기로 그린다(`stationInitialsFontSizeSp`).
+  `MediaNotificationService` 의 위젯 갱신 `merge(...)` 는 트리거일 뿐 판정이 아니다.
+- **알림 아트는 `Station.toMediaItem` 에서 동기로 그려 `setArtworkData` 로 싣는다**(`StationArtworkRenderer`,
+  시스템 Bold). 나중에 `replaceMediaItem` 으로 갈아끼우면 transition 콜백이 다시 돌아 재생 위치 규약이
+  흔들린다. 메인에서 도는 경로라 스테이션 id 로 캐시한다(`stationArtworkCache`).
 - 알려진 한계: UI 없이 서비스만
   살아 있을 때 감독자가 포기하면 알림이 없다. 스테이션 정지 후 직전 에피소드 미니바는 앱을 다시 시작하기
   전까지 보이지 않는다.

@@ -142,6 +142,10 @@ class PlayerRepositoryImpl @Inject constructor(
         return playerDataSource.hasMediaItem()
     }
 
+    override suspend fun prepareStationArtwork(station: Station) {
+        playerDataSource.prepareStationArtwork(station)
+    }
+
     override fun playStation(station: Station, stream: StationStream) {
         playerDataSource.playStation(station, stream)
     }

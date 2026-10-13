@@ -105,16 +105,10 @@ fun StationArt(
     ) {
         // 부모가 무한 제약을 주면 side 가 Dp.Infinity 가 되어 폰트 크기가 발산한다.
         val side = minOf(maxWidth, maxHeight).coerceAtMost(StationArtMaxSide)
-        val ratio = when (art.initials.length) {
-            1 -> 0.44f
-            2 -> 0.36f
-            3 -> 0.30f
-            else -> 0.25f
-        }
         Text(
             text = art.initials,
             color = Color.White,
-            fontSize = with(LocalDensity.current) { (side * ratio).toSp() },
+            fontSize = with(LocalDensity.current) { (side * art.textRatio).toSp() },
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
         )

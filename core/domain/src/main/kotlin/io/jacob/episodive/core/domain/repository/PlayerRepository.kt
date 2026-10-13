@@ -56,6 +56,9 @@ interface PlayerRepository {
      */
     fun hasMediaItem(): Boolean
 
+    /** 알림용 아트를 미리 그려 둔다. [playStation] 이 메인에서 그리지 않게 한다. 어느 스레드에서 불러도 된다. */
+    suspend fun prepareStationArtwork(station: Station)
+
     /** 스테이션의 스트림을 올려 바로 튼다. */
     fun playStation(station: Station, stream: StationStream)
 

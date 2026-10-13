@@ -4,8 +4,10 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
+import androidx.glance.LocalContext
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.action.actionParametersOf
@@ -19,7 +21,11 @@ import androidx.glance.layout.ContentScale
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import io.jacob.episodive.core.model.StationArt
 import io.jacob.episodive.feature.widget.PlaybackControl
 import io.jacob.episodive.feature.widget.R
 import io.jacob.episodive.feature.widget.action.WidgetActionCallback
@@ -143,4 +149,34 @@ internal fun WidgetThumbnail(
             .size(sizeDp.dp)
             .cornerRadius(cornerDp.dp),
     )
+}
+
+/**
+ * 스테이션 이니셜 썸네일. 비트맵 대신 방송사 색 박스에 이니셜을 얹는다(글자 비율은 앱의 Compose
+ * `StationArt` 와 같다). 장식이라 접근성 설명은 달지 않는다 — 이름은 곁의 텍스트가 읽는다.
+ */
+@Composable
+internal fun StationThumbnail(
+    art: StationArt,
+    sizeDp: Int,
+    cornerDp: Int = 10,
+) {
+    val fontScale = LocalContext.current.resources.configuration.fontScale
+    Box(
+        modifier = GlanceModifier
+            .size(sizeDp.dp)
+            .background(ColorProvider(Color(art.colorArgb)))
+            .cornerRadius(cornerDp.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = art.initials,
+            style = TextStyle(
+                color = ColorProvider(Color.White),
+                fontSize = stationInitialsFontSizeSp(sizeDp, art.textRatio, fontScale).sp,
+                fontWeight = FontWeight.Bold,
+            ),
+            maxLines = 1,
+        )
+    }
 }

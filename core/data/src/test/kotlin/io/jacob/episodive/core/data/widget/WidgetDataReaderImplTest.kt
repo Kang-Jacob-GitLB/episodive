@@ -8,8 +8,11 @@ import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetUserRecentPodcastsUseCase
 import io.jacob.episodive.core.model.Podcast
+import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.podcastTestDataList
+import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.every
@@ -33,6 +36,11 @@ class WidgetDataReaderImplTest {
     private val userRepository = mockk<UserRepository>(relaxed = true)
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
     private val playerRepository = mockk<PlayerRepository>(relaxed = true)
+
+    init {
+        // 기본은 스테이션 없음. relaxed mock 의 빈 Flow 는 바로 완료돼 에피소드 경로까지 닫아 버린다.
+        every { playerRepository.nowPlayingStation } returns MutableStateFlow(null)
+    }
 
     private val reader = WidgetDataReaderImpl(
         getNowPlaying = getNowPlaying,
@@ -103,6 +111,77 @@ class WidgetDataReaderImplTest {
                 podcastFlow.value = podcast
                 // distinctUntilChanged 가 feedTitle 변경을 흡수하지 않아야 재방출된다.
                 assertEquals(podcast.title, awaitItem()?.feedTitle)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `Given a station, when nowPlayingFlow collected, then emits station snapshot without episode ids`() =
+        runTest {
+            every { playerRepository.nowPlayingStation } returns flowOf(radioStationTestData)
+            every { playerRepository.isPlaying } returns flowOf(true)
+
+            reader.nowPlayingFlow().test {
+                val snapshot = awaitItem()!!
+                assertEquals(radioStationTestData.id, snapshot.stationId)
+                assertEquals(radioStationTestData.art, snapshot.stationArt)
+                assertEquals(radioStationTestData.name, snapshot.title)
+                assertEquals(radioStationTestData.broadcaster, snapshot.feedTitle)
+                assertNull(snapshot.imageUrl)
+                assertNull(snapshot.episodeId)
+                assertNull(snapshot.podcastId)
+                assertEquals(true, snapshot.isStation)
+                assertEquals(true, snapshot.isPlaying)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `Given a station, when snapshotNowPlaying called, then returns station snapshot`() =
+        runTest {
+            every { playerRepository.nowPlayingStation } returns MutableStateFlow(radioStationTestData)
+            every { playerRepository.isPlaying } returns MutableStateFlow(true)
+
+            val snapshot = reader.snapshotNowPlaying()!!
+
+            assertEquals(radioStationTestData.id, snapshot.stationId)
+            assertEquals(radioStationTestData.art, snapshot.stationArt)
+            assertNull(snapshot.episodeId)
+            assertEquals(true, snapshot.isPlaying)
+        }
+
+    @Test
+    fun `Given station then none, when nowPlayingFlow collected, then switches to episode path`() =
+        runTest {
+            val station = MutableStateFlow<Station?>(radioStationTestData)
+            every { playerRepository.nowPlayingStation } returns station
+            every { playerRepository.isPlaying } returns flowOf(true)
+            every { getNowPlaying() } returns flowOf(episodeTestData)
+            every { getPodcast(episodeTestData.feedId) } returns flowOf(null)
+
+            reader.nowPlayingFlow().test {
+                assertEquals(radioStationTestData.id, awaitItem()?.stationId)
+                station.value = null
+                val snapshot = awaitItem()!!
+                assertNull(snapshot.stationId)
+                assertEquals(episodeTestData.id, snapshot.episodeId)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `Given a station, when stream title changes, then no new snapshot is emitted`() =
+        runTest {
+            // 곡 제목은 스냅샷에 싣지 않으므로 바뀌어도 재방출이 없어야 한다.
+            val streamTitle = MutableStateFlow<String?>("곡 1")
+            every { playerRepository.nowPlayingStation } returns MutableStateFlow(radioStationTestData)
+            every { playerRepository.isPlaying } returns MutableStateFlow(true)
+            every { playerRepository.streamTitle } returns streamTitle
+
+            reader.nowPlayingFlow().test {
+                awaitItem()
+                streamTitle.value = "곡 2"
+                expectNoEvents()
                 cancelAndIgnoreRemainingEvents()
             }
         }

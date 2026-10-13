@@ -25,6 +25,7 @@ import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.PlaybackFailure
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationStream
+import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.model.mapper.toDurationMillis
 import io.jacob.episodive.core.player.audio.PlaybackSpectrumMonitor
 import io.jacob.episodive.core.testing.model.episodeTestData
@@ -38,8 +39,10 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import io.mockk.verifyOrder
@@ -71,10 +74,14 @@ class PlayerDataSourceImplTest {
     private lateinit var dataSource: PlayerDataSourceImpl
 
     private val episode = episodeTestData
+    private val artworkBytes = byteArrayOf(1, 2, 3)
 
     @Before
     fun setUp() {
         mockkStatic(Uri::class)
+        // 이니셜 아트는 android.graphics 로 그려 JVM 테스트에서 돌 수 없다. 그리기 자체는 Robolectric 테스트가 본다.
+        mockkObject(StationArtworkRenderer)
+        every { StationArtworkRenderer.render(any(), any()) } returns artworkBytes
         // PlaybackException 이 생성 시각을 SystemClock 에서 읽는다.
         mockkStatic(SystemClock::class)
         every { SystemClock.elapsedRealtime() } returns 0L
@@ -91,6 +98,7 @@ class PlayerDataSourceImplTest {
         dataSource.release()
         unmockkStatic(Uri::class)
         unmockkStatic(SystemClock::class)
+        unmockkObject(StationArtworkRenderer)
     }
 
     // ---------------------------------------------------------------------
@@ -1986,6 +1994,42 @@ class PlayerDataSourceImplTest {
         assertEquals(null, metadata.artworkUri)
         assertEquals(true, metadata.isPlayable)
         assertEquals(MediaItem.ClippingConfiguration.UNSET, item.clippingConfiguration)
+    }
+
+    @Test
+    fun `Given station, When playStation called, Then item carries front cover artwork bytes`() {
+        val metadata = playStationAndCapture().mediaMetadata
+
+        assertEquals(artworkBytes.toList(), metadata.artworkData?.toList())
+        assertEquals(MediaMetadata.PICTURE_TYPE_FRONT_COVER, metadata.artworkDataType)
+    }
+
+    @Test
+    fun `Given same station played twice, When playStation called, Then artwork is rendered once`() {
+        playStationAndCapture()
+        playStationAndCapture()
+
+        verify(exactly = 1) { StationArtworkRenderer.render(station.art, any()) }
+    }
+
+    @Test
+    fun `Given prepared artwork, When playStation called, Then no render happens on the playing path`() = runTest {
+        dataSource.prepareStationArtwork(station)
+        verify(exactly = 1) { StationArtworkRenderer.render(station.art, any()) }
+
+        val metadata = playStationAndCapture().mediaMetadata
+
+        verify(exactly = 1) { StationArtworkRenderer.render(station.art, any()) }
+        assertEquals(artworkBytes.toList(), metadata.artworkData?.toList())
+    }
+
+    @Test
+    fun `Given two stations with the same art, When played, Then render is shared by art`() {
+        val sameArt = station.copy(id = "other-id")
+        playStationAndCapture()
+        dataSource.playStation(sameArt, hlsStream)
+
+        verify(exactly = 1) { StationArtworkRenderer.render(station.art, any()) }
     }
 
     @Test

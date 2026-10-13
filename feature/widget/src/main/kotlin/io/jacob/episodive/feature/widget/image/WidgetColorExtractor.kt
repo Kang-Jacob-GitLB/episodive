@@ -26,10 +26,11 @@ object WidgetColorExtractor {
      * Palette 추출은 한 번만 수행([backgroundColor])하고, 피드색은 그 결과에서 파생한다.
      * 호출부가 두 함수를 따로 엮을 필요 없이 한 패스로 두 색을 받는다.
      */
-    fun colors(bitmap: Bitmap?): WidgetBackground {
-        val background = backgroundColor(bitmap)
-        return WidgetBackground(background, feedBackgroundColor(background))
-    }
+    fun colors(bitmap: Bitmap?): WidgetBackground = fromColor(backgroundColor(bitmap))
+
+    /** 이미 정해진 배경색에서 피드 영역 색을 파생한다. 추출을 거치지 않는 경로(스테이션)가 쓴다. */
+    fun fromColor(background: Int): WidgetBackground =
+        WidgetBackground(background, feedBackgroundColor(background))
 
     fun backgroundColor(bitmap: Bitmap?): Int {
         if (bitmap == null) return FALLBACK
