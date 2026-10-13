@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +19,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +38,7 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.testing.model.radioStationTestData
+import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.StationArt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -58,6 +60,9 @@ fun StationBar(
 ) {
     val unplayableFormat = stringResource(R.string.feature_radio_unplayable_format)
     val unavailableFormat = stringResource(uiR.string.core_ui_station_unavailable_format)
+    val sleepTimerExpiredMessage = stringResource(uiR.string.core_ui_sleep_timer_expired)
+    // 수집은 한 번만 시작한다. 라우팅(시트 호스트/전역 호스트)이 바뀌어도 앞 콜백에 갇히지 않게 읽는 함수로 쥔다.
+    val currentOnShowSnackbar by rememberUpdatedState(onShowSnackbar)
 
     // 수집은 AnimatedVisibility 밖에 둔다. 감독자는 항목을 비운 뒤에 재생 불가를 알리므로, 이펙트는 바가
     // 사라지는 순간에 도착한다.
@@ -69,9 +74,10 @@ fun StationBar(
             val message = when (effect) {
                 is StationBarEffect.ShowUnplayable -> String.format(unplayableFormat, effect.station.name)
                 is StationBarEffect.ShowUnavailable -> String.format(unavailableFormat, effect.station.name)
+                is StationBarEffect.ShowSleepTimerExpired -> sleepTimerExpiredMessage
             }
             snackbar?.cancel()
-            snackbar = launch { onShowSnackbar(message, null) }
+            snackbar = launch { currentOnShowSnackbar(message, null) }
         }
     }
 
@@ -147,7 +153,7 @@ internal fun StationBarContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    LivePill()
+                    LiveBadge()
 
                     // ICY 제목이 없거나 비면 방송사를 보여 준다.
                     FadingEdgeText(
@@ -184,20 +190,6 @@ internal fun StationBarContent(
             )
         }
     }
-}
-
-@Composable
-private fun LivePill() {
-    Text(
-        modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.primary)
-            .padding(horizontal = 5.dp, vertical = 1.dp),
-        text = stringResource(uiR.string.core_ui_station_live),
-        style = MaterialTheme.typography.labelSmall,
-        color = Color.White,
-        maxLines = 1,
-    )
 }
 
 @DevicePreviews

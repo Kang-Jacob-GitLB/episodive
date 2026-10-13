@@ -10,4 +10,8 @@
     <!-- %1$s 는 방송 이름 -->
     <string name="feature_radio_unplayable_format">Lost connection to %1$s. Playback stopped.</string>
     <string name="feature_radio_stop">Stop</string>
+    <string name="feature_radio_previous">Previous station</string>
+    <string name="feature_radio_next">Next station</string>
+    <string name="feature_radio_station_list">All stations</string>
+    <string name="feature_radio_collapse">Collapse player</string>
 </resources>

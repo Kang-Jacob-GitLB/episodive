@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
+import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.LiveStreamSupervisor
 import io.jacob.episodive.core.domain.station.StationPlaybackController
@@ -30,6 +31,7 @@ class StationBarViewModel @Inject constructor(
     @param:Player(EpisodivePlayers.Main) private val playerRepository: PlayerRepository,
     supervisor: LiveStreamSupervisor,
     private val stationPlaybackController: StationPlaybackController,
+    sleepTimer: SleepTimer,
 ) : ViewModel() {
 
     // 스테이션 여부는 nowPlayingStation 하나로만 가른다. nowPlaying(에피소드)과 combine 하면 전환 순간
@@ -73,6 +75,15 @@ class StationBarViewModel @Inject constructor(
         viewModelScope.launch {
             stationPlaybackController.unavailable.collect { _effect.emit(StationBarEffect.ShowUnavailable(it)) }
         }
+        // 타이머는 앱 수명이라 에피소드 쪽 안내(PlayerBar)가 스테이션 재생 중에는 입을 닫는다. 대신 여기서 알린다.
+        // 스테이션이 올라 있을 때만 — 에피소드 재생 중 만료는 PlayerBar 가 이미 알린다.
+        viewModelScope.launch {
+            sleepTimer.expired.collect {
+                if (playerRepository.nowPlayingStation.first() != null) {
+                    _effect.emit(StationBarEffect.ShowSleepTimerExpired)
+                }
+            }
+        }
     }
 
     /**
@@ -109,4 +120,5 @@ sealed interface StationBarAction {
 sealed interface StationBarEffect {
     data class ShowUnplayable(val station: Station) : StationBarEffect
     data class ShowUnavailable(val station: Station) : StationBarEffect
+    data object ShowSleepTimerExpired : StationBarEffect
 }

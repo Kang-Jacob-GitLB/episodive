@@ -7,13 +7,7 @@
     <string name="feature_player_playback_speed">재생 속도</string>
     <string name="feature_player_show_more">더보기</string>
     <string name="feature_player_show_less">간단히</string>
-    <string name="feature_player_sleep_timer">슬립 타이머</string>
-    <string name="feature_player_sleep_timer_cancel">타이머 취소</string>
-    <string name="feature_player_sleep_timer_end_of_episode">에피소드 끝까지</string>
-    <string name="feature_player_sleep_timer_expired">슬립 타이머가 종료되었습니다</string>
     <string name="feature_player_deep_link_not_found">그 에피소드를 찾지 못했어요.</string>
-    <string name="feature_player_sleep_timer_minutes">%d분</string>
-    <string name="feature_player_sleep_timer_requires_playback">재생 중에만 슬립 타이머를 설정할 수 있습니다</string>
     <string name="feature_player_playlist_title">재생목록</string>
     <string name="feature_player_playlist_queue_count">%d개 대기 중</string>
     <string name="feature_player_caption_turn_on">자막 켜기</string>

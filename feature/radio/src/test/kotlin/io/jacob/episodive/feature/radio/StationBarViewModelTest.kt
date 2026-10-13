@@ -1,6 +1,7 @@
 package io.jacob.episodive.feature.radio
 
 import app.cash.turbine.test
+import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.LiveStreamSupervisor
 import io.jacob.episodive.core.domain.station.StationPlaybackController
@@ -34,6 +35,8 @@ class StationBarViewModelTest {
     private val isBuffering = MutableStateFlow(false)
     private val unplayable = MutableSharedFlow<Station>(extraBufferCapacity = 1)
     private val unavailable = MutableSharedFlow<Station>(extraBufferCapacity = 1)
+    private val sleepTimer = mockk<SleepTimer>()
+    private val sleepTimerExpired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     private fun createViewModel(): StationBarViewModel {
         every { playerRepository.nowPlayingStation } returns nowPlayingStation
@@ -42,7 +45,8 @@ class StationBarViewModelTest {
         every { playerRepository.isBuffering } returns isBuffering
         every { supervisor.unplayable } returns unplayable
         every { stationPlaybackController.unavailable } returns unavailable
-        return StationBarViewModel(playerRepository, supervisor, stationPlaybackController)
+        every { sleepTimer.expired } returns sleepTimerExpired
+        return StationBarViewModel(playerRepository, supervisor, stationPlaybackController, sleepTimer)
     }
 
     @Test
@@ -117,6 +121,30 @@ class StationBarViewModelTest {
             unavailable.emit(radioStationTestData)
 
             assertEquals(StationBarEffect.ShowUnavailable(radioStationTestData), awaitItem())
+        }
+    }
+
+    @Test
+    fun `Given 스테이션 재생 중 타이머 만료, Then ShowSleepTimerExpired 이펙트`() = runTest {
+        nowPlayingStation.value = radioStationTestData
+        val viewModel = createViewModel()
+
+        viewModel.effect.test {
+            sleepTimerExpired.emit(Unit)
+
+            assertEquals(StationBarEffect.ShowSleepTimerExpired, awaitItem())
+        }
+    }
+
+    @Test
+    fun `Given 스테이션이 없을 때 타이머 만료, Then 이펙트가 없다`() = runTest {
+        // 에피소드 재생 중의 만료는 PlayerBar 가 알린다. 여기서도 알리면 스낵바가 두 번 뜬다.
+        val viewModel = createViewModel()
+
+        viewModel.effect.test {
+            sleepTimerExpired.emit(Unit)
+
+            expectNoEvents()
         }
     }
 
