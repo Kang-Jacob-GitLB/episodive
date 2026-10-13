@@ -52,6 +52,7 @@ class PlayerScreenTest {
         nowPlaying: Episode = episodeTestData,
         progress: Progress = Progress(1000.seconds, 2000.seconds, 6000.seconds),
         isPlaying: Boolean = true,
+        isLive: Boolean = false,
         chapters: List<Chapter> = defaultChapters,
         playlist: List<Episode> = episodeTestDataList,
         indexOfList: Int = 0,
@@ -85,6 +86,7 @@ class PlayerScreenTest {
                     nowPlaying = nowPlaying,
                     progress = progress,
                     isPlaying = isPlaying,
+                    isLive = isLive,
                     onCollapse = onCollapse,
                     onToggleLike = onToggleLike,
                     onShare = onShare,
@@ -186,6 +188,43 @@ class PlayerScreenTest {
         setPlayerScreen()
 
         composeTestRule.onNodeWithText("16:40", substring = true).assertExists()
+    }
+
+    @Test
+    fun live_showsLiveIndicatorInsteadOfSeekerAndTimes() {
+        setPlayerScreen(isLive = true)
+
+        composeTestRule.onNodeWithText("LIVE").assertExists()
+        composeTestRule.onNodeWithText("On air").assertExists()
+        composeTestRule.onNodeWithText("16:40", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun live_hidesSeekSpeedAndDownloadControls() {
+        setPlayerScreen(isLive = true)
+
+        composeTestRule.onNodeWithContentDescription("Replay").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Forward").assertDoesNotExist()
+        composeTestRule.onNodeWithText("1x").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Save").assertDoesNotExist()
+        // 이전·다음·목록은 라이브에서도 쓴다.
+        composeTestRule.onNodeWithContentDescription("Previous").assertExists()
+        composeTestRule.onNodeWithContentDescription("Next").assertExists()
+        composeTestRule.onNodeWithContentDescription("List").assertExists()
+    }
+
+    @Test
+    fun live_hidesChapterSection() {
+        setPlayerScreen(isLive = true)
+
+        composeTestRule.onNodeWithText("Chapter 1", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun notLive_hasNoLiveIndicator() {
+        setPlayerScreen()
+
+        composeTestRule.onNodeWithText("On air").assertDoesNotExist()
     }
 
     @Test

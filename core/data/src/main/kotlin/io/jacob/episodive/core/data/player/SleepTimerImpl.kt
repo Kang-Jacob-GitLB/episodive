@@ -76,6 +76,8 @@ class SleepTimerImpl(
                 val current = playerRepository.progress.first()
                 val startEpisodeId = current.episodeId ?: return@launch
                 if (current.duration.inWholeMilliseconds <= 0) return@launch
+                // HLS 라이브의 duration 은 DVR 창 길이라 양수다. 끝이 없으니 "에피소드 끝까지" 는 성립하지 않는다.
+                if (playerRepository.liveEpisodeId.first() == startEpisodeId) return@launch
 
                 var timerExpired = false
                 playerRepository.progress.takeWhile { progress ->

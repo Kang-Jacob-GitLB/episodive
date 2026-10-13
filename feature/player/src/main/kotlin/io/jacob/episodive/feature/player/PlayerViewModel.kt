@@ -117,13 +117,14 @@ class PlayerViewModel @Inject constructor(
         getPlaylistUseCase(),
         playerRepository.indexOfList,
         playerRepository.progress,
-        // combine 이 10-arity 까지라 재생 여부와 준비 여부를 한 칸에 묶는다.
+        // 재생 여부와 준비 여부는 한 칸에 묶는다(combineTyped 는 11-arity 까지다).
         combine(playerRepository.isPlaying, playerRepository.isBuffering, ::Pair),
         playerRepository.speed,
         chapters,
         playerRepository.cue,
         sleepTimer.remainingMs,
-    ) { podcast, nowPlaying, playlist, indexOfList, progress, (isPlaying, isBuffering), speed, chapters, cue, sleepTimerRemainingMs ->
+        playerRepository.liveEpisodeId,
+    ) { podcast, nowPlaying, playlist, indexOfList, progress, (isPlaying, isBuffering), speed, chapters, cue, sleepTimerRemainingMs, liveEpisodeId ->
         if (podcast != null && nowPlaying != null) {
             PlayerState.Success(
                 podcast = podcast,
@@ -137,6 +138,7 @@ class PlayerViewModel @Inject constructor(
                 chapters = chapters,
                 cue = cue,
                 sleepTimerRemainingMs = sleepTimerRemainingMs,
+                liveEpisodeId = liveEpisodeId,
             ) as PlayerState
         } else {
             PlayerState.Error("podcast or nowPlaying is null")
@@ -150,7 +152,7 @@ class PlayerViewModel @Inject constructor(
         initialValue = PlayerState.Loading
     )
 
-    // state(10-arity combine)에 끼우지 않는다 — PlayerBar 는 state 를 늘 수집하는데(미니바만
+    // state(11-arity combine)에 끼우지 않는다 — PlayerBar 는 state 를 늘 수집하는데(미니바만
     // 보여도) 여기에 자막을 섞으면 시트가 닫혀 있어도 인식이 계속 돈다. PlayerBottomSheet 만
     // 이 StateFlow 를 수집한다.
     val caption: StateFlow<LiveCaptionState> = observeLiveCaptionUseCase()
@@ -500,7 +502,12 @@ sealed interface PlayerState {
         val chapters: List<Chapter>,
         val cue: String,
         val sleepTimerRemainingMs: Long? = null,
-    ) : PlayerState
+        /** 플레이어가 라이브로 판명한 에피소드 id. 전환 직후엔 이전 에피소드 값이 남을 수 있다. */
+        val liveEpisodeId: Long? = null,
+    ) : PlayerState {
+        /** 지금 보이는 에피소드가 라이브인가. id 가 다르면 이전 에피소드의 판정이라 일반 화면이다. */
+        val isLive: Boolean get() = liveEpisodeId != null && liveEpisodeId == nowPlaying.id
+    }
 
     data class Error(val message: String) : PlayerState
 }

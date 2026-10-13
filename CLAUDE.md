@@ -236,7 +236,7 @@ Room 왕복과 `flowOn(IO)` 를 거쳐 `progress` 보다 늦게 도착한다. �
   (`CaptionTextNormalizer`).
 - **`decodingMethod` 는 `greedy_search` 로 고정한다.** 긴 줄 강제 확정(`CaptionLineTracker`)은
   "이미 낸 토큰은 바뀌지 않는다" 에 기댄다. beam search 는 앞 토큰을 고친다.
-- **자막 StateFlow(`PlayerViewModel.caption`)는 플레이어 시트만 수집한다.** 10-arity `state` 에
+- **자막 StateFlow(`PlayerViewModel.caption`)는 플레이어 시트만 수집한다.** 11-arity `state` 에
   끼우지 마라 — `PlayerBar` 가 `state` 를 늘 수집하므로 미니바만 보여도 인식이 돈다. 시트가
   닫히면 `WhileSubscribed(5s)` 뒤 세션이 끝나고, `RecognizerCache` 가 30초 뒤 인식기(수백 MB)를
   놓는다.

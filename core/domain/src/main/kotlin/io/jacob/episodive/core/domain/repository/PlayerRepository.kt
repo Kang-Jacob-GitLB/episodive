@@ -82,6 +82,9 @@ interface PlayerRepository {
     /** 지금 올라 있는 스테이션. [nowPlaying] 과 배타이며, 둘을 combine 해 판별하지 말 것. */
     val nowPlayingStation: Flow<Station?>
 
+    /** 라이브로 판명된 현재 에피소드의 id. 판명 전이거나 라이브가 아니면 null. */
+    val liveEpisodeId: Flow<Long?>
+
     /** 스트림이 싣고 오는 "지금 나오는 곡" 정보. 스테이션이 아니거나 항목이 바뀌면 null. */
     val streamTitle: Flow<String?>
 
