@@ -16,5 +16,6 @@
     <string name="feature_radio_collapse">플레이어 접기</string>
     <!-- %1$d 는 kbps 단위 비트레이트 -->
     <string name="feature_radio_info_bitrate_format">%1$dkbps</string>
+    <string name="feature_radio_info_open_homepage">웹사이트 열기</string>
     <string name="feature_radio_info_source">Radio Browser 제공</string>
 </resources>

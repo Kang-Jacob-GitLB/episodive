@@ -91,15 +91,17 @@ class StationPlayerViewModel @Inject constructor(
 
     /**
      * 표시 중인 스테이션의 부가 정보. `state` 와 따로 둔다 — 네트워크로 받는 값이라 `Active` 에 넣으면 재생 상태가
-     * 바뀔 때마다 얽히고, 늦게 와도 시트를 막지 않아야 한다. 스테이션이 바뀌면 이전 값을 먼저 비운다. 늦게 도착한
-     * 이전 스테이션의 상세가 새 스테이션 밑에 남으면 안 된다(transformLatest 가 이전 요청도 취소한다).
+     * 바뀔 때마다 얽히고, 늦게 와도 시트를 막지 않아야 한다.
+     *
+     * 값에 스테이션 id 를 싣는다. 스테이션이 바뀌어도 값을 비우지 않고(비우면 시트 안 정보 영역이 사라졌다
+     * 돌아와 스크롤이 튄다) 화면이 id 로 자기 차례인지 가른다 — 늦게 오는 이전 스테이션 상세는 그려지지 않는다.
+     * transformLatest 가 이전 요청도 취소한다.
      */
-    val details: StateFlow<StationDetails?> = state
+    val details: StateFlow<StationDetailsOf?> = state
         .map { (it as? StationPlayerState.Active)?.station?.id }
         .distinctUntilChanged()
         .transformLatest { stationId ->
-            emit(null)
-            if (stationId != null) emit(getStationDetailsUseCase(stationId))
+            if (stationId != null) emit(StationDetailsOf(stationId, getStationDetailsUseCase(stationId)))
         }
         .stateIn(
             scope = viewModelScope,
@@ -185,6 +187,12 @@ sealed interface StationPlayerState {
         val sleepTimerRemainingMs: Long?,
     ) : StationPlayerState
 }
+
+/** [details] 가 어느 스테이션의 것인지 함께 싣는다. null 은 받지 못했거나 쓸 만한 값이 없다는 뜻이다. */
+data class StationDetailsOf(
+    val stationId: String,
+    val details: StationDetails?,
+)
 
 sealed interface StationPlayerAction {
     data object PlayOrPause : StationPlayerAction

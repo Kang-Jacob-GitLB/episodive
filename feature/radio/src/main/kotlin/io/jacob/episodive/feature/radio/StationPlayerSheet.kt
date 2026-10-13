@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -181,7 +182,7 @@ fun StationPlayerSheet(
 internal fun StationPlayerScreen(
     state: StationPlayerState.Active,
     modifier: Modifier = Modifier,
-    details: StationDetails? = null,
+    details: StationDetailsOf? = null,
     onCollapse: () -> Unit = {},
     onPlayOrPause: () -> Unit = {},
     onPrevious: () -> Unit = {},
@@ -353,14 +354,17 @@ internal fun StationPlayerScreen(
             }
         }
 
-        if (details != null) {
-            item {
+        // 항목 자리는 늘 둔다. 있다 없다 하면 위로 스크롤해 둔 채 이전/다음을 눌렀을 때 목록이 튄다.
+        // 내용은 지금 보이는 스테이션의 상세일 때만 그린다.
+        item {
+            val shown = details?.takeIf { it.stationId == station.id }?.details
+            if (shown != null) {
                 StationInfoSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = dimension.screenPadding)
                         .padding(top = 8.dp, bottom = systemBarsPadding.calculateBottomPadding() + 32.dp),
-                    details = details,
+                    details = shown,
                 )
             }
         }
@@ -594,7 +598,11 @@ internal fun StationInfoSection(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(role = Role.Button) {
+                    .heightIn(min = 48.dp)
+                    .clickable(
+                        onClickLabel = stringResource(R.string.feature_radio_info_open_homepage),
+                        role = Role.Button,
+                    ) {
                         // 열 브라우저가 없는 기기에서 던진다. 부가 정보 때문에 앱이 죽으면 안 된다.
                         runCatching { uriHandler.openUri(homepage) }
                     }
@@ -654,9 +662,11 @@ internal fun StationInfoSection(
     }
 }
 
+private val DisplayHostPrefix = Regex("^(https?://)?(www\\.)?", RegexOption.IGNORE_CASE)
+
 /** 주소 줄에는 스킴과 `www.` 를 떼고 보인다. 열 때는 원래 주소를 그대로 쓴다. */
 private fun String.toDisplayHost(): String {
-    return removePrefix("https://").removePrefix("http://").removePrefix("www.").trimEnd('/')
+    return replace(DisplayHostPrefix, "").trimEnd('/')
 }
 
 @DevicePreviews
@@ -675,7 +685,7 @@ private fun StationPlayerScreenPreview() {
                 next = regionalRadioStationTestData,
                 sleepTimerRemainingMs = null,
             ),
-            details = stationDetailsTestData,
+            details = StationDetailsOf(radioStationTestData.id, stationDetailsTestData),
         )
     }
 }

@@ -2,7 +2,7 @@ package io.jacob.episodive.core.data.radio
 
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.network.model.StationDetailsResponse
-import java.net.URI
+import java.net.URL
 
 private const val MAX_TAGS = 5
 private val VALID_BITRATE_KBPS = 1..512
@@ -37,11 +37,19 @@ internal fun mergeStationDetails(
     return StationDetails(homepage = homepage, tags = tags, codec = codec, bitrateKbps = bitrate)
 }
 
+/**
+ * http/https 주소만 통과시키고 스킴은 소문자로 바로잡는다. `ACTION_VIEW` 는 스킴을 대소문자 구분해 맞추므로
+ * "HTTP://x" 를 그대로 넘기면 열 앱이 없어 아무 일도 일어나지 않는다.
+ *
+ * 파싱은 `java.net.URL` 로 한다. `URI` 는 공백·한글 경로를 거부해 멀쩡한 주소를 버린다. `URL` 은 모르는
+ * 스킴(`javascript:`·`intent:`)을 프로토콜 단계에서 던지므로 차단은 그대로다. 공백만 `%20` 으로 바꾼다.
+ */
 private fun String?.toWebUrlOrNull(): String? {
     val value = this?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-    val uri = runCatching { URI(value) }.getOrNull() ?: return null
-    val scheme = uri.scheme?.lowercase()
-    return value.takeIf { (scheme == "http" || scheme == "https") && !uri.host.isNullOrEmpty() }
+    val url = runCatching { URL(value) }.getOrNull() ?: return null
+    val scheme = url.protocol.lowercase()
+    if ((scheme != "http" && scheme != "https") || url.host.isNullOrEmpty()) return null
+    return scheme + value.substring(value.indexOf(':')).replace(" ", "%20")
 }
 
 private fun String?.toDisplayTags(): List<String> {

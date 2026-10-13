@@ -274,11 +274,11 @@ class StationPlayerViewModelTest {
         val viewModel = createViewModel()
         val job = launchCollectDetails(viewModel)
 
-        assertEquals(stationDetailsTestData, viewModel.details.value)
+        assertEquals(StationDetailsOf(a.id, stationDetailsTestData), viewModel.details.value)
 
         pendingStationId.value = b.id
 
-        assertEquals(codecOnlyStationDetailsTestData, viewModel.details.value)
+        assertEquals(StationDetailsOf(b.id, codecOnlyStationDetailsTestData), viewModel.details.value)
         job.cancel()
     }
 
@@ -289,7 +289,7 @@ class StationPlayerViewModelTest {
         val viewModel = createViewModel()
         val job = launchCollectDetails(viewModel)
 
-        assertNull(viewModel.details.value)
+        assertEquals(StationDetailsOf(a.id, null), viewModel.details.value)
         job.cancel()
     }
 

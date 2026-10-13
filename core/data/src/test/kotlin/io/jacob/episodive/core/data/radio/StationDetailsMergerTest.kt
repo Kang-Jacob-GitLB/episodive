@@ -120,9 +120,29 @@ class StationDetailsMergerTest {
             "http://kbs.example.com/radio",
             mergeStationDetails(priority, listOf(response("a", homepage = " http://kbs.example.com/radio ")))!!.homepage,
         )
+    }
+
+    @Test
+    fun `Given uppercase scheme, When merge, Then scheme is lowercased`() {
         assertEquals(
-            "HTTPS://Example.com",
-            mergeStationDetails(priority, listOf(response("a", homepage = "HTTPS://Example.com")))!!.homepage,
+            "https://Example.com/Path",
+            mergeStationDetails(priority, listOf(response("a", homepage = "HTTPS://Example.com/Path")))!!.homepage,
+        )
+        assertEquals(
+            "http://x.example.com",
+            mergeStationDetails(priority, listOf(response("a", homepage = "HTTP://x.example.com")))!!.homepage,
+        )
+    }
+
+    @Test
+    fun `Given korean path or space, When merge, Then kept with space escaped`() {
+        assertEquals(
+            "https://radio.example.com/한글/방송",
+            mergeStationDetails(priority, listOf(response("a", homepage = "https://radio.example.com/한글/방송")))!!.homepage,
+        )
+        assertEquals(
+            "https://radio.example.com/my%20page",
+            mergeStationDetails(priority, listOf(response("a", homepage = "https://radio.example.com/my page")))!!.homepage,
         )
     }
 
