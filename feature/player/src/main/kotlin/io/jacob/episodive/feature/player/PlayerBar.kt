@@ -164,7 +164,8 @@ fun PlayerBar(
                 }
 
                 is PlayerEffect.SleepTimerExpired -> {
-                    if (!isShowPlayer) {
+                    // 타이머가 앱 수명이라 스테이션 재생 중 만료도 여기로 온다. 그 안내는 StationBar 가 띄운다.
+                    if (!isShowPlayer && !suppressed) {
                         onShowSnackbar(sleepTimerExpiredMessage, null)
                     }
                 }

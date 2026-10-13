@@ -7,6 +7,7 @@ import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.common.TimeProvider
 import io.jacob.episodive.core.common.combine as combineTyped
+import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.caption.CaptionToggleResult
 import io.jacob.episodive.core.domain.usecase.caption.ObserveCaptionDownloadFailuresUseCase
@@ -38,10 +39,7 @@ import io.jacob.episodive.core.model.caption.LiveCaptionState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -85,6 +83,7 @@ class PlayerViewModel @Inject constructor(
     observeLiveCaptionUseCase: ObserveLiveCaptionUseCase,
     private val toggleCaptionUseCase: ToggleCaptionUseCase,
     observeCaptionDownloadFailuresUseCase: ObserveCaptionDownloadFailuresUseCase,
+    private val sleepTimer: SleepTimer,
 ) : ViewModel() {
     private val nowPlaying = getNowPlayingUseCase()
         .stateIn(
@@ -112,9 +111,6 @@ class PlayerViewModel @Inject constructor(
      */
     private var restoreLastPlayJob: Job? = null
 
-    private var sleepTimerJob: Job? = null
-    private val _sleepTimerRemainingMs = MutableStateFlow<Long?>(null)
-
     val state: StateFlow<PlayerState> = combineTyped(
         podcast,
         nowPlaying,
@@ -126,7 +122,7 @@ class PlayerViewModel @Inject constructor(
         playerRepository.speed,
         chapters,
         playerRepository.cue,
-        _sleepTimerRemainingMs,
+        sleepTimer.remainingMs,
     ) { podcast, nowPlaying, playlist, indexOfList, progress, (isPlaying, isBuffering), speed, chapters, cue, sleepTimerRemainingMs ->
         if (podcast != null && nowPlaying != null) {
             PlayerState.Success(
@@ -281,6 +277,10 @@ class PlayerViewModel @Inject constructor(
                 .onEach { refreshEpisodeDescriptionUseCase(it) }
                 .catch { Timber.w(it, "설명 보강 스트림이 끊겼다") }
                 .collect { }
+        }
+        // 만료 알림은 타이머가 앱 수명이라 여기서 받아 Effect 로 흘린다.
+        viewModelScope.launch {
+            sleepTimer.expired.collect { _effect.emit(PlayerEffect.SleepTimerExpired) }
         }
         // 자막 모델 다운로드/로드 실패는 caption StateFlow 에 담기지 않는 일회성 이벤트라
         // 여기서 직접 수집해 Effect 로 흘려보낸다.
@@ -458,74 +458,15 @@ class PlayerViewModel @Inject constructor(
     }
 
     private fun startSleepTimer(durationMs: Long) {
-        sleepTimerJob?.cancel()
-        sleepTimerJob = viewModelScope.launch {
-            try {
-                playerRepository.setVolume(1f)
-                _sleepTimerRemainingMs.value = durationMs
-                val endTime = timeProvider.currentTimeMillis() + durationMs
-                while (isActive) {
-                    val remaining = endTime - timeProvider.currentTimeMillis()
-                    if (remaining <= 0) {
-                        playerRepository.setVolume(0f)
-                        playerRepository.pause()
-                        _effect.emit(PlayerEffect.SleepTimerExpired)
-                        break
-                    }
-                    if (remaining <= FADE_OUT_DURATION_MS) {
-                        val volume = remaining.toFloat() / FADE_OUT_DURATION_MS
-                        playerRepository.setVolume(volume)
-                    }
-                    _sleepTimerRemainingMs.value = remaining
-                    delay(1000)
-                }
-            } finally {
-                playerRepository.setVolume(1f)
-                _sleepTimerRemainingMs.value = null
-            }
-        }
+        sleepTimer.start(durationMs)
     }
 
     private fun startEndOfEpisodeTimer() {
-        sleepTimerJob?.cancel()
-        sleepTimerJob = viewModelScope.launch {
-            try {
-                playerRepository.setVolume(1f)
-                // 여기서도 에피소드 판별을 progress 안의 episodeId 로 한다.
-                // DB 파생 nowPlaying 과 섞으면 전환 시점에 타이머가 엉뚱한 에피소드를 기준으로 돈다.
-                val current = playerRepository.progress.first()
-                val startEpisodeId = current.episodeId ?: return@launch
-                if (current.duration.inWholeMilliseconds <= 0) return@launch
-
-                var timerExpired = false
-                playerRepository.progress.takeWhile { progress ->
-                    val remaining = progress.duration.inWholeMilliseconds - progress.position.inWholeMilliseconds
-                    if (progress.episodeId != startEpisodeId) return@takeWhile false
-                    _sleepTimerRemainingMs.value = remaining.coerceAtLeast(0)
-                    if (remaining <= FADE_OUT_DURATION_MS) {
-                        val volume = remaining.toFloat() / FADE_OUT_DURATION_MS
-                        playerRepository.setVolume(volume.coerceIn(0f, 1f))
-                    }
-                    val shouldContinue = remaining > 500
-                    if (!shouldContinue) timerExpired = true
-                    shouldContinue
-                }.collect {}
-
-                if (timerExpired) {
-                    playerRepository.setVolume(0f)
-                    playerRepository.pause()
-                    _effect.emit(PlayerEffect.SleepTimerExpired)
-                }
-            } finally {
-                playerRepository.setVolume(1f)
-                _sleepTimerRemainingMs.value = null
-            }
-        }
+        sleepTimer.startEndOfEpisode()
     }
 
     private fun cancelSleepTimer() {
-        sleepTimerJob?.cancel()
-        sleepTimerJob = null
+        sleepTimer.cancel()
     }
 
     /** 컨트롤 바 자막 토글 버튼. 판정은 토글 상태표(설계 문서)를 그대로 따르는 유스케이스가 한다. */
@@ -541,10 +482,6 @@ class PlayerViewModel @Inject constructor(
             CaptionToggleResult.Disabled,
             CaptionToggleResult.DownloadCancelled -> {}
         }
-    }
-
-    companion object {
-        internal const val FADE_OUT_DURATION_MS = 15_000L
     }
 }
 

@@ -2,6 +2,7 @@ package io.jacob.episodive.feature.player
 
 import app.cash.turbine.test
 import io.jacob.episodive.core.common.TimeProvider
+import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.usecase.caption.CaptionToggleResult
 import io.jacob.episodive.core.domain.usecase.caption.ObserveCaptionDownloadFailuresUseCase
@@ -83,6 +84,8 @@ class PlayerViewModelTest {
     private val observeLiveCaptionUseCase = mockk<ObserveLiveCaptionUseCase>(relaxed = true)
     private val toggleCaptionUseCase = mockk<ToggleCaptionUseCase>(relaxed = true)
     private val observeCaptionDownloadFailuresUseCase = mockk<ObserveCaptionDownloadFailuresUseCase>(relaxed = true)
+    private val sleepTimer = mockk<SleepTimer>(relaxed = true)
+    private val sleepTimerExpired = MutableSharedFlow<Unit>()
 
     private val progressFlow = MutableStateFlow(Progress(0.seconds, 0.seconds, 0.seconds))
     private val isPlayingFlow = MutableStateFlow(false)
@@ -109,6 +112,8 @@ class PlayerViewModelTest {
         // 개별 caption 테스트는 필요한 mock 을 각자 다시 stub 한다.
         every { observeLiveCaptionUseCase() } returns flowOf(LiveCaptionState.Initial)
         every { observeCaptionDownloadFailuresUseCase() } returns MutableSharedFlow()
+        every { sleepTimer.remainingMs } returns MutableStateFlow(null)
+        every { sleepTimer.expired } returns sleepTimerExpired
     }
 
     private fun setupDefaultMocks() {
@@ -143,6 +148,7 @@ class PlayerViewModelTest {
             observeLiveCaptionUseCase = observeLiveCaptionUseCase,
             toggleCaptionUseCase = toggleCaptionUseCase,
             observeCaptionDownloadFailuresUseCase = observeCaptionDownloadFailuresUseCase,
+            sleepTimer = sleepTimer,
         ).also { viewModelInstance = it }
     }
 
@@ -830,119 +836,48 @@ class PlayerViewModelTest {
         }
 
     // --- Sleep Timer Tests ---
+    // 타이머 로직 자체는 SleepTimerImplTest 가 검증한다. 여기서는 위임과 만료 이펙트만 본다.
 
     @Test
-    fun `Given end of episode timer running, When progress moves to another episode, Then timer stops without pausing`() =
-        runTest {
-            // 타이머의 에피소드 판별도 progress.episodeId 로 한다. nowPlaying 은 DB 왕복 탓에
-            // 전환 후에도 한동안 이전 에피소드로 남아 있어서, 그것으로 판별하면 타이머가
-            // 이미 넘어간 에피소드를 기준으로 계속 돌며 엉뚱한 시점에 재생을 멈춘다.
-            // 판별을 nowPlaying 으로 되돌리면 이 테스트가 실패한다.
-            setupDefaultMocks()
-            val episodeA = episodeTestDataList[0]
-            val episodeB = episodeTestDataList[1]
-            // nowPlaying 은 A 로 고정한다 — 전환이 progress 에만 먼저 반영된 상태를 재현한다.
-            nowPlayingFlow.value = episodeA
-            every { getNowPlayingUseCase() } returns flowOf(episodeA)
-            progressFlow.value = Progress(10.seconds, 10.seconds, 600.seconds, episodeId = episodeA.id)
+    fun `Given SetSleepTimer action, Then 타이머에 시간을 넘긴다`() = runTest {
+        setupDefaultMocks()
+        val viewModel = createViewModel()
 
-            val viewModel = createViewModel()
-            viewModel.sendAction(PlayerAction.SleepTimerEndOfEpisode)
+        viewModel.sendAction(PlayerAction.SetSleepTimer(60_000L))
 
-            // 아직 A 를 재생 중이므로 타이머가 살아 있다.
-            progressFlow.value = Progress(20.seconds, 20.seconds, 600.seconds, episodeId = episodeA.id)
-            verify(exactly = 0) { playerRepository.pause() }
-
-            // B 로 넘어가면 타이머는 중단돼야 한다.
-            // 남은 시간을 **0 으로** 주는 것이 중요하다. 만료 조건(remaining <= 500)을 넘기지 않으면
-            // 판별을 무엇으로 하든 pause() 가 불리지 않아 이 테스트가 아무것도 잡지 못한다.
-            //
-            // 다만 이 테스트는 "판별을 nowPlaying 으로 되돌리면 실패한다"를 보이지는 못한다.
-            // nowPlaying 은 stateIn(WhileSubscribed) 이라 이 테스트에서 값이 흐르지 않고,
-            // 옛 구현도 null 비교로 조기 중단되기 때문이다(실측 확인).
-            // 잡아내는 것은 "에피소드 판별을 아예 없애는" 회귀다.
-            progressFlow.value = Progress(600.seconds, 600.seconds, 600.seconds, episodeId = episodeB.id)
-
-            verify(exactly = 0) { playerRepository.pause() }
-        }
+        verify { sleepTimer.start(60_000L) }
+    }
 
     @Test
-    fun `Given SetSleepTimer action, When timer expires, Then pause is called and SleepTimerExpired effect is emitted`() =
-        runTest {
-            setupDefaultMocks()
-            every { timeProvider.currentTimeMillis() } returnsMany listOf(0L, 60_001L)
+    fun `Given SleepTimerEndOfEpisode action, Then 에피소드 끝 타이머를 시작한다`() = runTest {
+        setupDefaultMocks()
+        val viewModel = createViewModel()
 
-            val viewModel = createViewModel()
+        viewModel.sendAction(PlayerAction.SleepTimerEndOfEpisode)
 
-            viewModel.effect.test {
-                viewModel.sendAction(PlayerAction.SetSleepTimer(60_000L))
-                assertEquals(PlayerEffect.SleepTimerExpired, awaitItem())
-            }
-
-            verify { playerRepository.pause() }
-        }
+        verify { sleepTimer.startEndOfEpisode() }
+    }
 
     @Test
-    fun `Given SetSleepTimer action, When timer expires, Then volume is restored to 1f`() =
-        runTest {
-            setupDefaultMocks()
-            every { timeProvider.currentTimeMillis() } returnsMany listOf(0L, 60_001L)
+    fun `Given CancelSleepTimer action, Then 타이머를 취소한다`() = runTest {
+        setupDefaultMocks()
+        val viewModel = createViewModel()
 
-            val viewModel = createViewModel()
+        viewModel.sendAction(PlayerAction.CancelSleepTimer)
 
-            viewModel.sendAction(PlayerAction.SetSleepTimer(60_000L))
-
-            // finally block restores volume after expiry
-            verify { playerRepository.setVolume(0f) }  // fade to 0 at expiry
-            verify(atLeast = 1) { playerRepository.setVolume(1f) }  // restored in finally
-        }
+        verify { sleepTimer.cancel() }
+    }
 
     @Test
-    fun `Given CancelSleepTimer action, When no timer is active, Then no crash occurs`() =
-        runTest {
-            setupDefaultMocks()
-            val viewModel = createViewModel()
+    fun `Given 타이머가 만료되면, Then SleepTimerExpired effect 를 내보낸다`() = runTest {
+        setupDefaultMocks()
+        val viewModel = createViewModel()
 
-            viewModel.sendAction(PlayerAction.CancelSleepTimer)
-
-            // Should not crash; verify no pause called
-            verify(exactly = 0) { playerRepository.pause() }
+        viewModel.effect.test {
+            sleepTimerExpired.emit(Unit)
+            assertEquals(PlayerEffect.SleepTimerExpired, awaitItem())
         }
-
-    @Test
-    fun `Given two sequential SetSleepTimer actions, When both expire immediately, Then each triggers pause`() =
-        runTest {
-            setupDefaultMocks()
-            // With UnconfinedTestDispatcher, each timer expires instantly via mocked time
-            every { timeProvider.currentTimeMillis() } returnsMany listOf(
-                0L, 60_001L,       // first timer: start → expire
-                0L, 30_001L,       // second timer: start → expire
-            )
-
-            val viewModel = createViewModel()
-
-            viewModel.sendAction(PlayerAction.SetSleepTimer(60_000L))
-            viewModel.sendAction(PlayerAction.SetSleepTimer(30_000L))
-
-            verify(exactly = 2) { playerRepository.pause() }
-        }
-
-    @Test
-    fun `Given SleepTimerEndOfEpisode action with live stream, When duration is zero, Then no timer starts`() =
-        runTest {
-            setupDefaultMocks()
-            nowPlayingFlow.value = episodeTestData
-            // episodeId 를 채워서 조기 return(episodeId == null) 이 아니라
-            // duration == 0(라이브 스트림) 때문에 타이머가 뜨지 않는 경로를 실제로 검증한다.
-            progressFlow.value = Progress(0.seconds, 0.seconds, 0.seconds, episodeId = episodeTestData.id)
-
-            val viewModel = createViewModel()
-
-            viewModel.sendAction(PlayerAction.SleepTimerEndOfEpisode)
-
-            // No pause should be called for live stream (duration = 0)
-            verify(exactly = 0) { playerRepository.pause() }
-        }
+    }
 
     // --- Episode Description Refresh Tests ---
 

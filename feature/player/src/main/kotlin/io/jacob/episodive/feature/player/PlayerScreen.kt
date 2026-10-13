@@ -111,6 +111,7 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
+import io.jacob.episodive.core.model.SLEEP_TIMER_FADE_OUT_MS
 import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
 import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.model.coverUrl
@@ -983,8 +984,8 @@ private fun ControlPanelBottom(
                     icon = {
                         val moonTint = when {
                             sleepTimerRemainingMs == null -> MaterialTheme.colorScheme.onSurfaceVariant
-                            sleepTimerRemainingMs <= PlayerViewModel.FADE_OUT_DURATION_MS -> {
-                                val fraction = sleepTimerRemainingMs / PlayerViewModel.FADE_OUT_DURATION_MS.toFloat()
+                            sleepTimerRemainingMs <= SLEEP_TIMER_FADE_OUT_MS -> {
+                                val fraction = sleepTimerRemainingMs / SLEEP_TIMER_FADE_OUT_MS.toFloat()
                                 lerp(
                                     MaterialTheme.colorScheme.onSurfaceVariant,
                                     MaterialTheme.colorScheme.primary,
@@ -1472,8 +1473,8 @@ private fun SleepTimerSheet(
                 val seconds = (displayMs / 1000) % 60
                 val timerColor = when {
                     !isActive -> MaterialTheme.colorScheme.onSurface
-                    displayMs <= PlayerViewModel.FADE_OUT_DURATION_MS -> {
-                        val fraction = displayMs / PlayerViewModel.FADE_OUT_DURATION_MS.toFloat()
+                    displayMs <= SLEEP_TIMER_FADE_OUT_MS -> {
+                        val fraction = displayMs / SLEEP_TIMER_FADE_OUT_MS.toFloat()
                         lerp(
                             MaterialTheme.colorScheme.onSurface,
                             MaterialTheme.colorScheme.primary,
