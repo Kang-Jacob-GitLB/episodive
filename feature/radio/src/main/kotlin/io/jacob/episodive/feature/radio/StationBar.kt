@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +36,7 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.testing.model.radioStationTestData
+import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.StationArt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -147,7 +147,7 @@ internal fun StationBarContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    LivePill()
+                    LiveBadge()
 
                     // ICY 제목이 없거나 비면 방송사를 보여 준다.
                     FadingEdgeText(
@@ -184,20 +184,6 @@ internal fun StationBarContent(
             )
         }
     }
-}
-
-@Composable
-private fun LivePill() {
-    Text(
-        modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.primary)
-            .padding(horizontal = 5.dp, vertical = 1.dp),
-        text = stringResource(uiR.string.core_ui_station_live),
-        style = MaterialTheme.typography.labelSmall,
-        color = Color.White,
-        maxLines = 1,
-    )
 }
 
 @DevicePreviews

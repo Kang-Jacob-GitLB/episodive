@@ -12,6 +12,14 @@
     <string name="core_ui_snackbar_unsaved">저장을 취소했습니다</string>
     <string name="core_ui_snackbar_undo">실행 취소</string>
 
+    <string name="core_ui_sleep_timer">슬립 타이머</string>
+    <string name="core_ui_sleep_timer_cancel">타이머 취소</string>
+    <string name="core_ui_sleep_timer_end_of_episode">에피소드 끝까지</string>
+    <string name="core_ui_sleep_timer_expired">슬립 타이머가 종료되었습니다</string>
+    <string name="core_ui_sleep_timer_minutes">%d분</string>
+    <string name="core_ui_sleep_timer_requires_playback">재생 중에만 슬립 타이머를 설정할 수 있습니다</string>
+    <string name="core_ui_live_now">지금 방송</string>
+
     <string name="core_ui_station_favorite_add">즐겨찾기에 추가</string>
     <string name="core_ui_station_favorite_remove">즐겨찾기에서 삭제</string>
     <string name="core_ui_station_connecting">연결 중</string>

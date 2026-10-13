@@ -125,7 +125,7 @@ fun PlayerBar(
 
     val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
     val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
-    val sleepTimerExpiredMessage = stringResource(R.string.feature_player_sleep_timer_expired)
+    val sleepTimerExpiredMessage = stringResource(uiR.string.core_ui_sleep_timer_expired)
     val deepLinkErrorMessage = stringResource(R.string.feature_player_deep_link_not_found)
     val captionDownloadStartedPattern = stringResource(R.string.feature_player_caption_download_started)
     val captionUnsupportedMessage = stringResource(R.string.feature_player_caption_unsupported)

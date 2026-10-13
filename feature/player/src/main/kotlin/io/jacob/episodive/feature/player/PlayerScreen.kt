@@ -35,7 +35,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -64,10 +63,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
@@ -80,7 +76,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -102,6 +97,7 @@ import io.jacob.episodive.core.designsystem.component.PlayPauseMorphIcon
 import io.jacob.episodive.core.designsystem.component.RotateSwapIcon
 import io.jacob.episodive.core.designsystem.component.StateImage
 import io.jacob.episodive.core.designsystem.component.hiddenWhileLoading
+import io.jacob.episodive.core.designsystem.component.playerBackdrop
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveShapes
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
@@ -124,23 +120,17 @@ import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.ui.R as uiR
 import io.jacob.episodive.core.ui.ChapterItem
 import io.jacob.episodive.core.ui.PodcastSimpleItem
+import io.jacob.episodive.core.ui.PresetCircle
+import io.jacob.episodive.core.ui.SleepTimerSheet
 import io.jacob.episodive.core.ui.episodeItems
 import io.jacob.episodive.core.ui.share.rememberShareLauncher
 
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.sin
 import kotlin.time.Duration.Companion.seconds
 
 /** v2: 앨범아트 팔레트 색을 뽑기 전 기본 그라디언트 시작색(원본 줄 366). */
 private val PlayerGradientDefaultTop = Color(0xFF7A3527)
-private const val PlayerBackgroundGradientAngle = 193f
-
-/** 그라디언트 중간·어두운 스톱이 커버 색에서 배경으로 섞이는 비율. */
-private const val PlayerGradientMidBlend = 0.42f
-private const val PlayerGradientDarkBlend = 0.78f
 
 /** v2: 하단 반투명 컨트롤 바 — 5단계 shape 사다리에 없는 26px 고정 반경(원본 줄 380). */
 private val PlayerControlBarHeight = 52.dp
@@ -154,15 +144,6 @@ private val PlayerDownloadRingSize = 40.dp
 /** v2: 배속 다이얼 시트의 큰 숫자 — 타이포 스케일에 없는 일회성 크기(원본 줄 393). */
 private val PlayerDialValueTextStyle = TextStyle(fontSize = 42.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.02).em)
 private val PlayerDialUnitTextStyle = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Normal)
-
-/** v2: 슬립 타이머 남은 시간 숫자 — 타이포 스케일에 없는 일회성 크기(원본 줄 413). */
-private val PlayerSleepTimerValueTextStyle = TextStyle(fontSize = 40.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.02.em)
-
-/**
- * 슬립 타이머 프리셋 원 지름. 목업 폭(344 - 좌우 22)에 다섯 개가 8dp 간격으로 한 줄에
- * 들어가는 크기다. 이보다 크면 좁은 기기에서 줄이 넘어간다.
- */
-private val PlayerSleepTimerPresetSize = 52.dp
 
 /** 재생목록 항목 여백 — 위아래는 첫·마지막 항목의 강조 배경이 잘리지 않을 만큼만 둔다. */
 private val PlaylistHorizontalPadding = 16.dp
@@ -186,7 +167,7 @@ fun PlayerBottomSheet(
 
     val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
     val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
-    val sleepTimerExpiredMessage = stringResource(R.string.feature_player_sleep_timer_expired)
+    val sleepTimerExpiredMessage = stringResource(uiR.string.core_ui_sleep_timer_expired)
     val shareFailedMessage = stringResource(uiR.string.core_ui_share_failed)
     val deepLinkErrorMessage = stringResource(R.string.feature_player_deep_link_not_found)
     val captionDownloadStartedPattern = stringResource(R.string.feature_player_caption_download_started)
@@ -434,21 +415,7 @@ internal fun PlayerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillParentMaxHeight(0.92f)
-                    // v2: 193도 · 4단계 스톱 구조를 유지하되, 중간 스톱까지 전부 앨범아트
-                    // 팔레트 색에서 파생시킨다. 고정 레드 스톱을 끼우면 커버가 무슨 색이든
-                    // 배경이 늘 붉게 나온다.
-                    .drawWithCache {
-                        val (start, end) = angledGradientEndpoints(PlayerBackgroundGradientAngle, size)
-                        val brush = Brush.linearGradient(
-                            0f to dominantColor,
-                            0.30f to lerp(dominantColor, backgroundColor, PlayerGradientMidBlend),
-                            0.58f to lerp(dominantColor, backgroundColor, PlayerGradientDarkBlend),
-                            0.82f to backgroundColor,
-                            start = start,
-                            end = end,
-                        )
-                        onDrawBehind { drawRect(brush) }
-                    },
+                    .playerBackdrop(top = dominantColor, background = backgroundColor),
             ) {
                 Column(
                     modifier = Modifier
@@ -653,19 +620,6 @@ internal fun PlayerScreen(
             onDismiss = { showSleepTimerSheet = false },
         )
     }
-}
-
-/** CSS `linear-gradient(angleDeg, ...)` 각도 규약을 Compose 선형 그라디언트의 시작/끝 좌표로 변환한다. */
-private fun angledGradientEndpoints(angleDegrees: Float, size: Size): Pair<Offset, Offset> {
-    val angleRad = Math.toRadians(angleDegrees.toDouble())
-    val width = size.width
-    val height = size.height
-    val length = abs(width * sin(angleRad)) + abs(height * cos(angleRad))
-    val centerX = width / 2f
-    val centerY = height / 2f
-    val dx = (length / 2 * sin(angleRad)).toFloat()
-    val dy = (length / 2 * cos(angleRad)).toFloat()
-    return Offset(centerX - dx, centerY + dy) to Offset(centerX + dx, centerY - dy)
 }
 
 /**
@@ -997,7 +951,7 @@ private fun ControlPanelBottom(
                         Icon(
                             modifier = Modifier.size(21.dp),
                             imageVector = EpisodiveIcons.Moon,
-                            contentDescription = stringResource(R.string.feature_player_sleep_timer),
+                            contentDescription = stringResource(uiR.string.core_ui_sleep_timer),
                             tint = moonTint,
                         )
                     }
@@ -1404,160 +1358,6 @@ private fun PlaylistSheet(
 }
 
 @Composable
-private fun SleepTimerSheet(
-    modifier: Modifier = Modifier,
-    remainingMs: Long?,
-    isPlaying: Boolean,
-    onSetTimer: (Long) -> Unit = {},
-    onEndOfEpisode: () -> Unit = {},
-    onCancel: () -> Unit = {},
-    onDismiss: () -> Unit = {},
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val requiresPlaybackMessage = stringResource(R.string.feature_player_sleep_timer_requires_playback)
-
-    fun handleAction(action: () -> Unit) {
-        if (isPlaying) {
-            action()
-        } else {
-            scope.launch {
-                snackbarHostState.currentSnackbarData?.dismiss()
-                snackbarHostState.showSnackbar(
-                    message = requiresPlaybackMessage,
-                    duration = SnackbarDuration.Short,
-                )
-            }
-        }
-    }
-
-    // 한 줄에 들어가는 다섯 개까지만 둔다. 줄바꿈되면 시트가 세로로 늘어나 다이얼·버튼이 밀린다.
-    // 커스텀 시간 입력이 없어 이 다섯 개가 선택지의 전부이므로, 칸을 잠들지 않을 시간에 쓰지 않는다.
-    val timerPresets = remember {
-        listOf(
-            5L * 60 * 1000,
-            10L * 60 * 1000,
-            15L * 60 * 1000,
-            30L * 60 * 1000,
-            60L * 60 * 1000,
-        )
-    }
-    val isActive = remainingMs != null
-
-    ModalBottomSheet(
-        modifier = modifier.fillMaxWidth(),
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        shape = EpisodiveShapes.bottomSheet,
-        dragHandle = { EpisodiveDragHandle() }
-    ) {
-        Box {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize()
-                    .padding(horizontal = 22.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = stringResource(R.string.feature_player_sleep_timer),
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                val displayMs = remainingMs ?: 0L
-                val minutes = displayMs / 1000 / 60
-                val seconds = (displayMs / 1000) % 60
-                val timerColor = when {
-                    !isActive -> MaterialTheme.colorScheme.onSurface
-                    displayMs <= SLEEP_TIMER_FADE_OUT_MS -> {
-                        val fraction = displayMs / SLEEP_TIMER_FADE_OUT_MS.toFloat()
-                        lerp(
-                            MaterialTheme.colorScheme.onSurface,
-                            MaterialTheme.colorScheme.primary,
-                            fraction,
-                        )
-                    }
-                    else -> MaterialTheme.colorScheme.primary
-                }
-                val moonColor = if (isActive) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        modifier = Modifier.size(26.dp),
-                        imageVector = EpisodiveIcons.Moon,
-                        contentDescription = null,
-                        tint = moonColor,
-                    )
-
-                    Text(
-                        text = String.format("%d:%02d", minutes, seconds),
-                        style = PlayerSleepTimerValueTextStyle,
-                        color = timerColor,
-                    )
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    timerPresets.forEach { durationMs ->
-                        // 단위는 로케일 리소스가 붙인다 (한국어 "분", 영어 "m").
-                        val label = stringResource(
-                            R.string.feature_player_sleep_timer_minutes,
-                            (durationMs / 1000 / 60).toInt(),
-                        )
-                        PlayerPresetCircle(
-                            size = PlayerSleepTimerPresetSize,
-                            label = label,
-                            selected = false,
-                            onClick = { handleAction { onSetTimer(durationMs) } },
-                        )
-                    }
-                }
-
-                PlayerSheetActionButton(
-                    onClick = { handleAction { onEndOfEpisode() } },
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    icon = EpisodiveIcons.SkipNext,
-                    text = stringResource(R.string.feature_player_sleep_timer_end_of_episode),
-                )
-
-                AnimatedVisibility(visible = isActive) {
-                    PlayerSheetActionButton(
-                        onClick = { onCancel() },
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                        icon = EpisodiveIcons.Close,
-                        text = stringResource(R.string.feature_player_sleep_timer_cancel),
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            EpisodiveSwipeDismissSnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
-        }
-    }
-}
-
-@Composable
 private fun SpeedSheet(
     modifier: Modifier = Modifier,
     speed: Float,
@@ -1616,7 +1416,7 @@ private fun SpeedSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
                 manualSpeed.forEach { presetSpeed ->
-                    PlayerPresetCircle(
+                    PresetCircle(
                         size = 52.dp,
                         label = "${decimalFormat.format(presetSpeed)}x",
                         selected = speed == presetSpeed,
@@ -1628,106 +1428,6 @@ private fun SpeedSheet(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-    }
-}
-
-/** v2: 배속·슬립타이머 시트가 공유하는 원형 프리셋 (원본 줄 396, 415). */
-@Composable
-private fun PlayerPresetCircle(
-    modifier: Modifier = Modifier,
-    size: Dp,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = modifier
-            .size(size)
-            .then(
-                if (selected) {
-                    Modifier.shadow(
-                        elevation = 8.dp,
-                        shape = CircleShape,
-                        ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                    )
-                } else {
-                    Modifier
-                },
-            )
-            .clip(CircleShape)
-            .background(
-                if (selected) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    // 시트 배경(surfaceContainer)과 한 단계 차이인 surfaceContainerHigh 로는
-                    // 버튼 경계가 보이지 않는다. 두 단계 위 표면에 테두리까지 둘러 분리한다.
-                    MaterialTheme.colorScheme.surfaceContainerHighest
-                },
-            )
-            .then(
-                if (selected) {
-                    Modifier
-                } else {
-                    Modifier.border(
-                        1.dp,
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-                        CircleShape,
-                    )
-                },
-            )
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
-            ),
-            color = if (selected) {
-                MaterialTheme.colorScheme.onPrimary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
-        )
-    }
-}
-
-/** v2: 슬립타이머 시트의 "에피소드 끝까지" / "타이머 취소" pill 버튼(원본 줄 422~423). */
-@Composable
-private fun PlayerSheetActionButton(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    containerColor: Color,
-    contentColor: Color,
-    icon: ImageVector,
-    text: String,
-    fontWeight: FontWeight = FontWeight.SemiBold,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(50.dp)
-            .clip(EpisodiveShapes.pill)
-            .background(containerColor)
-            .clickable { onClick() },
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            modifier = Modifier.size(18.dp),
-            imageVector = icon,
-            contentDescription = null,
-            tint = contentColor,
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = fontWeight),
-            color = contentColor,
-        )
     }
 }
 
