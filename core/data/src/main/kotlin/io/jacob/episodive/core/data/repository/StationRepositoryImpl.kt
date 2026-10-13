@@ -2,10 +2,12 @@ package io.jacob.episodive.core.data.repository
 
 import io.jacob.episodive.core.data.radio.KoreanStationCatalog
 import io.jacob.episodive.core.data.radio.StationCatalogEntry
+import io.jacob.episodive.core.data.radio.mergeStationDetails
 import io.jacob.episodive.core.database.dao.StationDao
 import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.network.datasource.StationRemoteDataSource
@@ -13,6 +15,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
@@ -24,6 +28,7 @@ class StationRepositoryImpl internal constructor(
     private val stationDao: StationDao,
     private val catalog: List<StationCatalogEntry>,
     private val ioDispatcher: CoroutineDispatcher,
+    private val now: () -> Long = System::currentTimeMillis,
 ) : StationRepository {
 
     private val stationsById = catalog.associateBy { it.station.id }
@@ -97,7 +102,44 @@ class StationRepositoryImpl internal constructor(
         (resolved ?: entry.fallbackUrl?.takeIf { it !in excluding })?.let { StationStream(url = it, isHls = entry.isHls) }
     }
 
+    private class CachedDetails(val details: StationDetails?, val fetchedAtMillis: Long)
+
+    // 메모리 캐시만 둔다. 부가 정보라 앱을 다시 켜면 다시 받아도 되고, Room 스키마를 늘릴 값어치가 없다.
+    private val detailsCache = mutableMapOf<String, CachedDetails>()
+    private val detailsMutex = Mutex()
+
+    override suspend fun getStationDetails(stationId: String): StationDetails? = withContext(ioDispatcher) {
+        val entry = stationsById[stationId] ?: return@withContext null
+
+        // 같은 스테이션을 동시에 부르면 한 번만 받도록 락 안에서 확인하고 받는다. 상세는 부가 정보라
+        // 직렬화돼도 상관없다.
+        detailsMutex.withLock {
+            detailsCache[stationId]
+                ?.takeIf { now() - it.fetchedAtMillis < DETAILS_TTL_MILLIS }
+                ?.let { return@withLock it.details }
+
+            val fetched = withTimeoutOrNull(DETAILS_TIMEOUT_MILLIS) {
+                try {
+                    val responses = remoteDataSource.getStationDetails(entry.radioBrowserIds)
+                    Fetched(mergeStationDetails(entry.radioBrowserIds, responses))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.w(e, "getStationDetails failed. stationId: $stationId")
+                    null
+                }
+            }
+            // 실패·시간 초과는 캐시하지 않는다. 다음에 열 때 다시 시도한다. "정보 없음"(null)은 성공이라 캐시한다.
+            fetched?.let { detailsCache[stationId] = CachedDetails(it.details, now()) }
+            fetched?.details
+        }
+    }
+
+    private class Fetched(val details: StationDetails?)
+
     private companion object {
         const val RESOLVE_TIMEOUT_MILLIS = 15_000L
+        const val DETAILS_TIMEOUT_MILLIS = 10_000L
+        const val DETAILS_TTL_MILLIS = 24 * 60 * 60 * 1000L
     }
 }

@@ -10,15 +10,20 @@ import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
 import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -37,6 +42,7 @@ class StationPlayerViewModel @Inject constructor(
     private val getStationsUseCase: GetStationsUseCase,
     private val getFavoriteStationsUseCase: GetFavoriteStationsUseCase,
     private val toggleFavoriteStationUseCase: ToggleFavoriteStationUseCase,
+    private val getStationDetailsUseCase: GetStationDetailsUseCase,
     private val sleepTimer: SleepTimer,
 ) : ViewModel() {
 
@@ -82,6 +88,24 @@ class StationPlayerViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000, replayExpirationMillis = 0),
         initialValue = StationPlayerState.Loading,
     )
+
+    /**
+     * 표시 중인 스테이션의 부가 정보. `state` 와 따로 둔다 — 네트워크로 받는 값이라 `Active` 에 넣으면 재생 상태가
+     * 바뀔 때마다 얽히고, 늦게 와도 시트를 막지 않아야 한다. 스테이션이 바뀌면 이전 값을 먼저 비운다. 늦게 도착한
+     * 이전 스테이션의 상세가 새 스테이션 밑에 남으면 안 된다(transformLatest 가 이전 요청도 취소한다).
+     */
+    val details: StateFlow<StationDetails?> = state
+        .map { (it as? StationPlayerState.Active)?.station?.id }
+        .distinctUntilChanged()
+        .transformLatest { stationId ->
+            emit(null)
+            if (stationId != null) emit(getStationDetailsUseCase(stationId))
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = null,
+        )
 
     private val _action = MutableSharedFlow<StationPlayerAction>(extraBufferCapacity = 1)
 

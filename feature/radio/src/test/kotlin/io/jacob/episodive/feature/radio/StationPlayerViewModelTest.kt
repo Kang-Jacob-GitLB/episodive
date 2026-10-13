@@ -4,13 +4,16 @@ import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.testing.model.codecOnlyStationDetailsTestData
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
 import io.jacob.episodive.core.testing.model.kbsHappyRadioStationTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
+import io.jacob.episodive.core.testing.model.stationDetailsTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -38,6 +41,7 @@ class StationPlayerViewModelTest {
     private val getStationsUseCase = mockk<GetStationsUseCase>()
     private val getFavoriteStationsUseCase = mockk<GetFavoriteStationsUseCase>()
     private val toggleFavoriteStationUseCase = mockk<ToggleFavoriteStationUseCase>(relaxed = true)
+    private val getStationDetailsUseCase = mockk<GetStationDetailsUseCase>()
     private val sleepTimer = mockk<SleepTimer>(relaxed = true)
 
     private val a = radioStationTestData
@@ -70,6 +74,7 @@ class StationPlayerViewModelTest {
             getStationsUseCase = getStationsUseCase,
             getFavoriteStationsUseCase = getFavoriteStationsUseCase,
             toggleFavoriteStationUseCase = toggleFavoriteStationUseCase,
+            getStationDetailsUseCase = getStationDetailsUseCase,
             sleepTimer = sleepTimer,
         )
     }
@@ -260,6 +265,52 @@ class StationPlayerViewModelTest {
         verify(exactly = 1) { sleepTimer.start(60_000L) }
         verify(exactly = 1) { sleepTimer.cancel() }
     }
+
+    @Test
+    fun `Given 표시 스테이션이 바뀜, Then 상세가 그 스테이션의 것을 따라간다`() = runTest {
+        coEvery { getStationDetailsUseCase(a.id) } returns stationDetailsTestData
+        coEvery { getStationDetailsUseCase(b.id) } returns codecOnlyStationDetailsTestData
+        nowPlayingStation.value = a
+        val viewModel = createViewModel()
+        val job = launchCollectDetails(viewModel)
+
+        assertEquals(stationDetailsTestData, viewModel.details.value)
+
+        pendingStationId.value = b.id
+
+        assertEquals(codecOnlyStationDetailsTestData, viewModel.details.value)
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 상세를 받지 못함, Then null 이다`() = runTest {
+        coEvery { getStationDetailsUseCase(a.id) } returns null
+        nowPlayingStation.value = a
+        val viewModel = createViewModel()
+        val job = launchCollectDetails(viewModel)
+
+        assertNull(viewModel.details.value)
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 재생 상태만 바뀜, Then 상세를 다시 받지 않는다`() = runTest {
+        coEvery { getStationDetailsUseCase(a.id) } returns stationDetailsTestData
+        nowPlayingStation.value = a
+        val viewModel = createViewModel()
+        val job = launchCollectDetails(viewModel)
+
+        isPlaying.value = true
+        streamTitle.value = "Artist - Title"
+
+        coVerify(exactly = 1) { getStationDetailsUseCase(a.id) }
+        job.cancel()
+    }
+
+    private fun TestScope.launchCollectDetails(viewModel: StationPlayerViewModel) =
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.details.collect {}
+        }
 
     private fun TestScope.launchCollect(viewModel: StationPlayerViewModel) =
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {

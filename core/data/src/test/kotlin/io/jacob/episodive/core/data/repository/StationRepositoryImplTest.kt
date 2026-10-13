@@ -2,6 +2,7 @@ package io.jacob.episodive.core.data.repository
 
 import app.cash.turbine.test
 import io.jacob.episodive.core.data.radio.stationCatalogEntryTestData
+import io.jacob.episodive.core.data.radio.stationDetailsResponsesTestData
 import io.jacob.episodive.core.database.dao.StationDao
 import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.domain.repository.StationRepository
@@ -11,6 +12,7 @@ import io.jacob.episodive.core.network.datasource.StationRemoteDataSource
 import io.jacob.episodive.core.testing.model.icecastStreamTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
+import io.jacob.episodive.core.testing.model.stationDetailsTestData
 import io.jacob.episodive.core.testing.model.tvStationTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.coEvery
@@ -40,11 +42,14 @@ class StationRepositoryImplTest {
     private val remoteDataSource = mockk<StationRemoteDataSource>()
     private val stationDao = mockk<StationDao>()
 
+    private var nowMillis = 1_000_000L
+
     private val repository = StationRepositoryImpl(
         remoteDataSource = remoteDataSource,
         stationDao = stationDao,
         catalog = stationCatalogEntryTestData,
         ioDispatcher = UnconfinedTestDispatcher(mainDispatcherRule.testDispatcher.scheduler),
+        now = { nowMillis },
     )
 
     @Test
@@ -233,5 +238,74 @@ class StationRepositoryImplTest {
         }
         coVerify(exactly = 0) { stationDao.upsertRecent(any()) }
         coVerify(exactly = 0) { stationDao.trimRecent(any()) }
+    }
+
+    @Test
+    fun `Given known id, When getStationDetails, Then all candidates requested at once and merged`() = runTest {
+        coEvery { remoteDataSource.getStationDetails(listOf("a", "b")) } returns stationDetailsResponsesTestData
+
+        assertEquals(stationDetailsTestData, repository.getStationDetails(radioStationTestData.id))
+        coVerify(exactly = 1) { remoteDataSource.getStationDetails(listOf("a", "b")) }
+    }
+
+    @Test
+    fun `Given within TTL, When getStationDetails twice, Then remote called once`() = runTest {
+        coEvery { remoteDataSource.getStationDetails(any()) } returns stationDetailsResponsesTestData
+
+        repository.getStationDetails(radioStationTestData.id)
+        nowMillis += 24 * 60 * 60 * 1000L - 1
+        repository.getStationDetails(radioStationTestData.id)
+
+        coVerify(exactly = 1) { remoteDataSource.getStationDetails(any()) }
+    }
+
+    @Test
+    fun `Given TTL elapsed, When getStationDetails, Then remote called again`() = runTest {
+        coEvery { remoteDataSource.getStationDetails(any()) } returns stationDetailsResponsesTestData
+
+        repository.getStationDetails(radioStationTestData.id)
+        nowMillis += 24 * 60 * 60 * 1000L
+        repository.getStationDetails(radioStationTestData.id)
+
+        coVerify(exactly = 2) { remoteDataSource.getStationDetails(any()) }
+    }
+
+    @Test
+    fun `Given remote fails, When getStationDetails, Then null and not cached`() = runTest {
+        coEvery { remoteDataSource.getStationDetails(any()) } throws IOException("down") andThen
+            stationDetailsResponsesTestData
+
+        assertNull(repository.getStationDetails(radioStationTestData.id))
+        assertEquals(stationDetailsTestData, repository.getStationDetails(radioStationTestData.id))
+    }
+
+    @Test
+    fun `Given remote hangs, When getStationDetails, Then null after timeout`() = runTest {
+        coEvery { remoteDataSource.getStationDetails(any()) } coAnswers { awaitCancellation() }
+
+        val details = async { repository.getStationDetails(radioStationTestData.id) }
+        advanceTimeBy(9_000)
+        runCurrent()
+        assertEquals(false, details.isCompleted)
+        advanceTimeBy(2_000)
+
+        assertNull(details.await())
+    }
+
+    @Test
+    fun `Given nothing usable, When getStationDetails twice, Then null is cached`() = runTest {
+        coEvery { remoteDataSource.getStationDetails(any()) } returns emptyList()
+
+        assertNull(repository.getStationDetails(radioStationTestData.id))
+        assertNull(repository.getStationDetails(radioStationTestData.id))
+
+        coVerify(exactly = 1) { remoteDataSource.getStationDetails(any()) }
+    }
+
+    @Test
+    fun `Given unknown id, When getStationDetails, Then null without network`() = runTest {
+        assertNull(repository.getStationDetails("unknown"))
+
+        coVerify(exactly = 0) { remoteDataSource.getStationDetails(any()) }
     }
 }

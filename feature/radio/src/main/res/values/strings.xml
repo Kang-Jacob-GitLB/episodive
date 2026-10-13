@@ -14,4 +14,7 @@
     <string name="feature_radio_next">Next station</string>
     <string name="feature_radio_station_list">All stations</string>
     <string name="feature_radio_collapse">Collapse player</string>
+    <!-- %1$d 는 kbps 단위 비트레이트 -->
+    <string name="feature_radio_info_bitrate_format">%1$dkbps</string>
+    <string name="feature_radio_info_source">Powered by Radio Browser</string>
 </resources>
