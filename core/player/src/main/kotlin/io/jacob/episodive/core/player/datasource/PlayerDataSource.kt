@@ -79,6 +79,12 @@ interface PlayerDataSource {
     /** 지금 올라 있는 스테이션. [nowPlaying] 과 배타다. */
     val nowPlayingStation: Flow<Station?>
 
+    /**
+     * 라이브로 판명된 현재 에피소드의 id. 판명 전·일반 에피소드·스테이션이면 null 이다.
+     * 에피소드 id 는 플레이어에 실제로 올라 있는 항목에서 얻는다.
+     */
+    val liveEpisodeId: Flow<Long?>
+
     /** 스트림이 싣고 오는 "지금 나오는 곡" 정보(ICY/ID3). 항목이 바뀌면 null 로 돌아간다. */
     val streamTitle: Flow<String?>
 

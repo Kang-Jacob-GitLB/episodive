@@ -36,6 +36,7 @@ class PlayerRepositoryTest {
     fun teardown() {
         coVerify { playerDataSource.nowPlaying }
         coVerify { playerDataSource.nowPlayingStation }
+        coVerify { playerDataSource.liveEpisodeId }
         coVerify { playerDataSource.streamTitle }
         coVerify { playerDataSource.failures }
         coVerify { playerDataSource.playlist }
@@ -486,6 +487,7 @@ class PlayerRepositoryTest {
     fun `Given dependencies, When accessing station flows, Then exposes the playerDataSource flows`() = runTest {
         // Given
         every { playerDataSource.nowPlayingStation } returns flowOf(radioStationTestData)
+        every { playerDataSource.liveEpisodeId } returns flowOf(42L)
         every { playerDataSource.streamTitle } returns flowOf("곡")
         val failure = playbackFailureTestData
         every { playerDataSource.failures } returns flowOf(failure)
@@ -493,6 +495,7 @@ class PlayerRepositoryTest {
 
         // When / Then
         repository.nowPlayingStation.test { assertEquals(radioStationTestData, awaitItem()); awaitComplete() }
+        repository.liveEpisodeId.test { assertEquals(42L, awaitItem()); awaitComplete() }
         repository.streamTitle.test { assertEquals("곡", awaitItem()); awaitComplete() }
         repository.failures.test { assertEquals(failure, awaitItem()); awaitComplete() }
     }

@@ -119,6 +119,7 @@ import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.ui.R as uiR
 import io.jacob.episodive.core.ui.ChapterItem
+import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.PodcastSimpleItem
 import io.jacob.episodive.core.ui.PresetCircle
 import io.jacob.episodive.core.ui.SleepTimerSheet
@@ -294,6 +295,7 @@ fun PlayerBottomSheet(
             progress = s.progress,
             isPlaying = s.isPlaying,
             isBuffering = s.isBuffering,
+            isLive = s.isLive,
             onCollapse = { collapse() },
             onToggleLike = { viewModel.sendAction(PlayerAction.ToggleLike) },
             onShare = {
@@ -306,9 +308,11 @@ fun PlayerBottomSheet(
                     // 바뀌는 순간 잠깐 이전 것을 들고 있어, 확인 없이 실으면 남의 지점을 보낸다.
                     // 다 들은 에피소드도 뺀다 — 위치가 끝에 멈춰 있어 "엔딩 크레딧부터 들어라"가
                     // 된다. 모델의 하한(MIN_SHARE_POSITION_MS)은 이 반대쪽만 막는다.
+                    // 라이브는 위치가 의미 없다(받는 쪽이 지나간 방송의 한 지점으로 가게 된다).
                     positionMs = s.progress.position.inWholeMilliseconds
                         .takeIf {
-                            s.progress.episodeId == s.nowPlaying.id && !s.nowPlaying.isCompleted
+                            !s.isLive &&
+                                    s.progress.episodeId == s.nowPlaying.id && !s.nowPlaying.isCompleted
                         },
                 )
             },
@@ -360,6 +364,8 @@ internal fun PlayerScreen(
     progress: Progress,
     isPlaying: Boolean,
     isBuffering: Boolean = false,
+    /** 라이브 에피소드. 탐색바·이동·배속·다운로드·챕터를 숨긴다. */
+    isLive: Boolean = false,
     onCollapse: () -> Unit,
     onToggleLike: () -> Unit,
     onShare: () -> Unit,
@@ -524,20 +530,25 @@ internal fun PlayerScreen(
                         )
                     }
 
-                    ControlPanelProgress(
-                        modifier = Modifier.padding(top = 16.dp),
-                        isPlaying = isPlaying,
-                        progress = progress,
-                        chapters = chapters,
-                        onSeekTo = onSeekTo,
-                        onChapterIndex = { chapterIndex = it }
-                    )
+                    if (isLive) {
+                        LiveIndicator(modifier = Modifier.padding(top = 16.dp))
+                    } else {
+                        ControlPanelProgress(
+                            modifier = Modifier.padding(top = 16.dp),
+                            isPlaying = isPlaying,
+                            progress = progress,
+                            chapters = chapters,
+                            onSeekTo = onSeekTo,
+                            onChapterIndex = { chapterIndex = it }
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(20.dp))
 
                     ControlPanelBottom(
                         isPlaying = isPlaying,
                         isBuffering = isBuffering,
+                        isLive = isLive,
                         isSaved = nowPlaying.isSaved,
                         isDownloading = nowPlaying.isDownloading,
                         downloadProgress = nowPlaying.downloadProgress,
@@ -566,7 +577,7 @@ internal fun PlayerScreen(
             )
         }
 
-        if (chapters.isNotEmpty()) {
+        if (!isLive && chapters.isNotEmpty()) {
             item {
                 ChapterSection(
                     chapters = chapters,
@@ -615,6 +626,7 @@ internal fun PlayerScreen(
             remainingMs = sleepTimerRemainingMs,
             isPlaying = isPlaying,
             onSetTimer = { onSetSleepTimer(it) },
+            showEndOfEpisode = !isLive,
             onEndOfEpisode = onSleepTimerEndOfEpisode,
             onCancel = onCancelSleepTimer,
             onDismiss = { showSleepTimerSheet = false },
@@ -779,11 +791,32 @@ private fun ControlPanelProgress(
     }
 }
 
+/** 라이브 에피소드는 끝도 위치도 없어 탐색바 자리에 방송 중 표지만 둔다. */
+@Composable
+private fun LiveIndicator(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 30.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        LiveBadge()
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = stringResource(uiR.string.core_ui_live_now),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 @Composable
 private fun ControlPanelBottom(
     modifier: Modifier = Modifier,
     isPlaying: Boolean,
     isBuffering: Boolean = false,
+    isLive: Boolean = false,
     isSaved: Boolean = false,
     isDownloading: Boolean = false,
     downloadProgress: Float = 0f,
@@ -814,20 +847,22 @@ private fun ControlPanelBottom(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 26.dp, end = 26.dp, top = 14.dp, bottom = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = if (isLive) Arrangement.SpaceEvenly else Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            EpisodiveIconButton(
-                modifier = Modifier.size(48.dp),
-                onClick = onBackward,
-                icon = {
-                    Icon(
-                        modifier = Modifier.size(31.dp),
-                        imageVector = EpisodiveIcons.Replay15,
-                        contentDescription = "Replay",
-                    )
-                }
-            )
+            if (!isLive) {
+                EpisodiveIconButton(
+                    modifier = Modifier.size(48.dp),
+                    onClick = onBackward,
+                    icon = {
+                        Icon(
+                            modifier = Modifier.size(31.dp),
+                            imageVector = EpisodiveIcons.Replay15,
+                            contentDescription = "Replay",
+                        )
+                    }
+                )
+            }
 
             EpisodiveIconButton(
                 modifier = Modifier.size(48.dp),
@@ -889,17 +924,19 @@ private fun ControlPanelBottom(
                 }
             )
 
-            EpisodiveIconButton(
-                modifier = Modifier.size(48.dp),
-                onClick = onForward,
-                icon = {
-                    Icon(
-                        modifier = Modifier.size(31.dp),
-                        imageVector = EpisodiveIcons.Forward30,
-                        contentDescription = "Forward",
-                    )
-                }
-            )
+            if (!isLive) {
+                EpisodiveIconButton(
+                    modifier = Modifier.size(48.dp),
+                    onClick = onForward,
+                    icon = {
+                        Icon(
+                            modifier = Modifier.size(31.dp),
+                            imageVector = EpisodiveIcons.Forward30,
+                            contentDescription = "Forward",
+                        )
+                    }
+                )
+            }
         }
 
         Box(
@@ -921,15 +958,17 @@ private fun ControlPanelBottom(
             ) {
                 val decimalFormat = DecimalFormat("#.#")
 
-                EpisodiveTextButton(
-                    modifier = Modifier.weight(1f),
-                    onClick = onSpeed,
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Text(
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                        text = "${decimalFormat.format(speed)}x"
-                    )
+                if (!isLive) {
+                    EpisodiveTextButton(
+                        modifier = Modifier.weight(1f),
+                        onClick = onSpeed,
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                            text = "${decimalFormat.format(speed)}x"
+                        )
+                    }
                 }
 
                 EpisodiveIconButton(
@@ -978,57 +1017,59 @@ private fun ControlPanelBottom(
                     }
                 )
 
-                // 다운로드 중(진행 링)과 아닐 때(토글)는 서로 다른 버튼이다. 아이콘을 그대로 두
-                // 갈래에 넣으면 버튼이 바뀔 때마다 새로 붙어, 다운로드가 끝나는 순간(화살표 →
-                // 완료)에 돌아가지 못한다. 옮겨 다닐 수 있는 콘텐츠로 묶어 상태를 이어 준다.
-                // 화살표와 완료 체크는 이어지는 모양이 아니라 돌려서 바꾼다. 색은 감싼 버튼이
-                // 상태에 맞게 내려준다(진행·완료 = primary).
-                val downloadIcon = remember {
-                    movableContentOf { imageVector: ImageVector, description: String ->
-                        RotateSwapIcon(
-                            modifier = Modifier.size(21.dp),
-                            imageVector = imageVector,
-                            contentDescription = description,
+                if (!isLive) {
+                    // 다운로드 중(진행 링)과 아닐 때(토글)는 서로 다른 버튼이다. 아이콘을 그대로 두
+                    // 갈래에 넣으면 버튼이 바뀔 때마다 새로 붙어, 다운로드가 끝나는 순간(화살표 →
+                    // 완료)에 돌아가지 못한다. 옮겨 다닐 수 있는 콘텐츠로 묶어 상태를 이어 준다.
+                    // 화살표와 완료 체크는 이어지는 모양이 아니라 돌려서 바꾼다. 색은 감싼 버튼이
+                    // 상태에 맞게 내려준다(진행·완료 = primary).
+                    val downloadIcon = remember {
+                        movableContentOf { imageVector: ImageVector, description: String ->
+                            RotateSwapIcon(
+                                modifier = Modifier.size(21.dp),
+                                imageVector = imageVector,
+                                contentDescription = description,
+                            )
+                        }
+                    }
+
+                    if (isDownloading) {
+                        EpisodiveIconProgressButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = { onToggleSave() },
+                            // 컨트롤 바 높이(52dp) 안에 링이 들어가야 위아래가 잘리지 않는다.
+                            size = PlayerDownloadRingSize,
+                            // 크기 확정 전(progress 0)에는 무한 스피너, 진행률이 잡히면 실제 %로 표시
+                            isLoading = downloadProgress <= 0f,
+                            progress = downloadProgress,
+                            // 활성 색은 같은 바에 있는 슬립 타이머와 같은 primary 다. 링만 색으로
+                            // 표시하고 안쪽 원은 비워, 바 안의 다른 아이콘들과 같은 평면으로 둔다.
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.primary,
+                            ),
+                            icon = { downloadIcon(EpisodiveIcons.Download, "Downloading") },
+                        )
+                    } else {
+                        EpisodiveIconToggleButton(
+                            modifier = Modifier.weight(1f),
+                            checked = isSaved,
+                            onCheckedChange = { onToggleSave() },
+                            colors = IconButtonDefaults.iconToggleButtonColors(
+                                checkedContainerColor = Color.Transparent,
+                                // 다운로드 완료(활성)도 슬립 타이머 활성과 같은 primary 로 맞춘다.
+                                checkedContentColor = MaterialTheme.colorScheme.primary,
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                            icon = {
+                                downloadIcon(
+                                    if (isSaved) EpisodiveIcons.DownloadDone else EpisodiveIcons.Download,
+                                    if (isSaved) "Unsave" else "Save",
+                                )
+                            },
                         )
                     }
-                }
-
-                if (isDownloading) {
-                    EpisodiveIconProgressButton(
-                        modifier = Modifier.weight(1f),
-                        onClick = { onToggleSave() },
-                        // 컨트롤 바 높이(52dp) 안에 링이 들어가야 위아래가 잘리지 않는다.
-                        size = PlayerDownloadRingSize,
-                        // 크기 확정 전(progress 0)에는 무한 스피너, 진행률이 잡히면 실제 %로 표시
-                        isLoading = downloadProgress <= 0f,
-                        progress = downloadProgress,
-                        // 활성 색은 같은 바에 있는 슬립 타이머와 같은 primary 다. 링만 색으로
-                        // 표시하고 안쪽 원은 비워, 바 안의 다른 아이콘들과 같은 평면으로 둔다.
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = MaterialTheme.colorScheme.primary,
-                        ),
-                        icon = { downloadIcon(EpisodiveIcons.Download, "Downloading") },
-                    )
-                } else {
-                    EpisodiveIconToggleButton(
-                        modifier = Modifier.weight(1f),
-                        checked = isSaved,
-                        onCheckedChange = { onToggleSave() },
-                        colors = IconButtonDefaults.iconToggleButtonColors(
-                            checkedContainerColor = Color.Transparent,
-                            // 다운로드 완료(활성)도 슬립 타이머 활성과 같은 primary 로 맞춘다.
-                            checkedContentColor = MaterialTheme.colorScheme.primary,
-                            containerColor = Color.Transparent,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
-                        icon = {
-                            downloadIcon(
-                                if (isSaved) EpisodiveIcons.DownloadDone else EpisodiveIcons.Download,
-                                if (isSaved) "Unsave" else "Save",
-                            )
-                        },
-                    )
                 }
 
                 EpisodiveIconButton(

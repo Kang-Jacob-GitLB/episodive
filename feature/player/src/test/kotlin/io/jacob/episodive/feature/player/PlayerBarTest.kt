@@ -3,6 +3,7 @@ package io.jacob.episodive.feature.player
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
@@ -35,6 +36,7 @@ class PlayerBarTest {
         nowPlaying: Episode = episodeTestData,
         progress: Progress = Progress(30.seconds, 60.seconds, 100.seconds),
         isPlaying: Boolean = false,
+        isLive: Boolean = false,
         isLiked: Boolean = false,
         chapters: List<Chapter> = defaultChapters,
         onExpand: () -> Unit = {},
@@ -54,6 +56,7 @@ class PlayerBarTest {
                     nowPlaying = episode,
                     progress = progress,
                     isPlaying = isPlaying,
+                    isLive = isLive,
                     chapters = chapters,
                     onExpand = onExpand,
                     onToggleLike = onToggleLike,
@@ -64,6 +67,20 @@ class PlayerBarTest {
     }
 
     // --- Display tests ---
+
+    @Test
+    fun progressLineIsDisplayed() {
+        setPlayerBar()
+
+        composeTestRule.onNodeWithTag(PLAYER_BAR_PROGRESS_TAG, useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun live_progressLineIsNotDisplayed() {
+        setPlayerBar(isLive = true)
+
+        composeTestRule.onNodeWithTag(PLAYER_BAR_PROGRESS_TAG, useUnmergedTree = true).assertDoesNotExist()
+    }
 
     @Test
     fun episodeTitleIsDisplayed() {

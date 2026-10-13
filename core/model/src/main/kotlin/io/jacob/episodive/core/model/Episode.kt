@@ -46,13 +46,6 @@ data class Episode(
     val downloadStatus: DownloadStatus? = null,
     val downloadProgress: Float = 0f,
 ) {
-    val isLive: Boolean
-        get() = enclosureLength == 0L ||
-                startTime != null ||
-                endTime != null ||
-                status != null ||
-                contentLink != null
-
     val isLiked: Boolean = likedAt != null
 
     val isSaved: Boolean = savedAt != null

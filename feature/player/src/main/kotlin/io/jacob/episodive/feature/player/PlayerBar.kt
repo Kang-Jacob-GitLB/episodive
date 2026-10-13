@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -225,6 +226,7 @@ fun PlayerBar(
                 progress = s.progress,
                 isPlaying = s.isPlaying,
                 isBuffering = s.isBuffering,
+                isLive = s.isLive,
                 chapters = s.chapters,
                 onExpand = { viewModel.sendAction(PlayerAction.ExpandPlayer) },
                 onToggleLike = { viewModel.sendAction(PlayerAction.ToggleLike) },
@@ -241,6 +243,9 @@ fun PlayerBar(
     }
 }
 
+/** 미니바 진행선 테스트 식별자. */
+internal const val PLAYER_BAR_PROGRESS_TAG = "PlayerBarProgress"
+
 @Composable
 internal fun PlayerBarContent(
     modifier: Modifier = Modifier,
@@ -249,6 +254,8 @@ internal fun PlayerBarContent(
     progress: Progress,
     isPlaying: Boolean,
     isBuffering: Boolean = false,
+    /** 라이브 에피소드는 끝이 없어 진행선을 그리지 않는다. */
+    isLive: Boolean = false,
     chapters: List<Chapter>,
     onExpand: () -> Unit,
     onToggleLike: () -> Unit,
@@ -337,19 +344,22 @@ internal fun PlayerBarContent(
             )
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(dimension.progressThicknessThin)
-                .align(Alignment.BottomCenter)
-                .background(Color.White.copy(alpha = 0.2f))
-        ) {
+        if (!isLive) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(progress.positionRatio)
-                    .fillMaxHeight()
-                    .background(MaterialTheme.colorScheme.primary)
-            )
+                    .testTag(PLAYER_BAR_PROGRESS_TAG)
+                    .fillMaxWidth()
+                    .height(dimension.progressThicknessThin)
+                    .align(Alignment.BottomCenter)
+                    .background(Color.White.copy(alpha = 0.2f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress.positionRatio)
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+            }
         }
     }
 }

@@ -164,6 +164,7 @@ class PlayerRepositoryImpl @Inject constructor(
 
     override val nowPlaying: Flow<Episode?> = playerDataSource.nowPlaying
     override val nowPlayingStation: Flow<Station?> = playerDataSource.nowPlayingStation
+    override val liveEpisodeId: Flow<Long?> = playerDataSource.liveEpisodeId
     override val streamTitle: Flow<String?> = playerDataSource.streamTitle
     override val failures: Flow<PlaybackFailure> = playerDataSource.failures
     override val playlist: Flow<List<Episode>> = playerDataSource.playlist

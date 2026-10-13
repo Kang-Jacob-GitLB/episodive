@@ -1824,6 +1824,8 @@ class PlayerDataSourceImplTest {
             .build()
 
     private fun transitionTo(item: MediaItem?) {
+        // media3 는 transition 콜백 시점에 currentMediaItem 이 이미 새 항목이다. 구현이 그것을 읽는다.
+        every { player.currentMediaItem } returns item
         listenerSlot.captured.onMediaItemTransition(
             item,
             Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED,
@@ -2486,6 +2488,123 @@ class PlayerDataSourceImplTest {
         transitionTo(null)
 
         verify(exactly = 0) { player.setPlaybackSpeed(any()) }
+        verify(exactly = 0) { player.repeatMode = any() }
+    }
+
+    // ---------------------------------------------------------------------
+    // 라이브 에피소드
+    // ---------------------------------------------------------------------
+
+    /** 현재 창이 [isLive]·[isPlaceholder] 인 타임라인을 플레이어에 올리고 변경 콜백을 보낸다. */
+    private fun givenWindow(isLive: Boolean, isPlaceholder: Boolean = false) {
+        val timeline = mockk<Timeline>(relaxed = true)
+        every { timeline.isEmpty } returns false
+        every { timeline.getWindow(any(), any()) } answers {
+            val window = arg<Timeline.Window>(1)
+            window.set(
+                Timeline.Window.SINGLE_WINDOW_UID,
+                MediaItem.EMPTY,
+                null,
+                C.TIME_UNSET,
+                C.TIME_UNSET,
+                C.TIME_UNSET,
+                true,
+                isLive,
+                if (isLive) MediaItem.LiveConfiguration.UNSET else null,
+                0L,
+                C.TIME_UNSET,
+                0,
+                0,
+                0L,
+            )
+            window.isPlaceholder = isPlaceholder
+            window
+        }
+        every { player.currentTimeline } returns timeline
+        every { player.currentMediaItemIndex } returns 0
+        listenerSlot.captured.onTimelineChanged(timeline, Player.TIMELINE_CHANGE_REASON_SOURCE_UPDATE)
+    }
+
+    @Test
+    fun `Given live window on episode, When timeline changes, Then liveEpisodeId is the playing episode`() = runTest {
+        transitionTo(episodeItem())
+
+        givenWindow(isLive = true)
+
+        dataSource.liveEpisodeId.test { assertEquals(episode.id, awaitItem()) }
+    }
+
+    @Test
+    fun `Given placeholder live window, When timeline changes, Then liveEpisodeId stays null`() = runTest {
+        transitionTo(episodeItem())
+
+        givenWindow(isLive = true, isPlaceholder = true)
+
+        dataSource.liveEpisodeId.test { assertEquals(null, awaitItem()) }
+    }
+
+    @Test
+    fun `Given non-live window, When timeline changes, Then liveEpisodeId stays null`() = runTest {
+        transitionTo(episodeItem())
+
+        givenWindow(isLive = false)
+
+        dataSource.liveEpisodeId.test { assertEquals(null, awaitItem()) }
+    }
+
+    @Test
+    fun `Given station with live window, When timeline changes, Then liveEpisodeId is null`() = runTest {
+        transitionTo(stationItem())
+
+        givenWindow(isLive = true)
+
+        dataSource.liveEpisodeId.test { assertEquals(null, awaitItem()) }
+    }
+
+    @Test
+    fun `Given live episode, When next item is not live, Then liveEpisodeId clears`() = runTest {
+        transitionTo(episodeItem())
+        givenWindow(isLive = true)
+
+        givenWindow(isLive = false)
+        transitionTo(episodeItem(episode.copy(id = 999L)))
+
+        dataSource.liveEpisodeId.test { assertEquals(null, awaitItem()) }
+    }
+
+    @Test
+    fun `Given user speed 1_5 and live episode, Then speed is forced to 1x and restored when it ends`() = runTest {
+        dataSource.setSpeed(1.5f)
+        transitionTo(episodeItem())
+        clearMocks(player, answers = false, recordedCalls = true)
+
+        givenWindow(isLive = true)
+        verify(exactly = 1) { player.setPlaybackSpeed(1f) }
+
+        givenWindow(isLive = false)
+        verify(exactly = 1) { player.setPlaybackSpeed(1.5f) }
+        dataSource.speed.test { assertEquals(1.5f, awaitItem()) }
+    }
+
+    @Test
+    fun `Given live episode, When setSpeed called, Then only the stored value changes`() = runTest {
+        transitionTo(episodeItem())
+        givenWindow(isLive = true)
+        clearMocks(player, answers = false, recordedCalls = true)
+
+        dataSource.setSpeed(2f)
+
+        verify(exactly = 0) { player.setPlaybackSpeed(any()) }
+        dataSource.speed.test { assertEquals(2f, awaitItem()) }
+    }
+
+    @Test
+    fun `Given live episode, Then repeat mode is left alone`() {
+        transitionTo(episodeItem())
+        clearMocks(player, answers = false, recordedCalls = true)
+
+        givenWindow(isLive = true)
+
         verify(exactly = 0) { player.repeatMode = any() }
     }
 }

@@ -71,6 +71,12 @@ class PlayerDataSourceImpl @Inject constructor(
     // 덮인다.
     private var wasStation = false
 
+    // 직전에 배속을 제한했는지(스테이션 또는 라이브 에피소드). 반복 모드는 스테이션만 정하므로 따로 둔다.
+    private var wasSpeedRestricted = false
+
+    // 현재 창의 라이브 여부를 읽을 때 재사용하는 Window. 플레이어 스레드에서만 쓴다.
+    private val liveWindow = Timeline.Window()
+
     // 이니셜 아트 → 알림 아트 PNG. 같은 아트면 같은 그림이라 스테이션 id 가 아니라 아트로 키를 삼는다.
     // IO 의 선렌더([prepareStationArtwork])와 메인의 폴백 렌더가 함께 만지므로 동시 접근에 안전해야 한다.
     private val stationArtworkCache = ConcurrentHashMap<StationArt, ByteArray>()
@@ -104,6 +110,7 @@ class PlayerDataSourceImpl @Inject constructor(
             _playlist.value = items.mapNotNull { item ->
                 item.episodeTag()
             }
+            updateLiveState()
         }
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -133,19 +140,21 @@ class PlayerDataSourceImpl @Inject constructor(
             if (station?.id != _nowPlayingStation.value?.id) stationStale = false
             _nowPlayingStation.value = station
             _streamTitle.value = null
-            // 스테이션은 배속·반복을 적용하지 않는다. 라이브는 1x 가 아니면 버퍼가 마르고, 반복 모드가
-            // 켜져 있으면 스트림이 끊겨도 ENDED 가 아니라 같은 항목의 재연결 루프(REPEAT)가 돼 Ended 실패가
-            // 나지 않는다. 사용자 값은 _speed·_repeat 에 보존해 두었다가 에피소드로 돌아올 때 되돌린다.
+            // 스테이션은 반복을 적용하지 않는다. 반복 모드가 켜져 있으면 스트림이 끊겨도 ENDED 가 아니라
+            // 같은 항목의 재연결 루프(REPEAT)가 돼 Ended 실패가 나지 않는다. 사용자 값은 _repeat 에
+            // 보존해 두었다가 에피소드로 돌아올 때 되돌린다. 라이브 에피소드는 반복을 그대로 둔다 —
+            // 끊기면 ENDED 로 드러나는 쪽이 정상이고, 복구 경로가 스테이션 전용이다.
             if ((station != null) != wasStation) {
                 wasStation = station != null
                 if (station != null) {
-                    player.setPlaybackSpeed(1f)
                     player.repeatMode = Player.REPEAT_MODE_OFF
                 } else {
-                    player.setPlaybackSpeed(_speed.value)
                     player.repeatMode = _repeat.value
                 }
             }
+            // 배속은 스테이션뿐 아니라 라이브 에피소드도 막는다. 라이브 여부는 타임라인이 준비돼야 알 수
+            // 있어, 새 항목이 라이브면 이 자리가 아니라 뒤따르는 onTimelineChanged 에서 판명된다.
+            updateLiveState()
             _indexOfList.value = player.currentMediaItemIndex
             // 재생목록을 통째로 갈아끼우는 중에는 발행하지 않는다. media3 가 setMediaItems 호출
             // 스택 안에서 이 콜백을 인라인 실행하는데, 그때는 아직 목표 항목·위치에 도달하기 전이라
@@ -203,6 +212,7 @@ class PlayerDataSourceImpl @Inject constructor(
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             _playback.value = playbackState
+            updateLiveState()
             _isBuffering.value = player.isBufferingToPlay()
             when (playbackState) {
                 Player.STATE_IDLE -> Timber.d("STATE_IDLE")
@@ -791,10 +801,10 @@ class PlayerDataSourceImpl @Inject constructor(
     override fun setSpeed(speed: Float) {
         val safeSpeed = speed.coerceIn(0.5f, 3.5f)
         _speed.value = safeSpeed
-        // 스테이션 중에는 값만 저장한다. PlayerViewModel 이 생성될 때마다 사용자 배속을 setSpeed 로
+        // 스테이션·라이브 에피소드 중에는 값만 저장한다. PlayerViewModel 이 생성될 때마다 사용자 배속을 setSpeed 로
         // 보내므로 여기서 막지 않으면 라이브 스트림이 배속으로 돌아 버퍼가 마른다. 에피소드로
-        // 돌아오면 transition 이 저장해 둔 값을 다시 적용한다.
-        if (currentStation() == null) player.setPlaybackSpeed(safeSpeed)
+        // 돌아오면 [updateLiveState] 가 저장해 둔 값을 다시 적용한다.
+        if (!isSpeedRestricted()) player.setPlaybackSpeed(safeSpeed)
     }
 
     override fun setVolume(volume: Float) {
@@ -889,6 +899,35 @@ class PlayerDataSourceImpl @Inject constructor(
 
     private fun currentEpisodeId(): Long? = currentEpisode()?.id
 
+    /**
+     * 지금 항목이 라이브 에피소드인가. 피드 메타로 점치지 않고 플레이어가 본 창으로 가른다 — 피드의
+     * 라이브 항목엔 길이·상태 같은 일관된 표지가 없다. 준비 전 placeholder 창은 아직 모른다.
+     * 스테이션은 에피소드가 아니라 여기서 제외한다.
+     */
+    private fun isLiveEpisode(): Boolean {
+        if (currentEpisode() == null) return false
+        val timeline = player.currentTimeline
+        if (timeline.isEmpty) return false
+        val window = timeline.getWindow(player.currentMediaItemIndex, liveWindow)
+        return !window.isPlaceholder && window.isLive()
+    }
+
+    private fun isSpeedRestricted(): Boolean =
+        currentStation() != null || _liveEpisodeId.value != null
+
+    /**
+     * 라이브 에피소드 판정을 갱신하고, 바뀌면 배속 제한을 맞춘다. 라이브는 1x 가 아니면 버퍼가 마른다.
+     * 사용자 값은 [_speed] 에 보존해 두었다가 제한이 풀릴 때 되돌린다. 종류가 바뀔 때만 건드린다 —
+     * 매번 되돌리면 MediaSession 으로 플레이어에 직접 건 값이 낡은 저장값으로 덮인다.
+     */
+    private fun updateLiveState() {
+        _liveEpisodeId.value = if (isLiveEpisode()) currentEpisodeId() else null
+        val restricted = isSpeedRestricted()
+        if (restricted == wasSpeedRestricted) return
+        wasSpeedRestricted = restricted
+        player.setPlaybackSpeed(if (restricted) 1f else _speed.value)
+    }
+
     /** 지금 플레이어에 올라 있는 스테이션. [currentEpisode] 와 같은 이유로 플레이어에서 읽는다. */
     private fun currentStation(): Station? =
         player.currentMediaItem?.stationTag()
@@ -981,6 +1020,9 @@ class PlayerDataSourceImpl @Inject constructor(
 
     private val _nowPlayingStation = MutableStateFlow<Station?>(null)
     override val nowPlayingStation: Flow<Station?> = _nowPlayingStation
+
+    private val _liveEpisodeId = MutableStateFlow<Long?>(null)
+    override val liveEpisodeId: Flow<Long?> = _liveEpisodeId
 
     private val _streamTitle = MutableStateFlow<String?>(null)
     override val streamTitle: Flow<String?> = _streamTitle

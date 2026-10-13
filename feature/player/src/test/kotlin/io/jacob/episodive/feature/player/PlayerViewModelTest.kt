@@ -96,6 +96,7 @@ class PlayerViewModelTest {
     private val isShuffleFlow = MutableStateFlow(false)
     private val repeatFlow = MutableStateFlow(Repeat.OFF)
     private val nowPlayingFlow = MutableStateFlow<Episode?>(null)
+    private val liveEpisodeIdFlow = MutableStateFlow<Long?>(null)
 
     private fun setupPlayerRepositoryMocks() {
         every { playerRepository.progress } returns progressFlow
@@ -108,6 +109,7 @@ class PlayerViewModelTest {
         every { playerRepository.isShuffle } returns isShuffleFlow
         every { playerRepository.repeat } returns repeatFlow
         every { playerRepository.nowPlaying } returns nowPlayingFlow
+        every { playerRepository.liveEpisodeId } returns liveEpisodeIdFlow
         // caption 관련 유스케이스는 대부분 테스트에서 의미가 없어 기본값을 여기서 공통으로 깐다.
         // 개별 caption 테스트는 필요한 mock 을 각자 다시 stub 한다.
         every { observeLiveCaptionUseCase() } returns flowOf(LiveCaptionState.Initial)
@@ -224,6 +226,42 @@ class PlayerViewModelTest {
                 val playing = expectMostRecentItem() as PlayerState.Success
                 assertEquals(false, playing.isBuffering)
                 assertTrue(playing.isPlaying)
+            }
+        }
+
+    @Test
+    fun `Given liveEpisodeId matches nowPlaying, When collecting, Then state isLive`() =
+        runTest {
+            setupPlayerRepositoryMocks()
+            val episode = episodeTestData
+            every { getNowPlayingUseCase() } returns flowOf(episode)
+            every { getPodcastUseCase(episode.feedId) } returns flowOf(podcastTestData)
+            every { getPlaylistUseCase() } returns flowOf(emptyList())
+            every { getUserDataUseCase() } returns flowOf(UserData(speed = 1.0f))
+            liveEpisodeIdFlow.value = episode.id
+
+            val viewModel = createViewModel()
+
+            viewModel.state.test {
+                assertTrue((awaitItem() as PlayerState.Success).isLive)
+            }
+        }
+
+    @Test
+    fun `Given liveEpisodeId of previous episode lingers, When collecting, Then state is not live`() =
+        runTest {
+            setupPlayerRepositoryMocks()
+            val episode = episodeTestData
+            every { getNowPlayingUseCase() } returns flowOf(episode)
+            every { getPodcastUseCase(episode.feedId) } returns flowOf(podcastTestData)
+            every { getPlaylistUseCase() } returns flowOf(emptyList())
+            every { getUserDataUseCase() } returns flowOf(UserData(speed = 1.0f))
+            liveEpisodeIdFlow.value = episode.id + 1
+
+            val viewModel = createViewModel()
+
+            viewModel.state.test {
+                assertEquals(false, (awaitItem() as PlayerState.Success).isLive)
             }
         }
 

@@ -24,9 +24,11 @@ class SleepTimerImplTest {
     private val timeProvider = mockk<TimeProvider>(relaxed = true)
 
     private val progressFlow = MutableStateFlow(Progress(0.seconds, 0.seconds, 0.seconds))
+    private val liveEpisodeIdFlow = MutableStateFlow<Long?>(null)
 
     private fun TestScope.createTimer(): SleepTimerImpl {
         every { playerRepository.progress } returns progressFlow
+        every { playerRepository.liveEpisodeId } returns liveEpisodeIdFlow
         return SleepTimerImpl(
             playerRepository = playerRepository,
             timeProvider = timeProvider,
@@ -153,6 +155,20 @@ class SleepTimerImplTest {
         val timer = createTimer()
 
         timer.startEndOfEpisode()
+
+        verify(exactly = 0) { playerRepository.pause() }
+        assertNull(timer.remainingMs.value)
+    }
+
+    @Test
+    fun `Given 라이브 에피소드(HLS 라서 길이는 양수), When 에피소드 끝 타이머를 걸면, Then 타이머가 뜨지 않는다`() = runTest {
+        val episode = episodeTestData
+        progressFlow.value = Progress(10.seconds, 10.seconds, 600.seconds, episodeId = episode.id)
+        liveEpisodeIdFlow.value = episode.id
+        val timer = createTimer()
+
+        timer.startEndOfEpisode()
+        progressFlow.value = Progress(600.seconds, 600.seconds, 600.seconds, episodeId = episode.id)
 
         verify(exactly = 0) { playerRepository.pause() }
         assertNull(timer.remainingMs.value)
