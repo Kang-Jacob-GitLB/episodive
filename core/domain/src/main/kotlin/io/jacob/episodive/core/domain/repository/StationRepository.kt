@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.domain.repository
 
 import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.StationStream
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,12 @@ interface StationRepository {
         stationId: String,
         excluding: Set<String> = emptySet(),
     ): StationStream?
+
+    /**
+     * 홈페이지·음질·태그. 네트워크로 받아 24시간 메모리에 캐시한다. 모르는 스테이션이거나 받지 못했거나
+     * 쓸 만한 값이 하나도 없으면 null — 부가 정보라 호출한 쪽은 그 섹션만 숨기면 된다.
+     */
+    suspend fun getStationDetails(stationId: String): StationDetails?
 
     /** 즐겨찾기한 순서의 역순(최신순). 카탈로그에서 빠진 스테이션은 제외된다. */
     fun getFavoriteStations(): Flow<List<Station>>

@@ -10,15 +10,20 @@ import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
 import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -37,6 +42,7 @@ class StationPlayerViewModel @Inject constructor(
     private val getStationsUseCase: GetStationsUseCase,
     private val getFavoriteStationsUseCase: GetFavoriteStationsUseCase,
     private val toggleFavoriteStationUseCase: ToggleFavoriteStationUseCase,
+    private val getStationDetailsUseCase: GetStationDetailsUseCase,
     private val sleepTimer: SleepTimer,
 ) : ViewModel() {
 
@@ -82,6 +88,26 @@ class StationPlayerViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000, replayExpirationMillis = 0),
         initialValue = StationPlayerState.Loading,
     )
+
+    /**
+     * 표시 중인 스테이션의 부가 정보. `state` 와 따로 둔다 — 네트워크로 받는 값이라 `Active` 에 넣으면 재생 상태가
+     * 바뀔 때마다 얽히고, 늦게 와도 시트를 막지 않아야 한다.
+     *
+     * 값에 스테이션 id 를 싣는다. 스테이션이 바뀌어도 값을 비우지 않고(비우면 시트 안 정보 영역이 사라졌다
+     * 돌아와 스크롤이 튄다) 화면이 id 로 자기 차례인지 가른다 — 늦게 오는 이전 스테이션 상세는 그려지지 않는다.
+     * transformLatest 가 이전 요청도 취소한다.
+     */
+    val details: StateFlow<StationDetailsOf?> = state
+        .map { (it as? StationPlayerState.Active)?.station?.id }
+        .distinctUntilChanged()
+        .transformLatest { stationId ->
+            if (stationId != null) emit(StationDetailsOf(stationId, getStationDetailsUseCase(stationId)))
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = null,
+        )
 
     private val _action = MutableSharedFlow<StationPlayerAction>(extraBufferCapacity = 1)
 
@@ -161,6 +187,12 @@ sealed interface StationPlayerState {
         val sleepTimerRemainingMs: Long?,
     ) : StationPlayerState
 }
+
+/** [details] 가 어느 스테이션의 것인지 함께 싣는다. null 은 받지 못했거나 쓸 만한 값이 없다는 뜻이다. */
+data class StationDetailsOf(
+    val stationId: String,
+    val details: StationDetails?,
+)
 
 sealed interface StationPlayerAction {
     data object PlayOrPause : StationPlayerAction

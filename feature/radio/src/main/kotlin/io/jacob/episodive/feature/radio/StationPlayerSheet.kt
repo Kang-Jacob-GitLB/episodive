@@ -7,9 +7,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -17,12 +20,14 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
@@ -47,10 +52,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,10 +76,12 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.SLEEP_TIMER_FADE_OUT_MS
+import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
+import io.jacob.episodive.core.testing.model.stationDetailsTestData
 import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.SleepTimerSheet
 import io.jacob.episodive.core.ui.StationArt
@@ -104,6 +114,7 @@ fun StationPlayerSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val details by viewModel.details.collectAsStateWithLifecycle()
     val currentOnDismiss by rememberUpdatedState(onDismiss)
 
     // 정지·감독자 포기·에피소드 전환·재시작 등 스테이션이 사라지는 모든 경로를 여기서 한 번에 받는다.
@@ -147,6 +158,7 @@ fun StationPlayerSheet(
         Box {
             StationPlayerScreen(
                 state = s,
+                details = details,
                 onCollapse = { hideThen {} },
                 onPlayOrPause = { viewModel.sendAction(StationPlayerAction.PlayOrPause) },
                 onPrevious = { viewModel.sendAction(StationPlayerAction.Previous) },
@@ -170,6 +182,7 @@ fun StationPlayerSheet(
 internal fun StationPlayerScreen(
     state: StationPlayerState.Active,
     modifier: Modifier = Modifier,
+    details: StationDetailsOf? = null,
     onCollapse: () -> Unit = {},
     onPlayOrPause: () -> Unit = {},
     onPrevious: () -> Unit = {},
@@ -338,6 +351,21 @@ internal fun StationPlayerScreen(
                         onOpenStationList = onOpenStationList,
                     )
                 }
+            }
+        }
+
+        // 항목 자리는 늘 둔다. 있다 없다 하면 위로 스크롤해 둔 채 이전/다음을 눌렀을 때 목록이 튄다.
+        // 내용은 지금 보이는 스테이션의 상세일 때만 그린다.
+        item {
+            val shown = details?.takeIf { it.stationId == station.id }?.details
+            if (shown != null) {
+                StationInfoSection(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = dimension.screenPadding)
+                        .padding(top = 8.dp, bottom = systemBarsPadding.calculateBottomPadding() + 32.dp),
+                    details = shown,
+                )
             }
         }
     }
@@ -545,6 +573,102 @@ private fun StationControlBar(
     }
 }
 
+/**
+ * 스테이션 부가 정보. 홈페이지·음질·태그 중 있는 것만 그린다. 커뮤니티가 채운 값이라 빠진 줄이 흔하다.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun StationInfoSection(
+    details: StationDetails,
+    modifier: Modifier = Modifier,
+) {
+    val uriHandler = LocalUriHandler.current
+    val quality = listOfNotNull(
+        details.codec,
+        details.bitrateKbps?.let { stringResource(R.string.feature_radio_info_bitrate_format, it) },
+    ).joinToString(" · ").takeIf { it.isNotEmpty() }
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        HorizontalDivider()
+
+        details.homepage?.let { homepage ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .clickable(
+                        onClickLabel = stringResource(R.string.feature_radio_info_open_homepage),
+                        role = Role.Button,
+                    ) {
+                        // 열 브라우저가 없는 기기에서 던진다. 부가 정보 때문에 앱이 죽으면 안 된다.
+                        runCatching { uriHandler.openUri(homepage) }
+                    }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Icon(
+                    modifier = Modifier.size(18.dp),
+                    imageVector = EpisodiveIcons.WorldShare,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = homepage.toDisplayHost(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+
+        quality?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
+        if (details.tags.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                details.tags.forEach { tag ->
+                    Text(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        text = tag,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        Text(
+            text = stringResource(R.string.feature_radio_info_source),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private val DisplayHostPrefix = Regex("^(https?://)?(www\\.)?", RegexOption.IGNORE_CASE)
+
+/** 주소 줄에는 스킴과 `www.` 를 떼고 보인다. 열 때는 원래 주소를 그대로 쓴다. */
+private fun String.toDisplayHost(): String {
+    return replace(DisplayHostPrefix, "").trimEnd('/')
+}
+
 @DevicePreviews
 @Composable
 private fun StationPlayerScreenPreview() {
@@ -561,6 +685,7 @@ private fun StationPlayerScreenPreview() {
                 next = regionalRadioStationTestData,
                 sleepTimerRemainingMs = null,
             ),
+            details = StationDetailsOf(radioStationTestData.id, stationDetailsTestData),
         )
     }
 }

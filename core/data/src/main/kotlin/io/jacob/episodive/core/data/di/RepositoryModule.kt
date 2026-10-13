@@ -176,6 +176,7 @@ object RepositoryModule {
             stationDao = stationDao,
             catalog = KoreanStationCatalog.entries,
             ioDispatcher = ioDispatcher,
+            now = System::currentTimeMillis,
         )
     }
 }
