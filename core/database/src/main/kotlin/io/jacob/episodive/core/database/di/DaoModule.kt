@@ -29,4 +29,8 @@ object DaoModule {
     @Provides
     @Singleton
     fun provideRecentSearchDao(database: EpisodiveDatabase) = database.recentSearchDao()
+
+    @Provides
+    @Singleton
+    fun provideStationDao(database: EpisodiveDatabase) = database.stationDao()
 }

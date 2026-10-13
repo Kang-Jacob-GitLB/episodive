@@ -24,6 +24,7 @@ import io.jacob.episodive.core.data.repository.StationRepositoryImpl
 import io.jacob.episodive.core.data.repository.UserRepositoryImpl
 import io.jacob.episodive.core.data.util.updater.EpisodeRemoteUpdater
 import io.jacob.episodive.core.data.util.updater.PodcastRemoteUpdater
+import io.jacob.episodive.core.database.dao.StationDao
 import io.jacob.episodive.core.database.datasource.EpisodeLocalDataSource
 import io.jacob.episodive.core.database.datasource.FeedLocalDataSource
 import io.jacob.episodive.core.database.datasource.PodcastLocalDataSource
@@ -167,10 +168,12 @@ object RepositoryModule {
     @Singleton
     fun provideStationRepository(
         stationRemoteDataSource: StationRemoteDataSource,
+        stationDao: StationDao,
         @Dispatcher(EpisodiveDispatchers.IO) ioDispatcher: CoroutineDispatcher,
     ): StationRepository {
         return StationRepositoryImpl(
             remoteDataSource = stationRemoteDataSource,
+            stationDao = stationDao,
             catalog = KoreanStationCatalog.entries,
             ioDispatcher = ioDispatcher,
         )
