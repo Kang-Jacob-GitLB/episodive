@@ -16,8 +16,9 @@ import io.jacob.episodive.core.model.StationKind
  * - 토큰이 붙은 URL(KBS·MBC·SBS·CPBC·지역 MBC)은 만료되므로 [StationCatalogEntry.fallbackUrl] 을
  *   두지 않는다. 항상 재생 직전에 Radio Browser 에서 새로 받는다.
  * - "KBS 1Radio" 로 등록된 항목 하나는 실제로 2라디오 주소라 해피FM 으로 분류했다.
- * - http fallback 호스트의 cleartext 허용은 재생 경로 PR 에서 기기 확인과 함께
- *   network_security_config 에 추가한다(IP 호스트 포함).
+ * - http fallback 호스트의 cleartext 허용은 network_security_config 에 추가했고
+ *   KoreanStationCatalogTest 의 불변식 테스트가 지킨다(IP 호스트 포함). 새 http 항목을 더하면
+ *   그 호스트도 함께 허용해야 테스트가 통과한다.
  *
  * TV 는 모델에는 있으나 v1 카탈로그에는 넣지 않는다.
  */

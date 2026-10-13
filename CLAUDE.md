@@ -273,6 +273,43 @@ Room 왕복과 `flowOn(IO)` 를 거쳐 `progress` 보다 늦게 도착한다. �
   실행 코드를 금지한다. 런타임에 받는 것은 모델(데이터)뿐이다. APK 는 ABI 별로 나눠
   (`splits.abi`) 릴리즈도 ABI 별로 올린다(`publish.yml`).
 
+### 라이브 스테이션 재생 규약 (필수)
+
+라디오 스테이션은 `Station` 을 태그로 단 `MediaItem` 한 개로 Main 플레이어에 올린다(HLS 는 `:core:player`
+의 `media3-exoplayer-hls`). 에피소드와 같은 플레이어·같은 `progress` 를 쓰므로 아래를 어기면 에피소드의
+이어듣기 지점이나 배속이 조용히 망가진다.
+
+- **스테이션 여부는 `nowPlayingStation` 하나로만 가른다.** `nowPlaying` 과 `combine` 하지 마라. 둘은
+  `onMediaItemTransition` 의 같은 자리에서 함께 바뀌는 배타 쌍인데, 서로 다른 Flow 를 따로 구독하면
+  재생 위치 저장 규약에서 겪은 것과 같은 어긋난 순간을 본다. `MediaNotificationService` 도 두 수집기가
+  필드만 갱신하고 레이아웃은 필드를 읽어 정한다.
+- **스테이션이면 `progress.episodeId` 는 null 이다.** `currentEpisodeId()` 와 `playbackDuration()` 이 이미
+  그렇게 답하므로 `progressUpdater`·`playbackDuration`·`publishStartOfPlayback` 에 스테이션 분기를 넣지
+  마라. 분기를 넣는 순간 저장 경로가 갈라진다. 계약 테스트가 `PlayerDataSourceImplTest` 에 있다.
+  **길이는 라이브 여부의 근거가 아니다.** Icecast 는 `player.duration` 이 없어 0 이지만, HLS 라이브는
+  라이브 창 길이(양수)가 그대로 발행된다. "duration 이 0 이면 라이브" 로 판정하지 마라 — 라이브는
+  `nowPlayingStation != null` 로만 안다. (스테이션이면 시크바를 숨기는 것은 PR5 의 UI 몫이다.)
+- **배속·반복은 항목 종류가 바뀔 때만 transition 에서 다시 정하고, 스테이션 중의 `setSpeed`·
+  `setRepeat`·`changeRepeat` 는 값만 저장한다.** 라이브 스트림이 1x 가 아니면 버퍼가 말라 끊긴다. 반복이
+  켜져 있으면 Icecast 가 끊겨도 ENDED 가 아니라 같은 항목의 REPEAT 재연결 루프가 되어 `Ended` 실패가 나지
+  않는다 — 그래서 스테이션 중에는 플레이어를 1x·REPEAT_OFF 로 두고 사용자 값(`_speed`·`_repeat`)은
+  보존했다가 에피소드로 돌아올 때 되돌린다. `PlayerViewModel` 은 생성될 때마다 사용자 배속을 `setSpeed`
+  로 보내므로 플레이어에 바로 적용하면 스테이션 중에도 배속이 걸린다. 반대로 **에피소드끼리의 전환에서는
+  건드리지 마라** — 매번 저장값을 되돌리면 MediaSession(Android Auto 등)이 플레이어에 직접 건 값이
+  낡은 저장값으로 덮인다.
+- **`failures` 에 replay 를 두지 마라.** 같은 스테이션을 다시 틀 때 지난 실패가 재생되면 멀쩡한 세션에
+  복구가 돈다. 구독자가 없을 때의 실패는 버려지는 것이 맞다.
+- **복구 조작(`restartStation`·`stopStation`)은 `stationId` 가드를 거친다.** 지금 올라 있는 것이 그
+  스테이션일 때만 동작하고 아니면 false 를 돌려준다. 복구는 늦게 도착하므로, 그 사이 사용자가 다른 것을
+  골랐다면 아무것도 하지 않아야 한다. 사용자 의도의 호출(`play*`·`next`·`stop` 등)만 `playRequestCount()`
+  를 올리고 복원(`prepare`)·`restartStation`·`stopStation` 은 올리지 않는다.
+- **http 스트림 호스트는 `network_security_config.xml` 이 허용해야 하고, 그 짝은 카탈로그 불변식
+  테스트(`KoreanStationCatalogTest`)가 지킨다.** 빠뜨리면 재생 시점에 `IO_CLEARTEXT_NOT_PERMITTED` 로 조용히
+  실패한다. 테스트가 읽는 XML 은 Gradle task input 으로 선언했다(`org.gradle.caching` 때문에 XML 만 바뀐
+  실행이 캐시로 건너뛰어진다). 새 http 항목을 더하면 호스트도 함께 허용한다.
+- **스테이션을 멈추거나 포기할 때는 항목을 비운다**(`stopStation`). `hasMediaItem()` 이 참인 동안은 앱
+  재시작 시 마지막 에피소드 복원이 막히므로, 멈추기만 하고 항목을 남기면 죽은 스트림이 플레이어를 붙든다.
+
 ## 중요 구현 세부사항
 
 ### 1. Enum 처리 (필수)

@@ -1,7 +1,9 @@
 package io.jacob.episodive.core.testing.model
 
+import io.jacob.episodive.core.model.PlaybackFailure
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationStream
 
 val radioStationTestData = Station(
     id = "test-radio",
@@ -31,4 +33,20 @@ val stationTestData = listOf(
     radioStationTestData,
     tvStationTestData,
     regionalRadioStationTestData,
+)
+
+val hlsStreamTestData = StationStream(
+    url = "https://example.com/live/playlist.m3u8",
+    isHls = true,
+)
+
+val icecastStreamTestData = StationStream(
+    url = "https://example.com/live/stream",
+    isHls = false,
+)
+
+val playbackFailureTestData = PlaybackFailure(
+    cause = PlaybackFailure.Cause.Gone,
+    stationId = radioStationTestData.id,
+    streamUrl = icecastStreamTestData.url,
 )

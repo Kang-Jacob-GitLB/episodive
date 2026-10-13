@@ -12,6 +12,7 @@ import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import androidx.media3.session.SessionError
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
@@ -26,6 +27,7 @@ import io.jacob.episodive.core.domain.usecase.episode.GetMostRecentPlayedEpisode
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.Station
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -59,8 +61,10 @@ class MediaNotificationService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    private lateinit var nowPlaying: Episode
-    private var isLiked = false
+    // 스테이션을 먼저 틀면 에피소드가 한 번도 없을 수 있다. 두 수집기는 각자 필드만 갱신하고,
+    // 레이아웃은 그 필드를 읽어 정한다 — combine 으로 묶으면 한쪽이 늦을 때 어긋난 쌍을 본다.
+    private var nowPlaying: Episode? = null
+    private var currentStation: Station? = null
 
     companion object {
         private const val NOTIFICATION_ID = 1001
@@ -100,8 +104,15 @@ class MediaNotificationService : MediaSessionService() {
 
         serviceScope.launch {
             getNowPlayingUseCase().collectLatest { episode ->
-                episode?.let { nowPlaying = it }
-                updateCustomLayout(episode?.isLiked ?: false)
+                nowPlaying = episode
+                updateCustomLayout()
+            }
+        }
+
+        serviceScope.launch {
+            playerRepository.nowPlayingStation.collect { station ->
+                currentStation = station
+                updateCustomLayout()
             }
         }
 
@@ -122,19 +133,29 @@ class MediaNotificationService : MediaSessionService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_WIDGET_PLAY_PAUSE -> serviceScope.launch { playerRepository.playOrPause() }
-            ACTION_WIDGET_SEEK_FWD -> serviceScope.launch { playerRepository.seekForward() }
-            ACTION_WIDGET_SEEK_BWD -> serviceScope.launch { playerRepository.seekBackward() }
+            ACTION_WIDGET_SEEK_FWD -> if (currentControls().showCustomButtons) {
+                serviceScope.launch { playerRepository.seekForward() }
+            }
+
+            ACTION_WIDGET_SEEK_BWD -> if (currentControls().showCustomButtons) {
+                serviceScope.launch { playerRepository.seekBackward() }
+            }
         }
         return super.onStartCommand(intent, flags, startId)
     }
 
-    private fun updateCustomLayout(isLiked: Boolean) {
-        val customLayout = getCustomLayout(isLiked)
-        mediaSession?.setCustomLayout(customLayout)
+    private fun currentControls(): NotificationControls =
+        notificationControls(currentStation, nowPlaying?.isLiked ?: false)
+
+    private fun updateCustomLayout() {
+        mediaSession?.setCustomLayout(getCustomLayout())
     }
 
     private fun getCustomLayout(): ImmutableList<CommandButton> {
-        return getCustomLayout(isLiked)
+        val controls = currentControls()
+        // 라이브에는 15초/30초 건너뛰기도 좋아요 대상도 없다.
+        if (!controls.showCustomButtons) return ImmutableList.of()
+        return getCustomLayout(controls.isLiked)
     }
 
     private fun getCustomLayout(isLiked: Boolean): ImmutableList<CommandButton> {
@@ -224,6 +245,12 @@ class MediaNotificationService : MediaSessionService() {
             customCommand: SessionCommand,
             args: Bundle,
         ): ListenableFuture<SessionResult> {
+            // 레이아웃을 비워 두어도 이미 그려진 알림이나 외부 컨트롤러가 명령을 보낼 수 있다.
+            // 무시한 것을 성공으로 답하면 컨트롤러는 처리된 줄 안다 — 지원하지 않는다고 답한다.
+            // (홈 화면 위젯의 ±탐색 버튼을 스테이션일 때 숨기는 것은 PR5 범위다.)
+            if (!currentControls().showCustomButtons) {
+                return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
+            }
             when (CustomCommand.fromAction(customCommand.customAction)) {
                 CustomCommand.SEEK_BACKWARD -> playerRepository.seekBackward()
                 CustomCommand.SEEK_FORWARD -> playerRepository.seekForward()
@@ -256,7 +283,7 @@ class MediaNotificationService : MediaSessionService() {
     }
 
     private fun toggleLikeEpisode() = serviceScope.launch {
-        toggleLikedEpisodeUseCase(nowPlaying)
+        nowPlaying?.let { toggleLikedEpisodeUseCase(it) }
     }
 }
 

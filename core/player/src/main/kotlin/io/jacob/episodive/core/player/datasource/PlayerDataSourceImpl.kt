@@ -1,20 +1,29 @@
 package io.jacob.episodive.core.player.datasource
 
+import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Metadata
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.Tracks
 import androidx.media3.common.text.CueGroup
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.extractor.metadata.icy.IcyInfo
+import androidx.media3.extractor.metadata.id3.TextInformationFrame
 import io.jacob.episodive.core.domain.download.EpisodeDownloader
 import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.PlaybackFailure
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.Spectrum
+import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.player.audio.PlaybackSpectrumMonitor
 import io.jacob.episodive.core.model.coverUrl
 import io.jacob.episodive.core.model.mapper.toDurationMillis
@@ -42,12 +51,27 @@ class PlayerDataSourceImpl @Inject constructor(
     private val episodeDownloader: EpisodeDownloader,
     // 파도 애니메이션이 있는 클립 플레이어에만 붙는다. 없으면 스펙트럼은 늘 잠잠하다.
     private val spectrumMonitor: PlaybackSpectrumMonitor? = null,
+    // 진행 갱신이 도는 범위. 테스트가 가상 시간으로 갱신 코루틴을 결정적으로 돌리려고 바꿔 끼운다.
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) : PlayerDataSource {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // prepare() 가 setMediaItems 를 호출하는 동안 transition 콜백의 progress 발행을 막는 플래그.
     // 콜백과 prepare() 는 같은 플레이어 스레드에서만 실행되므로 별도 동기화가 필요 없다.
     private var isPreparing = false
+
+    // 사용자 의도로 현재 항목을 바꾼 호출 수. 복구 쪽이 "그 사이 사용자가 다른 걸 골랐는가" 를
+    // 가르는 근거라, 복원(prepare)과 복구(restartStation)는 세지 않는다. 메인 스레드에서만 만진다.
+    private var playRequests = 0L
+
+    // 직전 항목이 스테이션이었는지. 배속·반복은 종류가 바뀔 때만 다시 정한다. 에피소드끼리 넘어갈 때
+    // 매번 저장값을 되돌려 놓으면 MediaSession(Android Auto 등)으로 플레이어에 직접 건 값이 낡은 저장값으로
+    // 덮인다.
+    private var wasStation = false
+
+    // 지금 스테이션의 소리가 한 번이라도 멎었는지(일시정지·포커스 일시 상실 등). 다시 흐를 때 라이브로
+    // 다시 붙을지를 가른다. 다른 스테이션으로 바뀔 때만 푼다 — 멈춘 채 복구(restartStation)가 같은
+    // 항목을 다시 올려도 transition 이 나므로, 그때 풀면 재개 시 복구 시점의 버퍼부터 흐른다.
+    private var stationStale = false
 
     private val listener = object : Player.Listener {
         override fun onTimelineChanged(timeline: Timeline, reason: Int) {
@@ -96,7 +120,25 @@ class PlayerDataSourceImpl @Inject constructor(
             }
 
             val episode = mediaItem?.episodeTag()
+            val station = mediaItem?.stationTag()
             _nowPlaying.value = episode
+            // 에피소드와 스테이션은 한 항목이 가질 수 있는 둘 중 하나라 같은 자리에서 함께 바꾼다.
+            if (station?.id != _nowPlayingStation.value?.id) stationStale = false
+            _nowPlayingStation.value = station
+            _streamTitle.value = null
+            // 스테이션은 배속·반복을 적용하지 않는다. 라이브는 1x 가 아니면 버퍼가 마르고, 반복 모드가
+            // 켜져 있으면 스트림이 끊겨도 ENDED 가 아니라 같은 항목의 재연결 루프(REPEAT)가 돼 Ended 실패가
+            // 나지 않는다. 사용자 값은 _speed·_repeat 에 보존해 두었다가 에피소드로 돌아올 때 되돌린다.
+            if ((station != null) != wasStation) {
+                wasStation = station != null
+                if (station != null) {
+                    player.setPlaybackSpeed(1f)
+                    player.repeatMode = Player.REPEAT_MODE_OFF
+                } else {
+                    player.setPlaybackSpeed(_speed.value)
+                    player.repeatMode = _repeat.value
+                }
+            }
             _indexOfList.value = player.currentMediaItemIndex
             // 재생목록을 통째로 갈아끼우는 중에는 발행하지 않는다. media3 가 setMediaItems 호출
             // 스택 안에서 이 콜백을 인라인 실행하는데, 그때는 아직 목표 항목·위치에 도달하기 전이라
@@ -159,12 +201,32 @@ class PlayerDataSourceImpl @Inject constructor(
                 Player.STATE_IDLE -> Timber.d("STATE_IDLE")
                 Player.STATE_BUFFERING -> Timber.d("STATE_BUFFERING")
                 Player.STATE_READY -> Timber.d("STATE_READY")
-                Player.STATE_ENDED -> Timber.d("STATE_ENDED")
+                Player.STATE_ENDED -> {
+                    Timber.d("STATE_ENDED")
+                    // 라이브는 끝나지 않는다. 스테이션이 ENDED 가 됐다면 서버가 스트림을 끊은 것이다.
+                    val item = player.currentMediaItem
+                    val station = item?.stationTag()
+                    if (station != null) {
+                        _failures.tryEmit(
+                            PlaybackFailure(
+                                cause = PlaybackFailure.Cause.Ended,
+                                stationId = station.id,
+                                streamUrl = item.localConfiguration?.uri?.toString(),
+                            )
+                        )
+                    }
+                }
             }
         }
 
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
             _isBuffering.value = player.isBufferingToPlay()
+            rejoinLiveIfStale()
+        }
+
+        // 전화 같은 포커스 일시 상실은 playWhenReady 를 끄지 않고 재생만 억제한다. 일시정지와 같이 다룬다.
+        override fun onPlaybackSuppressionReasonChanged(playbackSuppressionReason: Int) {
+            rejoinLiveIfStale()
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -177,7 +239,8 @@ class PlayerDataSourceImpl @Inject constructor(
         }
 
         override fun onRepeatModeChanged(repeatMode: Int) {
-            _repeat.value = repeatMode
+            // 스테이션이 강제로 끈 OFF 는 사용자 값이 아니다. 덮으면 에피소드로 돌아와도 복원할 값이 없다.
+            if (currentStation() == null) _repeat.value = repeatMode
             when (repeatMode) {
                 Player.REPEAT_MODE_OFF -> Timber.d("REPEAT_MODE_OFF")
                 Player.REPEAT_MODE_ONE -> Timber.d("REPEAT_MODE_ONE")
@@ -192,6 +255,23 @@ class PlayerDataSourceImpl @Inject constructor(
 
         override fun onPlayerError(error: PlaybackException) {
             Timber.e("errorCode: ${error.errorCode}, errorCodeName: ${error.errorCodeName}, message: ${error.message}, cause: ${error.cause}")
+            _failures.tryEmit(error.toFailure(player.currentMediaItem))
+        }
+
+        // IcyInfo.rawMetadata·TextInformationFrame 은 @UnstableApi 다. CI 의 lint 가 opt-in 누락을 오류로 잡는다.
+        @OptIn(UnstableApi::class)
+        override fun onMetadata(metadata: Metadata) {
+            if (currentStation() == null) return
+            for (i in 0 until metadata.length()) {
+                val title = when (val entry = metadata[i]) {
+                    is IcyInfo -> decodeIcyTitle(entry.rawMetadata, entry.title)
+                    is TextInformationFrame -> entry.takeIf { it.id == "TIT2" }?.values?.firstOrNull()
+                    else -> null
+                }
+                // 제목 정보가 아예 없는 항목은 건드리지 않는다. 빈 제목(곡 사이 멘트·광고)은 지운다 —
+                // 남겨 두면 지난 곡이 계속 떠 있다.
+                if (title != null) _streamTitle.value = title.trim().ifBlank { null }
+            }
         }
 
         override fun onTracksChanged(tracks: Tracks) {
@@ -286,6 +366,59 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     /**
+     * 스테이션을 올릴 아이템. 클리핑·자막은 걸지 않는다.
+     *
+     * 미디어 id 에 접두어를 붙여 에피소드의 숫자 id 와 겹치지 않게 한다. 아트는 싣지 않는다.
+     */
+    private fun Station.toMediaItem(stream: StationStream): MediaItem {
+        val mediaMetadata = MediaMetadata.Builder()
+            .setTitle(name)
+            .setDisplayTitle(name)
+            .setArtist(broadcaster)
+            .setMediaType(MediaMetadata.MEDIA_TYPE_RADIO_STATION)
+            .setIsPlayable(true)
+            .build()
+
+        return MediaItem.Builder()
+            .setMediaId("station:$id")
+            .setUri(stream.url)
+            .setMimeType(if (stream.isHls) MimeTypes.APPLICATION_M3U8 else null)
+            .setTag(this)
+            .setMediaMetadata(mediaMetadata)
+            .build()
+    }
+
+    /**
+     * 멎었던 스테이션이 다시 흐를 때 지금 방송으로 다시 붙는다.
+     *
+     * 라이브는 멈춘 자리에서 이어 들을 이유가 없다. 그대로 두면 멎기 전에 받아 둔 버퍼부터 흘러 방송보다
+     * 멎은 시간만큼 늦게 들리고, HLS 는 그 지점이 창 밖으로 밀려 BehindLiveWindow 가 난다. 재생으로
+     * 돌아오는 경로가 여럿(미니바·알림·위젯·MediaSession·포커스 복귀)이라 각 함수가 아니라 플레이어
+     * 콜백 한 자리에서 처리한다.
+     *
+     * 멈추고(소스 해제) → 기본 위치로 옮기고 → 다시 준비한다. 셋 다 필요하다.
+     * - 탐색만 하면 안 된다: 탐색이 안 되는 ICY 는 기본 위치가 0 이라, 0 에서 멎었다면 같은 위치로의
+     *   탐색을 media3 가 건너뛰어 재연결이 일어나지 않는다. 멈춰서 소스를 놓아야 새 연결로 시작한다.
+     * - 멈추고 다시 준비만 해도 안 된다: `stop()` 은 위치를 남겨 두고, 멈춘 동안에도 HLS 재생목록은
+     *   갱신되므로 다시 준비하면 정지했던 그 방송 시점으로 돌아간다. IDLE 에서의 `seekToDefaultPosition`
+     *   이 남은 위치를 지워야 새 타임라인의 기본 위치(라이브 끝)에서 시작한다.
+     * 항목을 바꾸지 않으므로 transition 은 나지 않는다.
+     */
+    private fun rejoinLiveIfStale() {
+        if (currentStation() == null) return
+        val flowing = player.playWhenReady &&
+            player.playbackSuppressionReason == Player.PLAYBACK_SUPPRESSION_REASON_NONE
+        if (!flowing) {
+            stationStale = true
+        } else if (stationStale) {
+            stationStale = false
+            player.stop()
+            player.seekToDefaultPosition()
+            player.prepare()
+        }
+    }
+
+    /**
      * 이 미디어 아이템을 재생할 때 실제로 흐르는 길이.
      *
      * 준비가 끝나기 전에는 `player.duration` 이 TIME_UNSET 이라 메타에서 길이를 가져와야
@@ -335,6 +468,9 @@ class PlayerDataSourceImpl @Inject constructor(
      */
     private fun MediaItem.episodeTag(): Episode? = localConfiguration?.tag as? Episode
 
+    /** 이 아이템에 실린 스테이션. [Station.toMediaItem] 이 `setTag` 로 붙여 둔 것이다. */
+    private fun MediaItem.stationTag(): Station? = localConfiguration?.tag as? Station
+
     /**
      * 잘라 올린 아이템인지 — 즉 [toMediaItem] 이 `setClippingConfiguration` 을 불렀는지.
      *
@@ -382,6 +518,7 @@ class PlayerDataSourceImpl @Inject constructor(
 
     override fun play(episode: Episode) {
         Timber.i("url: ${episode.enclosureUrl}")
+        playRequests++
         val mediaItem = episode.toMediaItem(isClip = false)
 
         player.setMediaItem(mediaItem)
@@ -393,6 +530,7 @@ class PlayerDataSourceImpl @Inject constructor(
         episodes.forEachIndexed { index, episode ->
             Timber.i("[$index] url: ${episode.enclosureUrl}")
         }
+        playRequests++
         val mediaItems = episodes.map { it.toMediaItem(isClip = false) }
 
         // setMediaItems 는 목록의 첫 항목으로 transition 을 인라인 발생시킨다. 목표가 첫 항목이
@@ -445,6 +583,7 @@ class PlayerDataSourceImpl @Inject constructor(
         }
 
         Timber.i("url: ${episode.enclosureUrl}, clipStartTime: ${episode.clipStartTime}, clipDuration: ${episode.clipDuration}")
+        playRequests++
         val mediaItem = episode.toMediaItem(isClip = true)
 
         player.setMediaItem(mediaItem)
@@ -456,6 +595,7 @@ class PlayerDataSourceImpl @Inject constructor(
         episodes.forEachIndexed { index, episode ->
             Timber.i("[$index] url: ${episode.enclosureUrl}, clipStartTime: ${episode.clipStartTime}, clipDuration: ${episode.clipDuration}")
         }
+        playRequests++
         val mediaItems = episodes.map { it.toMediaItem(isClip = true) }
 
         // play(episodes, indexToPlay) 와 같은 이유로 목표 항목에 도달할 때까지 발행을 막는다.
@@ -473,6 +613,7 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     override fun playIndex(index: Int) {
+        playRequests++
         if (index in 0 until player.mediaItemCount) {
             player.seekToDefaultPosition(index)
             player.playWhenReady = true
@@ -500,15 +641,57 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     override fun stop() {
-        // 진행 상태를 여기서 따로 비우지 않는다. clearMediaItems() 가 목록을 비우면 media3 가
-        // onMediaItemTransition(null, PLAYLIST_CHANGED) 를 부르고, 그 경로가 이미 비어 있는
-        // 진행 상태(episodeId = null)를 발행한다. 같은 값을 여기서 한 번 더 실어 보내면
-        // "이 자리가 그 일을 한다" 는 인상만 남고 실제로 지키는 것은 없다.
+        playRequests++
+        clearPlayer()
+    }
+
+    /**
+     * 멈추고 항목을 비운다. 사용자 정지([stop])와 복구의 정지([stopStation])가 함께 쓴다 — 사용자 호출 수는
+     * 호출자가 정한다.
+     *
+     * 진행 상태를 여기서 따로 비우지 않는다. clearMediaItems() 가 목록을 비우면 media3 가
+     * onMediaItemTransition(null, PLAYLIST_CHANGED) 를 부르고, 그 경로가 이미 비어 있는
+     * 진행 상태(episodeId = null)를 발행한다. 같은 값을 여기서 한 번 더 실어 보내면
+     * "이 자리가 그 일을 한다" 는 인상만 남고 실제로 지키는 것은 없다.
+     */
+    private fun clearPlayer() {
         player.stop()
         player.clearMediaItems()
     }
 
+    override fun playStation(station: Station, stream: StationStream) {
+        Timber.i("station: ${station.id}, url: ${stream.url}, isHls: ${stream.isHls}")
+        playRequests++
+        // 단일 항목이라 isPreparing 이 필요 없다. 발행은 transition 콜백이 한다.
+        player.setMediaItem(station.toMediaItem(stream))
+        player.prepare()
+        player.playWhenReady = true
+        // 막 새로 연결했으니 멎은 적이 없다. 같은 스테이션을 멈춰 둔 채 다시 고르면 플래그가 남아 있어
+        // 위의 playWhenReady 콜백이 한 번 더 연결한다. 다만 통화처럼 재생이 억제된 채 골랐다면 그동안
+        // 받은 버퍼가 늦으므로 억제가 풀릴 때 다시 붙도록 남긴다.
+        stationStale = player.playbackSuppressionReason != Player.PLAYBACK_SUPPRESSION_REASON_NONE
+    }
+
+    override fun restartStation(stationId: String, stream: StationStream?): Boolean {
+        val current = player.currentMediaItem
+        val station = current?.stationTag()?.takeIf { it.id == stationId } ?: return false
+        // 복구는 사용자 의도가 아니므로 playRequests 를 세지 않고, 재생/일시정지 상태도 건드리지 않는다.
+        player.setMediaItem(stream?.let { station.toMediaItem(it) } ?: current)
+        player.prepare()
+        return true
+    }
+
+    override fun stopStation(stationId: String): Boolean {
+        if (currentStation()?.id != stationId) return false
+        // 복구의 정지는 사용자 호출이 아니므로 playRequests 를 올리지 않는다.
+        clearPlayer()
+        return true
+    }
+
+    override fun playRequestCount(): Long = playRequests
+
     override fun next() {
+        playRequests++
         if (player.hasNextMediaItem()) {
             player.seekToNextMediaItem()
             player.playWhenReady = true
@@ -516,6 +699,7 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     override fun previous() {
+        playRequests++
         if (player.hasPreviousMediaItem()) {
             player.seekToPrevious()
             player.playWhenReady = true
@@ -563,23 +747,28 @@ class PlayerDataSourceImpl @Inject constructor(
     }
 
     override fun setRepeat(repeat: Int) {
-        player.repeatMode = repeat
+        // 스테이션 중에는 값만 저장한다(setSpeed 와 같은 이유). 에피소드로 돌아오면 transition 이 적용한다.
+        if (currentStation() != null) _repeat.value = repeat else player.repeatMode = repeat
     }
 
     override fun changeRepeat() {
-        val newState = when (player.repeatMode) {
+        val isStation = currentStation() != null
+        val newState = when (if (isStation) _repeat.value else player.repeatMode) {
             Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ONE
             Player.REPEAT_MODE_ONE -> Player.REPEAT_MODE_ALL
             Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_OFF
             else -> return
         }
-        player.repeatMode = newState
+        if (isStation) _repeat.value = newState else player.repeatMode = newState
     }
 
     override fun setSpeed(speed: Float) {
         val safeSpeed = speed.coerceIn(0.5f, 3.5f)
-        player.setPlaybackSpeed(safeSpeed)
         _speed.value = safeSpeed
+        // 스테이션 중에는 값만 저장한다. PlayerViewModel 이 생성될 때마다 사용자 배속을 setSpeed 로
+        // 보내므로 여기서 막지 않으면 라이브 스트림이 배속으로 돌아 버퍼가 마른다. 에피소드로
+        // 돌아오면 transition 이 저장해 둔 값을 다시 적용한다.
+        if (currentStation() == null) player.setPlaybackSpeed(safeSpeed)
     }
 
     override fun setVolume(volume: Float) {
@@ -674,6 +863,47 @@ class PlayerDataSourceImpl @Inject constructor(
 
     private fun currentEpisodeId(): Long? = currentEpisode()?.id
 
+    /** 지금 플레이어에 올라 있는 스테이션. [currentEpisode] 와 같은 이유로 플레이어에서 읽는다. */
+    private fun currentStation(): Station? =
+        player.currentMediaItem?.stationTag()
+
+    /** 플레이어 오류를 복구가 갈라 볼 수 있는 원인으로 분류한다. */
+    @OptIn(UnstableApi::class)
+    private fun PlaybackException.toFailure(item: MediaItem?): PlaybackFailure {
+        val kind = when (errorCode) {
+            PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> {
+                when ((cause as? HttpDataSource.InvalidResponseCodeException)?.responseCode) {
+                    401, 403, 410 -> PlaybackFailure.Cause.Expired
+                    in 500..599 -> PlaybackFailure.Cause.Network
+                    else -> PlaybackFailure.Cause.Gone
+                }
+            }
+
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
+            PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+            PlaybackException.ERROR_CODE_TIMEOUT -> PlaybackFailure.Cause.Network
+
+            PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW -> PlaybackFailure.Cause.BehindLiveWindow
+
+            PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
+            PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED,
+            PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED,
+            PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED,
+            PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
+            PlaybackException.ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE,
+            PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED,
+            PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED -> PlaybackFailure.Cause.Gone
+
+            else -> PlaybackFailure.Cause.Other
+        }
+        return PlaybackFailure(
+            cause = kind,
+            stationId = item?.stationTag()?.id,
+            streamUrl = item?.localConfiguration?.uri?.toString(),
+        )
+    }
+
     /**
      * 재생목록을 갈아끼운 직후, 실제로 재생할 항목의 상태를 발행한다.
      * 갈아끼우는 동안 억제한 transition 콜백을 대신하는 확정 발행이다.
@@ -722,6 +952,20 @@ class PlayerDataSourceImpl @Inject constructor(
 
     private val _nowPlaying = MutableStateFlow<Episode?>(null)
     override val nowPlaying: Flow<Episode?> = _nowPlaying
+
+    private val _nowPlayingStation = MutableStateFlow<Station?>(null)
+    override val nowPlayingStation: Flow<Station?> = _nowPlayingStation
+
+    private val _streamTitle = MutableStateFlow<String?>(null)
+    override val streamTitle: Flow<String?> = _streamTitle
+
+    // replay 를 두지 않는다. 같은 스테이션을 다시 틀 때 지난 실패가 재생되면 멀쩡한 세션에 복구가 돈다.
+    // 구독자가 없을 때의 실패는 버려지는 것이 맞다 — 복구는 지금 듣고 있는 쪽의 일이다.
+    private val _failures = MutableSharedFlow<PlaybackFailure>(
+        extraBufferCapacity = 8,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+    override val failures: Flow<PlaybackFailure> = _failures
 
     private val _playlist = MutableStateFlow<List<Episode>>(emptyList())
     override val playlist: Flow<List<Episode>> = _playlist
