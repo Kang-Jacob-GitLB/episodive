@@ -3,7 +3,6 @@ package io.jacob.episodive.core.network.datasource
 import com.google.gson.Gson
 import io.jacob.episodive.core.network.model.BroadcasterSource
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -11,7 +10,8 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertThrows
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
@@ -94,18 +94,18 @@ class BroadcasterStreamDataSourceTest {
     fun `Given 5xx, When resolve, Then throws IOException`() = runTest {
         server.enqueue(MockResponse().setResponseCode(503))
 
-        assertThrows(IOException::class.java) {
-            runBlocking { dataSource.resolve(BroadcasterSource.Mbc("sfm")) }
-        }
+        val error = runCatching { dataSource.resolve(BroadcasterSource.Mbc("sfm")) }.exceptionOrNull()
+
+        assertTrue(error is IOException)
     }
 
     @Test
     fun `Given malformed KBS json, When resolve, Then throws`() = runTest {
         server.enqueue(MockResponse().setBody("not json"))
 
-        assertThrows(Exception::class.java) {
-            runBlocking { dataSource.resolve(BroadcasterSource.Kbs("21")) }
-        }
+        val error = runCatching { dataSource.resolve(BroadcasterSource.Kbs("21")) }.exceptionOrNull()
+
+        assertNotNull(error)
     }
 
     @Test
