@@ -20,6 +20,7 @@ import io.jacob.episodive.core.model.Chapter
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.testing.model.captionLineOf
 import io.jacob.episodive.core.testing.model.captionLineTestData
@@ -27,6 +28,8 @@ import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.liveCaptionTestData
 import io.jacob.episodive.core.testing.model.podcastTestData
+import io.jacob.episodive.core.testing.model.stationLiveCaptionTestData
+import io.jacob.episodive.core.ui.caption.CaptionButtonState
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import org.junit.Assert.assertEquals
@@ -425,7 +428,7 @@ class PlayerScreenTest {
 
     @Test
     fun captionEpisodeIdMismatch_cueIsShownInstead() {
-        val caption = liveCaptionTestData.copy(episodeId = 999L)
+        val caption = liveCaptionTestData.copy(subject = CaptionSubject.Episode(999L))
         setPlayerScreen(
             progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
             liveCaption = { caption },
@@ -437,8 +440,22 @@ class PlayerScreenTest {
     }
 
     @Test
+    fun captionOfStation_isNotDrawnWhenProgressEpisodeIdIsNull() {
+        // progress.episodeId 가 null 인 순간(전환 중)에도 스테이션 자막이 새면 안 된다.
+        val caption = stationLiveCaptionTestData()
+        setPlayerScreen(
+            progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = null),
+            liveCaption = { caption },
+            cue = "test cue text",
+        )
+
+        composeTestRule.onNodeWithText(caption.lines.last().text, substring = true).assertDoesNotExist()
+        composeTestRule.onNodeWithText("test cue text").assertExists()
+    }
+
+    @Test
     fun captionEpisodeIdMatches_captionTextIsShownInsteadOfCue() {
-        val caption = liveCaptionTestData.copy(episodeId = 111L)
+        val caption = liveCaptionTestData.copy(subject = CaptionSubject.Episode(111L))
         setPlayerScreen(
             progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
             liveCaption = { caption },
@@ -451,7 +468,7 @@ class PlayerScreenTest {
 
     @Test
     fun captionEpisodeIdMatches_translationLineIsShown() {
-        val caption = liveCaptionTestData.copy(episodeId = 111L, isTranslating = true)
+        val caption = liveCaptionTestData.copy(subject = CaptionSubject.Episode(111L), isTranslating = true)
         setPlayerScreen(
             progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
             liveCaption = { caption },
@@ -463,7 +480,7 @@ class PlayerScreenTest {
 
     @Test
     fun captionIsTranslatingFalse_translationLineIsNotShown() {
-        val caption = liveCaptionTestData.copy(episodeId = 111L, isTranslating = false)
+        val caption = liveCaptionTestData.copy(subject = CaptionSubject.Episode(111L), isTranslating = false)
         setPlayerScreen(
             progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
             liveCaption = { caption },
@@ -477,7 +494,7 @@ class PlayerScreenTest {
 
     @Test
     fun rollingCaption_recentLinesAreShown() {
-        val caption = liveCaptionTestData.copy(episodeId = 111L)
+        val caption = liveCaptionTestData.copy(subject = CaptionSubject.Episode(111L))
         setPlayerScreen(
             progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
             liveCaption = { caption },
@@ -490,7 +507,7 @@ class PlayerScreenTest {
 
     @Test
     fun rollingCaption_translationPersistsAcrossNewLine() {
-        var caption by mutableStateOf(liveCaptionTestData.copy(episodeId = 111L))
+        var caption by mutableStateOf(liveCaptionTestData.copy(subject = CaptionSubject.Episode(111L)))
         setPlayerScreen(
             progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = 111L),
             liveCaption = { caption },
@@ -516,7 +533,7 @@ class PlayerScreenTest {
         val firstHalf = captionLineTestData.copy(id = 10L, utteranceId = 999L, text = "First half of the line")
         val secondHalf = captionLineTestData.copy(id = 11L, utteranceId = 999L, text = "second half.", isFinal = false)
         val caption = liveCaptionTestData.copy(
-            episodeId = 111L,
+            subject = CaptionSubject.Episode(111L),
             lines = listOf(firstHalf, secondHalf),
             translations = emptyList(),
             isTranslating = false,

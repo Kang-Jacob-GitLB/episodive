@@ -105,6 +105,7 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.SLEEP_TIMER_FADE_OUT_MS
 import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.model.coverUrl
 import io.jacob.episodive.core.model.mapper.toHumanReadable
@@ -120,6 +121,10 @@ import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.PodcastSimpleItem
 import io.jacob.episodive.core.ui.PresetCircle
 import io.jacob.episodive.core.ui.SleepTimerSheet
+import io.jacob.episodive.core.ui.caption.CaptionButtonState
+import io.jacob.episodive.core.ui.caption.CaptionToggleButton
+import io.jacob.episodive.core.ui.caption.RollingCaptionOverlay
+import io.jacob.episodive.core.ui.caption.toCaptionButtonState
 import io.jacob.episodive.core.ui.episodeItems
 import io.jacob.episodive.core.ui.share.rememberShareLauncher
 
@@ -168,12 +173,12 @@ fun PlayerBottomSheet(
     val sleepTimerExpiredMessage = stringResource(uiR.string.core_ui_sleep_timer_expired)
     val shareFailedMessage = stringResource(uiR.string.core_ui_share_failed)
     val deepLinkErrorMessage = stringResource(R.string.feature_player_deep_link_not_found)
-    val captionDownloadStartedPattern = stringResource(R.string.feature_player_caption_download_started)
+    val captionDownloadStartedPattern = stringResource(uiR.string.core_ui_caption_download_started)
     val captionUnsupportedMessage = stringResource(R.string.feature_player_caption_unsupported)
-    val captionFailedNetworkMessage = stringResource(R.string.feature_player_caption_download_failed_network)
-    val captionFailedStorageMessage = stringResource(R.string.feature_player_caption_download_failed_storage)
-    val captionFailedCorruptMessage = stringResource(R.string.feature_player_caption_download_failed_corrupt)
-    val captionFailedUnloadableMessage = stringResource(R.string.feature_player_caption_download_failed_unloadable)
+    val captionFailedNetworkMessage = stringResource(uiR.string.core_ui_caption_download_failed_network)
+    val captionFailedStorageMessage = stringResource(uiR.string.core_ui_caption_download_failed_storage)
+    val captionFailedCorruptMessage = stringResource(uiR.string.core_ui_caption_download_failed_corrupt)
+    val captionFailedUnloadableMessage = stringResource(uiR.string.core_ui_caption_download_failed_unloadable)
     val context = LocalContext.current
 
     val shareLauncher = rememberShareLauncher(
@@ -698,7 +703,7 @@ fun PushUpCue(
  * 재구성을 이 컴포저블 안에 가둔다 — 값으로 풀어 상위에서 넘기면 매 단어(partial)마다
  * 상위 트리까지 재구성된다.
  *
- * [liveCaption] 이 있고 그 `episodeId` 가 [episodeId](= progress.episodeId)와 일치하며 원문
+ * [liveCaption] 이 있고 그 `subject` 가 `Episode([episodeId])`(= progress.episodeId)와 일치하며 원문
  * 줄이 하나라도 있으면 [RollingCaptionOverlay] 로 커버 전체에 원문(과 번역)을 롤링하고, 그
  * 외에는 기존 transcript [cue] 를 [PushUpCue] 로 보여준다(둘 다 비면 자연히 숨는다).
  */
@@ -709,7 +714,13 @@ private fun CueOverlay(
     liveCaption: () -> LiveCaption?,
     episodeId: Long?,
 ) {
-    val caption = liveCaption()?.takeIf { it.episodeId == episodeId && it.lines.isNotEmpty() }
+    val caption = liveCaption()?.takeIf { caption ->
+        // progress.episodeId 가 null 이면 어떤 자막도 그리지 않는다. null 을 subject 와 비교하게
+        // 풀어 두면 다른 대상(스테이션) 자막이 새어 들어올 길이 열린다.
+        episodeId != null &&
+            caption.subject == CaptionSubject.Episode(episodeId) &&
+            caption.lines.isNotEmpty()
+    }
 
     // 둘 다 분기 없이 늘 부른다 — if/else 로 번갈아 부르면 빠지는 쪽의 AnimatedVisibility 가
     // 컴포지션에서 통째로 사라져 페이드아웃 없이 꺼지고, 들어오는 쪽은 visible=true 로 시작해
@@ -1083,82 +1094,6 @@ private fun ControlPanelBottom(
                 )
             }
         }
-    }
-}
-
-/**
- * 컨트롤 바 자막 토글. [buttonState] 는 람다로만 읽는다 — [CaptionButtonState] 는 자막 텍스트가
- * 아니라 켜짐 여부·가용성에만 좌우되지만, 같은 원본 `LiveCaptionState` 를 구독하는 이상 매
- * partial 갱신마다 `.value` 읽기 자체가 재구성을 유발한다. 그 재구성을 이 버튼 하나로 가둔다.
- */
-@Composable
-private fun CaptionToggleButton(
-    modifier: Modifier = Modifier,
-    buttonState: () -> CaptionButtonState,
-    onClick: () -> Unit,
-) {
-    val turnOnDescription = stringResource(R.string.feature_player_caption_turn_on)
-    val turnOffDescription = stringResource(R.string.feature_player_caption_turn_off)
-    val downloadingDescription = stringResource(R.string.feature_player_caption_downloading)
-
-    when (val state = buttonState()) {
-        is CaptionButtonState.Progress -> EpisodiveIconProgressButton(
-            modifier = modifier,
-            onClick = onClick,
-            size = PlayerDownloadRingSize,
-            isLoading = state.progress <= 0f,
-            progress = state.progress,
-            colors = IconButtonDefaults.iconButtonColors(
-                containerColor = Color.Transparent,
-                contentColor = MaterialTheme.colorScheme.primary,
-            ),
-            icon = {
-                Icon(
-                    modifier = Modifier.size(21.dp),
-                    imageVector = EpisodiveIcons.Caption,
-                    contentDescription = downloadingDescription,
-                )
-            },
-        )
-
-        CaptionButtonState.Active -> EpisodiveIconButton(
-            modifier = modifier,
-            onClick = onClick,
-            icon = {
-                Icon(
-                    modifier = Modifier.size(21.dp),
-                    imageVector = EpisodiveIcons.Caption,
-                    contentDescription = turnOffDescription,
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-        )
-
-        CaptionButtonState.Dimmed -> EpisodiveIconButton(
-            modifier = modifier,
-            onClick = onClick,
-            icon = {
-                Icon(
-                    modifier = Modifier.size(21.dp),
-                    imageVector = EpisodiveIcons.Caption,
-                    contentDescription = turnOffDescription,
-                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
-                )
-            }
-        )
-
-        CaptionButtonState.Inactive -> EpisodiveIconButton(
-            modifier = modifier,
-            onClick = onClick,
-            icon = {
-                Icon(
-                    modifier = Modifier.size(21.dp),
-                    imageVector = EpisodiveIcons.Caption,
-                    contentDescription = turnOnDescription,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        )
     }
 }
 

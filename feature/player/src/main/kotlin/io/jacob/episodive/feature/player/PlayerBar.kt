@@ -129,12 +129,12 @@ fun PlayerBar(
     val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
     val sleepTimerExpiredMessage = stringResource(uiR.string.core_ui_sleep_timer_expired)
     val deepLinkErrorMessage = stringResource(R.string.feature_player_deep_link_not_found)
-    val captionDownloadStartedPattern = stringResource(R.string.feature_player_caption_download_started)
+    val captionDownloadStartedPattern = stringResource(uiR.string.core_ui_caption_download_started)
     val captionUnsupportedMessage = stringResource(R.string.feature_player_caption_unsupported)
-    val captionFailedNetworkMessage = stringResource(R.string.feature_player_caption_download_failed_network)
-    val captionFailedStorageMessage = stringResource(R.string.feature_player_caption_download_failed_storage)
-    val captionFailedCorruptMessage = stringResource(R.string.feature_player_caption_download_failed_corrupt)
-    val captionFailedUnloadableMessage = stringResource(R.string.feature_player_caption_download_failed_unloadable)
+    val captionFailedNetworkMessage = stringResource(uiR.string.core_ui_caption_download_failed_network)
+    val captionFailedStorageMessage = stringResource(uiR.string.core_ui_caption_download_failed_storage)
+    val captionFailedCorruptMessage = stringResource(uiR.string.core_ui_caption_download_failed_corrupt)
+    val captionFailedUnloadableMessage = stringResource(uiR.string.core_ui_caption_download_failed_unloadable)
     val context = LocalContext.current
     // 수집은 한 번만 시작하므로 suppressed 를 그대로 읽으면 첫 컴포지션의 값에 갇힌다. 스테이션이 올라오거나
     // 내려가도 만료 안내가 중복되거나 빠지지 않게 읽는 시점의 값을 쓴다.
