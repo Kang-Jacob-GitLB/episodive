@@ -86,6 +86,10 @@ class PlayerDataSourceImpl @Inject constructor(
     // 항목을 다시 올려도 transition 이 나므로, 그때 풀면 재개 시 복구 시점의 버퍼부터 흐른다.
     private var stationStale = false
 
+    // 라이브 에피소드가 BEHIND_LIVE_WINDOW 로 떨어져 연달아 재합류한 횟수. 재생이 다시 잡히거나(READY)
+    // 항목이 바뀌면 푼다. 재합류해도 곧바로 같은 오류가 나는 스트림에서 무한 루프를 끊는 상한이다.
+    private var liveRejoinCount = 0
+
     private val listener = object : Player.Listener {
         override fun onTimelineChanged(timeline: Timeline, reason: Int) {
             Timber.d(
@@ -140,6 +144,7 @@ class PlayerDataSourceImpl @Inject constructor(
             if (station?.id != _nowPlayingStation.value?.id) stationStale = false
             _nowPlayingStation.value = station
             _streamTitle.value = null
+            liveRejoinCount = 0
             // 스테이션은 반복을 적용하지 않는다. 반복 모드가 켜져 있으면 스트림이 끊겨도 ENDED 가 아니라
             // 같은 항목의 재연결 루프(REPEAT)가 돼 Ended 실패가 나지 않는다. 사용자 값은 _repeat 에
             // 보존해 두었다가 에피소드로 돌아올 때 되돌린다. 라이브 에피소드는 반복을 그대로 둔다 —
@@ -217,7 +222,10 @@ class PlayerDataSourceImpl @Inject constructor(
             when (playbackState) {
                 Player.STATE_IDLE -> Timber.d("STATE_IDLE")
                 Player.STATE_BUFFERING -> Timber.d("STATE_BUFFERING")
-                Player.STATE_READY -> Timber.d("STATE_READY")
+                Player.STATE_READY -> {
+                    Timber.d("STATE_READY")
+                    liveRejoinCount = 0
+                }
                 Player.STATE_ENDED -> {
                     Timber.d("STATE_ENDED")
                     // 라이브는 끝나지 않는다. 스테이션이 ENDED 가 됐다면 서버가 스트림을 끊은 것이다.
@@ -272,6 +280,7 @@ class PlayerDataSourceImpl @Inject constructor(
 
         override fun onPlayerError(error: PlaybackException) {
             Timber.e("errorCode: ${error.errorCode}, errorCodeName: ${error.errorCodeName}, message: ${error.message}, cause: ${error.cause}")
+            if (rejoinLiveEpisode(error)) return
             _failures.tryEmit(error.toFailure(player.currentMediaItem))
         }
 
@@ -452,6 +461,29 @@ class PlayerDataSourceImpl @Inject constructor(
             player.seekToDefaultPosition()
             player.prepare()
         }
+    }
+
+    /**
+     * 라이브 에피소드가 창 밖으로 밀려 난 오류(BEHIND_LIVE_WINDOW)를 라이브 엣지에 재합류해 푼다.
+     * media3 가 권하는 복구(`seekToDefaultPosition` + `prepare`)다. 스테이션은 감독자
+     * (`LiveStreamSupervisor`)의 몫이라 여기서 건드리지 않는다.
+     *
+     * 이 오류는 탐색 창이 있는 미디어에서만 나므로, 라이브 판정([isLiveEpisode])이 아직 안 선
+     * 시점(준비 전 placeholder 창)의 오류도 라이브의 증거로 본다. 저장 위치 복원이 창 밖으로
+     * seek 한 경우가 그렇다. playWhenReady 는 건드리지 않아 재생 의도가 유지된다.
+     *
+     * 상한([MaxLiveRejoin])을 넘으면 처리하지 않고 false 를 돌려 일반 실패로 흘린다.
+     *
+     * @return 복구를 시작했으면 true. 이때는 실패를 내보내지 않는다.
+     */
+    private fun rejoinLiveEpisode(error: PlaybackException): Boolean {
+        if (error.errorCode != PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) return false
+        if (currentEpisode() == null) return false
+        if (liveRejoinCount >= MaxLiveRejoin) return false
+        liveRejoinCount++
+        player.seekToDefaultPosition()
+        player.prepare()
+        return true
     }
 
     /**
@@ -1142,3 +1174,6 @@ class PlayerDataSourceImpl @Inject constructor(
 
 /** 알림 아트 캐시의 상한. 카탈로그 크기(36) 안팎이라 넘지 않는 안전장치다. */
 private const val StationArtworkCacheMax = 36
+
+/** 라이브 에피소드가 BEHIND_LIVE_WINDOW 로 연달아 재합류하는 횟수의 상한. */
+private const val MaxLiveRejoin = 3
