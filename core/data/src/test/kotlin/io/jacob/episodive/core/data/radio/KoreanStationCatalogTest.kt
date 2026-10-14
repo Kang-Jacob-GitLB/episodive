@@ -48,6 +48,19 @@ class KoreanStationCatalogTest {
     }
 
     @Test
+    fun `Given catalog, Then broadcasterSource 가 있는 항목은 HLS 이고 방송사 9개가 모두 갖는다`() {
+        val withSource = entries.filter { it.broadcasterSource != null }
+        assertTrue(withSource.all { it.isHls })
+        assertEquals(
+            setOf(
+                "kbs-1radio", "kbs-happyfm", "kbs-classicfm", "kbs-coolfm",
+                "mbc-sfm", "mbc-fm4u", "mbc-allthatmusic", "sbs-powerfm", "sbs-lovefm",
+            ),
+            withSource.map { it.station.id }.toSet(),
+        )
+    }
+
+    @Test
     fun `Given catalog, Then every station is radio`() {
         assertTrue(entries.all { it.station.kind == StationKind.RADIO })
     }

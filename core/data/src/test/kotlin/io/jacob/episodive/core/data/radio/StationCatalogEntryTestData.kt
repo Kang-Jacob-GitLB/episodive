@@ -2,6 +2,8 @@
 // (CLAUDE.md 의 :core:model 테스트 예외와 같은 사유 — 팩토리를 함께 쓰려면 모듈을 떼어내야 한다.)
 package io.jacob.episodive.core.data.radio
 
+import io.jacob.episodive.core.network.model.BroadcasterSource
+import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
 import io.jacob.episodive.core.testing.model.tvStationTestData
@@ -27,6 +29,15 @@ internal val hlsRadioEntryTestData = StationCatalogEntry(
     radioBrowserIds = listOf("r"),
     isHls = true,
     fallbackUrl = null,
+)
+
+/** 방송사 소스가 있는 HLS 항목. 공용 목록에는 넣지 않고 방송사 경로 테스트만 따로 쓴다. */
+internal val broadcasterRadioEntryTestData = StationCatalogEntry(
+    station = kbsFirstRadioStationTestData,
+    radioBrowserIds = listOf("k"),
+    isHls = true,
+    fallbackUrl = "https://fallback/k",
+    broadcasterSource = BroadcasterSource.Kbs("21"),
 )
 
 internal val stationCatalogEntryTestData = listOf(

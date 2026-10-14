@@ -2,6 +2,7 @@ package io.jacob.episodive.core.data.radio
 
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.network.model.BroadcasterSource
 
 /**
  * 국내 라디오 큐레이션 카탈로그. Radio Browser 원본을 그대로 쓰지 않고 아래 기준으로 걸러 옮겼다.
@@ -14,7 +15,9 @@ import io.jacob.episodive.core.model.StationKind
  * - 인터넷 개인 방송은 v1 에서 제외한다.
  * - KBS 3라디오는 공식 스트림 등록이 없어 제외한다.
  * - 토큰이 붙은 URL(KBS·MBC·SBS·CPBC·지역 MBC)은 만료되므로 [StationCatalogEntry.fallbackUrl] 을
- *   두지 않는다. 항상 재생 직전에 Radio Browser 에서 새로 받는다.
+ *   두지 않는다. 항상 재생 직전에 새로 받는다. KBS·MBC·SBS 전국 채널은 방송사 자체 API
+ *   ([StationCatalogEntry.broadcasterSource])에서, 나머지는 Radio Browser 에서 받는다(Radio Browser 가
+ *   주는 서명 URL 은 크롤 시점 토큰이라 이미 만료돼 있는 경우가 많다).
  * - "KBS 1Radio" 로 등록된 항목 하나는 실제로 2라디오 주소라 해피FM 으로 분류했다.
  * - http fallback 호스트의 cleartext 허용은 network_security_config 에 추가했고
  *   KoreanStationCatalogTest 의 불변식 테스트가 지킨다(IP 호스트 포함). 새 http 항목을 더하면
@@ -36,6 +39,7 @@ internal object KoreanStationCatalog {
                 "6d4a1b58-b7c6-11e9-acb2-52543be04c81",
                 "16c1e8aa-1e9e-422b-9611-842b61a70983",
             ),
+            broadcasterSource = BroadcasterSource.Kbs("21"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -51,6 +55,7 @@ internal object KoreanStationCatalog {
                 "9b3576ec-7f67-11e9-aa30-52543be04c81",
                 "8dc941a6-c866-4552-9fea-541c137cfb5d",
             ),
+            broadcasterSource = BroadcasterSource.Kbs("22"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -69,6 +74,7 @@ internal object KoreanStationCatalog {
                 "c038a859-7be1-11e9-aa30-52543be04c81",
                 "d52bcf11-db1b-44d7-be0d-c37dad6bb568",
             ),
+            broadcasterSource = BroadcasterSource.Kbs("24"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -86,6 +92,7 @@ internal object KoreanStationCatalog {
                 "2672e98d-b642-456e-8d77-e331ab4e007c",
                 "d5642b73-a600-4fdd-9a07-a63116b04e38",
             ),
+            broadcasterSource = BroadcasterSource.Kbs("25"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -100,6 +107,7 @@ internal object KoreanStationCatalog {
             radioBrowserIds = listOf(
                 "fc4c247a-7f66-11e9-aa30-52543be04c81",
             ),
+            broadcasterSource = BroadcasterSource.Mbc("sfm"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -115,6 +123,7 @@ internal object KoreanStationCatalog {
                 "730d9f95-57a3-4eec-94a2-ed270baa64c8",
                 "8f6a0b47-7be2-11e9-aa30-52543be04c81",
             ),
+            broadcasterSource = BroadcasterSource.Mbc("mfm"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -129,6 +138,7 @@ internal object KoreanStationCatalog {
             radioBrowserIds = listOf(
                 "01335461-d022-4ad8-9fbc-1bd3ef534def",
             ),
+            broadcasterSource = BroadcasterSource.Mbc("chm"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -143,6 +153,7 @@ internal object KoreanStationCatalog {
             radioBrowserIds = listOf(
                 "1cc29b79-7be3-11e9-aa30-52543be04c81",
             ),
+            broadcasterSource = BroadcasterSource.Sbs("powerpc/powerfm"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -158,6 +169,7 @@ internal object KoreanStationCatalog {
                 "0fc7173f-5106-4c47-9156-621124fb0803",
                 "e6bc48f7-7be2-11e9-aa30-52543be04c81",
             ),
+            broadcasterSource = BroadcasterSource.Sbs("lovepc/lovefm"),
             isHls = true,
             fallbackUrl = null,
         ),
