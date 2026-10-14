@@ -49,7 +49,11 @@ class LiveCaptionEngine @Inject constructor(
     private val sessionLock = Mutex()
 
     fun session(subject: CaptionSubject, model: InstalledCaptionModel): Flow<CaptionSession> = channelFlow {
-        // 세션은 한 번에 하나만 돈다(아래 클래스 문서). 락을 기다리는 동안은 캡처도 인식기도 건드리지
+        // 락 대기 중에도 호출부가 "준비 중" 을 알 수 있게 Loading 은 락 앞에서 보낸다 — 캡처·인식기와
+        // 무관해 안전하다. 그렇지 않으면 앞 세션이 끝날 때까지(최대 WhileSubscribed 꼬리) 초기값에 머문다.
+        send(CaptionSession.Loading)
+
+        // 세션은 한 번에 하나만 돈다(클래스 문서). 락을 기다리는 동안은 캡처도 인식기도 건드리지
         // 않으며, 기다리다 취소되면 아무것도 정리할 것이 없다.
         sessionLock.withLock {
             pcm.startCapture()
@@ -59,8 +63,6 @@ class LiveCaptionEngine @Inject constructor(
             // pcm 을 캡처 중인 채로 그대로 새 버린다. 인식기는 "받았을 때만" release() 한다.
             var recognizer: SpeechRecognizer? = null
             try {
-                send(CaptionSession.Loading)
-
                 when (val acquired = recognizers.acquire(model)) {
                     is RecognizerAcquireResult.Unloadable -> {
                         send(CaptionSession.Unloadable)

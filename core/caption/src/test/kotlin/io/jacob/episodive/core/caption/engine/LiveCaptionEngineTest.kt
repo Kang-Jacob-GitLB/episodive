@@ -464,6 +464,31 @@ class LiveCaptionEngineTest {
     }
 
     @Test
+    fun `락을 기다리는 세션도 Loading 을 먼저 내보낸다`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val events = mutableListOf<String>()
+        val pcm = FakeSpeechPcmSource(events)
+        val recognizers = RecognizerCache(FakeEngineRecognizerFactory(events), dispatcher)
+        val engine = LiveCaptionEngine(
+            pcm, recognizers, FakeCaptionTranslatorFactory(null), DeviceLanguageProvider { "en" }, dispatcher,
+        )
+
+        val first = backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { } }
+        pump()
+        val waitingResults = mutableListOf<CaptionSession>()
+        val waiting = backgroundScope.launch(dispatcher) {
+            engine.session(CaptionSubject.Station("kbs-cool-fm"), model).collect { waitingResults.add(it) }
+        }
+        pump(steps = 3)
+
+        assertEquals(listOf<CaptionSession>(CaptionSession.Loading), waitingResults)
+        assertEquals(listOf("startCapture"), events.filter { it.endsWith("Capture") })
+        waiting.cancel()
+        first.cancel()
+        pump()
+    }
+
+    @Test
     fun `다른 언어 두 세션은 첫 인식기가 첫 세션 stream 이 닫힌 뒤에만 닫힌다`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val events = mutableListOf<String>()
