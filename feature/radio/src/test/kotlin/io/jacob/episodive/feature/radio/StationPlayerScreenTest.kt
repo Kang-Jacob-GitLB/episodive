@@ -11,6 +11,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.test.core.app.ApplicationProvider
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.testing.model.bareOnAirProgramTestData
 import io.jacob.episodive.core.testing.model.codecOnlyStationDetailsTestData
@@ -76,6 +78,7 @@ class StationPlayerScreenTest {
         onToggleFavorite: () -> Unit = {},
         details: StationDetailsOf? = null,
         onAir: OnAirOf? = null,
+        schedule: ScheduleOf? = null,
         uriHandler: UriHandler = FakeUriHandler(),
     ) {
         composeTestRule.setContent {
@@ -85,6 +88,7 @@ class StationPlayerScreenTest {
                         state = state,
                         details = details,
                         onAir = onAir,
+                        schedule = schedule,
                         onPlayOrPause = onPlayOrPause,
                         onStop = onStop,
                         onToggleFavorite = onToggleFavorite,
@@ -178,6 +182,154 @@ class StationPlayerScreenTest {
         val with = composeTestRule.onNodeWithContentDescription(previousDescription).getUnclippedBoundsInRoot()
 
         assertEquals(without, with)
+    }
+
+    private val seoul = ZoneId.of("Asia/Seoul")
+    private val hourMillis = 3_600_000L
+    private val dayStart = LocalDateTime.of(2026, 10, 14, 0, 0).atZone(seoul).toInstant().toEpochMilli()
+
+    /** 00시부터 한 시간씩 10개. 4번째(03:00)가 첫 행, 인덱스 5(05:00)가 지금 방송이다. */
+    private val programs = (0 until 10).map { i ->
+        onAirProgramTestData(
+            title = "프로그램$i",
+            startMillis = dayStart + i * hourMillis,
+            endMillis = dayStart + (i + 1) * hourMillis,
+            host = if (i % 2 == 0) "진행자$i" else null,
+        )
+    }
+
+    private fun scheduleOf(list: List<OnAirProgram> = programs) = ScheduleOf(activeState.station.id, list)
+
+    private fun onAirOf(program: OnAirProgram?) = OnAirOf(activeState.station.id, program)
+
+    @Test
+    fun `Given 편성표, Then 지금 방송 앞 1개와 뒤 4개만 보이고 진행자 없으면 제목만 보인다`() {
+        setScreen(schedule = scheduleOf(), onAir = onAirOf(programs[5]))
+
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_title))
+            .performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("프로그램3", substring = true).assertDoesNotExist()
+        composeTestRule.onNodeWithText("프로그램4 · 진행자4").assertExists()
+        composeTestRule.onNodeWithText("프로그램5").assertExists()
+        composeTestRule.onNodeWithText("프로그램9").assertExists()
+        composeTestRule.onNodeWithText("05:00").assertExists()
+        composeTestRule.onNodeWithText("프로그램3", substring = true).assertDoesNotExist()
+        composeTestRule.onNodeWithText("프로그램2", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Given 편성표, Then 지금 방송 행만 강조된다`() {
+        setScreen(schedule = scheduleOf(), onAir = onAirOf(programs[5]))
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_title)).performScrollTo()
+
+        val onAirNow = context.getString(R.string.feature_radio_schedule_on_air)
+        composeTestRule.onAllNodes(SemanticsMatcher("방송 중 행") { node ->
+            node.config.getOrNull(SemanticsProperties.StateDescription) == onAirNow
+        }).assertCountEquals(1)
+        composeTestRule.onNode(
+            SemanticsMatcher("방송 중 행") { it.config.getOrNull(SemanticsProperties.StateDescription) == onAirNow }
+        ).assertTextContains("프로그램5", substring = true)
+    }
+
+    @Test
+    fun `Given 지금 방송이 다음 프로그램으로 넘어감, Then 강조와 창이 따라간다`() {
+        var onAir by mutableStateOf<OnAirOf?>(onAirOf(programs[5]))
+        composeTestRule.setContent {
+            EpisodiveTheme { StationPlayerScreen(state = activeState, schedule = scheduleOf(), onAir = onAir) }
+        }
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_title)).performScrollTo()
+        composeTestRule.onNodeWithText("프로그램4", substring = true).assertExists()
+
+        // 곡만 다른 사본이어도 같은 칸으로 본다.
+        onAir = onAirOf(programs[6].copy(song = "곡"))
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("프로그램4", substring = true).assertDoesNotExist()
+        composeTestRule.onNode(
+            SemanticsMatcher("방송 중 행") {
+                it.config.getOrNull(SemanticsProperties.StateDescription) ==
+                    context.getString(R.string.feature_radio_schedule_on_air)
+            }
+        ).assertTextContains("프로그램6", substring = true)
+    }
+
+    @Test
+    fun `Given 전체 보기를 누르면, Then 전부 보이고 접기로 되돌아온다`() {
+        setScreen(schedule = scheduleOf(), onAir = onAirOf(programs[5]))
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_show_all))
+            .performScrollTo().performClick()
+
+        composeTestRule.onNodeWithText("프로그램0", substring = true).assertExists()
+        composeTestRule.onNodeWithText("프로그램9", substring = true).assertExists()
+
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_show_less))
+            .performScrollTo().performClick()
+
+        composeTestRule.onNodeWithText("프로그램0", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Given 모두 접힌 창에 들어가는 짧은 편성표, Then 전체 보기가 없다`() {
+        setScreen(schedule = scheduleOf(programs.take(4)), onAir = onAirOf(programs[1]))
+
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_title)).performScrollTo()
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_show_all)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Given 지금 방송을 모름, Then 처음 6개만 보이고 강조는 없다`() {
+        setScreen(schedule = scheduleOf(), onAir = null)
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_title)).performScrollTo()
+
+        composeTestRule.onNodeWithText("프로그램5").assertExists()
+        composeTestRule.onNodeWithText("프로그램6", substring = true).assertDoesNotExist()
+        composeTestRule.onAllNodes(
+            SemanticsMatcher("방송 중 행") {
+                it.config.getOrNull(SemanticsProperties.StateDescription) ==
+                    context.getString(R.string.feature_radio_schedule_on_air)
+            }
+        ).assertCountEquals(0)
+    }
+
+    @Test
+    fun `Given 상세와 편성표, Then 편성표가 홈페이지 링크와 태그 chip 사이에 있다`() {
+        setScreen(
+            details = shownDetails(stationDetailsTestData),
+            schedule = scheduleOf(),
+            onAir = onAirOf(programs[5]),
+        )
+        val title = composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_title))
+        title.performScrollTo()
+
+        val linkTop = composeTestRule.onNodeWithText("radio.example.com").getUnclippedBoundsInRoot().top
+        val scheduleTop = title.getUnclippedBoundsInRoot().top
+        val chipTop = composeTestRule.onNodeWithText("news").getUnclippedBoundsInRoot().top
+
+        assertTrue(linkTop < scheduleTop)
+        assertTrue(scheduleTop < chipTop)
+    }
+
+    @Test
+    fun `Given 편성표만 있고 상세 없음, Then 편성표만 보이고 출처 문구는 없다`() {
+        setScreen(details = shownDetails(null), schedule = scheduleOf(), onAir = onAirOf(programs[5]))
+
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_title))
+            .performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_info_source)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Given 편성표가 비었거나 다른 스테이션의 것, Then 섹션이 없다`() {
+        setScreen(details = shownDetails(stationDetailsTestData), schedule = scheduleOf(emptyList()))
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_title)).assertDoesNotExist()
+        composeTestRule.onNodeWithText("radio.example.com").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `Given 다른 스테이션의 편성표, Then 그리지 않는다`() {
+        setScreen(schedule = ScheduleOf("other-station", programs), onAir = onAirOf(programs[5]))
+
+        composeTestRule.onNodeWithText(context.getString(R.string.feature_radio_schedule_title)).assertDoesNotExist()
     }
 
     @Test

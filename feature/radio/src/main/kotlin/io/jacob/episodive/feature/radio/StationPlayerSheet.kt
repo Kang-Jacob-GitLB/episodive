@@ -45,6 +45,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +58,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -75,6 +78,7 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveShapes
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.SLEEP_TIMER_FADE_OUT_MS
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.art
@@ -119,6 +123,7 @@ fun StationPlayerSheet(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val details by viewModel.details.collectAsStateWithLifecycle()
     val onAir by viewModel.onAir.collectAsStateWithLifecycle()
+    val schedule by viewModel.schedule.collectAsStateWithLifecycle()
     val currentOnDismiss by rememberUpdatedState(onDismiss)
 
     // 정지·감독자 포기·에피소드 전환·재시작 등 스테이션이 사라지는 모든 경로를 여기서 한 번에 받는다.
@@ -164,6 +169,7 @@ fun StationPlayerSheet(
                 state = s,
                 details = details,
                 onAir = onAir,
+                schedule = schedule,
                 onCollapse = { hideThen {} },
                 onPlayOrPause = { viewModel.sendAction(StationPlayerAction.PlayOrPause) },
                 onPrevious = { viewModel.sendAction(StationPlayerAction.Previous) },
@@ -189,6 +195,7 @@ internal fun StationPlayerScreen(
     modifier: Modifier = Modifier,
     details: StationDetailsOf? = null,
     onAir: OnAirOf? = null,
+    schedule: ScheduleOf? = null,
     onCollapse: () -> Unit = {},
     onPlayOrPause: () -> Unit = {},
     onPrevious: () -> Unit = {},
@@ -394,13 +401,17 @@ internal fun StationPlayerScreen(
         // 내용은 지금 보이는 스테이션의 상세일 때만 그린다.
         item {
             val shown = details?.takeIf { it.stationId == station.id }?.details
-            if (shown != null) {
+            val shownSchedule = schedule?.takeIf { it.stationId == station.id }?.programs.orEmpty()
+            // 상세도 편성표도 없으면 구분선까지 통째로 숨긴다.
+            if (shown != null || shownSchedule.isNotEmpty()) {
                 StationInfoSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = dimension.screenPadding)
                         .padding(top = 8.dp, bottom = systemBarsPadding.calculateBottomPadding() + 32.dp),
                     details = shown,
+                    schedule = shownSchedule,
+                    current = program,
                 )
             }
         }
@@ -615,13 +626,15 @@ private fun StationControlBar(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun StationInfoSection(
-    details: StationDetails,
+    details: StationDetails?,
     modifier: Modifier = Modifier,
+    schedule: List<OnAirProgram> = emptyList(),
+    current: OnAirProgram? = null,
 ) {
     val uriHandler = LocalUriHandler.current
     val quality = listOfNotNull(
-        details.codec,
-        details.bitrateKbps?.let { stringResource(R.string.feature_radio_info_bitrate_format, it) },
+        details?.codec,
+        details?.bitrateKbps?.let { stringResource(R.string.feature_radio_info_bitrate_format, it) },
     ).joinToString(" · ").takeIf { it.isNotEmpty() }
 
     Column(
@@ -630,7 +643,7 @@ internal fun StationInfoSection(
     ) {
         HorizontalDivider()
 
-        details.homepage?.let { homepage ->
+        details?.homepage?.let { homepage ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -671,7 +684,12 @@ internal fun StationInfoSection(
             )
         }
 
-        if (details.tags.isNotEmpty()) {
+        // 링크(와 음질)와 태그 사이. 편성표를 모르면 섹션 통째로 없다 — 간격은 Column 이 알아서 접는다.
+        if (schedule.isNotEmpty()) {
+            StationScheduleSection(schedule = schedule, current = current)
+        }
+
+        if (details != null && details.tags.isNotEmpty()) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -690,11 +708,99 @@ internal fun StationInfoSection(
             }
         }
 
+        // 출처는 Radio Browser 정보를 그릴 때만 밝힌다.
+        if (details != null) {
+            Text(
+                text = stringResource(R.string.feature_radio_info_source),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** 접힌 편성표가 현재 방송 앞에 보이는 개수. */
+private const val ScheduleBefore = 1
+
+/** 접힌 편성표가 현재 방송 뒤에 보이는 개수. */
+private const val ScheduleAfter = 4
+
+/**
+ * 오늘 편성표. 접힌 상태에서는 지금 방송 앞뒤 몇 개만 보이고, 현재를 모르면 처음부터 같은 개수만 보인다.
+ * 지금 방송 행은 [current] 와 같은 칸인지로 가른다 — 시계를 따로 읽지 않으므로 경계 시각에 미니바·시트의 현재 방송과
+ * 어긋나지 않는다.
+ */
+@Composable
+private fun StationScheduleSection(
+    schedule: List<OnAirProgram>,
+    current: OnAirProgram?,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val currentIndex = schedule.indexOfFirst { it.isSameSlotAs(current) }
+    val collapsedRange = if (currentIndex >= 0) {
+        maxOf(0, currentIndex - ScheduleBefore)..minOf(schedule.lastIndex, currentIndex + ScheduleAfter)
+    } else {
+        0..minOf(schedule.lastIndex, ScheduleBefore + ScheduleAfter)
+    }
+    val canExpand = collapsedRange.count() < schedule.size
+    val shown = if (expanded) schedule.indices else collapsedRange
+    val onAirDescription = stringResource(R.string.feature_radio_schedule_on_air)
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         Text(
-            text = stringResource(R.string.feature_radio_info_source),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text = stringResource(R.string.feature_radio_schedule_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
         )
+
+        shown.forEach { index ->
+            val program = schedule[index]
+            val isCurrent = index == currentIndex
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 32.dp)
+                    .semantics(mergeDescendants = true) {
+                        if (isCurrent) stateDescription = onAirDescription
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = program.startTimeText(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = program.titleWithHost(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+
+        if (canExpand) {
+            Text(
+                modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .clickable(role = Role.Button) { expanded = !expanded }
+                    .padding(vertical = 12.dp),
+                text = stringResource(
+                    if (expanded) R.string.feature_radio_schedule_show_less else R.string.feature_radio_schedule_show_all
+                ),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 

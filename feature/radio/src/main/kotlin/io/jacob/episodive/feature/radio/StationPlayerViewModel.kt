@@ -13,6 +13,7 @@ import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveTodayScheduleUseCase
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
 import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Station
@@ -48,6 +49,7 @@ class StationPlayerViewModel @Inject constructor(
     private val toggleFavoriteStationUseCase: ToggleFavoriteStationUseCase,
     private val getStationDetailsUseCase: GetStationDetailsUseCase,
     private val observeOnAirProgramUseCase: ObserveOnAirProgramUseCase,
+    private val observeTodayScheduleUseCase: ObserveTodayScheduleUseCase,
     private val sleepTimer: SleepTimer,
 ) : ViewModel() {
 
@@ -127,6 +129,26 @@ class StationPlayerViewModel @Inject constructor(
                 emptyFlow()
             } else {
                 observeOnAirProgramUseCase(stationId).map { OnAirOf(stationId, it) }
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = null,
+        )
+
+    /**
+     * 표시 중인 스테이션의 오늘 편성표. [onAir] 와 같은 이유로 `state` 와 따로 두고 id 를 싣는다. 편성표는 [onAir] 와
+     * 같은 캐시에서 나오므로 지금 방송 행은 화면이 [onAir] 의 현재 항목과 맞춰 가린다 — 경계 시각에 둘이 어긋나지 않는다.
+     */
+    val schedule: StateFlow<ScheduleOf?> = state
+        .map { (it as? StationPlayerState.Active)?.station?.id }
+        .distinctUntilChanged()
+        .flatMapLatest { stationId ->
+            if (stationId == null) {
+                emptyFlow()
+            } else {
+                observeTodayScheduleUseCase(stationId).map { ScheduleOf(stationId, it) }
             }
         }
         .stateIn(
@@ -224,6 +246,12 @@ data class StationDetailsOf(
 data class OnAirOf(
     val stationId: String,
     val program: OnAirProgram?,
+)
+
+/** [programs] 이 어느 스테이션의 것인지 함께 싣는다. 비어 있으면 편성표를 모르거나 받지 못했다는 뜻이다. */
+data class ScheduleOf(
+    val stationId: String,
+    val programs: List<OnAirProgram>,
 )
 
 sealed interface StationPlayerAction {
