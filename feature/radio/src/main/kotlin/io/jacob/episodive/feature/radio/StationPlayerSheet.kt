@@ -84,7 +84,7 @@ import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
 import io.jacob.episodive.core.testing.model.stationDetailsTestData
 import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.SleepTimerSheet
-import io.jacob.episodive.core.ui.StationArt
+import io.jacob.episodive.core.ui.StationCover
 import kotlinx.coroutines.launch
 import io.jacob.episodive.core.ui.R as uiR
 
@@ -94,6 +94,9 @@ private val StationControlBarShape = RoundedCornerShape(26.dp)
 
 /** 곡명 한 줄의 높이. 곡명이 있든 없든 이 높이를 비워 두어 아래 버튼이 움직이지 않게 한다. */
 private val StreamTitleHeight = 24.dp
+
+/** 지금 방송 중인 프로그램 줄의 자리 높이. 프로그램 정보 유무와 무관하게 비워 둔다. */
+private val ProgramLineHeight = 22.dp
 
 /**
  * 라디오 전용 플레이어 시트. 에피소드 플레이어(`PlayerBottomSheet`)와 같은 모양의 시트지만 탐색바·시간·배속이 없다
@@ -115,6 +118,7 @@ fun StationPlayerSheet(
     val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val details by viewModel.details.collectAsStateWithLifecycle()
+    val onAir by viewModel.onAir.collectAsStateWithLifecycle()
     val currentOnDismiss by rememberUpdatedState(onDismiss)
 
     // 정지·감독자 포기·에피소드 전환·재시작 등 스테이션이 사라지는 모든 경로를 여기서 한 번에 받는다.
@@ -159,6 +163,7 @@ fun StationPlayerSheet(
             StationPlayerScreen(
                 state = s,
                 details = details,
+                onAir = onAir,
                 onCollapse = { hideThen {} },
                 onPlayOrPause = { viewModel.sendAction(StationPlayerAction.PlayOrPause) },
                 onPrevious = { viewModel.sendAction(StationPlayerAction.Previous) },
@@ -183,6 +188,7 @@ internal fun StationPlayerScreen(
     state: StationPlayerState.Active,
     modifier: Modifier = Modifier,
     details: StationDetailsOf? = null,
+    onAir: OnAirOf? = null,
     onCollapse: () -> Unit = {},
     onPlayOrPause: () -> Unit = {},
     onPrevious: () -> Unit = {},
@@ -197,6 +203,8 @@ internal fun StationPlayerScreen(
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
     val station = state.station
     val art = remember(station) { station.art }
+    // 늦게 오는 이전 스테이션의 프로그램은 그리지 않는다.
+    val program = onAir?.takeIf { it.stationId == station.id }?.program
     var showSleepTimerSheet by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -258,11 +266,12 @@ internal fun StationPlayerScreen(
                                     spotColor = Color.Black,
                                 ),
                         ) {
-                            StationArt(
+                            StationCover(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .clip(EpisodiveShapes.playerCover),
                                 station = station,
+                                imageUrl = program?.imageUrl,
                             )
                         }
                     }
@@ -292,6 +301,25 @@ internal fun StationPlayerScreen(
                             maxLines = 1,
                         )
 
+                        // 프로그램 줄도 높이를 늘 비워 둔다. 프로그램 정보가 늦게 오거나 없어도 아래 버튼이 움직이지 않는다.
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(ProgramLineHeight),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            program?.let {
+                                FadingEdgeText(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    text = it.titleWithHost(),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
+
                         Row(
                             modifier = Modifier.padding(top = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -303,6 +331,13 @@ internal fun StationPlayerScreen(
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            program?.timeRangeText()?.let { range ->
+                                Text(
+                                    text = range,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                                )
+                            }
                         }
 
                         // 곡명이 없을 때도 높이를 비워 둔다. 있다 없다 하면 아래 버튼이 곡이 바뀔 때마다 움직인다.
@@ -313,7 +348,8 @@ internal fun StationPlayerScreen(
                             contentAlignment = Alignment.Center,
                         ) {
                             AnimatedContent(
-                                targetState = state.streamTitle?.takeIf { it.isNotBlank() },
+                                // 곡을 주는 방송사(MBC)는 그것이 먼저다. 아니면 스트림이 싣는 제목.
+                                targetState = (program?.song ?: state.streamTitle)?.takeIf { it.isNotBlank() },
                                 transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
                                 label = "StreamTitle",
                             ) { title ->

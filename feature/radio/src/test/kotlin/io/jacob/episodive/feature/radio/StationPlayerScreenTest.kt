@@ -19,6 +19,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -27,17 +28,22 @@ import androidx.compose.ui.unit.height
 import androidx.test.core.app.ApplicationProvider
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.model.StationDetails
+import io.jacob.episodive.core.testing.model.bareOnAirProgramTestData
 import io.jacob.episodive.core.testing.model.codecOnlyStationDetailsTestData
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
+import io.jacob.episodive.core.testing.model.onAirProgramTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
 import io.jacob.episodive.core.testing.model.stationDetailsTestData
+import io.jacob.episodive.core.ui.StationCoverImageTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.time.LocalDateTime
+import java.time.ZoneId
 import io.jacob.episodive.core.ui.R as uiR
 
 @RunWith(RobolectricTestRunner::class)
@@ -69,6 +75,7 @@ class StationPlayerScreenTest {
         onStop: () -> Unit = {},
         onToggleFavorite: () -> Unit = {},
         details: StationDetailsOf? = null,
+        onAir: OnAirOf? = null,
         uriHandler: UriHandler = FakeUriHandler(),
     ) {
         composeTestRule.setContent {
@@ -77,6 +84,7 @@ class StationPlayerScreenTest {
                     StationPlayerScreen(
                         state = state,
                         details = details,
+                        onAir = onAir,
                         onPlayOrPause = onPlayOrPause,
                         onStop = onStop,
                         onToggleFavorite = onToggleFavorite,
@@ -100,6 +108,76 @@ class StationPlayerScreenTest {
         ).assertIsDisplayed()
         composeTestRule.onNodeWithText(context.getString(uiR.string.core_ui_station_live)).assertIsDisplayed()
         composeTestRule.onNodeWithText(context.getString(uiR.string.core_ui_live_now)).assertIsDisplayed()
+    }
+
+    private val program = onAirProgramTestData.copy(
+        startMillis = LocalDateTime.of(2026, 10, 14, 9, 0).atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli(),
+        endMillis = LocalDateTime.of(2026, 10, 14, 11, 0).atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli(),
+    )
+
+    @Test
+    fun `Given 지금 스테이션의 프로그램, Then 제목과 진행자와 방송 시간이 보이고 이미지를 요청한다`() {
+        setScreen(onAir = OnAirOf(activeState.station.id, program))
+
+        composeTestRule.onNodeWithText("${program.title} · ${program.host}", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("09:00 – 11:00").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(StationCoverImageTag, useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `Given 다른 스테이션의 프로그램, Then 그리지 않는다`() {
+        setScreen(onAir = OnAirOf("other-station", program))
+
+        composeTestRule.onNodeWithText(program.title, substring = true).assertDoesNotExist()
+        composeTestRule.onNodeWithText("09:00 – 11:00").assertDoesNotExist()
+        composeTestRule.onNodeWithTag(StationCoverImageTag, useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Given 이미지 없는 프로그램, Then 이니셜 아트만 있고 제목은 보인다`() {
+        setScreen(onAir = OnAirOf(activeState.station.id, bareOnAirProgramTestData))
+
+        composeTestRule.onNodeWithText(bareOnAirProgramTestData.title, substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(StationCoverImageTag, useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Given 진행자 없음, Then 제목만 보인다`() {
+        setScreen(onAir = OnAirOf(activeState.station.id, bareOnAirProgramTestData))
+
+        composeTestRule.onNodeWithText("${bareOnAirProgramTestData.title} ·", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Given 곡과 streamTitle, Then 곡이 먼저이고 곡이 없으면 streamTitle 이다`() {
+        var onAir by mutableStateOf<OnAirOf?>(OnAirOf(activeState.station.id, program.copy(song = "곡 - 가수")))
+        composeTestRule.setContent {
+            EpisodiveTheme {
+                StationPlayerScreen(state = activeState.copy(streamTitle = "Stream Title"), onAir = onAir)
+            }
+        }
+        composeTestRule.onNodeWithText("곡 - 가수", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Stream Title", substring = true).assertDoesNotExist()
+
+        onAir = OnAirOf(activeState.station.id, program)
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Stream Title", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `Given 프로그램 유무, Then 이전 버튼 위치가 같다`() {
+        var onAir by mutableStateOf<OnAirOf?>(null)
+        composeTestRule.setContent {
+            EpisodiveTheme { StationPlayerScreen(state = activeState, onAir = onAir) }
+        }
+        val without = composeTestRule.onNodeWithContentDescription(previousDescription).getUnclippedBoundsInRoot()
+
+        onAir = OnAirOf(activeState.station.id, program)
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(program.title, substring = true).assertIsDisplayed()
+        val with = composeTestRule.onNodeWithContentDescription(previousDescription).getUnclippedBoundsInRoot()
+
+        assertEquals(without, with)
     }
 
     @Test

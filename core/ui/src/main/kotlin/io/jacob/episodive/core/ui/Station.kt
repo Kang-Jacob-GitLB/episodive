@@ -35,7 +35,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -45,6 +49,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.MorphIcon
 import io.jacob.episodive.core.designsystem.component.SectionHeader
@@ -112,6 +118,39 @@ fun StationArt(
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
         )
+    }
+}
+
+/** [StationCover] 의 프로그램 이미지 노드 태그. 이미지를 요청했는지 테스트가 가른다. */
+const val StationCoverImageTag = "StationCoverImage"
+
+/**
+ * 스테이션 커버. 프로그램 이미지가 있으면 그것을 꽉 채워 그리고, 없거나 받는 동안·실패했을 때는 이니셜 아트
+ * ([StationArt]) 를 그대로 둔다. 아트를 늘 아래에 깔아 두므로 이미지가 늦게 와도 빈 칸이 생기지 않는다.
+ */
+@Composable
+fun StationCover(
+    station: Station,
+    imageUrl: String?,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier) {
+        StationArt(station = station, modifier = Modifier.fillMaxSize())
+
+        if (imageUrl != null && !LocalInspectionMode.current) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .crossfade(true)
+                    .build(),
+                // 장식이다. 프로그램 제목은 곁의 텍스트가 읽는다.
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag(StationCoverImageTag),
+            )
+        }
     }
 }
 

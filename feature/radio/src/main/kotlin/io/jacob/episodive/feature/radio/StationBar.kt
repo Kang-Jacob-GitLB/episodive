@@ -39,7 +39,7 @@ import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.ui.LiveBadge
-import io.jacob.episodive.core.ui.StationArt
+import io.jacob.episodive.core.ui.StationCover
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import io.jacob.episodive.core.ui.R as uiR
@@ -130,11 +130,12 @@ internal fun StationBarContent(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            StationArt(
+            StationCover(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(RoundedCornerShape(11.dp)),
                 station = station,
+                imageUrl = state.program?.imageUrl,
             )
 
             Column(
@@ -155,10 +156,13 @@ internal fun StationBarContent(
                 ) {
                     LiveBadge()
 
-                    // ICY 제목이 없거나 비면 방송사를 보여 준다.
+                    // 곡(MBC) → ICY 제목 → 프로그램 제목 순으로 보여 주고, 다 없으면 방송사를 보여 준다.
                     FadingEdgeText(
                         modifier = Modifier.weight(1f),
-                        text = state.streamTitle?.takeIf { it.isNotBlank() } ?: station.broadcaster,
+                        text = state.program?.song?.takeIf { it.isNotBlank() }
+                            ?: state.streamTitle?.takeIf { it.isNotBlank() }
+                            ?: state.program?.title?.takeIf { it.isNotBlank() }
+                            ?: station.broadcaster,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.72f),
                         maxLines = 1,

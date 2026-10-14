@@ -12,7 +12,9 @@ import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
@@ -20,7 +22,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
@@ -43,6 +47,7 @@ class StationPlayerViewModel @Inject constructor(
     private val getFavoriteStationsUseCase: GetFavoriteStationsUseCase,
     private val toggleFavoriteStationUseCase: ToggleFavoriteStationUseCase,
     private val getStationDetailsUseCase: GetStationDetailsUseCase,
+    private val observeOnAirProgramUseCase: ObserveOnAirProgramUseCase,
     private val sleepTimer: SleepTimer,
 ) : ViewModel() {
 
@@ -102,6 +107,27 @@ class StationPlayerViewModel @Inject constructor(
         .distinctUntilChanged()
         .transformLatest { stationId ->
             if (stationId != null) emit(StationDetailsOf(stationId, getStationDetailsUseCase(stationId)))
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = null,
+        )
+
+    /**
+     * 표시 중인 스테이션이 지금 방송 중인 프로그램. `state` 와 따로 둔다 — 네트워크로 받고 프로그램 경계마다
+     * 바뀌는 값이라 `Active` 에 넣으면 재생 상태와 얽힌다. [details] 와 같은 이유로 값에 스테이션 id 를 싣고
+     * 화면이 id 로 자기 차례인지 가른다. flatMapLatest 가 이전 스테이션의 구독을 끊는다.
+     */
+    val onAir: StateFlow<OnAirOf?> = state
+        .map { (it as? StationPlayerState.Active)?.station?.id }
+        .distinctUntilChanged()
+        .flatMapLatest { stationId ->
+            if (stationId == null) {
+                emptyFlow()
+            } else {
+                observeOnAirProgramUseCase(stationId).map { OnAirOf(stationId, it) }
+            }
         }
         .stateIn(
             scope = viewModelScope,
@@ -192,6 +218,12 @@ sealed interface StationPlayerState {
 data class StationDetailsOf(
     val stationId: String,
     val details: StationDetails?,
+)
+
+/** [program] 이 어느 스테이션의 것인지 함께 싣는다. null 은 프로그램 정보를 모르거나 받지 못했다는 뜻이다. */
+data class OnAirOf(
+    val stationId: String,
+    val program: OnAirProgram?,
 )
 
 sealed interface StationPlayerAction {

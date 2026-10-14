@@ -6,12 +6,15 @@ import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.testing.model.bareOnAirProgramTestData
 import io.jacob.episodive.core.testing.model.codecOnlyStationDetailsTestData
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
 import io.jacob.episodive.core.testing.model.kbsHappyRadioStationTestData
+import io.jacob.episodive.core.testing.model.onAirProgramTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.stationDetailsTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -21,6 +24,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -42,6 +46,7 @@ class StationPlayerViewModelTest {
     private val getFavoriteStationsUseCase = mockk<GetFavoriteStationsUseCase>()
     private val toggleFavoriteStationUseCase = mockk<ToggleFavoriteStationUseCase>(relaxed = true)
     private val getStationDetailsUseCase = mockk<GetStationDetailsUseCase>()
+    private val observeOnAirProgramUseCase = mockk<ObserveOnAirProgramUseCase>()
     private val sleepTimer = mockk<SleepTimer>(relaxed = true)
 
     private val a = radioStationTestData
@@ -66,6 +71,7 @@ class StationPlayerViewModelTest {
         every { getFavoriteStationsUseCase() } returns favorites
         every { getStationsUseCase(StationKind.RADIO) } returns stations
         every { sleepTimer.remainingMs } returns sleepRemaining
+        every { observeOnAirProgramUseCase(any()) } returns flowOf(null)
         // play 가 pending 을 즉시 세우는 컨트롤러를 흉내 낸다. 두 번째 호출이 이 값을 기준으로 삼아야 한다.
         every { stationPlaybackController.play(any()) } answers { pendingStationId.value = firstArg() }
         return StationPlayerViewModel(
@@ -75,6 +81,7 @@ class StationPlayerViewModelTest {
             getFavoriteStationsUseCase = getFavoriteStationsUseCase,
             toggleFavoriteStationUseCase = toggleFavoriteStationUseCase,
             getStationDetailsUseCase = getStationDetailsUseCase,
+            observeOnAirProgramUseCase = observeOnAirProgramUseCase,
             sleepTimer = sleepTimer,
         )
     }
@@ -306,6 +313,60 @@ class StationPlayerViewModelTest {
         coVerify(exactly = 1) { getStationDetailsUseCase(a.id) }
         job.cancel()
     }
+
+    @Test
+    fun `Given 표시 스테이션이 바뀜, Then 프로그램이 그 스테이션의 것을 따라간다`() = runTest {
+        nowPlayingStation.value = a
+        val viewModel = createViewModel()
+        every { observeOnAirProgramUseCase(a.id) } returns flowOf(onAirProgramTestData)
+        every { observeOnAirProgramUseCase(b.id) } returns flowOf(bareOnAirProgramTestData)
+        val job = launchCollectOnAir(viewModel)
+
+        assertEquals(OnAirOf(a.id, onAirProgramTestData), viewModel.onAir.value)
+
+        pendingStationId.value = b.id
+
+        assertEquals(OnAirOf(b.id, bareOnAirProgramTestData), viewModel.onAir.value)
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 프로그램을 모름, Then 스테이션 id 와 null 이 실린다`() = runTest {
+        nowPlayingStation.value = a
+        val viewModel = createViewModel()
+        val job = launchCollectOnAir(viewModel)
+
+        assertEquals(OnAirOf(a.id, null), viewModel.onAir.value)
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 재생 상태만 바뀜, Then 프로그램을 다시 구독하지 않는다`() = runTest {
+        nowPlayingStation.value = a
+        val viewModel = createViewModel()
+        val job = launchCollectOnAir(viewModel)
+
+        isPlaying.value = true
+        streamTitle.value = "Artist - Title"
+
+        verify(exactly = 1) { observeOnAirProgramUseCase(a.id) }
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 스테이션이 없음, Then 프로그램은 구독하지 않는다`() = runTest {
+        val viewModel = createViewModel()
+        val job = launchCollectOnAir(viewModel)
+
+        assertNull(viewModel.onAir.value)
+        verify(exactly = 0) { observeOnAirProgramUseCase(any()) }
+        job.cancel()
+    }
+
+    private fun TestScope.launchCollectOnAir(viewModel: StationPlayerViewModel) =
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.onAir.collect {}
+        }
 
     private fun TestScope.launchCollectDetails(viewModel: StationPlayerViewModel) =
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
