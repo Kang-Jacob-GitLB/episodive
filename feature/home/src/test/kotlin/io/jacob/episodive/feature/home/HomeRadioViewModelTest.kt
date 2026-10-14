@@ -195,6 +195,7 @@ class HomeRadioViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        verify(exactly = 1) { observeStationProgramImagesUseCase(any()) }
+        // 로딩 중의 빈 구성 한 번을 빼면, 섹션이 채워진 뒤로는 구독이 한 번뿐이다.
+        verify(exactly = 1) { observeStationProgramImagesUseCase(match { it.isNotEmpty() }) }
     }
 }
