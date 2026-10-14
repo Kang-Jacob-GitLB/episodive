@@ -39,6 +39,7 @@ import io.jacob.episodive.core.domain.repository.PodcastRepository
 import io.jacob.episodive.core.domain.repository.RecentSearchRepository
 import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.domain.repository.UserRepository
+import io.jacob.episodive.core.network.datasource.BroadcasterStreamDataSource
 import io.jacob.episodive.core.network.datasource.ChannelRemoteDataSource
 import io.jacob.episodive.core.network.datasource.ChapterRemoteDataSource
 import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
@@ -168,11 +169,13 @@ object RepositoryModule {
     @Singleton
     fun provideStationRepository(
         stationRemoteDataSource: StationRemoteDataSource,
+        broadcasterStreamDataSource: BroadcasterStreamDataSource,
         stationDao: StationDao,
         @Dispatcher(EpisodiveDispatchers.IO) ioDispatcher: CoroutineDispatcher,
     ): StationRepository {
         return StationRepositoryImpl(
             remoteDataSource = stationRemoteDataSource,
+            broadcasterDataSource = broadcasterStreamDataSource,
             stationDao = stationDao,
             catalog = KoreanStationCatalog.entries,
             ioDispatcher = ioDispatcher,

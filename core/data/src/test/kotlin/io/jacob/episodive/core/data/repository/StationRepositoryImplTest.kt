@@ -1,6 +1,8 @@
 package io.jacob.episodive.core.data.repository
 
 import app.cash.turbine.test
+import io.jacob.episodive.core.data.radio.StationCatalogEntry
+import io.jacob.episodive.core.data.radio.broadcasterRadioEntryTestData
 import io.jacob.episodive.core.data.radio.stationCatalogEntryTestData
 import io.jacob.episodive.core.data.radio.stationDetailsResponsesTestData
 import io.jacob.episodive.core.database.dao.StationDao
@@ -8,8 +10,11 @@ import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.StationStream
+import io.jacob.episodive.core.network.datasource.BroadcasterStreamDataSource
 import io.jacob.episodive.core.network.datasource.StationRemoteDataSource
+import io.jacob.episodive.core.network.model.BroadcasterSource
 import io.jacob.episodive.core.testing.model.icecastStreamTestData
+import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
 import io.jacob.episodive.core.testing.model.stationDetailsTestData
@@ -24,6 +29,7 @@ import io.mockk.runs
 import io.mockk.slot
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -40,17 +46,23 @@ class StationRepositoryImplTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val remoteDataSource = mockk<StationRemoteDataSource>()
+    private val broadcasterDataSource = mockk<BroadcasterStreamDataSource>()
     private val stationDao = mockk<StationDao>()
 
     private var nowMillis = 1_000_000L
 
-    private val repository = StationRepositoryImpl(
+    private fun repositoryOf(catalog: List<StationCatalogEntry>) = StationRepositoryImpl(
         remoteDataSource = remoteDataSource,
+        broadcasterDataSource = broadcasterDataSource,
         stationDao = stationDao,
-        catalog = stationCatalogEntryTestData,
+        catalog = catalog,
         ioDispatcher = UnconfinedTestDispatcher(mainDispatcherRule.testDispatcher.scheduler),
         now = { nowMillis },
     )
+
+    private val repository = repositoryOf(stationCatalogEntryTestData)
+
+    private val broadcasterRepository = repositoryOf(listOf(broadcasterRadioEntryTestData))
 
     @Test
     fun `Given catalog, When getStations RADIO, Then only radio in catalog order`() = runTest {
@@ -156,6 +168,104 @@ class StationRepositoryImplTest {
                 excluding = setOf("https://live/a", "https://live/b", "https://fallback/a"),
             )
         )
+    }
+
+    @Test
+    fun `Given broadcaster succeeds, When resolveStreamUrl, Then its url and Radio Browser not called`() = runTest {
+        coEvery { broadcasterDataSource.resolve(BroadcasterSource.Kbs("21")) } returns "https://kbs/new"
+
+        assertEquals(
+            StationStream("https://kbs/new", isHls = true),
+            broadcasterRepository.resolveStreamUrl(kbsFirstRadioStationTestData.id),
+        )
+        coVerify(exactly = 0) { remoteDataSource.resolveStreamUrl(any()) }
+    }
+
+    @Test
+    fun `Given broadcaster returns null, When resolveStreamUrl, Then Radio Browser used`() = runTest {
+        coEvery { broadcasterDataSource.resolve(any()) } returns null
+        coEvery { remoteDataSource.resolveStreamUrl("k") } returns "https://live/k"
+
+        assertEquals(
+            StationStream("https://live/k", isHls = true),
+            broadcasterRepository.resolveStreamUrl(kbsFirstRadioStationTestData.id),
+        )
+    }
+
+    @Test
+    fun `Given broadcaster throws, When resolveStreamUrl, Then Radio Browser used`() = runTest {
+        coEvery { broadcasterDataSource.resolve(any()) } throws IOException("403")
+        coEvery { remoteDataSource.resolveStreamUrl("k") } returns "https://live/k"
+
+        assertEquals(
+            StationStream("https://live/k", isHls = true),
+            broadcasterRepository.resolveStreamUrl(kbsFirstRadioStationTestData.id),
+        )
+    }
+
+    @Test
+    fun `Given broadcaster url excluded, When resolveStreamUrl, Then Radio Browser used`() = runTest {
+        coEvery { broadcasterDataSource.resolve(any()) } returns "https://kbs/old"
+        coEvery { remoteDataSource.resolveStreamUrl("k") } returns "https://live/k"
+
+        assertEquals(
+            StationStream("https://live/k", isHls = true),
+            broadcasterRepository.resolveStreamUrl(
+                kbsFirstRadioStationTestData.id,
+                excluding = setOf("https://kbs/old"),
+            ),
+        )
+    }
+
+    @Test
+    fun `Given broadcaster hangs, When resolveStreamUrl, Then Radio Browser used after broadcaster timeout`() = runTest {
+        coEvery { broadcasterDataSource.resolve(any()) } coAnswers { awaitCancellation() }
+        coEvery { remoteDataSource.resolveStreamUrl("k") } returns "https://live/k"
+
+        val stream = async { broadcasterRepository.resolveStreamUrl(kbsFirstRadioStationTestData.id) }
+        advanceTimeBy(4_000)
+        runCurrent()
+        assertEquals(false, stream.isCompleted)
+        advanceTimeBy(2_000)
+
+        assertEquals(StationStream("https://live/k", isHls = true), stream.await())
+    }
+
+    @Test
+    fun `Given broadcaster fails after delay, When resolveStreamUrl, Then Radio Browser still called`() = runTest {
+        coEvery { broadcasterDataSource.resolve(any()) } coAnswers {
+            delay(4_000)
+            throw IOException("slow")
+        }
+        coEvery { remoteDataSource.resolveStreamUrl("k") } returns "https://live/k"
+
+        val stream = async { broadcasterRepository.resolveStreamUrl(kbsFirstRadioStationTestData.id) }
+        advanceTimeBy(5_000)
+
+        assertEquals(StationStream("https://live/k", isHls = true), stream.await())
+    }
+
+    @Test
+    fun `Given excluding not empty, When resolveStreamUrl, Then broadcaster skipped`() = runTest {
+        coEvery { remoteDataSource.resolveStreamUrl("k") } returns "https://live/k"
+
+        assertEquals(
+            StationStream("https://live/k", isHls = true),
+            broadcasterRepository.resolveStreamUrl(
+                kbsFirstRadioStationTestData.id,
+                excluding = setOf("https://kbs/failed"),
+            ),
+        )
+        coVerify(exactly = 0) { broadcasterDataSource.resolve(any()) }
+    }
+
+    @Test
+    fun `Given entry without broadcaster source, When resolveStreamUrl, Then broadcaster not called`() = runTest {
+        coEvery { remoteDataSource.resolveStreamUrl("a") } returns "https://live/a"
+
+        repository.resolveStreamUrl(radioStationTestData.id)
+
+        coVerify(exactly = 0) { broadcasterDataSource.resolve(any()) }
     }
 
     @Test
