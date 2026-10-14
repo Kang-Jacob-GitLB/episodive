@@ -10,6 +10,7 @@ import io.jacob.episodive.core.model.PlaybackFailure
 import io.jacob.episodive.core.model.PlaybackFailure.Cause
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationStream
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -183,7 +184,16 @@ class LiveStreamSupervisorImpl(
             _unplayable.tryEmit(station)
             // 사용자 정지(컨트롤러의 stop)와 겹치지 않는다 — 그쪽은 stopStation 을 거치지 않는다.
             // 비운 뒤에는 마지막 에피소드를 일시정지로 다시 올려 미니바가 돌아오게 한다.
-            scope.launch(mainDispatcher) { restoreLastPlayState() }
+            scope.launch(mainDispatcher) {
+                // ApplicationScope 에는 예외 처리기가 없어 DataStore/Room 예외가 프로세스를 죽인다.
+                try {
+                    restoreLastPlayState()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.w(e, "restore last play state failed")
+                }
+            }
         }
     }
 

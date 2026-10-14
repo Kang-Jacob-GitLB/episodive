@@ -7,6 +7,7 @@ import io.jacob.episodive.core.domain.usecase.player.RestoreLastPlayStateUseCase
 import io.jacob.episodive.core.domain.usecase.station.PlayStationResult
 import io.jacob.episodive.core.domain.usecase.station.PlayStationUseCase
 import io.jacob.episodive.core.model.Station
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * 모든 판단은 [mainDispatcher] 에서 한다. `PlayStationUseCase` 와 플레이어가 메인 전용이고, [playJob] 과
@@ -82,7 +84,16 @@ class StationPlaybackControllerImpl(
         // 스테이션이 플레이어를 비웠으니 마지막 에피소드를 일시정지로 다시 올려 미니바가 돌아오게 한다.
         // 자동 재생하지 않고, 위치는 저장된 이어듣기 지점 그대로다. 읽는 사이 다른 항목이 올라오면
         // 유스케이스가 prepare 직전에 다시 보고 물러난다.
-        scope.launch(mainDispatcher) { restoreLastPlayState() }
+        scope.launch(mainDispatcher) {
+            // ApplicationScope 에는 예외 처리기가 없어 DataStore/Room 예외가 프로세스를 죽인다.
+            try {
+                restoreLastPlayState()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "restore last play state failed")
+            }
+        }
     }
 
     private fun cancelPending() {

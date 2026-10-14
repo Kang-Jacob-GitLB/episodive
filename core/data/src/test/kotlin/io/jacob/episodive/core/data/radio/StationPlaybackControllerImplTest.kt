@@ -178,7 +178,7 @@ class StationPlaybackControllerImplTest {
     }
 
     @Test
-    fun `Given 스테이션 없이 재생 중, When play 로 토글만 하면, Then 복원하지 않는다`() = runTest {
+    fun `Given 같은 스테이션을 재생 중, When play 로 토글만 하면, Then 복원하지 않는다`() = runTest {
         nowPlayingStation.value = a
         val controller = createController()
 

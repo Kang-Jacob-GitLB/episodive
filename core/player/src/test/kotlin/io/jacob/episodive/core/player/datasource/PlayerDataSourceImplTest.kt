@@ -138,7 +138,10 @@ class PlayerDataSourceImplTest {
         dataSource.prepare(listOf(episode), indexToPlay = 0, positionMs = 1000L)
 
         // Then
-        verify { player.playWhenReady = false }
+        verifyOrder {
+            player.playWhenReady = false
+            player.prepare()
+        }
     }
 
     @Test

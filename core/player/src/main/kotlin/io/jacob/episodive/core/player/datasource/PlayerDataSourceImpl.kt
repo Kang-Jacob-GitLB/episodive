@@ -536,11 +536,12 @@ class PlayerDataSourceImpl @Inject constructor(
         // 발행을 막아, 복원 위치가 잘못된 중간값으로 한 번도 노출되지 않게 한다.
         isPreparing = true
         try {
+            // stop() 은 playWhenReady 를 건드리지 않는다. 스테이션을 듣다 멈춘 뒤 복원하면 true 가 남아 있어
+            // 복원이 곧바로 재생으로 이어진다. 복원은 언제나 일시정지로 올린다. prepare 앞에서 꺼야 한다 —
+            // prepare 가 남은 true 로 오디오 포커스를 요청하면 뒤늦게 꺼도 반납되지 않는다.
+            player.playWhenReady = false
             player.setMediaItems(mediaItems, indexToPlay, positionMs)
             player.prepare()
-            // stop() 은 playWhenReady 를 건드리지 않는다. 스테이션을 듣다 멈춘 뒤 복원하면 true 가 남아 있어
-            // 복원이 곧바로 재생으로 이어진다. 복원은 언제나 일시정지로 올린다.
-            player.playWhenReady = false
         } finally {
             isPreparing = false
         }
