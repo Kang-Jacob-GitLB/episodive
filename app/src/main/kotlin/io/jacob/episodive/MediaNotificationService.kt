@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.CommandButton
@@ -29,12 +30,14 @@ import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.player.WidgetPlayPauseUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
 import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Station
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -42,6 +45,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -95,7 +99,9 @@ class MediaNotificationService : MediaSessionService() {
 
         createNotificationChannel()
 
-        val player = playerRepository.getPlayer()
+        // 스테이션 재생 중에는 세션이 읽는 메타데이터만 프로그램 기준으로 덧씌운다. 재생 중인 항목은 건드리지 않는다.
+        val player = OnAirMetadataPlayer(playerRepository.getPlayer())
+        observeOnAirOverlay(player)
 
         mediaSession = MediaSession.Builder(this, player)
             .setCallback(MediaSessionCallback())
@@ -148,10 +154,13 @@ class MediaNotificationService : MediaSessionService() {
     }
 
     /**
-     * 재생 중인 스테이션의 프로그램 제목과 이미지 주소. 일시정지 중에는 구독하지 않는다 — 멈춘 위젯 제목 때문에 편성 루프(5분 TTL
-     * 재조회)를 돌릴 이유가 없고, 다시 재생하면 그때 현재 제목을 새로 받는다.
+     * 재생 중인 스테이션과 지금 방송 중인 프로그램. 일시정지 중에는 구독하지 않는다 — 멈춘 화면 때문에 편성 루프(5분 TTL
+     * 재조회)를 돌릴 이유가 없고, 다시 재생하면 그때 현재 프로그램을 새로 받는다. 곡은 빼고(includeSong = false) 받는다 —
+     * 백그라운드 재생 내내 곡 폴링이 돌면 안 된다.
+     *
+     * 위젯 갱신 트리거와 세션 메타데이터 덧씌움이 함께 쓰므로 하나로 공유한다(구독이 둘이어도 편성 루프는 하나).
      */
-    private fun currentProgramTitleFlow(): Flow<Pair<String?, String?>> =
+    private val playingProgram: Flow<Pair<Station, OnAirProgram?>> by lazy {
         combine(
             playerRepository.nowPlayingStation,
             playerRepository.isPlaying,
@@ -161,10 +170,38 @@ class MediaNotificationService : MediaSessionService() {
                 if (station == null) {
                     emptyFlow()
                 } else {
-                    observeOnAirProgramUseCase(station.id, includeSong = false).map { it?.title to it?.imageUrl }
+                    observeOnAirProgramUseCase(station.id, includeSong = false).map { station to it }
                 }
             }
+            .shareIn(
+                scope = serviceScope,
+                started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
+                replay = 1,
+            )
+    }
+
+    /** 위젯 부제가 바뀌는 신호: 프로그램 제목과 이미지. */
+    private fun currentProgramTitleFlow(): Flow<Pair<String?, String?>> =
+        playingProgram
+            .map { (_, program) -> program?.title to program?.imageUrl }
             .distinctUntilChanged()
+
+    /**
+     * 프로그램이 바뀔 때마다 세션 메타데이터 덧씌움을 바꾼다. 프로그램을 모르면(null) 덧씌우지 않아 원래 값이 그대로다.
+     * 일시정지로 구독이 멎어도 마지막 덧씌움은 남는다 — 멈춘 알림에도 프로그램이 보이는 게 맞다. 스테이션이 바뀌거나 에피소드로
+     * 넘어가면 [OnAirMetadataPlayer] 가 올라 있는 항목과 대조해 알아서 원본을 돌려준다.
+     */
+    private fun observeOnAirOverlay(player: OnAirMetadataPlayer) = serviceScope.launch {
+        playingProgram.collect { (station, program) ->
+            player.setOverlay(program?.let { station.toOverlay(it) })
+        }
+    }
+
+    private fun Station.toOverlay(program: OnAirProgram) = OnAirMetadataPlayer.Overlay(
+        station = this,
+        artist = program.host?.takeIf { it.isNotBlank() }?.let { "${program.title} · $it" } ?: program.title,
+        artworkUri = program.imageUrl?.takeIf { it.startsWith("https://") }?.toUri(),
+    )
 
     @UnstableApi
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
