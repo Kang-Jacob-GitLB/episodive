@@ -28,6 +28,8 @@ import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.liveCaptionTestData
 import io.jacob.episodive.core.testing.model.podcastTestData
+import io.jacob.episodive.core.testing.model.stationLiveCaptionTestData
+import io.jacob.episodive.core.ui.caption.CaptionButtonState
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import org.junit.Assert.assertEquals
@@ -435,6 +437,20 @@ class PlayerScreenTest {
 
         composeTestRule.onNodeWithText("test cue text").assertExists()
         composeTestRule.onNodeWithText(caption.lines.last().text, substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun captionOfStation_isNotDrawnWhenProgressEpisodeIdIsNull() {
+        // progress.episodeId 가 null 인 순간(전환 중)에도 스테이션 자막이 새면 안 된다.
+        val caption = stationLiveCaptionTestData()
+        setPlayerScreen(
+            progress = Progress(1000.seconds, 2000.seconds, 6000.seconds, episodeId = null),
+            liveCaption = { caption },
+            cue = "test cue text",
+        )
+
+        composeTestRule.onNodeWithText(caption.lines.last().text, substring = true).assertDoesNotExist()
+        composeTestRule.onNodeWithText("test cue text").assertExists()
     }
 
     @Test

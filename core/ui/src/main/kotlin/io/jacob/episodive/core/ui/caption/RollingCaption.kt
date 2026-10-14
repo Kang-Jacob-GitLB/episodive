@@ -1,4 +1,4 @@
-package io.jacob.episodive.feature.player
+package io.jacob.episodive.core.ui.caption
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animate
