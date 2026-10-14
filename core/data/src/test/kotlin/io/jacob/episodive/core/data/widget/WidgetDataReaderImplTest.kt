@@ -7,10 +7,13 @@ import io.jacob.episodive.core.domain.repository.UserRepository
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetUserRecentPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.testing.model.episodeTestData
+import io.jacob.episodive.core.testing.model.onAirProgramTestData
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -36,10 +39,12 @@ class WidgetDataReaderImplTest {
     private val userRepository = mockk<UserRepository>(relaxed = true)
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
     private val playerRepository = mockk<PlayerRepository>(relaxed = true)
+    private val observeOnAirProgram = mockk<ObserveOnAirProgramUseCase>()
 
     init {
         // 기본은 스테이션 없음. relaxed mock 의 빈 Flow 는 바로 완료돼 에피소드 경로까지 닫아 버린다.
         every { playerRepository.nowPlayingStation } returns MutableStateFlow(null)
+        every { observeOnAirProgram(any()) } returns flowOf(null)
     }
 
     private val reader = WidgetDataReaderImpl(
@@ -49,6 +54,7 @@ class WidgetDataReaderImplTest {
         userRepository = userRepository,
         episodeRepository = episodeRepository,
         playerRepository = playerRepository,
+        observeOnAirProgram = observeOnAirProgram,
     )
 
     @Test
@@ -132,6 +138,27 @@ class WidgetDataReaderImplTest {
                 assertNull(snapshot.podcastId)
                 assertEquals(true, snapshot.isStation)
                 assertEquals(true, snapshot.isPlaying)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `Given a station with on-air program, when nowPlayingFlow collected, then program title replaces broadcaster`() =
+        runTest {
+            val program = MutableStateFlow<OnAirProgram?>(null)
+            every { playerRepository.nowPlayingStation } returns MutableStateFlow(radioStationTestData)
+            every { playerRepository.isPlaying } returns MutableStateFlow(true)
+            every { observeOnAirProgram(radioStationTestData.id) } returns program
+
+            reader.nowPlayingFlow().test {
+                assertEquals(radioStationTestData.broadcaster, awaitItem()!!.feedTitle)
+
+                program.value = onAirProgramTestData
+                assertEquals(onAirProgramTestData.title, awaitItem()!!.feedTitle)
+
+                // 곡만 바뀌면 스냅샷은 그대로다.
+                program.value = onAirProgramTestData.copy(song = "곡 - 가수")
+                expectNoEvents()
                 cancelAndIgnoreRemainingEvents()
             }
         }
