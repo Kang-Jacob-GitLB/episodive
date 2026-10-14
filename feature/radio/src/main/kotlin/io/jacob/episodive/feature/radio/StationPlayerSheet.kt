@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -83,6 +84,7 @@ import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.SLEEP_TIMER_FADE_OUT_MS
 import io.jacob.episodive.core.model.StationDetails
+import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
@@ -90,6 +92,7 @@ import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
 import io.jacob.episodive.core.testing.model.stationDetailsTestData
 import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.SleepTimerSheet
+import io.jacob.episodive.core.ui.CardSection
 import io.jacob.episodive.core.ui.StationCover
 import kotlinx.coroutines.launch
 import io.jacob.episodive.core.ui.R as uiR
@@ -403,9 +406,9 @@ internal fun StationPlayerScreen(
         // 내용은 지금 보이는 스테이션의 상세일 때만 그린다.
         item {
             val shown = details?.takeIf { it.stationId == station.id }?.details
-            val shownSchedule = schedule?.takeIf { it.stationId == station.id }?.programs.orEmpty()
+            val shownSchedule = schedule?.takeIf { it.stationId == station.id }?.schedule
             // 상세도 편성표도 없으면 구분선까지 통째로 숨긴다.
-            if (shown != null || shownSchedule.isNotEmpty()) {
+            if (shown != null || !shownSchedule?.programs.isNullOrEmpty()) {
                 StationInfoSection(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -630,7 +633,7 @@ private fun StationControlBar(
 internal fun StationInfoSection(
     details: StationDetails?,
     modifier: Modifier = Modifier,
-    schedule: List<OnAirProgram> = emptyList(),
+    schedule: StationSchedule? = null,
     current: OnAirProgram? = null,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -687,7 +690,7 @@ internal fun StationInfoSection(
         }
 
         // 링크(와 음질)와 태그 사이. 편성표를 모르면 섹션 통째로 없다 — 간격은 Column 이 알아서 접는다.
-        if (schedule.isNotEmpty()) {
+        if (schedule != null && schedule.programs.isNotEmpty()) {
             StationScheduleSection(schedule = schedule, current = current)
         }
 
@@ -727,41 +730,55 @@ private const val ScheduleBefore = 1
 /** 접힌 편성표가 현재 방송 뒤에 보이는 개수. */
 private const val ScheduleAfter = 4
 
+private const val DayMillis = 24 * 60 * 60 * 1000L
+
 /**
- * 오늘 편성표. 접힌 상태에서는 지금 방송 앞뒤 몇 개만 보이고, 현재를 모르면 처음부터 같은 개수만 보인다.
- * 지금 방송 행은 [current] 와 같은 칸인지로 가른다 — 시계를 따로 읽지 않으므로 경계 시각에 미니바·시트의 현재 방송과
- * 어긋나지 않는다.
+ * 편성표 카드. 에피소드 플레이어의 정보 카드와 같은 [CardSection] 이라 헤더를 누르면 펼쳐진다. 접힌 상태에서는 지금
+ * 방송 앞뒤 몇 개만 보이고(날짜를 넘어가도 이어진다), 현재를 모르면 처음부터 같은 개수만 보인다. 펼치면 내일 새벽까지
+ * 전부 보인다. 지금 방송 행은 [current] 와 같은 칸인지로 가린다 — 시계를 따로 읽지 않으므로 경계 시각에 미니바·시트의
+ * 현재 방송과 어긋나지 않는다. 날짜가 바뀌는 행 앞에는 "내일" 구분이 붙는다.
  */
 @Composable
 private fun StationScheduleSection(
-    schedule: List<OnAirProgram>,
+    schedule: StationSchedule,
     current: OnAirProgram?,
     modifier: Modifier = Modifier,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val currentIndex = schedule.indexOfFirst { it.isSameSlotAs(current) }
+    val programs = schedule.programs
+    val currentIndex = programs.indexOfFirst { it.isSameSlotAs(current) }
     val collapsedRange = if (currentIndex >= 0) {
-        maxOf(0, currentIndex - ScheduleBefore)..minOf(schedule.lastIndex, currentIndex + ScheduleAfter)
+        maxOf(0, currentIndex - ScheduleBefore)..minOf(programs.lastIndex, currentIndex + ScheduleAfter)
     } else {
-        0..minOf(schedule.lastIndex, ScheduleBefore + ScheduleAfter)
+        0..minOf(programs.lastIndex, ScheduleBefore + ScheduleAfter)
     }
-    val canExpand = collapsedRange.count() < schedule.size
-    val shown = if (expanded) schedule.indices else collapsedRange
+    val shown = if (expanded) programs.indices else collapsedRange
     val onAirDescription = stringResource(R.string.feature_radio_schedule_on_air)
 
-    Column(
+    CardSection(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        title = stringResource(R.string.feature_radio_schedule_title),
+        expanded = expanded,
+        onClick = { expanded = !expanded },
+        // 정보 영역이 이미 화면 여백 안이라 카드 바깥 여백은 두지 않는다.
+        outerPadding = PaddingValues(0.dp),
     ) {
-        Text(
-            text = stringResource(R.string.feature_radio_schedule_title),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-
+        var previousDay = Long.MIN_VALUE
         shown.forEach { index ->
-            val program = schedule[index]
+            val program = programs[index]
             val isCurrent = index == currentIndex
+            val day = Math.floorDiv((program.startMillis ?: schedule.dayStartMillis) - schedule.dayStartMillis, DayMillis)
+            // 오늘이 아닌 날로 처음 넘어가는 행 앞에만 구분을 둔다. 어제 시작한 심야 프로그램(day < 0)에는 달지 않는다.
+            if (day >= 1 && previousDay < day) {
+                Text(
+                    modifier = Modifier.padding(top = 8.dp),
+                    text = stringResource(R.string.feature_radio_schedule_tomorrow),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            previousDay = day
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -789,22 +806,9 @@ private fun StationScheduleSection(
                 )
             }
         }
-
-        if (canExpand) {
-            Text(
-                modifier = Modifier
-                    .heightIn(min = 48.dp)
-                    .clickable(role = Role.Button) { expanded = !expanded }
-                    .padding(vertical = 12.dp),
-                text = stringResource(
-                    if (expanded) R.string.feature_radio_schedule_show_less else R.string.feature_radio_schedule_show_all
-                ),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
     }
 }
+
 
 private val DisplayHostPrefix = Regex("^(https?://)?(www\\.)?", RegexOption.IGNORE_CASE)
 

@@ -4,6 +4,7 @@ import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.StationStream
 import kotlinx.coroutines.flow.Flow
 
@@ -40,10 +41,11 @@ interface StationRepository {
     fun observeOnAir(stationId: String, includeSong: Boolean = true): Flow<OnAirProgram?>
 
     /**
-     * 오늘(Asia/Seoul) 방송분, 시작 시각순. [observeOnAir] 와 같은 편성표 캐시를 쓰므로 네트워크를 따로 부르지 않는다.
-     * 자정을 넘겨 오늘로 이어지는 어제 시작 프로그램도 포함한다. 편성 정보가 없는 스테이션·실패면 빈 목록을 발행한다.
+     * 지금 기준 편성표: 오늘(Asia/Seoul) 전체와 내일 새벽(05:00)까지, 시작 시각순. 자정을 넘겨 오늘로 이어지는 어제 시작
+     * 프로그램도 포함한다. [observeOnAir] 와 같은 편성표 캐시를 쓰므로 네트워크를 따로 부르지 않는다. 편성 정보가 없는
+     * 스테이션·실패면 빈 목록을 발행한다.
      */
-    fun observeTodaySchedule(stationId: String): Flow<List<OnAirProgram>>
+    fun observeSchedule(stationId: String): Flow<StationSchedule>
 
     /** 즐겨찾기한 순서의 역순(최신순). 카탈로그에서 빠진 스테이션은 제외된다. */
     fun getFavoriteStations(): Flow<List<Station>>

@@ -18,8 +18,7 @@
     <string name="feature_radio_info_bitrate_format">%1$dkbps</string>
     <string name="feature_radio_info_open_homepage">Open website</string>
     <string name="feature_radio_info_source">Powered by Radio Browser</string>
-    <string name="feature_radio_schedule_title">Today\'s schedule</string>
+    <string name="feature_radio_schedule_title">Schedule</string>
     <string name="feature_radio_schedule_on_air">On air now</string>
-    <string name="feature_radio_schedule_show_all">Show all</string>
-    <string name="feature_radio_schedule_show_less">Show less</string>
+    <string name="feature_radio_schedule_tomorrow">Tomorrow</string>
 </resources>

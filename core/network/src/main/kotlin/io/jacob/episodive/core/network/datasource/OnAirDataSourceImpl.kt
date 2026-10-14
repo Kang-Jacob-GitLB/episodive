@@ -48,12 +48,15 @@ class OnAirDataSourceImpl(
 
     override suspend fun schedule(source: OnAirSource, nowMillis: Long): List<OnAirProgram> =
         withContext(ioDispatcher) {
-            val today = Instant.ofEpochMilli(nowMillis).atZone(SEOUL).toLocalDate()
+            val zoned = Instant.ofEpochMilli(nowMillis).atZone(SEOUL)
+            val today = zoned.toLocalDate()
+            // 접힌 편성표의 "다음 몇 개"가 자정 앞에서 비지 않도록, 밤이 깊으면 내일분도 받는다. 낮에는 받지 않는다.
+            val late = zoned.hour >= TOMORROW_FROM_HOUR
             when (source) {
                 is OnAirSource.Kbs -> kbsSchedule(source, today)
                 is OnAirSource.Mbc -> mbcSchedule(source, today)
-                is OnAirSource.Sbs -> sbsSchedule(source, today)
-                is OnAirSource.Cbs -> cbsSchedule(source, today)
+                is OnAirSource.Sbs -> sbsSchedule(source, today, late)
+                is OnAirSource.Cbs -> cbsSchedule(source, today, late)
             }.sortedBy { it.startMillis }
         }
 
@@ -112,7 +115,8 @@ class OnAirDataSourceImpl(
     private suspend fun mbcSchedule(source: OnAirSource.Mbc, today: LocalDate): List<OnAirProgram> {
         val mine = mbcRows(today).filter { it.channel == source.channel }
         // 어제 시작해 자정을 넘기는 편성이 지금 걸려 있을 수 있어 어제도 함께 펼친다.
-        return listOf(today.minusDays(1), today).flatMap { date ->
+        // 요일 편성은 이미 받은 응답이라 내일분은 공짜다.
+        return listOf(today.minusDays(1), today, today.plusDays(1)).flatMap { date ->
             val label = date.dayOfWeek.koreanLabel()
             mine.filter { row -> row.liveDays?.contains(label) == true }.mapNotNull { row ->
                 val title = row.title?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
@@ -151,13 +155,14 @@ class OnAirDataSourceImpl(
         rows.also { mbcRaw = MbcRaw(dateKey, it) }
     }
 
-    private suspend fun sbsSchedule(source: OnAirSource.Sbs, today: LocalDate): List<OnAirProgram> {
+    private suspend fun sbsSchedule(source: OnAirSource.Sbs, today: LocalDate, withTomorrow: Boolean): List<OnAirProgram> {
         val name = SBS_SCHEDULE_NAMES[source.channelId] ?: return emptyList()
-        return listOf(today.minusDays(1), today).flatMap { date ->
+        val dates = listOfNotNull(today.minusDays(1), today, today.plusDays(1).takeIf { withTomorrow })
+        return dates.flatMap { date ->
             val url = endpoints.sbs.newBuilder()
                 .addPathSegments("schedule/${date.year}/${date.monthValue}/${date.dayOfMonth}/$name.json")
                 .build()
-            // 어제 파일이 없어도 오늘 편성은 보여 준다. 오늘 것이 없으면 그대로 실패로 올린다.
+            // 어제·내일 파일이 없어도 오늘 편성은 보여 준다. 오늘 것이 없으면 그대로 실패로 올린다.
             val body = if (date == today) {
                 get(url)
             } else {
@@ -186,13 +191,21 @@ class OnAirDataSourceImpl(
         }
     }
 
-    private suspend fun cbsSchedule(source: OnAirSource.Cbs, today: LocalDate): List<OnAirProgram> {
-        val url = endpoints.cbs.newBuilder().addPathSegments("schedule/radio/ajax").build()
-        val body = callFactory.fetchBody(Request.Builder().url(url).post("".toRequestBody()).build())
-        val channels: Map<String, List<CbsScheduleItemResponse>> = gson.fromJson(
-            body, object : TypeToken<Map<String, List<CbsScheduleItemResponse>>>() {}.type
-        ) ?: return emptyList()
-        val programs = channels[source.key].orEmpty().mapNotNull { item ->
+    private suspend fun cbsSchedule(source: OnAirSource.Cbs, today: LocalDate, withTomorrow: Boolean): List<OnAirProgram> {
+        // date 쿼리 없이 부르면 오늘, `?date=yyyy-MM-dd` 를 붙이면 그날이다(둘 다 POST).
+        val items = cbsItems(source, null) + if (withTomorrow) {
+            // 내일 것을 못 받아도 오늘 편성은 보여 준다.
+            try {
+                cbsItems(source, today.plusDays(1))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
+        val programs = items.mapNotNull { item ->
             val title = item.name?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
             val date = item.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: today
             val range = parseHhmmRange(date, item.startTime, item.endTime, colon = true)
@@ -212,6 +225,18 @@ class OnAirDataSourceImpl(
             val end = p.endMillis
             if (end != null && isLastMinuteOfDay(end)) p.copy(endMillis = end + MINUTE_MILLIS) else p
         }
+    }
+
+    private suspend fun cbsItems(source: OnAirSource.Cbs, date: LocalDate?): List<CbsScheduleItemResponse> {
+        val url = endpoints.cbs.newBuilder()
+            .addPathSegments("schedule/radio/ajax")
+            .apply { date?.let { addQueryParameter("date", it.toString()) } }
+            .build()
+        val body = callFactory.fetchBody(Request.Builder().url(url).post("".toRequestBody()).build())
+        val channels: Map<String, List<CbsScheduleItemResponse>> = gson.fromJson(
+            body, object : TypeToken<Map<String, List<CbsScheduleItemResponse>>>() {}.type
+        ) ?: return emptyList()
+        return channels[source.key].orEmpty()
     }
 
     private suspend fun get(url: HttpUrl): String = callFactory.fetchBody(Request.Builder().url(url).build())
@@ -291,6 +316,8 @@ class OnAirDataSourceImpl(
 
     private companion object {
         val SEOUL: ZoneId = ZoneId.of("Asia/Seoul")
+        /** 이 시각(Asia/Seoul) 이후에는 내일 편성도 받는다. */
+        const val TOMORROW_FROM_HOUR = 20
         const val MINUTE_MILLIS = 60_000L
         const val DAY_MILLIS = 24 * 60 * 60 * 1000L
         const val CBS_ORIGIN = "https://www.cbs.co.kr"

@@ -13,6 +13,7 @@ import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.network.datasource.BroadcasterStreamDataSource
 import io.jacob.episodive.core.network.datasource.OnAirDataSource
@@ -721,35 +722,41 @@ class StationRepositoryImplTest {
         coVerify(exactly = 1) { onAirDataSource.currentSong(any()) }
     }
 
-    // --- observeTodaySchedule ---
+    // --- observeSchedule ---
 
     private val dayStart = LocalDateTime.of(2026, 10, 14, 0, 0).atZone(seoul).toInstant().toEpochMilli()
     private val hour = 60 * minute
 
     @Test
-    fun `Given schedule spanning days, When observeTodaySchedule, Then today overlap only sorted by start`() = runTest {
+    fun `Given schedule spanning days, When observeSchedule, Then today overlap only sorted by start`() = runTest {
         nowMillis = tenAm
         val yesterdayEarly = onAirProgramTestData("어제 낮", dayStart - 10 * hour, dayStart - 9 * hour)
         val crossing = onAirProgramTestData("어제 심야", dayStart - hour, dayStart + hour)
         val lateNight = onAirProgramTestData("오늘 심야", dayStart + 23 * hour, dayStart + 25 * hour)
-        val tomorrow = onAirProgramTestData("내일", dayStart + 25 * hour, dayStart + 26 * hour)
-        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(tomorrow, noon, lateNight, yesterdayEarly, crossing, morning)
+        val tomorrowDawn = onAirProgramTestData("내일 새벽", dayStart + 25 * hour, dayStart + 26 * hour)
+        val tomorrowMorning = onAirProgramTestData("내일 아침", dayStart + 29 * hour, dayStart + 31 * hour)
+        coEvery { onAirDataSource.schedule(any(), any()) } returns
+            listOf(tomorrowMorning, tomorrowDawn, noon, lateNight, yesterdayEarly, crossing, morning)
 
-        onAirRepository.observeTodaySchedule(kbsFirstRadioStationTestData.id).test {
-            assertEquals(listOf(crossing, morning, noon, lateNight), awaitItem())
+        onAirRepository.observeSchedule(kbsFirstRadioStationTestData.id).test {
+            // 내일 05:00 전에 시작하는 것까지. 그 뒤(내일 아침)와 어제 끝난 것은 뺀다.
+            assertEquals(
+                StationSchedule(dayStart, listOf(crossing, morning, noon, lateNight, tomorrowDawn)),
+                awaitItem(),
+            )
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `Given observeOnAir and observeTodaySchedule, When both collected, Then schedule requested once`() = runTest {
+    fun `Given observeOnAir and observeSchedule, When both collected, Then schedule requested once`() = runTest {
         nowMillis = tenAm
         coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(morning, noon)
 
         onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
             awaitItem()
-            onAirRepository.observeTodaySchedule(kbsFirstRadioStationTestData.id).test {
-                assertEquals(listOf(morning, noon), awaitItem())
+            onAirRepository.observeSchedule(kbsFirstRadioStationTestData.id).test {
+                assertEquals(listOf(morning, noon), awaitItem().programs)
                 cancelAndIgnoreRemainingEvents()
             }
             cancelAndIgnoreRemainingEvents()
@@ -759,28 +766,28 @@ class StationRepositoryImplTest {
     }
 
     @Test
-    fun `Given fetch fails, When observeTodaySchedule, Then empty and retried later`() = runTest {
+    fun `Given fetch fails, When observeSchedule, Then empty and retried later`() = runTest {
         nowMillis = tenAm
         coEvery { onAirDataSource.schedule(any(), any()) } throws IOException("down") andThen listOf(morning)
 
-        onAirRepository.observeTodaySchedule(kbsFirstRadioStationTestData.id).test {
-            assertEquals(emptyList<OnAirProgram>(), awaitItem())
+        onAirRepository.observeSchedule(kbsFirstRadioStationTestData.id).test {
+            assertEquals(emptyList<OnAirProgram>(), awaitItem().programs)
             nowMillis += minute
             testScheduler.advanceTimeBy(minute)
             testScheduler.runCurrent()
-            assertEquals(listOf(morning), awaitItem())
+            assertEquals(listOf(morning), awaitItem().programs)
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `Given no onAirSource or unknown id, When observeTodaySchedule, Then empty and network untouched`() = runTest {
-        onAirRepository.observeTodaySchedule(regionalRadioStationTestData.id).test {
-            assertEquals(emptyList<OnAirProgram>(), awaitItem())
+    fun `Given no onAirSource or unknown id, When observeSchedule, Then empty and network untouched`() = runTest {
+        onAirRepository.observeSchedule(regionalRadioStationTestData.id).test {
+            assertEquals(emptyList<OnAirProgram>(), awaitItem().programs)
             awaitComplete()
         }
-        onAirRepository.observeTodaySchedule("unknown").test {
-            assertEquals(emptyList<OnAirProgram>(), awaitItem())
+        onAirRepository.observeSchedule("unknown").test {
+            assertEquals(emptyList<OnAirProgram>(), awaitItem().programs)
             awaitComplete()
         }
 

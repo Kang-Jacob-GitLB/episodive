@@ -281,4 +281,63 @@ class OnAirDataSourceTest {
 
         assertEquals(millis(2026, 10, 15, 0, 0), dataSource.schedule(OnAirSource.Cbs("fm"), now).single().endMillis)
     }
+
+    private val lateNight = millis(2026, 10, 14, 21, 0)
+
+    @Test
+    fun `Given late evening, When SBS schedule, Then tomorrow file is also read and daytime does not`() = runTest {
+        server.enqueue(MockResponse().setBody("[]"))
+        server.enqueue(MockResponse().setBody("""[{"start_time":"23:00","end_time":"25:00","title":"밤","program_image":""}]"""))
+        server.enqueue(MockResponse().setBody("""[{"start_time":"01:00","end_time":"03:00","title":"내일 새벽","program_image":""}]"""))
+
+        val result = dataSource.schedule(OnAirSource.Sbs("S07"), lateNight)
+
+        assertEquals(listOf("밤", "내일 새벽"), result.map { it.title })
+        assertEquals(millis(2026, 10, 15, 1, 0), result[1].startMillis)
+        assertEquals(3, server.requestCount)
+        server.takeRequest()
+        server.takeRequest()
+        assertEquals("/schedule/2026/10/15/Power.json", server.takeRequest().path)
+    }
+
+    @Test
+    fun `Given late evening and tomorrow SBS file missing, When schedule, Then today still returned`() = runTest {
+        server.enqueue(MockResponse().setBody("[]"))
+        server.enqueue(MockResponse().setBody("""[{"start_time":"23:00","end_time":"25:00","title":"밤","program_image":""}]"""))
+        server.enqueue(MockResponse().setResponseCode(403))
+
+        assertEquals(listOf("밤"), dataSource.schedule(OnAirSource.Sbs("S07"), lateNight).map { it.title })
+    }
+
+    @Test
+    fun `Given late evening, When CBS schedule, Then tomorrow is requested with date query`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"fm":[{"name":"밤","mc":"","startTime":"22:00","endTime":"23:59","date":"2026-10-14","program":null}],"musicfm":[],"joy4u":[]}"""))
+        server.enqueue(MockResponse().setBody("""{"fm":[{"name":"내일 아침","mc":"","startTime":"00:00","endTime":"01:00","date":"2026-10-15","program":null}],"musicfm":[],"joy4u":[]}"""))
+
+        val result = dataSource.schedule(OnAirSource.Cbs("fm"), lateNight)
+
+        assertEquals(listOf("밤", "내일 아침"), result.map { it.title })
+        assertEquals("/schedule/radio/ajax", server.takeRequest().path)
+        assertEquals("/schedule/radio/ajax?date=2026-10-15", server.takeRequest().path)
+    }
+
+    @Test
+    fun `Given daytime, When CBS schedule, Then only today is requested`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"fm":[],"musicfm":[],"joy4u":[]}"""))
+
+        dataSource.schedule(OnAirSource.Cbs("fm"), now)
+
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `Given MBC, When schedule, Then tomorrow weekday rows are included without extra request`() = runTest {
+        server.enqueue(MockResponse().setBody("""[{"Channel":"FM4U","ProgramTitle":"목요 새벽","StartTime":"0100","EndTime":"0300","LiveDays":"목"}]"""))
+
+        val result = dataSource.schedule(OnAirSource.Mbc("FM4U"), lateNight)
+
+        assertEquals(listOf("목요 새벽"), result.map { it.title })
+        assertEquals(millis(2026, 10, 15, 1, 0), result.single().startMillis)
+        assertEquals(1, server.requestCount)
+    }
 }

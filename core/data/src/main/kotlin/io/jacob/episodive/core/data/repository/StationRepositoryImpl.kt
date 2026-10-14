@@ -10,6 +10,7 @@ import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.network.datasource.BroadcasterStreamDataSource
 import io.jacob.episodive.core.network.datasource.OnAirDataSource
@@ -220,13 +221,14 @@ class StationRepositoryImpl internal constructor(
         }
     }
 
-    override fun observeTodaySchedule(stationId: String): Flow<List<OnAirProgram>> {
-        val source = stationsById[stationId]?.onAirSource ?: return flowOf(emptyList())
+    override fun observeSchedule(stationId: String): Flow<StationSchedule> {
+        val source = stationsById[stationId]?.onAirSource
+            ?: return flowOf(StationSchedule(dayStartOf(now()), emptyList()))
         return flow {
             while (true) {
                 val schedule = loadSchedule(stationId, source)
                 val nowMillis = now()
-                emit(schedule?.todayAt(nowMillis).orEmpty())
+                emit(StationSchedule(dayStartOf(nowMillis), schedule?.windowAt(nowMillis).orEmpty()))
                 // 편성표는 TTL 마다 다시 받으므로 그 주기로 다시 읽는다. 날짜가 넘어가는 순간도 그 안에서 따라간다.
                 delay(if (schedule == null) ONAIR_FAILURE_RETRY_MILLIS else SCHEDULE_TTL_MILLIS)
             }
@@ -302,11 +304,16 @@ class StationRepositoryImpl internal constructor(
         filter { (it.startMillis ?: return@filter false) <= nowMillis && nowMillis < (it.endMillis ?: return@filter false) }
             .maxByOrNull { it.startMillis ?: 0L }
 
-    /** [nowMillis] 가 속한 날(Asia/Seoul)과 겹치는 프로그램. 시각을 모르는 항목은 뺀다. 시작순. */
-    private fun List<OnAirProgram>.todayAt(nowMillis: Long): List<OnAirProgram> {
-        val dayStart = Instant.ofEpochMilli(nowMillis).atZone(SEOUL).toLocalDate().atStartOfDay(SEOUL)
-        val from = dayStart.toInstant().toEpochMilli()
-        val to = dayStart.plusDays(1).toInstant().toEpochMilli()
+    private fun dayStartOf(nowMillis: Long): Long =
+        Instant.ofEpochMilli(nowMillis).atZone(SEOUL).toLocalDate().atStartOfDay(SEOUL).toInstant().toEpochMilli()
+
+    /**
+     * [nowMillis] 가 속한 날 00:00 부터 [SCHEDULE_WINDOW_MILLIS] 안에 걸리는 프로그램. 시각을 모르는 항목은 뺀다. 시작순.
+     * 끝은 내일 05:00 — KBS 의 방송일(05:00~29:00)과 같은 선이다.
+     */
+    private fun List<OnAirProgram>.windowAt(nowMillis: Long): List<OnAirProgram> {
+        val from = dayStartOf(nowMillis)
+        val to = from + SCHEDULE_WINDOW_MILLIS
         return filter { (it.startMillis ?: return@filter false) < to && (it.endMillis ?: return@filter false) > from }
             .sortedBy { it.startMillis }
     }
@@ -319,6 +326,7 @@ class StationRepositoryImpl internal constructor(
         const val BROADCASTER_TIMEOUT_MILLIS = 5_000L
         const val DETAILS_TIMEOUT_MILLIS = 10_000L
         const val DETAILS_TTL_MILLIS = 24 * 60 * 60 * 1000L
+        const val SCHEDULE_WINDOW_MILLIS = 29 * 60 * 60 * 1000L
         const val SCHEDULE_TTL_MILLIS = 5 * 60 * 1000L
         const val SCHEDULE_REFETCH_MIN_MILLIS = 30_000L
         const val ONAIR_FAILURE_RETRY_MILLIS = 60_000L // 실패·편성 공백 뒤 재시도
