@@ -125,7 +125,8 @@ class EpisodiveWidget : GlanceAppWidget() {
             // 그동안 placeholder 가 부분적으로 깜빡이지 않도록, 로드 대상이 있는데 아직 현재 key 의
             // 결과가 준비되지 않았으면 위젯 전체를 원형 프로그레스로 덮는다(빈 상태는 제외).
             val isLoading =
-                (artUrl != null && readyArtwork == null) ||
+                // 스테이션은 비트맵이 늦거나 실패해도 이니셜 아트가 이미 있다. 위젯 전체를 스피너로 덮지 않는다.
+                (!isStation && artUrl != null && readyArtwork == null) ||
                     (visibleFeed.isNotEmpty() && !feedReady)
 
             EpisodiveGlanceTheme {

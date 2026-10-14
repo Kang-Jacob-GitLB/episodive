@@ -1,6 +1,5 @@
 package io.jacob.episodive
 
-import android.net.Uri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.DeviceInfo
 import androidx.media3.common.FlagSet
@@ -33,8 +32,8 @@ import io.jacob.episodive.core.model.Station
  *    스트림 메타데이터가 올 때마다 원본이 덮어쓴다.
  *
  * 알림 제목은 `title`, 본문은 `artist` 다(`DefaultMediaNotificationProvider`). 큰 아이콘은 `BitmapLoader.loadBitmapFromMetadata`
- * 가 `artworkData` 를 먼저 보고 없을 때만 `artworkUri` 를 읽는다 — 그래서 프로그램 이미지가 있을 때만 `artworkData` 를
- * 비우고 `artworkUri` 를 싣는다. 이미지가 없으면 원래의 이니셜 아트(`artworkData`)를 그대로 둔다.
+ * 가 `artworkData` 를 먼저 본다. `artworkUri` 를 싣고 세션이 직접 받게 하면 받기 전·실패 때 아트가 비므로, 서비스가 Coil 로
+ * 미리 받아 성공했을 때만 `artworkData` 바이트로 바꿔 싣는다. 그 전에는 원래의 이니셜 아트(`artworkData`)가 그대로다.
  *
  * 스테이션이 아니면(에피소드 등) 덧씌울 대상이 없어 원래 플레이어와 똑같이 위임만 한다.
  */
@@ -42,14 +41,22 @@ import io.jacob.episodive.core.model.Station
 internal class OnAirMetadataPlayer(player: Player) : ForwardingPlayer(player) {
 
     /**
+     * 프로그램 이미지. 서비스가 미리 받아 디코드·압축한 바이트다. [url] 이 같으면 같은 이미지로 본다(바이트 비교 비용을 피한다).
+     */
+    class Artwork(val url: String, val data: ByteArray) {
+        override fun equals(other: Any?): Boolean = other is Artwork && other.url == url
+        override fun hashCode(): Int = url.hashCode()
+    }
+
+    /**
      * @property station 덧씌울 스테이션. 지금 올라 있는 항목의 태그([Station])와 같을 때만 적용한다.
      * @property artist 알림 본문·잠금화면 부제로 쓸 "프로그램 제목 · 진행자".
-     * @property artworkUri 프로그램 이미지(https). 없으면 원래 아트를 둔다.
+     * @property artwork 받는 데 성공한 프로그램 이미지. 받는 중이거나 실패했으면 null 이고 원래 이니셜 아트가 그대로다.
      */
     data class Overlay(
         val station: Station,
         val artist: String,
-        val artworkUri: Uri?,
+        val artwork: Artwork?,
     )
 
     private var overlay: Overlay? = null
@@ -93,11 +100,8 @@ internal class OnAirMetadataPlayer(player: Player) : ForwardingPlayer(player) {
             .setDisplayTitle(o.station.name)
             .setArtist(o.artist)
             .apply {
-                if (o.artworkUri != null) {
-                    // artworkData 가 있으면 BitmapLoader 가 uri 를 무시한다.
-                    setArtworkData(null, null)
-                    setArtworkUri(o.artworkUri)
-                }
+                // 받는 데 성공했을 때만 바꾼다. 실패·로딩 중에는 원래 이니셜 아트(artworkData)가 남아 알림 아트가 비지 않는다.
+                o.artwork?.let { setArtworkData(it.data, MediaMetadata.PICTURE_TYPE_FRONT_COVER) }
             }
             .build()
     }

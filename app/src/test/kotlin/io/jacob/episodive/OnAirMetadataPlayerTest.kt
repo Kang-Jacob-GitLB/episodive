@@ -1,6 +1,5 @@
 package io.jacob.episodive
 
-import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -21,7 +20,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class OnAirMetadataPlayerTest {
     private val station = radioStationTestData
-    private val imageUri = Uri.parse("https://img.example.com/program.jpg")
+    private val artwork = OnAirMetadataPlayer.Artwork("https://img.example.com/program.jpg", byteArrayOf(9, 8, 7))
     private val initialsArt = byteArrayOf(1, 2, 3)
 
     // 스테이션 항목이 싣는 원본 메타데이터: 이름·방송사·이니셜 아트(Station.toMediaItem 과 같다).
@@ -47,8 +46,8 @@ class OnAirMetadataPlayerTest {
         return OnAirMetadataPlayer(player)
     }
 
-    private fun overlay(artwork: Uri? = imageUri, artist: String = "아침 라디오 · 홍길동") =
-        OnAirMetadataPlayer.Overlay(station = station, artist = artist, artworkUri = artwork)
+    private fun overlay(art: OnAirMetadataPlayer.Artwork? = artwork, artist: String = "아침 라디오 · 홍길동") =
+        OnAirMetadataPlayer.Overlay(station = station, artist = artist, artwork = art)
 
     private class Recorder : Player.Listener {
         val metadata = mutableListOf<MediaMetadata>()
@@ -74,7 +73,7 @@ class OnAirMetadataPlayerTest {
     }
 
     @Test
-    fun `Given 스테이션 재생 중에 프로그램을 앎, Then 제목은 스테이션 이름 본문은 프로그램이고 아트는 uri 로 바뀐다`() {
+    fun `Given 스테이션 재생 중에 프로그램 이미지를 받음, Then 제목은 스테이션 이름 본문은 프로그램이고 아트는 받은 바이트로 바뀐다`() {
         val w = wrapper()
         w.setOverlay(overlay())
 
@@ -82,20 +81,47 @@ class OnAirMetadataPlayerTest {
         assertEquals(station.name, m.title)
         assertEquals(station.name, m.displayTitle)
         assertEquals("아침 라디오 · 홍길동", m.artist)
-        assertEquals(imageUri, m.artworkUri)
-        // artworkData 가 남아 있으면 세션의 BitmapLoader 가 uri 를 무시한다.
-        assertNull(m.artworkData)
+        // 세션의 BitmapLoader 는 artworkData 를 먼저 본다. 받은 바이트가 이니셜 아트를 대신한다.
+        assertArrayEquals(artwork.data, m.artworkData)
+        assertNull(m.artworkUri)
     }
 
     @Test
-    fun `Given 프로그램 이미지가 없음, Then 제목과 본문은 덧씌우고 원래 이니셜 아트를 유지한다`() {
+    fun `Given 프로그램 이미지를 받는 중이거나 실패, Then 제목과 본문은 덧씌우고 원래 이니셜 아트를 유지한다`() {
         val w = wrapper()
-        w.setOverlay(overlay(artwork = null))
+        w.setOverlay(overlay(art = null))
 
         val m = w.mediaMetadata
         assertEquals("아침 라디오 · 홍길동", m.artist)
         assertArrayEquals(initialsArt, m.artworkData)
         assertNull(m.artworkUri)
+    }
+
+    @Test
+    fun `Given 텍스트만 덧씌운 뒤 이미지가 도착, Then 아트가 이니셜에서 받은 바이트로 한 번에 바뀌고 비는 구간이 없다`() {
+        val w = wrapper()
+        val listener = Recorder()
+        w.addListener(listener)
+
+        w.setOverlay(overlay(art = null))
+        assertArrayEquals(initialsArt, listener.metadata.last().artworkData)
+
+        w.setOverlay(overlay(art = artwork))
+        assertArrayEquals(artwork.data, listener.metadata.last().artworkData)
+        // 어느 알림에서도 아트가 null 인 적이 없다.
+        assertTrue(listener.metadata.all { it.artworkData != null })
+    }
+
+    @Test
+    fun `Given 같은 url 의 이미지, Then 같은 덧씌움으로 보고 다시 알리지 않는다`() {
+        val w = wrapper()
+        val listener = Recorder()
+        w.addListener(listener)
+
+        w.setOverlay(overlay(art = OnAirMetadataPlayer.Artwork(artwork.url, byteArrayOf(1))))
+        w.setOverlay(overlay(art = OnAirMetadataPlayer.Artwork(artwork.url, byteArrayOf(2))))
+
+        assertEquals(1, listener.metadata.size)
     }
 
     @Test
@@ -157,7 +183,7 @@ class OnAirMetadataPlayerTest {
         addedListener.captured.onMediaMetadataChanged(rawStationMetadata)
 
         assertEquals("아침 라디오 · 홍길동", listener.metadata.single().artist)
-        assertEquals(imageUri, listener.metadata.single().artworkUri)
+        assertArrayEquals(artwork.data, listener.metadata.single().artworkData)
     }
 
     @Test

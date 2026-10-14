@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.domain.repository
 
 import io.jacob.episodive.core.model.OnAirProgram
+import io.jacob.episodive.core.model.OnAirRefresh
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
@@ -37,8 +38,13 @@ interface StationRepository {
      *
      * @param includeSong 곡을 주는 방송사(MBC)의 곡을 얹을지. 곡은 45초마다 폴링해야 해서, 제목만 필요한 호출(위젯·알림
      *   갱신 트리거)은 false 로 불러 백그라운드에서 폴링이 돌지 않게 한다.
+     * @param refresh 재확인 주기. 목록 썸네일처럼 여러 스테이션을 한꺼번에 볼 때는 [OnAirRefresh.Boundary] 로 요청을 줄인다.
      */
-    fun observeOnAir(stationId: String, includeSong: Boolean = true): Flow<OnAirProgram?>
+    fun observeOnAir(
+        stationId: String,
+        includeSong: Boolean = true,
+        refresh: OnAirRefresh = OnAirRefresh.Live,
+    ): Flow<OnAirProgram?>
 
     /**
      * 지금 기준 편성표: 오늘(Asia/Seoul) 전체와 내일 새벽(05:00)까지, 시작 시각순. 자정을 넘겨 오늘로 이어지는 어제 시작

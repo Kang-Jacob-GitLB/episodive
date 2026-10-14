@@ -88,9 +88,9 @@ class RadioViewModel @Inject constructor(
      * 구독 대상은 카탈로그의 라디오 전체다. 즐겨찾기·최근은 그 부분집합이다.
      */
     val programImages: StateFlow<Map<String, String>> = getStationsUseCase(StationKind.RADIO)
-        .map { stations -> stations.map { it.id } }
+        .map { stations -> stations.mapTo(LinkedHashSet()) { it.id } }
         .distinctUntilChanged()
-        .flatMapLatest { ids -> observeStationProgramImagesUseCase(ids) }
+        .flatMapLatest { ids -> observeStationProgramImagesUseCase(ids.toList()) }
         .catch { e ->
             // 부가 정보라 실패해도 목록은 이니셜 아트로 그대로 보인다.
             Timber.w(e, "프로그램 이미지를 불러오지 못했다")

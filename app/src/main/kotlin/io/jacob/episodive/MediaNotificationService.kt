@@ -4,9 +4,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
-import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.CommandButton
@@ -16,6 +17,8 @@ import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
+import coil.Coil
+import coil.request.ImageRequest
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -42,13 +45,19 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.ByteArrayOutputStream
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @UnstableApi
 @AndroidEntryPoint
@@ -86,6 +95,10 @@ class MediaNotificationService : MediaSessionService() {
 
     companion object {
         private const val NOTIFICATION_ID = 1001
+
+        // 알림 큰 아이콘용 프로그램 이미지. 원본(최대 1280px)을 그대로 세션에 싣지 않는다.
+        private const val ARTWORK_SIZE_PX = 512
+        private const val ARTWORK_JPEG_QUALITY = 85
         private const val CHANNEL_ID = "episodive_playback_channel"
 
         // ServiceActions.kt (:feature:widget) 에서 하드코딩된 복제본이 동기화되어야 함.
@@ -188,20 +201,78 @@ class MediaNotificationService : MediaSessionService() {
 
     /**
      * 프로그램이 바뀔 때마다 세션 메타데이터 덧씌움을 바꾼다. 프로그램을 모르면(null) 덧씌우지 않아 원래 값이 그대로다.
-     * 일시정지로 구독이 멎어도 마지막 덧씌움은 남는다 — 멈춘 알림에도 프로그램이 보이는 게 맞다. 스테이션이 바뀌거나 에피소드로
-     * 넘어가면 [OnAirMetadataPlayer] 가 올라 있는 항목과 대조해 알아서 원본을 돌려준다.
+     *
+     * - 같은 스테이션이 일시정지로 구독이 멎었다가 재개되면 마지막 덧씌움을 유지한 채 편성을 새로 평가한다 — 멈춘 알림에도
+     *   프로그램이 보이는 게 맞다.
+     * - 스테이션이 바뀌거나 멈추면(null) 덧씌움을 곧바로 지운다. [OnAirMetadataPlayer] 도 항목과 대조하지만, 재개했을 때 지난
+     *   프로그램이 잠깐 보이지 않게 여기서 비운다.
+     * - 프로그램 이미지는 먼저 텍스트만 덧씌운 뒤 받아서 바이트로 싣는다. 받기 전·실패 때는 이니셜 아트가 그대로다.
      */
     private fun observeOnAirOverlay(player: OnAirMetadataPlayer) = serviceScope.launch {
-        playingProgram.collect { (station, program) ->
-            player.setOverlay(program?.let { station.toOverlay(it) })
-        }
+        playerRepository.nowPlayingStation
+            .map { it?.id }
+            .distinctUntilChanged()
+            .flatMapLatest { id ->
+                if (id == null) {
+                    flowOf<Pair<Station, OnAirProgram?>?>(null)
+                } else {
+                    playingProgram
+                        .filter { (station, _) -> station.id == id }
+                        .map<Pair<Station, OnAirProgram?>, Pair<Station, OnAirProgram?>?> { it }
+                        .onStart { emit(null) }
+                }
+            }
+            .collectLatest { entry ->
+                val (station, program) = entry ?: run { player.setOverlay(null); return@collectLatest }
+                if (program == null) {
+                    player.setOverlay(null)
+                    return@collectLatest
+                }
+                val url = program.imageUrl?.takeIf { it.startsWith("https://") }
+                val cached = url?.let { u -> programArtwork?.takeIf { it.url == u } }
+                player.setOverlay(station.toOverlay(program, cached))
+                if (url != null && cached == null) {
+                    val loaded = loadProgramArtwork(url) ?: return@collectLatest
+                    programArtwork = loaded
+                    player.setOverlay(station.toOverlay(program, loaded))
+                }
+            }
     }
 
-    private fun Station.toOverlay(program: OnAirProgram) = OnAirMetadataPlayer.Overlay(
-        station = this,
-        artist = program.host?.takeIf { it.isNotBlank() }?.let { "${program.title} · $it" } ?: program.title,
-        artworkUri = program.imageUrl?.takeIf { it.startsWith("https://") }?.toUri(),
-    )
+    // 마지막으로 받은 프로그램 이미지. 같은 프로그램이 다시 덧씌워질 때 아트가 한 번 비지 않게 한다.
+    private var programArtwork: OnAirMetadataPlayer.Artwork? = null
+
+    private fun Station.toOverlay(program: OnAirProgram, artwork: OnAirMetadataPlayer.Artwork?) =
+        OnAirMetadataPlayer.Overlay(
+            station = this,
+            artist = program.host?.takeIf { it.isNotBlank() }?.let { "${program.title} · $it" } ?: program.title,
+            artwork = artwork,
+        )
+
+    /** Coil 로 받아 알림 큰 아이콘에 알맞은 크기로 줄여 JPEG 바이트로 만든다. 실패하면 null. */
+    private suspend fun loadProgramArtwork(url: String): OnAirMetadataPlayer.Artwork? {
+        return try {
+            val request = ImageRequest.Builder(applicationContext)
+                .data(url)
+                .size(ARTWORK_SIZE_PX)
+                .allowHardware(false)
+                .build()
+            val result = Coil.imageLoader(applicationContext).execute(request)
+            val bitmap = (result.drawable as? BitmapDrawable)?.bitmap ?: return null
+            val bytes = withContext(Dispatchers.Default) {
+                ByteArrayOutputStream().use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, ARTWORK_JPEG_QUALITY, out)
+                    out.toByteArray()
+                }
+            }
+            OnAirMetadataPlayer.Artwork(url, bytes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "program artwork load failed: $url")
+            null
+        }
+    }
 
     @UnstableApi
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

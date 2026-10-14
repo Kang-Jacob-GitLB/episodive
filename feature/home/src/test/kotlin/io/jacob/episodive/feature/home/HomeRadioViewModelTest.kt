@@ -182,4 +182,19 @@ class HomeRadioViewModelTest {
             observeStationProgramImagesUseCase(match { it.size == 8 && "s1" in it })
         }
     }
+
+    @Test
+    fun `Given 재생 상태만 바뀜, Then 섹션 구성이 같아 프로그램 이미지를 다시 구독하지 않는다`() = runTest {
+        val viewModel = createViewModel(favorites = listOf(station(1)))
+
+        viewModel.programImages.test {
+            awaitItem()
+            nowPlayingStation.value = station(1)
+            nowPlayingStation.value = station(2)
+            nowPlayingStation.value = null
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        verify(exactly = 1) { observeStationProgramImagesUseCase(any()) }
+    }
 }

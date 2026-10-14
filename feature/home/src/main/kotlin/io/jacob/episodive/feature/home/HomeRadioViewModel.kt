@@ -81,9 +81,10 @@ class HomeRadioViewModel @Inject constructor(
      * 뜨면 안 된다. 섹션 구성이 바뀔 때만 구독 대상을 바꾼다.
      */
     val programImages: StateFlow<Map<String, String>> = state
-        .map { (it as? HomeRadioState.Success)?.stations?.map { station -> station.id }.orEmpty() }
+        .map { (it as? HomeRadioState.Success)?.stations?.mapTo(LinkedHashSet()) { station -> station.id }.orEmpty() }
+        // 순서·재생 상태가 바뀌어도 구성이 같으면 구독을 다시 걸지 않는다(집합으로 비교).
         .distinctUntilChanged()
-        .flatMapLatest { ids -> observeStationProgramImagesUseCase(ids) }
+        .flatMapLatest { ids -> observeStationProgramImagesUseCase(ids.toList()) }
         .catch { e ->
             Timber.w(e, "홈 라디오 프로그램 이미지를 불러오지 못했다")
             emit(emptyMap())
