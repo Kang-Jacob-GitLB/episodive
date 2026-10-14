@@ -793,4 +793,41 @@ class StationRepositoryImplTest {
 
         coVerify(exactly = 0) { onAirDataSource.schedule(any(), any()) }
     }
+
+    @Test
+    fun `Given KBS 처럼 조각난 편성과 필러, When observeOnAir and observeSchedule, Then 같은 합쳐진 프로그램을 본다`() = runTest {
+        nowMillis = tenAm
+        val pieces = listOf(
+            onAirProgramTestData("키스", tenAm - 2 * hour, tenAm - hour + 0, host = "가"),
+            onAirProgramTestData("키스", tenAm - hour, tenAm + 30 * minute - 1 * minute, host = "가"),
+            onAirProgramTestData("홍보 스팟", tenAm + 29 * minute, tenAm + 30 * minute),
+            onAirProgramTestData("키스", tenAm + 30 * minute, tenAm + hour, host = "가"),
+            onAirProgramTestData("뒤", tenAm + hour, tenAm + 2 * hour),
+        )
+        coEvery { onAirDataSource.schedule(any(), any()) } returns pieces
+        val merged = onAirProgramTestData("키스", tenAm - 2 * hour, tenAm + hour, host = "가")
+
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            assertEquals(merged, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        onAirRepository.observeSchedule(kbsFirstRadioStationTestData.id).test {
+            assertEquals(listOf(merged, pieces.last()), awaitItem().programs)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given 지금이 필러 안, When observeOnAir, Then 앞 프로그램이 현재로 유지된다`() = runTest {
+        nowMillis = tenAm + 29 * minute + 30_000L
+        val before = onAirProgramTestData("앞", tenAm - hour, tenAm + 29 * minute)
+        val filler = onAirProgramTestData("홍보 스팟", tenAm + 29 * minute, tenAm + 30 * minute)
+        val after = onAirProgramTestData("뒤", tenAm + 30 * minute, tenAm + 2 * hour)
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(before, filler, after)
+
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            assertEquals("앞", awaitItem()?.title)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

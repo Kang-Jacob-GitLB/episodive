@@ -3,6 +3,7 @@ package io.jacob.episodive.core.data.repository
 import io.jacob.episodive.core.data.radio.KoreanStationCatalog
 import io.jacob.episodive.core.data.radio.StationCatalogEntry
 import io.jacob.episodive.core.data.radio.mergeStationDetails
+import io.jacob.episodive.core.data.radio.normalizeSchedule
 import io.jacob.episodive.core.database.dao.StationDao
 import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.domain.repository.StationRepository
@@ -288,7 +289,8 @@ class StationRepositoryImpl internal constructor(
                 if (fresh) return@withLock cached.programs
             }
             try {
-                onAirDataSource.schedule(source, nowMillis).also {
+                // 조각·필러를 다듬은 뒤 캐시한다. 편성 목록과 현재 프로그램이 같은 목록을 본다.
+                onAirDataSource.schedule(source, nowMillis).normalizeSchedule().also {
                     scheduleCache[stationId] = CachedSchedule(it, dateKey, nowMillis)
                 }
             } catch (e: CancellationException) {

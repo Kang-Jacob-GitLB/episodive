@@ -98,6 +98,8 @@ class OnAirDataSourceImpl(
             day.schedules.orEmpty().mapNotNull { item ->
                 val title = item.title?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
                 val date = (item.date ?: day.date)?.let(::parseCompactDate) ?: today
+                // 요청한 날(어제~오늘)이 아닌 방송일이 섞여 와도 받지 않는다. 내일 오후 편성이 목록에 새지 않게 한다.
+                if (date < yesterday || date > today) return@mapNotNull null
                 val start = parseKbsTime(date, item.startTime)
                 val end = parseKbsTime(date, item.endTime)
                 OnAirProgram(

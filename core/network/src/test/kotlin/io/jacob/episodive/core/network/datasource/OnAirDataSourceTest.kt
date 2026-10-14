@@ -340,4 +340,22 @@ class OnAirDataSourceTest {
         assertEquals(millis(2026, 10, 15, 1, 0), result.single().startMillis)
         assertEquals(1, server.requestCount)
     }
+
+    @Test
+    fun `Given KBS response with days outside the requested range, When schedule, Then those days are dropped`() = runTest {
+        server.enqueue(
+            MockResponse().setBody(
+                """[
+                  {"program_planned_date":"20261014","schedules":[
+                    {"program_planned_date":"20261014","program_planned_start_time":"28000000","program_planned_end_time":"29000000","program_title":"오늘 끝"}]},
+                  {"program_planned_date":"20261015","schedules":[
+                    {"program_planned_date":"20261015","program_planned_start_time":"15000000","program_planned_end_time":"16000000","program_title":"내일 오후"}]},
+                  {"program_planned_date":"20261011","schedules":[
+                    {"program_planned_date":"20261011","program_planned_start_time":"15000000","program_planned_end_time":"16000000","program_title":"사흘 전"}]}
+                ]"""
+            )
+        )
+
+        assertEquals(listOf("오늘 끝"), dataSource.schedule(OnAirSource.Kbs("25"), now).map { it.title })
+    }
 }
