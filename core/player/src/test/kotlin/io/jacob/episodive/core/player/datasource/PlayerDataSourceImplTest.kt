@@ -53,6 +53,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -2334,12 +2335,69 @@ class PlayerDataSourceImplTest {
         }
 
     @Test
-    fun `Given rejoin limit reached, When player becomes READY, Then rejoin is allowed again`() =
+    fun `Given READY right before each error, When errors repeat, Then limit still stops rejoin`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns episodeItem()
+
+            scoped.failures.test {
+                repeat(3) {
+                    scopedListener.onPlayerError(behindLiveWindow())
+                    scopedListener.onPlaybackStateChanged(Player.STATE_READY)
+                    advanceTimeBy(5_000)
+                    runCurrent()
+                    scopedListener.onPlaybackStateChanged(Player.STATE_BUFFERING)
+                }
+                scopedListener.onPlayerError(behindLiveWindow())
+                runCurrent()
+
+                verify(exactly = 3) { scopedPlayer.seekToDefaultPosition() }
+                assertEquals(PlaybackFailure.Cause.BehindLiveWindow, awaitItem().cause)
+            }
+        }
+
+    @Test
+    fun `Given READY held for 30s, When error occurs again, Then rejoin is allowed again`() =
         runWithTestScope { scoped, scopedListener, scopedPlayer ->
             every { scopedPlayer.currentMediaItem } returns episodeItem()
 
             repeat(3) { scopedListener.onPlayerError(behindLiveWindow()) }
             scopedListener.onPlaybackStateChanged(Player.STATE_READY)
+            advanceTimeBy(30_001)
+            runCurrent()
+            scopedListener.onPlayerError(behindLiveWindow())
+            runCurrent()
+
+            verify(exactly = 4) { scopedPlayer.seekToDefaultPosition() }
+        }
+
+    @Test
+    fun `Given rejoin limit exhausted, When failure is emitted, Then next error rejoins again`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns episodeItem()
+
+            scoped.failures.test {
+                repeat(4) { scopedListener.onPlayerError(behindLiveWindow()) }
+                runCurrent()
+                awaitItem()
+
+                scopedListener.onPlayerError(behindLiveWindow())
+                runCurrent()
+
+                verify(exactly = 4) { scopedPlayer.seekToDefaultPosition() }
+                expectNoEvents()
+            }
+        }
+
+    @Test
+    fun `Given rejoin count used, When media item transitions, Then count resets`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns episodeItem()
+
+            repeat(3) { scopedListener.onPlayerError(behindLiveWindow()) }
+            scopedListener.onMediaItemTransition(
+                episodeItem(),
+                Player.MEDIA_ITEM_TRANSITION_REASON_AUTO,
+            )
             scopedListener.onPlayerError(behindLiveWindow())
             runCurrent()
 
