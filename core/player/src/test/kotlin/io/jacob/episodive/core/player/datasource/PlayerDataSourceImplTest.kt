@@ -53,6 +53,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -2308,6 +2309,147 @@ class PlayerDataSourceImplTest {
         assertEquals(PlaybackFailure.Cause.Expired, failure.cause)
         assertEquals(null, failure.stationId)
     }
+
+    private fun behindLiveWindow() = PlaybackException(
+        "behind",
+        null,
+        PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW,
+    )
+
+    @Test
+    fun `Given episode, When BEHIND_LIVE_WINDOW, Then seekToDefaultPosition and prepare run without failure`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns episodeItem()
+
+            scoped.failures.test {
+                scopedListener.onPlayerError(behindLiveWindow())
+                runCurrent()
+
+                verifyOrder {
+                    scopedPlayer.seekToDefaultPosition()
+                    scopedPlayer.prepare()
+                }
+                expectNoEvents()
+            }
+        }
+
+    @Test
+    fun `Given repeated BEHIND_LIVE_WINDOW, When limit exceeded, Then no more rejoin and failure is emitted`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns episodeItem()
+
+            scoped.failures.test {
+                repeat(3) { scopedListener.onPlayerError(behindLiveWindow()) }
+                scopedListener.onPlayerError(behindLiveWindow())
+                runCurrent()
+
+                verify(exactly = 3) { scopedPlayer.seekToDefaultPosition() }
+                verify(exactly = 3) { scopedPlayer.prepare() }
+                assertEquals(PlaybackFailure.Cause.BehindLiveWindow, awaitItem().cause)
+            }
+        }
+
+    @Test
+    fun `Given READY right before each error, When errors repeat, Then limit still stops rejoin`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns episodeItem()
+
+            scoped.failures.test {
+                repeat(3) {
+                    scopedListener.onPlayerError(behindLiveWindow())
+                    scopedListener.onPlaybackStateChanged(Player.STATE_READY)
+                    advanceTimeBy(5_000)
+                    runCurrent()
+                    scopedListener.onPlaybackStateChanged(Player.STATE_BUFFERING)
+                }
+                scopedListener.onPlayerError(behindLiveWindow())
+                runCurrent()
+
+                verify(exactly = 3) { scopedPlayer.seekToDefaultPosition() }
+                assertEquals(PlaybackFailure.Cause.BehindLiveWindow, awaitItem().cause)
+            }
+        }
+
+    @Test
+    fun `Given READY held for 30s, When error occurs again, Then rejoin is allowed again`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns episodeItem()
+
+            repeat(3) { scopedListener.onPlayerError(behindLiveWindow()) }
+            scopedListener.onPlaybackStateChanged(Player.STATE_READY)
+            advanceTimeBy(30_001)
+            runCurrent()
+            scopedListener.onPlayerError(behindLiveWindow())
+            runCurrent()
+
+            verify(exactly = 4) { scopedPlayer.seekToDefaultPosition() }
+        }
+
+    @Test
+    fun `Given rejoin limit exhausted, When failure is emitted, Then next error rejoins again`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns episodeItem()
+
+            scoped.failures.test {
+                repeat(4) { scopedListener.onPlayerError(behindLiveWindow()) }
+                runCurrent()
+                awaitItem()
+
+                scopedListener.onPlayerError(behindLiveWindow())
+                runCurrent()
+
+                verify(exactly = 4) { scopedPlayer.seekToDefaultPosition() }
+                expectNoEvents()
+            }
+        }
+
+    @Test
+    fun `Given rejoin count used, When media item transitions, Then count resets`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns episodeItem()
+
+            repeat(3) { scopedListener.onPlayerError(behindLiveWindow()) }
+            scopedListener.onMediaItemTransition(
+                episodeItem(),
+                Player.MEDIA_ITEM_TRANSITION_REASON_AUTO,
+            )
+            scopedListener.onPlayerError(behindLiveWindow())
+            runCurrent()
+
+            verify(exactly = 4) { scopedPlayer.seekToDefaultPosition() }
+        }
+
+    @Test
+    fun `Given station, When BEHIND_LIVE_WINDOW, Then player is left to the supervisor`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns stationItem()
+
+            scoped.failures.test {
+                scopedListener.onPlayerError(behindLiveWindow())
+                runCurrent()
+
+                verify(exactly = 0) { scopedPlayer.seekToDefaultPosition() }
+                verify(exactly = 0) { scopedPlayer.prepare() }
+                assertEquals(PlaybackFailure.Cause.BehindLiveWindow, awaitItem().cause)
+            }
+        }
+
+    @Test
+    fun `Given episode, When other error, Then no rejoin`() =
+        runWithTestScope { scoped, scopedListener, scopedPlayer ->
+            every { scopedPlayer.currentMediaItem } returns episodeItem()
+
+            scoped.failures.test {
+                scopedListener.onPlayerError(
+                    PlaybackException("io", null, PlaybackException.ERROR_CODE_IO_UNSPECIFIED)
+                )
+                runCurrent()
+
+                verify(exactly = 0) { scopedPlayer.seekToDefaultPosition() }
+                verify(exactly = 0) { scopedPlayer.prepare() }
+                assertEquals(PlaybackFailure.Cause.Network, awaitItem().cause)
+            }
+        }
 
     @Test
     fun `Given station reaching STATE_ENDED, Then Ended failure is emitted`() =
