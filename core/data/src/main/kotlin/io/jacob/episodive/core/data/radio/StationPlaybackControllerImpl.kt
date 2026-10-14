@@ -3,6 +3,7 @@ package io.jacob.episodive.core.data.radio
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.domain.station.StationPlaybackController
+import io.jacob.episodive.core.domain.usecase.player.RestoreLastPlayStateUseCase
 import io.jacob.episodive.core.domain.usecase.station.PlayStationResult
 import io.jacob.episodive.core.domain.usecase.station.PlayStationUseCase
 import io.jacob.episodive.core.model.Station
@@ -27,6 +28,7 @@ class StationPlaybackControllerImpl(
     private val playStationUseCase: PlayStationUseCase,
     private val playerRepository: PlayerRepository,
     private val stationRepository: StationRepository,
+    private val restoreLastPlayState: RestoreLastPlayStateUseCase,
     private val scope: CoroutineScope,
     private val mainDispatcher: CoroutineDispatcher,
 ) : StationPlaybackController {
@@ -77,6 +79,10 @@ class StationPlaybackControllerImpl(
     override fun stop() {
         cancelPending()
         playerRepository.stop()
+        // 스테이션이 플레이어를 비웠으니 마지막 에피소드를 일시정지로 다시 올려 미니바가 돌아오게 한다.
+        // 자동 재생하지 않고, 위치는 저장된 이어듣기 지점 그대로다. 읽는 사이 다른 항목이 올라오면
+        // 유스케이스가 prepare 직전에 다시 보고 물러난다.
+        scope.launch(mainDispatcher) { restoreLastPlayState() }
     }
 
     private fun cancelPending() {

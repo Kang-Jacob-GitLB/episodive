@@ -3,6 +3,7 @@ package io.jacob.episodive.core.data.radio
 import app.cash.turbine.test
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.StationRepository
+import io.jacob.episodive.core.domain.usecase.player.RestoreLastPlayStateUseCase
 import io.jacob.episodive.core.domain.usecase.station.PlayStationResult
 import io.jacob.episodive.core.domain.usecase.station.PlayStationUseCase
 import io.jacob.episodive.core.model.Station
@@ -10,6 +11,7 @@ import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -31,6 +33,7 @@ class StationPlaybackControllerImplTest {
     private val playStationUseCase = mockk<PlayStationUseCase>()
     private val playerRepository = mockk<PlayerRepository>(relaxed = true)
     private val stationRepository = mockk<StationRepository>()
+    private val restoreLastPlayState = mockk<RestoreLastPlayStateUseCase>()
 
     private val nowPlayingStation = MutableStateFlow<Station?>(null)
 
@@ -39,12 +42,14 @@ class StationPlaybackControllerImplTest {
 
     private fun TestScope.createController(): StationPlaybackControllerImpl {
         every { playerRepository.nowPlayingStation } returns nowPlayingStation
+        coEvery { restoreLastPlayState() } returns true
         coEvery { stationRepository.getStation(a.id) } returns a
         coEvery { stationRepository.getStation(b.id) } returns b
         return StationPlaybackControllerImpl(
             playStationUseCase = playStationUseCase,
             playerRepository = playerRepository,
             stationRepository = stationRepository,
+            restoreLastPlayState = restoreLastPlayState,
             scope = backgroundScope,
             mainDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
@@ -158,6 +163,28 @@ class StationPlaybackControllerImplTest {
         assertNull(controller.pendingStationId.value)
         verify(exactly = 1) { playerRepository.stop() }
         verify(exactly = 0) { playerRepository.stopStation(any()) }
+    }
+
+    @Test
+    fun `Given 스테이션을 듣는 중, When stop 하면, Then 비운 뒤에 마지막 에피소드 복원을 요청한다`() = runTest {
+        val controller = createController()
+
+        controller.stop()
+
+        coVerifyOrder {
+            playerRepository.stop()
+            restoreLastPlayState()
+        }
+    }
+
+    @Test
+    fun `Given 스테이션 없이 재생 중, When play 로 토글만 하면, Then 복원하지 않는다`() = runTest {
+        nowPlayingStation.value = a
+        val controller = createController()
+
+        controller.play(a.id)
+
+        coVerify(exactly = 0) { restoreLastPlayState() }
     }
 
     @Test

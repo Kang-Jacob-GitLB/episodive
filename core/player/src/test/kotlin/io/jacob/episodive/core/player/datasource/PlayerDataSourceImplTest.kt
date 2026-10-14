@@ -130,6 +130,18 @@ class PlayerDataSourceImplTest {
     }
 
     @Test
+    fun `Given playWhenReady 가 남은 플레이어, When prepare called, Then 재생하지 않고 일시정지로 올린다`() {
+        // Given
+        every { player.playWhenReady } returns true
+
+        // When
+        dataSource.prepare(listOf(episode), indexToPlay = 0, positionMs = 1000L)
+
+        // Then
+        verify { player.playWhenReady = false }
+    }
+
+    @Test
     fun `Given episode, When play called, Then setMediaItem, prepare, playWhenReady set on player`() {
         // When
         dataSource.play(episode)

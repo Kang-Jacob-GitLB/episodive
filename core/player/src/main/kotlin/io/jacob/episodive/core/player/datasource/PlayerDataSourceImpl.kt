@@ -538,6 +538,9 @@ class PlayerDataSourceImpl @Inject constructor(
         try {
             player.setMediaItems(mediaItems, indexToPlay, positionMs)
             player.prepare()
+            // stop() 은 playWhenReady 를 건드리지 않는다. 스테이션을 듣다 멈춘 뒤 복원하면 true 가 남아 있어
+            // 복원이 곧바로 재생으로 이어진다. 복원은 언제나 일시정지로 올린다.
+            player.playWhenReady = false
         } finally {
             isPreparing = false
         }

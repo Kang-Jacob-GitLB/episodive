@@ -17,6 +17,7 @@ import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.domain.station.LiveStreamSupervisor
 import io.jacob.episodive.core.domain.station.StationPlaybackController
+import io.jacob.episodive.core.domain.usecase.player.RestoreLastPlayStateUseCase
 import io.jacob.episodive.core.domain.usecase.station.PlayStationUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,12 +53,14 @@ object RadioModule {
         playStationUseCase: PlayStationUseCase,
         @Player(EpisodivePlayers.Main) playerRepository: PlayerRepository,
         stationRepository: StationRepository,
+        restoreLastPlayState: RestoreLastPlayStateUseCase,
         @ApplicationScope scope: CoroutineScope,
     ): StationPlaybackController {
         return StationPlaybackControllerImpl(
             playStationUseCase = playStationUseCase,
             playerRepository = playerRepository,
             stationRepository = stationRepository,
+            restoreLastPlayState = restoreLastPlayState,
             scope = scope,
             mainDispatcher = Dispatchers.Main.immediate,
         )
