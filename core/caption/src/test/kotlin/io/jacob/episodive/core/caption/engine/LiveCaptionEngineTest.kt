@@ -3,6 +3,7 @@ package io.jacob.episodive.core.caption.engine
 import io.jacob.episodive.core.caption.asset.InstalledCaptionModel
 import io.jacob.episodive.core.model.caption.CaptionLanguage
 import io.jacob.episodive.core.model.caption.CaptionSession
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.player.audio.PcmChunk
 import io.jacob.episodive.core.player.audio.SpeechPcmSource
 import kotlinx.coroutines.CompletableDeferred
@@ -30,7 +31,7 @@ class LiveCaptionEngineTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
-    private val episodeId = 5778530L
+    private val subject = CaptionSubject.Episode(5778530L)
 
     // RecognizerCache 가 `.loading` 마커를 encoderPath 의 상위 디렉터리에 실제로 쓴다 — 존재하지
     // 않는 경로("/fake/...")를 쓰면 그 쓰기 자체가 (권한 없음으로) 실패해 acquire() 가 조용히
@@ -71,7 +72,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1, rateHz = 16_000))
@@ -106,7 +107,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -138,7 +139,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -177,7 +178,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -223,7 +224,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -269,7 +270,7 @@ class LiveCaptionEngineTest {
             )
 
             val results = mutableListOf<CaptionSession>()
-            backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+            backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
             pump()
 
             pcm.enqueue(chunk(segment = 1))
@@ -308,7 +309,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -347,7 +348,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -379,7 +380,7 @@ class LiveCaptionEngineTest {
         )
 
         pcm.enqueue(chunk(segment = 1))
-        val job = backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { } }
+        val job = backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { } }
         pump()
         assertTrue(pcm.startCaptureCalled)
 
@@ -412,7 +413,7 @@ class LiveCaptionEngineTest {
             // translators.create() 가 던지는 예외는 세션 안에서 잡지 않는다 — 여기서 삼켜
             // collect 가 그 예외로 죽지 않게만 한다. 검증 대상은 그 예외가 나는 동안에도
             // startCapture()~stopCapture() 사이의 정리가 끝까지 갔는가이다.
-            runCatching { engine.session(episodeId, model).collect { } }
+            runCatching { engine.session(subject, model).collect { } }
         }
         pump()
 
@@ -449,7 +450,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, koModel).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, koModel).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -494,7 +495,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        engine.session(episodeId, model).collect { results.add(it) }
+        engine.session(subject, model).collect { results.add(it) }
 
         assertEquals(listOf(CaptionSession.Loading), results)
         assertTrue(

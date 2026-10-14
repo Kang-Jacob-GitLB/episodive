@@ -3,6 +3,7 @@ package io.jacob.episodive.core.testing.model
 import io.jacob.episodive.core.model.caption.CaptionAvailability
 import io.jacob.episodive.core.model.caption.CaptionLanguage
 import io.jacob.episodive.core.model.caption.CaptionLine
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.model.caption.LiveCaptionState
 
@@ -31,7 +32,7 @@ val captionTranslationTestDataList = captionLineTestDataList.map { line ->
 }
 
 val liveCaptionTestData = LiveCaption(
-    episodeId = 5778530L,
+    subject = CaptionSubject.Episode(5778530L),
     lines = captionLineTestDataList,
     translations = captionTranslationTestDataList,
     isTranslating = true,
@@ -42,3 +43,7 @@ val liveCaptionStateTestData = LiveCaptionState(
     availability = CaptionAvailability.Ready(CaptionLanguage.ENGLISH),
     caption = liveCaptionTestData,
 )
+
+/** 라디오 스테이션 자막 — [liveCaptionTestData] 와 줄·번역이 같고 대상만 스테이션이다. */
+fun stationLiveCaptionTestData(stationId: String = "kbs-cool-fm") =
+    liveCaptionTestData.copy(subject = CaptionSubject.Station(stationId))

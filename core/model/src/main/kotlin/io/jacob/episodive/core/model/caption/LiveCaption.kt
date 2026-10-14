@@ -21,7 +21,7 @@ data class CaptionLine(
 /**
  * 화면에 그릴 자막 상태 전체. 롤링 표시를 위해 여러 줄을 한꺼번에 들고 있는다.
  *
- * @param episodeId 이 자막이 속한 에피소드. `progress.episodeId` 와 일치할 때만 화면에 그린다.
+ * @param subject 이 자막이 속한 대상. 지금 재생 중인 대상(에피소드면 `progress.episodeId`)과 일치할 때만 화면에 그린다.
  * @param lines 원문 줄. 오래된 → 최신 순이고 마지막이 진행 중(partial)일 수 있다.
  * @param translations 번역 줄. 오래된 → 최신 순. 원문 줄보다 늦게 도착하며, 이미 받은 것보다
  * id 가 작은(늦게 온) 번역은 들어오지 않는다.
@@ -30,7 +30,7 @@ data class CaptionLine(
  * 도착하는 순간 원문 영역이 반으로 줄며 튄다.
  */
 data class LiveCaption(
-    val episodeId: Long,
+    val subject: CaptionSubject,
     val lines: List<CaptionLine> = emptyList(),
     val translations: List<CaptionLine> = emptyList(),
     val isTranslating: Boolean = false,

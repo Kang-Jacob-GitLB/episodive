@@ -4,6 +4,7 @@ import io.jacob.episodive.core.caption.asset.InstalledCaptionModel
 import io.jacob.episodive.core.caption.text.CaptionLineTracker
 import io.jacob.episodive.core.model.caption.CaptionLine
 import io.jacob.episodive.core.model.caption.CaptionSession
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.player.audio.SpeechPcmSource
 import kotlinx.coroutines.CoroutineDispatcher
@@ -35,7 +36,7 @@ class LiveCaptionEngine @Inject constructor(
     private val deviceLanguage: DeviceLanguageProvider,
     @CaptionThread private val dispatcher: CoroutineDispatcher,
 ) {
-    fun session(episodeId: Long, model: InstalledCaptionModel): Flow<CaptionSession> = channelFlow {
+    fun session(subject: CaptionSubject, model: InstalledCaptionModel): Flow<CaptionSession> = channelFlow {
         pcm.startCapture()
         // startCapture() 직후부터는 어떤 경로로 끝나든(send 취소, translators.create 예외,
         // Unloadable/Failed) 반드시 stopCapture() 까지 간다 — 이 try 를 recognizers.acquire()
@@ -72,7 +73,7 @@ class LiveCaptionEngine @Inject constructor(
                 translator?.let { t -> launch { t.prepare() } }
 
                 val tracker = CaptionLineTracker(model.language, model.maxLineChars)
-                val presenter = CaptionPresenter(episodeId, isTranslating = translator != null)
+                val presenter = CaptionPresenter(subject, isTranslating = translator != null)
                 var stream: RecognitionStream? = null
                 var currentSegment: Int? = null
                 var lastSent: LiveCaption? = null

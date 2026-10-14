@@ -109,6 +109,7 @@ import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Progress
 import io.jacob.episodive.core.model.SLEEP_TIMER_FADE_OUT_MS
 import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.model.coverUrl
 import io.jacob.episodive.core.model.mapper.toHumanReadable
@@ -701,7 +702,7 @@ fun PushUpCue(
  * 재구성을 이 컴포저블 안에 가둔다 — 값으로 풀어 상위에서 넘기면 매 단어(partial)마다
  * 상위 트리까지 재구성된다.
  *
- * [liveCaption] 이 있고 그 `episodeId` 가 [episodeId](= progress.episodeId)와 일치하며 원문
+ * [liveCaption] 이 있고 그 `subject` 가 `Episode([episodeId])`(= progress.episodeId)와 일치하며 원문
  * 줄이 하나라도 있으면 [RollingCaptionOverlay] 로 커버 전체에 원문(과 번역)을 롤링하고, 그
  * 외에는 기존 transcript [cue] 를 [PushUpCue] 로 보여준다(둘 다 비면 자연히 숨는다).
  */
@@ -712,7 +713,13 @@ private fun CueOverlay(
     liveCaption: () -> LiveCaption?,
     episodeId: Long?,
 ) {
-    val caption = liveCaption()?.takeIf { it.episodeId == episodeId && it.lines.isNotEmpty() }
+    val caption = liveCaption()?.takeIf { caption ->
+        // progress.episodeId 가 null 이면 어떤 자막도 그리지 않는다. null 을 subject 와 비교하게
+        // 풀어 두면 다른 대상(스테이션) 자막이 새어 들어올 길이 열린다.
+        episodeId != null &&
+            caption.subject == CaptionSubject.Episode(episodeId) &&
+            caption.lines.isNotEmpty()
+    }
 
     // 둘 다 분기 없이 늘 부른다 — if/else 로 번갈아 부르면 빠지는 쪽의 AnimatedVisibility 가
     // 컴포지션에서 통째로 사라져 페이드아웃 없이 꺼지고, 들어오는 쪽은 visible=true 로 시작해
