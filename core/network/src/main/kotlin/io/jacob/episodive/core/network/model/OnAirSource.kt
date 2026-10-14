@@ -14,3 +14,14 @@ sealed interface OnAirSource {
     /** CBS. [key] 는 편성표 응답의 채널 키(fm·musicfm·joy4u). */
     data class Cbs(val key: String) : OnAirSource
 }
+
+/**
+ * MBC 가 마지막으로 기록한 곡. 지금 나오는 곡이 아니라 "마지막 기록"이라, 프로그램이 바뀌었거나 오래됐으면 낡은 값이다.
+ *
+ * @property text "제목 - 가수"(앞의 ♬ 등 기호는 뗀 것)
+ * @property loggedAtMillis 기록 시각(RegDate, Asia/Seoul). 파싱하지 못하면 null.
+ */
+data class OnAirSongLog(
+    val text: String,
+    val loggedAtMillis: Long?,
+)

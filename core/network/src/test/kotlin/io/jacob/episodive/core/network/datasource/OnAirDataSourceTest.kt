@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.network.datasource
 
 import com.google.gson.Gson
+import io.jacob.episodive.core.network.model.OnAirSongLog
 import io.jacob.episodive.core.network.model.OnAirSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
@@ -108,14 +109,14 @@ class OnAirDataSourceTest {
     fun `Given MBC song rows, When currentSong, Then trims music symbol for the channel`() = runTest {
         server.enqueue(
             MockResponse().setBody(
-                """[{"Channel":"STFM","SomItem":"♬ 다른 곡 - 가수"},
-                   {"Channel":"FM4U","SomItem":"♬ 봄날 - 방탄소년단 "}]"""
+                """[{"Channel":"STFM","SomItem":"♬ 다른 곡 - 가수","RegDate":"2026-10-14 09:00:00"},
+                   {"Channel":"FM4U","SomItem":"♬ 봄날 - 방탄소년단 ","RegDate":"2026-10-14 09:58:30"}]"""
             )
         )
 
         val song = dataSource.currentSong(OnAirSource.Mbc("FM4U"))
 
-        assertEquals("봄날 - 방탄소년단", song)
+        assertEquals(OnAirSongLog("봄날 - 방탄소년단", millis(2026, 10, 14, 9, 58) + 30_000L), song)
     }
 
     @Test
@@ -222,5 +223,62 @@ class OnAirDataSourceTest {
         server.enqueue(MockResponse().setResponseCode(500))
 
         dataSource.schedule(OnAirSource.Kbs("21"), now)
+    }
+
+    @Test
+    fun `Given bad RegDate, When currentSong, Then log time is null`() = runTest {
+        server.enqueue(MockResponse().setBody("""[{"Channel":"FM4U","SomItem":"곡 - 가수","RegDate":"??"}]"""))
+
+        assertEquals(OnAirSongLog("곡 - 가수", null), dataSource.currentSong(OnAirSource.Mbc("FM4U")))
+    }
+
+    @Test
+    fun `Given MBC raw response, When three channels and same day, Then requested once and refetched next day`() = runTest {
+        val body = """[
+          {"Channel":"STFM","ProgramTitle":"표준","StartTime":"0900","EndTime":"1100","LiveDays":"수"},
+          {"Channel":"FM4U","ProgramTitle":"포유","StartTime":"0900","EndTime":"1100","LiveDays":"수"},
+          {"Channel":"CHAM","ProgramTitle":"올댓","StartTime":"0900","EndTime":"1100","LiveDays":"수"}]"""
+        server.enqueue(MockResponse().setBody(body))
+
+        assertEquals("표준", dataSource.schedule(OnAirSource.Mbc("STFM"), now).single { it.startMillis == millis(2026, 10, 14, 9, 0) }.title)
+        assertEquals("포유", dataSource.schedule(OnAirSource.Mbc("FM4U"), now).single { it.startMillis == millis(2026, 10, 14, 9, 0) }.title)
+        dataSource.schedule(OnAirSource.Mbc("CHAM"), now + 3_600_000L)
+        assertEquals(1, server.requestCount)
+
+        server.enqueue(MockResponse().setBody(body))
+        dataSource.schedule(OnAirSource.Mbc("STFM"), now + 24 * 3_600_000L)
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `Given MBC fetch fails, When schedule again, Then not cached`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(500))
+        server.enqueue(MockResponse().setBody("""[{"Channel":"STFM","ProgramTitle":"표준","StartTime":"0900","EndTime":"1100","LiveDays":"수"}]"""))
+
+        runCatching { dataSource.schedule(OnAirSource.Mbc("STFM"), now) }
+        assertEquals(listOf("표준"), dataSource.schedule(OnAirSource.Mbc("STFM"), now).map { it.title })
+    }
+
+    @Test
+    fun `Given CBS empty radioProfil, When schedule, Then falls back to vod`() = runTest {
+        server.enqueue(
+            MockResponse().setBody(
+                """{"fm":[{"name":"프로","mc":"","startTime":"09:00","endTime":"10:00","date":"2026-10-14",
+                   "program":{"mc":"","image":{"radioProfil":"","vod":"/data/v.png","mainTop":"/data/m.png"}}}],"musicfm":[],"joy4u":[]}"""
+            )
+        )
+
+        assertEquals("https://www.cbs.co.kr/data/v.png", dataSource.schedule(OnAirSource.Cbs("fm"), now).single().imageUrl)
+    }
+
+    @Test
+    fun `Given CBS last item ends 23-59, When schedule, Then runs to midnight`() = runTest {
+        server.enqueue(
+            MockResponse().setBody(
+                """{"fm":[{"name":"마지막","mc":"","startTime":"23:00","endTime":"23:59","date":"2026-10-14","program":null}],"musicfm":[],"joy4u":[]}"""
+            )
+        )
+
+        assertEquals(millis(2026, 10, 15, 0, 0), dataSource.schedule(OnAirSource.Cbs("fm"), now).single().endMillis)
     }
 }

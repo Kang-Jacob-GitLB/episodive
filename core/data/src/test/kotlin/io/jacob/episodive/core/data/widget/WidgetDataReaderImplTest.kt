@@ -44,7 +44,7 @@ class WidgetDataReaderImplTest {
     init {
         // 기본은 스테이션 없음. relaxed mock 의 빈 Flow 는 바로 완료돼 에피소드 경로까지 닫아 버린다.
         every { playerRepository.nowPlayingStation } returns MutableStateFlow(null)
-        every { observeOnAirProgram(any()) } returns flowOf(null)
+        every { observeOnAirProgram(any(), any()) } returns flowOf(null)
     }
 
     private val reader = WidgetDataReaderImpl(
@@ -148,7 +148,7 @@ class WidgetDataReaderImplTest {
             val program = MutableStateFlow<OnAirProgram?>(null)
             every { playerRepository.nowPlayingStation } returns MutableStateFlow(radioStationTestData)
             every { playerRepository.isPlaying } returns MutableStateFlow(true)
-            every { observeOnAirProgram(radioStationTestData.id) } returns program
+            every { observeOnAirProgram(radioStationTestData.id, false) } returns program
 
             reader.nowPlayingFlow().test {
                 assertEquals(radioStationTestData.broadcaster, awaitItem()!!.feedTitle)

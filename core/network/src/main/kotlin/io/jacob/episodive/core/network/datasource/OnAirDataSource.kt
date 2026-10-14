@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.network.datasource
 
 import io.jacob.episodive.core.model.OnAirProgram
+import io.jacob.episodive.core.network.model.OnAirSongLog
 import io.jacob.episodive.core.network.model.OnAirSource
 
 interface OnAirDataSource {
@@ -11,6 +12,6 @@ interface OnAirDataSource {
      */
     suspend fun schedule(source: OnAirSource, nowMillis: Long): List<OnAirProgram>
 
-    /** MBC 가 지금 틀고 있는 곡("제목 - 가수"). 없으면 null. */
-    suspend fun currentSong(source: OnAirSource.Mbc): String?
+    /** MBC 가 마지막으로 기록한 곡. 없으면 null. 낡았는지는 호출한 쪽이 [OnAirSongLog.loggedAtMillis] 로 가른다. */
+    suspend fun currentSong(source: OnAirSource.Mbc): OnAirSongLog?
 }

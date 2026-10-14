@@ -90,7 +90,7 @@ class WidgetDataReaderImpl @Inject constructor(
                 // 네트워크로 받는 값이라 첫 값을 기다리지 않게 null 로 시작한다.
                 combine(
                     playerRepository.isPlaying,
-                    observeOnAirProgram(station.id).onStart { emit(null) },
+                    observeOnAirProgram(station.id, includeSong = false).onStart { emit(null) },
                 ) { isPlaying, program -> station.toSnapshot(isPlaying, program?.title?.takeIf { it.isNotBlank() }) }
             } else {
                 episodeNowPlayingFlow()

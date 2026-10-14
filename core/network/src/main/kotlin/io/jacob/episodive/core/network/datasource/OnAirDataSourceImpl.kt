@@ -7,10 +7,13 @@ import io.jacob.episodive.core.network.model.CbsScheduleItemResponse
 import io.jacob.episodive.core.network.model.KbsScheduleDayResponse
 import io.jacob.episodive.core.network.model.MbcScheduleResponse
 import io.jacob.episodive.core.network.model.MbcSongResponse
+import io.jacob.episodive.core.network.model.OnAirSongLog
 import io.jacob.episodive.core.network.model.OnAirSource
 import io.jacob.episodive.core.network.model.SbsScheduleItemResponse
 import io.jacob.episodive.core.network.util.fetchBody
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.HttpUrl
@@ -20,6 +23,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -53,19 +57,26 @@ class OnAirDataSourceImpl(
             }.sortedBy { it.startMillis }
         }
 
-    override suspend fun currentSong(source: OnAirSource.Mbc): String? = withContext(ioDispatcher) {
+    override suspend fun currentSong(source: OnAirSource.Mbc): OnAirSongLog? = withContext(ioDispatcher) {
         val url = endpoints.mbc.newBuilder()
             .addPathSegments("music/somitem")
             .addQueryParameter("rtype", "json")
             .build()
         val rows: List<MbcSongResponse> = gson.fromJson(get(url), object : TypeToken<List<MbcSongResponse>>() {}.type)
             ?: return@withContext null
-        rows.firstOrNull { it.channel == source.channel }
-            ?.somItem
+        val row = rows.firstOrNull { it.channel == source.channel } ?: return@withContext null
+        val text = row.somItem
             ?.trim()
             ?.trimStart(*SONG_SYMBOLS, ' ')
             ?.takeIf { it.isNotEmpty() }
+            ?: return@withContext null
+        OnAirSongLog(text = text, loggedAtMillis = parseRegDate(row.regDate))
     }
+
+    /** "yyyy-MM-dd HH:mm:ss"(Asia/Seoul). 파싱하지 못하면 null. */
+    private fun parseRegDate(value: String?): Long? = runCatching {
+        LocalDateTime.parse(value!!.trim().replace(' ', 'T')).atZone(SEOUL).toInstant().toEpochMilli()
+    }.getOrNull()
 
     private suspend fun kbsSchedule(source: OnAirSource.Kbs, today: LocalDate): List<OnAirProgram> {
         // 자정을 넘긴 전날 편성("25:00")이 지금 시각에 걸릴 수 있어 전날부터 받는다.
@@ -99,10 +110,7 @@ class OnAirDataSourceImpl(
     }
 
     private suspend fun mbcSchedule(source: OnAirSource.Mbc, today: LocalDate): List<OnAirProgram> {
-        val url = endpoints.mbc.newBuilder().addPathSegments("Schedule/schedulelist").build()
-        val rows: List<MbcScheduleResponse> =
-            gson.fromJson(get(url), object : TypeToken<List<MbcScheduleResponse>>() {}.type) ?: return emptyList()
-        val mine = rows.filter { it.channel == source.channel }
+        val mine = mbcRows(today).filter { it.channel == source.channel }
         // 어제 시작해 자정을 넘기는 편성이 지금 걸려 있을 수 있어 어제도 함께 펼친다.
         return listOf(today.minusDays(1), today).flatMap { date ->
             val label = date.dayOfWeek.koreanLabel()
@@ -125,6 +133,24 @@ class OnAirDataSourceImpl(
      * SBS 웹 편성표가 쓰는 날짜별 정적 JSON(`schedule/Y/M/D/{Power|Love}.json`). 하루가 01:00 에 시작하고 자정 이후는
      * "24:00"·"25:00" 처럼 24 이상으로 와서, 00시대 방송은 전날 파일에 있다. 그래서 어제도 받는다.
      */
+    private class MbcRaw(val dateKey: String, val rows: List<MbcScheduleResponse>)
+
+    private var mbcRaw: MbcRaw? = null
+    private val mbcMutex = Mutex()
+
+    /**
+     * MBC 편성표는 전 채널·전 요일이 한 응답(수백 KB)이라 세 채널이 공유한다. 주간 고정 편성이라 날짜가 바뀔 때만 다시
+     * 받는다. 실패는 캐시하지 않는다.
+     */
+    private suspend fun mbcRows(today: LocalDate): List<MbcScheduleResponse> = mbcMutex.withLock {
+        val dateKey = today.toString()
+        mbcRaw?.takeIf { it.dateKey == dateKey }?.let { return@withLock it.rows }
+        val url = endpoints.mbc.newBuilder().addPathSegments("Schedule/schedulelist").build()
+        val rows: List<MbcScheduleResponse> =
+            gson.fromJson(get(url), object : TypeToken<List<MbcScheduleResponse>>() {}.type) ?: emptyList()
+        rows.also { mbcRaw = MbcRaw(dateKey, it) }
+    }
+
     private suspend fun sbsSchedule(source: OnAirSource.Sbs, today: LocalDate): List<OnAirProgram> {
         val name = SBS_SCHEDULE_NAMES[source.channelId] ?: return emptyList()
         return listOf(today.minusDays(1), today).flatMap { date ->
@@ -166,7 +192,7 @@ class OnAirDataSourceImpl(
         val channels: Map<String, List<CbsScheduleItemResponse>> = gson.fromJson(
             body, object : TypeToken<Map<String, List<CbsScheduleItemResponse>>>() {}.type
         ) ?: return emptyList()
-        return channels[source.key].orEmpty().mapNotNull { item ->
+        val programs = channels[source.key].orEmpty().mapNotNull { item ->
             val title = item.name?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
             val date = item.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: today
             val range = parseHhmmRange(date, item.startTime, item.endTime, colon = true)
@@ -174,15 +200,26 @@ class OnAirDataSourceImpl(
             OnAirProgram(
                 title = title,
                 host = item.mc.cleaned() ?: item.program?.mc.cleaned(),
-                imageUrl = (image?.radioProfil ?: image?.vod ?: image?.mainTop).toCbsUrl(),
+                // 빈 문자열은 값이 아니다. 필드마다 정리한 뒤 이어야 radioProfil 이 비었을 때 vod 로 넘어간다.
+                imageUrl = image?.radioProfil.toCbsUrl() ?: image?.vod.toCbsUrl() ?: image?.mainTop.toCbsUrl(),
                 startMillis = range?.first,
                 endMillis = range?.second,
                 song = null,
             )
         }
+        // 마지막 항목은 "23:59" 에 끝난다고 온다. 자정까지 이어지는 것으로 본다.
+        return programs.map { p ->
+            val end = p.endMillis
+            if (end != null && isLastMinuteOfDay(end)) p.copy(endMillis = end + MINUTE_MILLIS) else p
+        }
     }
 
     private suspend fun get(url: HttpUrl): String = callFactory.fetchBody(Request.Builder().url(url).build())
+
+    private fun isLastMinuteOfDay(millis: Long): Boolean {
+        val time = Instant.ofEpochMilli(millis).atZone(SEOUL).toLocalTime()
+        return time.hour == 23 && time.minute == 59
+    }
 
     private fun String?.cleaned(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
 
@@ -254,6 +291,7 @@ class OnAirDataSourceImpl(
 
     private companion object {
         val SEOUL: ZoneId = ZoneId.of("Asia/Seoul")
+        const val MINUTE_MILLIS = 60_000L
         const val DAY_MILLIS = 24 * 60 * 60 * 1000L
         const val CBS_ORIGIN = "https://www.cbs.co.kr"
         /** SBS 편성표 파일 이름. */

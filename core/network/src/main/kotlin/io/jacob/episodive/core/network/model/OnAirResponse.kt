@@ -30,6 +30,7 @@ data class MbcScheduleResponse(
 data class MbcSongResponse(
     @SerializedName("Channel") val channel: String? = null,
     @SerializedName("SomItem") val somItem: String? = null,
+    @SerializedName("RegDate") val regDate: String? = null,
 )
 
 data class SbsScheduleItemResponse(

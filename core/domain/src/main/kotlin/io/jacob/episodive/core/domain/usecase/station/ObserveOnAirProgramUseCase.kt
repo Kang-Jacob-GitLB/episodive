@@ -8,7 +8,7 @@ import javax.inject.Inject
 class ObserveOnAirProgramUseCase @Inject constructor(
     private val stationRepository: StationRepository,
 ) {
-    operator fun invoke(stationId: String): Flow<OnAirProgram?> {
-        return stationRepository.observeOnAir(stationId)
+    operator fun invoke(stationId: String, includeSong: Boolean = true): Flow<OnAirProgram?> {
+        return stationRepository.observeOnAir(stationId, includeSong)
     }
 }

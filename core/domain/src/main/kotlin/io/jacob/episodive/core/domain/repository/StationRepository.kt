@@ -33,8 +33,11 @@ interface StationRepository {
      * 지금 방송 중인 프로그램. 구독하는 동안 프로그램이 바뀌는 시각에 맞춰 새로 발행한다. 방송사 비공식 API 라
      * 편성 정보가 없는 스테이션·네트워크 실패·편성표에 지금 시각이 없으면 null 을 발행하고(에러로 올리지 않는다),
      * 호출한 쪽은 프로그램 정보 없이 그리면 된다.
+     *
+     * @param includeSong 곡을 주는 방송사(MBC)의 곡을 얹을지. 곡은 45초마다 폴링해야 해서, 제목만 필요한 호출(위젯·알림
+     *   갱신 트리거)은 false 로 불러 백그라운드에서 폴링이 돌지 않게 한다.
      */
-    fun observeOnAir(stationId: String): Flow<OnAirProgram?>
+    fun observeOnAir(stationId: String, includeSong: Boolean = true): Flow<OnAirProgram?>
 
     /**
      * 오늘(Asia/Seoul) 방송분, 시작 시각순. [observeOnAir] 와 같은 편성표 캐시를 쓰므로 네트워크를 따로 부르지 않는다.

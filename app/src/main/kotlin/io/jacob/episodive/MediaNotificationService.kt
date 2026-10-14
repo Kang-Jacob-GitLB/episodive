@@ -27,14 +27,18 @@ import io.jacob.episodive.core.domain.usecase.episode.GetMostRecentPlayedEpisode
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.player.WidgetPlayPauseUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Station
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
@@ -63,6 +67,9 @@ class MediaNotificationService : MediaSessionService() {
 
     @Inject
     lateinit var widgetUpdater: WidgetUpdater
+
+    @Inject
+    lateinit var observeOnAirProgramUseCase: ObserveOnAirProgramUseCase
 
     private var mediaSession: MediaSession? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -132,9 +139,23 @@ class MediaNotificationService : MediaSessionService() {
                 getNowPlayingUseCase().map { it?.id }.distinctUntilChanged(),
                 playerRepository.nowPlayingStation.map { it?.id }.distinctUntilChanged(),
                 playerRepository.isPlaying.distinctUntilChanged(),
+                // 위젯 부제의 프로그램 제목. Glance 세션은 곧 닫히므로 프로그램 경계에서 갱신을 건 쪽이 있어야 한다.
+                // 곡은 빼고(includeSong = false) 제목만 본다 — 백그라운드 재생 내내 곡 폴링이 돌면 안 된다.
+                currentProgramTitleFlow(),
             ).collectLatest { widgetUpdater.notifyNowPlayingChanged() }
         }
     }
+
+    private fun currentProgramTitleFlow(): Flow<String?> =
+        playerRepository.nowPlayingStation
+            .flatMapLatest { station ->
+                if (station == null) {
+                    emptyFlow()
+                } else {
+                    observeOnAirProgramUseCase(station.id, includeSong = false).map { it?.title }
+                }
+            }
+            .distinctUntilChanged()
 
     @UnstableApi
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

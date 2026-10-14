@@ -53,6 +53,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -63,6 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
@@ -96,11 +98,11 @@ import io.jacob.episodive.core.ui.R as uiR
 private val StationControlBarHeight = 52.dp
 private val StationControlBarShape = RoundedCornerShape(26.dp)
 
-/** 곡명 한 줄의 높이. 곡명이 있든 없든 이 높이를 비워 두어 아래 버튼이 움직이지 않게 한다. */
-private val StreamTitleHeight = 24.dp
+/** 곡명 한 줄의 높이. 글꼴 배율을 따르도록 sp 로 둔다(dp 면 큰 글꼴에서 줄이 잘린다). 곡명이 있든 없든 이 높이를 비워 두어 아래 버튼이 움직이지 않게 한다. */
+private val StreamTitleHeight = 24.sp
 
 /** 지금 방송 중인 프로그램 줄의 자리 높이. 프로그램 정보 유무와 무관하게 비워 둔다. */
-private val ProgramLineHeight = 22.dp
+private val ProgramLineHeight = 22.sp
 
 /**
  * 라디오 전용 플레이어 시트. 에피소드 플레이어(`PlayerBottomSheet`)와 같은 모양의 시트지만 탐색바·시간·배속이 없다
@@ -312,7 +314,7 @@ internal fun StationPlayerScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(ProgramLineHeight),
+                                .height(with(LocalDensity.current) { ProgramLineHeight.toDp() }),
                             contentAlignment = Alignment.Center,
                         ) {
                             program?.let {
@@ -351,7 +353,7 @@ internal fun StationPlayerScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(StreamTitleHeight),
+                                .height(with(LocalDensity.current) { StreamTitleHeight.toDp() }),
                             contentAlignment = Alignment.Center,
                         ) {
                             AnimatedContent(
