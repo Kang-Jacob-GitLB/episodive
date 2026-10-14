@@ -11,6 +11,7 @@ import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveStationProgramImagesUseCase
 import io.jacob.episodive.core.model.DataError
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
@@ -19,6 +20,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -38,6 +42,7 @@ class HomeRadioViewModel @Inject constructor(
     getStationsUseCase: GetStationsUseCase,
     getFavoriteStationsUseCase: GetFavoriteStationsUseCase,
     getRecentStationsUseCase: GetRecentStationsUseCase,
+    observeStationProgramImagesUseCase: ObserveStationProgramImagesUseCase,
     private val stationPlaybackController: StationPlaybackController,
     @param:Player(EpisodivePlayers.Main) playerRepository: PlayerRepository,
 ) : ViewModel() {
@@ -70,6 +75,24 @@ class HomeRadioViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = HomeRadioState.Loading,
     )
+
+    /**
+     * 섹션에 보이는 스테이션의 프로그램 이미지(id → 주소). `state` 와 따로 둔다 — 네트워크로 받는 값이라 섹션 자체가 늦게
+     * 뜨면 안 된다. 섹션 구성이 바뀔 때만 구독 대상을 바꾼다.
+     */
+    val programImages: StateFlow<Map<String, String>> = state
+        .map { (it as? HomeRadioState.Success)?.stations?.map { station -> station.id }.orEmpty() }
+        .distinctUntilChanged()
+        .flatMapLatest { ids -> observeStationProgramImagesUseCase(ids) }
+        .catch { e ->
+            Timber.w(e, "홈 라디오 프로그램 이미지를 불러오지 못했다")
+            emit(emptyMap())
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyMap(),
+        )
 
     private val _action = MutableSharedFlow<HomeRadioAction>(extraBufferCapacity = 1)
 

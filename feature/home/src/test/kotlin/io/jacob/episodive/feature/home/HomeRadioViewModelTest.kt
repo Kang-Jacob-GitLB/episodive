@@ -6,6 +6,7 @@ import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveStationProgramImagesUseCase
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.testing.model.radioStationTestData
@@ -33,6 +34,7 @@ class HomeRadioViewModelTest {
     private val getStationsUseCase = mockk<GetStationsUseCase>()
     private val getFavoriteStationsUseCase = mockk<GetFavoriteStationsUseCase>()
     private val getRecentStationsUseCase = mockk<GetRecentStationsUseCase>()
+    private val observeStationProgramImagesUseCase = mockk<ObserveStationProgramImagesUseCase>()
     private val stationPlaybackController = mockk<StationPlaybackController>(relaxed = true)
     private val playerRepository = mockk<PlayerRepository>(relaxed = true)
 
@@ -53,11 +55,13 @@ class HomeRadioViewModelTest {
         every { playerRepository.isPlaying } returns MutableStateFlow(false)
         every { playerRepository.isBuffering } returns MutableStateFlow(false)
         every { stationPlaybackController.pendingStationId } returns pendingStationId
+        every { observeStationProgramImagesUseCase(any()) } returns flowOf(emptyMap())
 
         return HomeRadioViewModel(
             getStationsUseCase = getStationsUseCase,
             getFavoriteStationsUseCase = getFavoriteStationsUseCase,
             getRecentStationsUseCase = getRecentStationsUseCase,
+            observeStationProgramImagesUseCase = observeStationProgramImagesUseCase,
             stationPlaybackController = stationPlaybackController,
             playerRepository = playerRepository,
         )
@@ -132,6 +136,7 @@ class HomeRadioViewModelTest {
             getStationsUseCase = getStationsUseCase,
             getFavoriteStationsUseCase = getFavoriteStationsUseCase,
             getRecentStationsUseCase = getRecentStationsUseCase,
+            observeStationProgramImagesUseCase = observeStationProgramImagesUseCase,
             stationPlaybackController = stationPlaybackController,
             playerRepository = playerRepository,
         )
@@ -159,5 +164,22 @@ class HomeRadioViewModelTest {
         pendingStationId.value = "s1"
 
         assertEquals("s1", (viewModel.state.value as HomeRadioState.Success).pendingStationId)
+    }
+
+    @Test
+    fun `Given 섹션에 보이는 스테이션, Then 그 id 들로만 프로그램 이미지를 구독한다`() = runTest {
+        val viewModel = createViewModel(favorites = listOf(station(1)), catalog = (0 until 12).map(::station))
+        every { observeStationProgramImagesUseCase(any()) } answers {
+            flowOf(firstArg<List<String>>().filter { it == "s1" }.associateWith { "https://img/$it.jpg" })
+        }
+
+        viewModel.programImages.test {
+            assertEquals(mapOf("s1" to "https://img/s1.jpg"), expectMostRecentItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        // 섹션은 즐겨찾기 1개 + 카탈로그로 채운 7개 = 8개다. 카탈로그 12개 전부를 구독하지 않는다.
+        verify(exactly = 1) {
+            observeStationProgramImagesUseCase(match { it.size == 8 && "s1" in it })
+        }
     }
 }

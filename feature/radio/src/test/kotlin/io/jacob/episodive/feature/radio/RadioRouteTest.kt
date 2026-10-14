@@ -9,6 +9,7 @@ import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveStationProgramImagesUseCase
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.testing.model.radioStationTestData
@@ -40,6 +41,7 @@ class RadioRouteTest {
     private val getFavoriteStationsUseCase = mockk<GetFavoriteStationsUseCase>()
     private val getRecentStationsUseCase = mockk<GetRecentStationsUseCase>()
     private val toggleFavoriteStationUseCase = mockk<ToggleFavoriteStationUseCase>()
+    private val observeStationProgramImagesUseCase = mockk<ObserveStationProgramImagesUseCase>()
     private val stationPlaybackController = mockk<StationPlaybackController>(relaxed = true)
     private val playerRepository = mockk<PlayerRepository>(relaxed = true)
 
@@ -70,11 +72,13 @@ class RadioRouteTest {
         every { playerRepository.isPlaying } returns MutableStateFlow(false)
         every { playerRepository.isBuffering } returns MutableStateFlow(false)
         every { stationPlaybackController.pendingStationId } returns MutableStateFlow(null)
+        every { observeStationProgramImagesUseCase(any()) } returns flowOf(emptyMap())
 
         return RadioViewModel(
             getStationsUseCase = getStationsUseCase,
             getFavoriteStationsUseCase = getFavoriteStationsUseCase,
             getRecentStationsUseCase = getRecentStationsUseCase,
+            observeStationProgramImagesUseCase = observeStationProgramImagesUseCase,
             toggleFavoriteStationUseCase = toggleFavoriteStationUseCase,
             stationPlaybackController = stationPlaybackController,
             playerRepository = playerRepository,

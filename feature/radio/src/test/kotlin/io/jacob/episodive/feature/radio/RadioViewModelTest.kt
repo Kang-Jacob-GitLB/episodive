@@ -6,6 +6,7 @@ import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveStationProgramImagesUseCase
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
@@ -19,6 +20,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -38,6 +40,7 @@ class RadioViewModelTest {
     private val getFavoriteStationsUseCase = mockk<GetFavoriteStationsUseCase>()
     private val getRecentStationsUseCase = mockk<GetRecentStationsUseCase>()
     private val toggleFavoriteStationUseCase = mockk<ToggleFavoriteStationUseCase>()
+    private val observeStationProgramImagesUseCase = mockk<ObserveStationProgramImagesUseCase>()
     private val stationPlaybackController = mockk<StationPlaybackController>(relaxed = true)
     private val playerRepository = mockk<PlayerRepository>(relaxed = true)
 
@@ -60,11 +63,13 @@ class RadioViewModelTest {
         every { playerRepository.isPlaying } returns isPlaying
         every { playerRepository.isBuffering } returns isBuffering
         every { stationPlaybackController.pendingStationId } returns pendingStationId
+        every { observeStationProgramImagesUseCase(any()) } returns flowOf(emptyMap())
 
         return RadioViewModel(
             getStationsUseCase = getStationsUseCase,
             getFavoriteStationsUseCase = getFavoriteStationsUseCase,
             getRecentStationsUseCase = getRecentStationsUseCase,
+            observeStationProgramImagesUseCase = observeStationProgramImagesUseCase,
             toggleFavoriteStationUseCase = toggleFavoriteStationUseCase,
             stationPlaybackController = stationPlaybackController,
             playerRepository = playerRepository,
@@ -133,6 +138,33 @@ class RadioViewModelTest {
 
             assertEquals(RadioEffect.ShowFavoriteSnackbar(a.id, true), awaitItem())
             assertEquals(RadioEffect.ShowFavoriteSnackbar(a.id, false), awaitItem())
+        }
+    }
+
+    @Test
+    fun `Given 카탈로그 전체, Then 프로그램 이미지는 라디오 스테이션 id 전부로 구독하고 이미지가 있는 것만 매핑된다`() = runTest {
+        val viewModel = createViewModel()
+        every { observeStationProgramImagesUseCase(any()) } returns flowOf(mapOf(a.id to "https://img/a.jpg"))
+
+        viewModel.programImages.test {
+            // 초기값(빈 맵) 뒤에 매핑이 온다. onAirSource 가 없는 스테이션은 맵에 없다.
+            assertEquals(mapOf(a.id to "https://img/a.jpg"), expectMostRecentItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        verify(exactly = 1) { observeStationProgramImagesUseCase(radioStationsTestData.map { it.id }) }
+    }
+
+    @Test
+    fun `Given 이미지 구독 실패, Then 빈 맵이고 목록 상태는 영향받지 않는다`() = runTest {
+        val viewModel = createViewModel()
+        every { observeStationProgramImagesUseCase(any()) } returns flow { throw IllegalStateException("boom") }
+
+        viewModel.programImages.test {
+            assertEquals(emptyMap<String, String>(), expectMostRecentItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        viewModel.state.test {
+            assertTrue(expectMostRecentItem() is RadioState.Success)
         }
     }
 }

@@ -164,6 +164,7 @@ private fun StationArtWithStatus(
     status: StationCardStatus,
     size: Dp,
     modifier: Modifier = Modifier,
+    imageUrl: String? = null,
 ) {
     Box(
         modifier = modifier
@@ -171,7 +172,8 @@ private fun StationArtWithStatus(
             .clip(RoundedCornerShape(size * StationArtCornerRatio)),
         contentAlignment = Alignment.Center,
     ) {
-        StationArt(station = station, modifier = Modifier.fillMaxSize())
+        // 프로그램 이미지가 있으면 그것을, 없거나 받는 동안·실패하면 이니셜 아트를 보인다.
+        StationCover(station = station, imageUrl = imageUrl, modifier = Modifier.fillMaxSize())
 
         if (status != StationCardStatus.Idle) {
             Box(
@@ -250,6 +252,7 @@ fun StationsSection(
     statusOf: (Station) -> StationCardStatus,
     onStationClick: (Station) -> Unit,
     onMore: (() -> Unit)? = null,
+    imageUrlOf: (Station) -> String? = { null },
 ) {
     SectionHeader(
         modifier = modifier,
@@ -297,6 +300,7 @@ fun StationsSection(
                     modifier = Modifier.animateItem(),
                     station = station,
                     status = statusOf(station),
+                    imageUrl = imageUrlOf(station),
                     onClick = { onStationClick(station) },
                 )
             }
@@ -339,6 +343,7 @@ fun StationTile(
     station: Station,
     status: StationCardStatus,
     onClick: () -> Unit,
+    imageUrl: String? = null,
 ) {
     Column(
         modifier = Modifier
@@ -346,7 +351,7 @@ fun StationTile(
             .then(modifier)
             .stationCardSemantics(status, onClick),
     ) {
-        StationArtWithStatus(station = station, status = status, size = StationTileSize)
+        StationArtWithStatus(station = station, status = status, size = StationTileSize, imageUrl = imageUrl)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -393,6 +398,7 @@ fun StationRow(
     isFavorite: Boolean,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
+    imageUrl: String? = null,
 ) {
     val dimension = LocalDimensionTheme.current
 
@@ -412,7 +418,7 @@ fun StationRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            StationArtWithStatus(station = station, status = status, size = StationRowArtSize)
+            StationArtWithStatus(station = station, status = status, size = StationRowArtSize, imageUrl = imageUrl)
 
             Column(
                 modifier = Modifier.weight(1f),
