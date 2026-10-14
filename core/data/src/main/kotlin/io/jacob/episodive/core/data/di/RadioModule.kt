@@ -36,12 +36,14 @@ object RadioModule {
         @Player(EpisodivePlayers.Main) playerRepository: PlayerRepository,
         stationRepository: StationRepository,
         networkMonitor: NetworkMonitor,
+        restoreLastPlayState: RestoreLastPlayStateUseCase,
         @ApplicationScope scope: CoroutineScope,
     ): LiveStreamSupervisor {
         return LiveStreamSupervisorImpl(
             playerRepository = playerRepository,
             stationRepository = stationRepository,
             networkMonitor = networkMonitor,
+            restoreLastPlayState = restoreLastPlayState,
             scope = scope,
             mainDispatcher = Dispatchers.Main.immediate,
         )
