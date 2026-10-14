@@ -3,6 +3,9 @@ package io.jacob.episodive.core.data.repository
 import app.cash.turbine.test
 import io.jacob.episodive.core.data.radio.StationCatalogEntry
 import io.jacob.episodive.core.data.radio.broadcasterRadioEntryTestData
+import io.jacob.episodive.core.data.radio.hlsRadioEntryTestData
+import io.jacob.episodive.core.data.radio.onAirKbsEntryTestData
+import io.jacob.episodive.core.data.radio.onAirMbcEntryTestData
 import io.jacob.episodive.core.data.radio.stationCatalogEntryTestData
 import io.jacob.episodive.core.data.radio.stationDetailsResponsesTestData
 import io.jacob.episodive.core.database.dao.StationDao
@@ -11,10 +14,13 @@ import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.network.datasource.BroadcasterStreamDataSource
+import io.jacob.episodive.core.network.datasource.OnAirDataSource
 import io.jacob.episodive.core.network.datasource.StationRemoteDataSource
 import io.jacob.episodive.core.network.model.BroadcasterSource
 import io.jacob.episodive.core.testing.model.icecastStreamTestData
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
+import io.jacob.episodive.core.testing.model.kbsHappyRadioStationTestData
+import io.jacob.episodive.core.testing.model.onAirProgramTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
 import io.jacob.episodive.core.testing.model.stationDetailsTestData
@@ -40,6 +46,8 @@ import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import java.io.IOException
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 class StationRepositoryImplTest {
     @get:Rule
@@ -47,6 +55,7 @@ class StationRepositoryImplTest {
 
     private val remoteDataSource = mockk<StationRemoteDataSource>()
     private val broadcasterDataSource = mockk<BroadcasterStreamDataSource>()
+    private val onAirDataSource = mockk<OnAirDataSource>()
     private val stationDao = mockk<StationDao>()
 
     private var nowMillis = 1_000_000L
@@ -54,6 +63,7 @@ class StationRepositoryImplTest {
     private fun repositoryOf(catalog: List<StationCatalogEntry>) = StationRepositoryImpl(
         remoteDataSource = remoteDataSource,
         broadcasterDataSource = broadcasterDataSource,
+        onAirDataSource = onAirDataSource,
         stationDao = stationDao,
         catalog = catalog,
         ioDispatcher = UnconfinedTestDispatcher(mainDispatcherRule.testDispatcher.scheduler),
@@ -417,5 +427,157 @@ class StationRepositoryImplTest {
         assertNull(repository.getStationDetails("unknown"))
 
         coVerify(exactly = 0) { remoteDataSource.getStationDetails(any()) }
+    }
+
+    // --- observeOnAir ---
+
+    private val seoul = ZoneId.of("Asia/Seoul")
+    private val tenAm = LocalDateTime.of(2026, 10, 14, 10, 0).atZone(seoul).toInstant().toEpochMilli()
+    private val minute = 60_000L
+
+    private val morning = onAirProgramTestData("아침", tenAm - 60 * minute, tenAm + 30 * minute, host = "가")
+    private val noon = onAirProgramTestData("점심", tenAm + 30 * minute, tenAm + 90 * minute, host = "나")
+
+    private val onAirRepository = repositoryOf(listOf(onAirKbsEntryTestData, onAirMbcEntryTestData, hlsRadioEntryTestData))
+
+    @Test
+    fun `Given schedule, When observeOnAir, Then current program emitted`() = runTest {
+        nowMillis = tenAm
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(noon, morning)
+
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            assertEquals(morning, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given boundary passes, When observeOnAir, Then next program without refetch`() = runTest {
+        nowMillis = tenAm
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(morning, noon)
+
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            assertEquals(morning, awaitItem())
+            // 가상 시간이 흐르는 만큼 시계도 흐르게 한다. 경계(30분)까지 5분 상한으로 쪼개 깬다.
+            repeat(6) {
+                nowMillis += 5 * minute
+                testScheduler.advanceTimeBy(5 * minute)
+                testScheduler.runCurrent()
+            }
+            assertEquals(noon, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        // 5분 TTL 마다 안전 재조회는 하되, 경계 전환 때문에 더 부르지는 않는다.
+        coVerify(atMost = 7) { onAirDataSource.schedule(any(), any()) }
+    }
+
+    @Test
+    fun `Given within TTL, When observeOnAir twice, Then schedule requested once`() = runTest {
+        nowMillis = tenAm
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(morning)
+
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 1) { onAirDataSource.schedule(any(), any()) }
+    }
+
+    @Test
+    fun `Given date changed, When observeOnAir, Then schedule requested again`() = runTest {
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(morning)
+        nowMillis = tenAm
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        nowMillis = tenAm + 24 * 60 * minute
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 2) { onAirDataSource.schedule(any(), any()) }
+    }
+
+    @Test
+    fun `Given fetch fails, When observeOnAir, Then null and not cached`() = runTest {
+        nowMillis = tenAm
+        coEvery { onAirDataSource.schedule(any(), any()) } throws IOException("down") andThen listOf(morning)
+
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            assertNull(awaitItem())
+            nowMillis += minute
+            testScheduler.advanceTimeBy(minute)
+            testScheduler.runCurrent()
+            assertEquals(morning, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given no program covers now, When observeOnAir, Then null`() = runTest {
+        nowMillis = tenAm
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(
+            onAirProgramTestData("먼 미래", tenAm + 300 * minute, tenAm + 360 * minute),
+        )
+
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            assertNull(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given station without onAirSource or unknown id, When observeOnAir, Then null and network untouched`() = runTest {
+        onAirRepository.observeOnAir(regionalRadioStationTestData.id).test {
+            assertNull(awaitItem())
+            awaitComplete()
+        }
+        onAirRepository.observeOnAir("unknown").test {
+            assertNull(awaitItem())
+            awaitComplete()
+        }
+
+        coVerify(exactly = 0) { onAirDataSource.schedule(any(), any()) }
+    }
+
+    @Test
+    fun `Given MBC, When observeOnAir, Then song polled every 45s and merged`() = runTest {
+        nowMillis = tenAm
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(morning)
+        coEvery { onAirDataSource.currentSong(any()) } returnsMany listOf("곡1 - 가수", "곡1 - 가수", "곡2 - 가수")
+
+        onAirRepository.observeOnAir(kbsHappyRadioStationTestData.id).test {
+            assertEquals(morning.copy(song = "곡1 - 가수"), awaitItem())
+            nowMillis += 45_000L
+            testScheduler.advanceTimeBy(45_000L)
+            testScheduler.runCurrent()
+            // 같은 곡이면 다시 발행하지 않는다.
+            expectNoEvents()
+            nowMillis += 45_000L
+            testScheduler.advanceTimeBy(45_000L)
+            testScheduler.runCurrent()
+            assertEquals(morning.copy(song = "곡2 - 가수"), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given song fetch fails, When observeOnAir, Then program without song`() = runTest {
+        nowMillis = tenAm
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(morning)
+        coEvery { onAirDataSource.currentSong(any()) } throws IOException("down")
+
+        onAirRepository.observeOnAir(kbsHappyRadioStationTestData.id).test {
+            assertEquals(morning, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }

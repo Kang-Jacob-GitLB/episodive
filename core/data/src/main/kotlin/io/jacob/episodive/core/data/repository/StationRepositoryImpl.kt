@@ -6,14 +6,21 @@ import io.jacob.episodive.core.data.radio.mergeStationDetails
 import io.jacob.episodive.core.database.dao.StationDao
 import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.domain.repository.StationRepository
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.network.datasource.BroadcasterStreamDataSource
+import io.jacob.episodive.core.network.datasource.OnAirDataSource
 import io.jacob.episodive.core.network.datasource.StationRemoteDataSource
+import io.jacob.episodive.core.network.model.OnAirSource
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
@@ -21,12 +28,15 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
+import java.time.Instant
+import java.time.ZoneId
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 
 class StationRepositoryImpl internal constructor(
     private val remoteDataSource: StationRemoteDataSource,
     private val broadcasterDataSource: BroadcasterStreamDataSource,
+    private val onAirDataSource: OnAirDataSource,
     private val stationDao: StationDao,
     private val catalog: List<StationCatalogEntry>,
     private val ioDispatcher: CoroutineDispatcher,
@@ -160,10 +170,107 @@ class StationRepositoryImpl internal constructor(
 
     private class Fetched(val details: StationDetails?)
 
+    private class CachedSchedule(
+        val programs: List<OnAirProgram>,
+        val dateKey: String,
+        val fetchedAtMillis: Long,
+    )
+
+    // 편성표도 메모리 캐시만 둔다. 실패는 캐시하지 않는다.
+    private val scheduleCache = mutableMapOf<String, CachedSchedule>()
+    private val scheduleMutex = Mutex()
+
+    override fun observeOnAir(stationId: String): Flow<OnAirProgram?> {
+        val source = stationsById[stationId]?.onAirSource ?: return flowOf(null)
+        val programs = onAirPrograms(stationId, source)
+        // 곡은 프로그램 경계와 상관없이 바뀌므로 따로 폴링해 얹는다. 곡을 주는 방송사는 MBC 뿐이다.
+        val flow = if (source is OnAirSource.Mbc) {
+            combine(programs, onAirSongs(source)) { program, song -> program?.copy(song = song) }
+        } else {
+            programs
+        }
+        return flow.distinctUntilChanged()
+    }
+
+    private fun onAirPrograms(stationId: String, source: OnAirSource): Flow<OnAirProgram?> = flow {
+        while (true) {
+            val schedule = loadSchedule(stationId, source)
+            val nowMillis = now()
+            val current = schedule?.currentAt(nowMillis)
+            emit(current)
+
+            // 임시 편성으로 끝 시각이 어긋나도 따라가도록 끝 시각까지 가더라도 SCHEDULE_TTL 이상은 자지 않는다.
+            // 현재 항목이 없으면 다음 항목의 시작까지, 다음도 없으면(SBS 는 지금 방송분뿐이다) 재시도 간격만큼 기다린다.
+            val untilChange = when {
+                schedule == null -> ONAIR_FAILURE_RETRY_MILLIS
+                current != null -> (current.endMillis ?: Long.MAX_VALUE) - nowMillis
+                else -> (schedule.nextStartAfter(nowMillis) ?: (nowMillis + ONAIR_FAILURE_RETRY_MILLIS)) - nowMillis
+            }
+            delay(untilChange.coerceIn(ONAIR_MIN_WAIT_MILLIS, SCHEDULE_TTL_MILLIS))
+        }
+    }
+
+    private fun onAirSongs(source: OnAirSource.Mbc): Flow<String?> = flow {
+        var last: String? = null
+        while (true) {
+            try {
+                last = onAirDataSource.currentSong(source)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // 실패하면 직전 곡을 그대로 둔다.
+                Timber.w(e, "currentSong failed. source: $source")
+            }
+            emit(last)
+            delay(SONG_POLL_MILLIS)
+        }
+    }
+
+    /**
+     * 편성표를 캐시에서 주거나 받아 온다. 날짜가 바뀌었거나 [SCHEDULE_TTL_MILLIS] 가 지났거나, 캐시에 지금 시각의
+     * 항목이 없는데 마지막으로 받은 지 [SCHEDULE_REFETCH_MIN_MILLIS] 가 지났으면 다시 받는다(SBS 는 지금 방송분
+     * 하나뿐이라 끝나면 곧바로 필요하다). 실패면 null.
+     */
+    private suspend fun loadSchedule(stationId: String, source: OnAirSource): List<OnAirProgram>? {
+        return scheduleMutex.withLock {
+            val nowMillis = now()
+            val dateKey = Instant.ofEpochMilli(nowMillis).atZone(SEOUL).toLocalDate().toString()
+            scheduleCache[stationId]?.let { cached ->
+                val age = nowMillis - cached.fetchedAtMillis
+                val fresh = cached.dateKey == dateKey && age < SCHEDULE_TTL_MILLIS &&
+                    (cached.programs.currentAt(nowMillis) != null || age < SCHEDULE_REFETCH_MIN_MILLIS)
+                if (fresh) return@withLock cached.programs
+            }
+            try {
+                onAirDataSource.schedule(source, nowMillis).also {
+                    scheduleCache[stationId] = CachedSchedule(it, dateKey, nowMillis)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "onAir schedule failed. stationId: $stationId, source: $source")
+                null
+            }
+        }
+    }
+
+    private fun List<OnAirProgram>.currentAt(nowMillis: Long): OnAirProgram? =
+        filter { (it.startMillis ?: return@filter false) <= nowMillis && nowMillis < (it.endMillis ?: return@filter false) }
+            .maxByOrNull { it.startMillis ?: 0L }
+
+    private fun List<OnAirProgram>.nextStartAfter(nowMillis: Long): Long? =
+        mapNotNull { it.startMillis }.filter { it > nowMillis }.minOrNull()
+
     private companion object {
         const val RESOLVE_TIMEOUT_MILLIS = 15_000L
         const val BROADCASTER_TIMEOUT_MILLIS = 5_000L
         const val DETAILS_TIMEOUT_MILLIS = 10_000L
         const val DETAILS_TTL_MILLIS = 24 * 60 * 60 * 1000L
+        const val SCHEDULE_TTL_MILLIS = 5 * 60 * 1000L
+        const val SCHEDULE_REFETCH_MIN_MILLIS = 30_000L
+        const val ONAIR_FAILURE_RETRY_MILLIS = 60_000L // 실패·편성 공백 뒤 재시도
+        const val ONAIR_MIN_WAIT_MILLIS = 1_000L
+        const val SONG_POLL_MILLIS = 45_000L
+        val SEOUL: ZoneId = ZoneId.of("Asia/Seoul")
     }
 }

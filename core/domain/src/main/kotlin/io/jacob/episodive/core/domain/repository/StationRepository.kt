@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.domain.repository
 
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
@@ -27,6 +28,13 @@ interface StationRepository {
      * 쓸 만한 값이 하나도 없으면 null — 부가 정보라 호출한 쪽은 그 섹션만 숨기면 된다.
      */
     suspend fun getStationDetails(stationId: String): StationDetails?
+
+    /**
+     * 지금 방송 중인 프로그램. 구독하는 동안 프로그램이 바뀌는 시각에 맞춰 새로 발행한다. 방송사 비공식 API 라
+     * 편성 정보가 없는 스테이션·네트워크 실패·편성표에 지금 시각이 없으면 null 을 발행하고(에러로 올리지 않는다),
+     * 호출한 쪽은 프로그램 정보 없이 그리면 된다.
+     */
+    fun observeOnAir(stationId: String): Flow<OnAirProgram?>
 
     /** 즐겨찾기한 순서의 역순(최신순). 카탈로그에서 빠진 스테이션은 제외된다. */
     fun getFavoriteStations(): Flow<List<Station>>

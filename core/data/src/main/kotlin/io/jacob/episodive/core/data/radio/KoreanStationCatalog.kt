@@ -3,6 +3,7 @@ package io.jacob.episodive.core.data.radio
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.network.model.BroadcasterSource
+import io.jacob.episodive.core.network.model.OnAirSource
 
 /**
  * 국내 라디오 큐레이션 카탈로그. Radio Browser 원본을 그대로 쓰지 않고 아래 기준으로 걸러 옮겼다.
@@ -40,6 +41,7 @@ internal object KoreanStationCatalog {
                 "16c1e8aa-1e9e-422b-9611-842b61a70983",
             ),
             broadcasterSource = BroadcasterSource.Kbs("21"),
+            onAirSource = OnAirSource.Kbs("21"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -56,6 +58,7 @@ internal object KoreanStationCatalog {
                 "8dc941a6-c866-4552-9fea-541c137cfb5d",
             ),
             broadcasterSource = BroadcasterSource.Kbs("22"),
+            onAirSource = OnAirSource.Kbs("22"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -75,6 +78,7 @@ internal object KoreanStationCatalog {
                 "d52bcf11-db1b-44d7-be0d-c37dad6bb568",
             ),
             broadcasterSource = BroadcasterSource.Kbs("24"),
+            onAirSource = OnAirSource.Kbs("24"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -93,6 +97,7 @@ internal object KoreanStationCatalog {
                 "d5642b73-a600-4fdd-9a07-a63116b04e38",
             ),
             broadcasterSource = BroadcasterSource.Kbs("25"),
+            onAirSource = OnAirSource.Kbs("25"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -108,6 +113,7 @@ internal object KoreanStationCatalog {
                 "fc4c247a-7f66-11e9-aa30-52543be04c81",
             ),
             broadcasterSource = BroadcasterSource.Mbc("sfm"),
+            onAirSource = OnAirSource.Mbc("STFM"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -124,6 +130,7 @@ internal object KoreanStationCatalog {
                 "8f6a0b47-7be2-11e9-aa30-52543be04c81",
             ),
             broadcasterSource = BroadcasterSource.Mbc("mfm"),
+            onAirSource = OnAirSource.Mbc("FM4U"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -139,6 +146,7 @@ internal object KoreanStationCatalog {
                 "01335461-d022-4ad8-9fbc-1bd3ef534def",
             ),
             broadcasterSource = BroadcasterSource.Mbc("chm"),
+            onAirSource = OnAirSource.Mbc("CHAM"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -154,6 +162,7 @@ internal object KoreanStationCatalog {
                 "1cc29b79-7be3-11e9-aa30-52543be04c81",
             ),
             broadcasterSource = BroadcasterSource.Sbs("powerpc/powerfm"),
+            onAirSource = OnAirSource.Sbs("S07"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -170,6 +179,7 @@ internal object KoreanStationCatalog {
                 "e6bc48f7-7be2-11e9-aa30-52543be04c81",
             ),
             broadcasterSource = BroadcasterSource.Sbs("lovepc/lovefm"),
+            onAirSource = OnAirSource.Sbs("S08"),
             isHls = true,
             fallbackUrl = null,
         ),
@@ -186,6 +196,7 @@ internal object KoreanStationCatalog {
             ),
             isHls = true,
             fallbackUrl = "https://m-aac.cbs.co.kr/mweb_cbs981/_definst_/cbs981.stream/playlist.m3u8",
+            onAirSource = OnAirSource.Cbs("fm"),
         ),
         StationCatalogEntry(
             station = Station(
@@ -202,6 +213,7 @@ internal object KoreanStationCatalog {
             ),
             isHls = true,
             fallbackUrl = "https://m-aac.cbs.co.kr/cbs939/_definst_/cbs939.stream/playlist.m3u8",
+            onAirSource = OnAirSource.Cbs("musicfm"),
         ),
         StationCatalogEntry(
             station = Station(
@@ -216,6 +228,7 @@ internal object KoreanStationCatalog {
             ),
             isHls = true,
             fallbackUrl = "https://m-aac.cbs.co.kr/mweb_cbscmc/_definst_/cbscmc.stream/playlist.m3u8",
+            onAirSource = OnAirSource.Cbs("joy4u"),
         ),
         StationCatalogEntry(
             station = Station(
