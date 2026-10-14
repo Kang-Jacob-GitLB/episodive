@@ -216,8 +216,8 @@ fun StationPlayerSheet(
                 details = details,
                 onAir = onAir,
                 schedule = schedule,
-                liveCaption = { caption.value.caption },
-                captionButtonState = { caption.value.toCaptionButtonState() },
+                liveCaption = { caption.value.state.caption },
+                captionButtonState = { caption.value.state.toCaptionButtonState() },
                 onToggleCaption = { viewModel.sendAction(StationPlayerAction.ToggleCaption) },
                 onCollapse = { hideThen {} },
                 onPlayOrPause = { viewModel.sendAction(StationPlayerAction.PlayOrPause) },
@@ -333,13 +333,11 @@ internal fun StationPlayerScreen(
                                 imageUrl = program?.imageUrl,
                             )
 
-                            // 분기 없이 늘 부른다 — 조건부로 부르면 페이드가 사라진다. 다른 스테이션(또는 받는 중 이전
-                            // 스테이션)의 자막은 subject 로 걸러 그리지 않는다. 람다로만 읽어 재구성을 이 안에 가둔다.
-                            RollingCaptionOverlay(
+                            // 분기 없이 늘 부른다 — 조건부로 부르면 페이드가 사라진다.
+                            StationCaptionOverlay(
                                 modifier = Modifier.matchParentSize(),
-                                caption = liveCaption()?.takeIf {
-                                    it.subject == CaptionSubject.Station(station.id) && it.lines.isNotEmpty()
-                                },
+                                stationId = station.id,
+                                liveCaption = liveCaption,
                             )
                         }
                     }
@@ -491,6 +489,24 @@ internal fun StationPlayerScreen(
             onDismiss = { showSleepTimerSheet = false },
         )
     }
+}
+
+/**
+ * 커버 위 자막. [liveCaption] 을 이 컴포저블 안에서만 읽어 매 단어(partial)마다 시트 목록 전체가 재구성되지
+ * 않게 한다. 다른 스테이션(받는 중 이전 스테이션 포함)의 자막은 subject 로 걸러 그리지 않는다.
+ */
+@Composable
+private fun StationCaptionOverlay(
+    stationId: String,
+    liveCaption: () -> LiveCaption?,
+    modifier: Modifier = Modifier,
+) {
+    RollingCaptionOverlay(
+        modifier = modifier,
+        caption = liveCaption()?.takeIf {
+            it.subject == CaptionSubject.Station(stationId) && it.lines.isNotEmpty()
+        },
+    )
 }
 
 @Composable

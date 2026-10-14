@@ -64,7 +64,7 @@ class ObserveStationCaptionUseCaseTest {
         every { captionRepository.modelState(CaptionLanguage.KOREAN) } returns flowOf(CaptionModelState.NotInstalled(sizeBytes = 42L))
 
         useCase().test {
-            val state = awaitItem()
+            val state = awaitItem().state
             assertFalse(state.isEnabled)
             assertEquals(CaptionAvailability.NotInstalled(CaptionLanguage.KOREAN, 42L), state.availability)
             awaitComplete()
@@ -80,7 +80,7 @@ class ObserveStationCaptionUseCaseTest {
         every { captionRepository.liveCaptions(CaptionSubject.Station("ko-station"), CaptionLanguage.KOREAN) } returns session()
 
         useCase().test {
-            val state = awaitItem()
+            val state = awaitItem().state
             assertEquals(CaptionAvailability.Ready(CaptionLanguage.KOREAN), state.availability)
             cancelAndIgnoreRemainingEvents()
         }
@@ -94,7 +94,7 @@ class ObserveStationCaptionUseCaseTest {
         every { captionRepository.liveCaptions(CaptionSubject.Station("en-station"), CaptionLanguage.ENGLISH) } returns session()
 
         useCase().test {
-            assertEquals(CaptionAvailability.Ready(CaptionLanguage.ENGLISH), awaitItem().availability)
+            assertEquals(CaptionAvailability.Ready(CaptionLanguage.ENGLISH), awaitItem().state.availability)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -105,7 +105,7 @@ class ObserveStationCaptionUseCaseTest {
         every { playerRepository.nowPlayingStation } returns flowOf(musicStation)
 
         useCase().test {
-            assertEquals(CaptionAvailability.Unsupported, awaitItem().availability)
+            assertEquals(CaptionAvailability.Unsupported, awaitItem().state.availability)
             awaitComplete()
         }
         verify(exactly = 0) { captionRepository.liveCaptions(any(), any()) }
@@ -117,7 +117,7 @@ class ObserveStationCaptionUseCaseTest {
         every { playerRepository.nowPlayingStation } returns flowOf(null)
 
         useCase().test {
-            assertEquals(CaptionAvailability.Unknown, awaitItem().availability)
+            assertEquals(CaptionAvailability.Unknown, awaitItem().state.availability)
             awaitComplete()
         }
     }
@@ -157,13 +157,25 @@ class ObserveStationCaptionUseCaseTest {
         every { captionRepository.liveCaptions(CaptionSubject.Station("en-station"), CaptionLanguage.ENGLISH) } returns session()
 
         useCase().test {
-            assertEquals(CaptionAvailability.Ready(CaptionLanguage.KOREAN), awaitItem().availability)
+            assertEquals(CaptionAvailability.Ready(CaptionLanguage.KOREAN), awaitItem().state.availability)
             station.value = enStation
-            assertEquals(CaptionAvailability.Ready(CaptionLanguage.ENGLISH), awaitItem().availability)
+            assertEquals(CaptionAvailability.Ready(CaptionLanguage.ENGLISH), awaitItem().state.availability)
             assertEquals(true, firstCancelled)
             cancelAndIgnoreRemainingEvents()
         }
         verify(exactly = 1) { captionRepository.liveCaptions(CaptionSubject.Station("en-station"), CaptionLanguage.ENGLISH) }
+    }
+
+    @Test
+    fun `Given 스테이션, Then 값에 그 스테이션 id 가 실린다`() = runTest {
+        enabled(false)
+        every { playerRepository.nowPlayingStation } returns flowOf(koStation)
+        every { captionRepository.modelState(CaptionLanguage.KOREAN) } returns flowOf(CaptionModelState.Installed)
+
+        useCase().test {
+            assertEquals("ko-station", awaitItem().stationId)
+            awaitComplete()
+        }
     }
 
     @Test

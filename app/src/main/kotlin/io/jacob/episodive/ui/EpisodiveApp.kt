@@ -300,6 +300,7 @@ fun EpisodiveApp(
                             onNowPlayingChange = { nowPlayingEpisodeId = it },
                             onIsPlayingChange = { isPlaying = it },
                             suppressed = suppressed,
+                            captionNoticeOwnedBySheet = showStationPlayer,
                         )
                     },
                     stationBar = {

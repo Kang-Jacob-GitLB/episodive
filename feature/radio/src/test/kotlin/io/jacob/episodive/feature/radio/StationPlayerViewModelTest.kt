@@ -6,6 +6,7 @@ import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.caption.CaptionToggleResult
 import io.jacob.episodive.core.domain.usecase.caption.ObserveCaptionDownloadFailuresUseCase
 import io.jacob.episodive.core.domain.usecase.caption.ObserveStationCaptionUseCase
+import io.jacob.episodive.core.domain.usecase.caption.StationCaption
 import io.jacob.episodive.core.domain.usecase.caption.ToggleCaptionUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
@@ -76,7 +77,7 @@ class StationPlayerViewModelTest {
     private val favorites = MutableStateFlow<List<Station>>(emptyList())
     private val stations = MutableStateFlow(listOf(a, b, c))
     private val sleepRemaining = MutableStateFlow<Long?>(null)
-    private val captionState = MutableStateFlow(LiveCaptionState.Initial)
+    private val captionState = MutableStateFlow(StationCaption(null, LiveCaptionState.Initial))
     private val captionFailures = MutableSharedFlow<CaptionDownloadFailure>(extraBufferCapacity = 1)
     private var captionSubscriptions = 0
 
@@ -445,7 +446,7 @@ class StationPlayerViewModelTest {
         val job = launchCollect(viewModel)
 
         assertEquals(0, captionSubscriptions)
-        assertEquals(LiveCaptionState.Initial, viewModel.caption.value)
+        assertEquals(LiveCaptionState.Initial, viewModel.caption.value.state)
 
         val captionJob = launchCollectCaption(viewModel)
         assertEquals(1, captionSubscriptions)
@@ -456,6 +457,7 @@ class StationPlayerViewModelTest {
     @Test
     fun `Given 모델 다운로드가 시작됨, When 자막 토글, Then 시작 effect 가 나간다`() = runTest {
         nowPlayingStation.value = a
+        captionState.value = StationCaption(a.id, LiveCaptionState.Initial)
         coEvery { toggleCaptionUseCase(any()) } returns CaptionToggleResult.DownloadStarted(1234L)
         val viewModel = createViewModel()
         val job = launchCollect(viewModel)
@@ -472,14 +474,17 @@ class StationPlayerViewModelTest {
     @Test
     fun `Given 지원하지 않는 언어, When 자막 토글, Then Unsupported effect 가 나간다`() = runTest {
         nowPlayingStation.value = a
+        captionState.value = StationCaption(a.id, LiveCaptionState.Initial)
         coEvery { toggleCaptionUseCase(any()) } returns CaptionToggleResult.UnsupportedLanguage
         val viewModel = createViewModel()
         val job = launchCollect(viewModel)
+        val captionJob = launchCollectCaption(viewModel)
         val effects = collectEffects(viewModel)
 
         viewModel.sendAction(StationPlayerAction.ToggleCaption)
 
         assertEquals(listOf<StationPlayerEffect>(StationPlayerEffect.CaptionUnsupported), effects)
+        captionJob.cancel()
         job.cancel()
     }
 
@@ -494,6 +499,23 @@ class StationPlayerViewModelTest {
         viewModel.sendAction(StationPlayerAction.ToggleCaption)
 
         coVerify(exactly = 0) { toggleCaptionUseCase(any()) }
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 자막이 아직 이전 스테이션의 값, When 자막 토글, Then 무시한다`() = runTest {
+        // 스테이션이 a 로 바뀌었지만 caption 은 아직 b 의 값이다.
+        nowPlayingStation.value = a
+        captionState.value = StationCaption(b.id, LiveCaptionState.Initial)
+        coEvery { toggleCaptionUseCase(any()) } returns CaptionToggleResult.Enabled
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+        val captionJob = launchCollectCaption(viewModel)
+
+        viewModel.sendAction(StationPlayerAction.ToggleCaption)
+
+        coVerify(exactly = 0) { toggleCaptionUseCase(any()) }
+        captionJob.cancel()
         job.cancel()
     }
 

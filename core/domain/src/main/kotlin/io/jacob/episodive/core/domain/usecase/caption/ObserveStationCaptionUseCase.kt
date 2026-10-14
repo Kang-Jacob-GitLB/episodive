@@ -29,7 +29,7 @@ class ObserveStationCaptionUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val captionRepository: CaptionRepository,
 ) {
-    operator fun invoke(): Flow<LiveCaptionState> {
+    operator fun invoke(): Flow<StationCaption> {
         val isEnabled = userRepository.getUserData().map { it.isCaptionEnabled }.distinctUntilChanged()
         val station = playerRepository.nowPlayingStation
             .map { it?.id to it?.language }
@@ -37,7 +37,9 @@ class ObserveStationCaptionUseCase @Inject constructor(
 
         return combine(isEnabled, station) { enabled, (id, language) -> Triple(enabled, id, language) }
             .distinctUntilChanged()
-            .flatMapLatest { (enabled, id, language) -> observe(enabled, id, language) }
+            .flatMapLatest { (enabled, id, language) ->
+                observe(enabled, id, language).map { StationCaption(stationId = id, state = it) }
+            }
     }
 
     private fun observe(isEnabled: Boolean, stationId: String?, language: String?): Flow<LiveCaptionState> {
@@ -56,3 +58,14 @@ class ObserveStationCaptionUseCase @Inject constructor(
         }
     }
 }
+
+/**
+ * [state] 가 어느 스테이션의 것인지 함께 싣는다. 스테이션이 바뀐 직후에는 새 값이 오기 전까지 이전 스테이션의
+ * 값이 남아 있으므로, 토글처럼 값으로 판정하는 쪽은 id 가 지금 스테이션과 같을 때만 믿어야 한다.
+ *
+ * @param stationId 스테이션이 없으면 null.
+ */
+data class StationCaption(
+    val stationId: String?,
+    val state: LiveCaptionState,
+)

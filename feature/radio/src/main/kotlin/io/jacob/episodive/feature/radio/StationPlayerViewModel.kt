@@ -12,6 +12,7 @@ import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.caption.CaptionToggleResult
 import io.jacob.episodive.core.domain.usecase.caption.ObserveCaptionDownloadFailuresUseCase
 import io.jacob.episodive.core.domain.usecase.caption.ObserveStationCaptionUseCase
+import io.jacob.episodive.core.domain.usecase.caption.StationCaption
 import io.jacob.episodive.core.domain.usecase.caption.ToggleCaptionUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
@@ -173,10 +174,10 @@ class StationPlayerViewModel @Inject constructor(
         )
 
     /**
-     * 자막 상태. `state` 에 끼우지 않는다 — 시트가 이 StateFlow 를 수집하는 동안만 인식이 돈다. 시트가 닫히면
+     * 자막 상태(스테이션 id 가 붙는다). `state` 에 끼우지 않는다 — 시트가 이 StateFlow 를 수집하는 동안만 인식이 돈다. 시트가 닫히면
      * `WhileSubscribed(5s)` 뒤 세션이 끝난다. 토글은 에피소드와 공유하는 `isCaptionEnabled` 하나다.
      */
-    val caption: StateFlow<LiveCaptionState> = observeStationCaptionUseCase()
+    val caption: StateFlow<StationCaption> = observeStationCaptionUseCase()
         // catch 로 끝내면 토글이 죽는다(저장값은 켜짐인데 화면은 꺼짐으로 굳는다). 짧은 백오프로 재구독하며,
         // stateIn 이 재시도 대기 중에도 마지막 값을 들고 있다.
         .retryWhen { cause, attempt ->
@@ -188,7 +189,7 @@ class StationPlayerViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = LiveCaptionState.Initial,
+            initialValue = StationCaption(stationId = null, state = LiveCaptionState.Initial),
         )
 
     private val _action = MutableSharedFlow<StationPlayerAction>(extraBufferCapacity = 1)
@@ -248,11 +249,13 @@ class StationPlayerViewModel @Inject constructor(
         ring.neighbor(anchorId, delta)?.let { stationPlaybackController.play(it.id) }
     }
 
-    // 받는 중에는 caption 이 이전 스테이션의 것이라 토글 판정이 어긋난다. 무시한다.
+    // 받는 중이거나 caption 이 아직 이전 스테이션의 값이면 토글 판정이 어긋난다. 무시한다.
     private fun toggleCaption() {
-        if ((state.value as? StationPlayerState.Active)?.isPending != false) return
+        val active = state.value as? StationPlayerState.Active ?: return
+        val current = caption.value
+        if (active.isPending || current.stationId != active.station.id) return
         viewModelScope.launch {
-            when (val result = toggleCaptionUseCase(caption.value)) {
+            when (val result = toggleCaptionUseCase(current.state)) {
                 is CaptionToggleResult.DownloadStarted ->
                     _effect.emit(StationPlayerEffect.CaptionDownloadStarted(result.sizeBytes))
 
