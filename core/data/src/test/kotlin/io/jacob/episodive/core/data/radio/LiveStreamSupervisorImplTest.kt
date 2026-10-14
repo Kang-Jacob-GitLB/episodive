@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import io.jacob.episodive.core.data.util.NetworkMonitor
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.repository.StationRepository
+import io.jacob.episodive.core.domain.usecase.player.RestoreLastPlayStateUseCase
 import io.jacob.episodive.core.model.Playback
 import io.jacob.episodive.core.model.PlaybackFailure
 import io.jacob.episodive.core.model.PlaybackFailure.Cause
@@ -65,12 +66,16 @@ class LiveStreamSupervisorImplTest {
         every { playerRepository.restartStation(any(), any()) } returns true
         every { playerRepository.stopStation(any()) } returns true
         coEvery { stationRepository.resolveStreamUrl(any(), any()) } returns hlsStreamTestData
+        coEvery { restoreLastPlayState() } returns true
     }
+
+    private val restoreLastPlayState = mockk<RestoreLastPlayStateUseCase>()
 
     private fun TestScope.supervisor() = LiveStreamSupervisorImpl(
         playerRepository = playerRepository,
         stationRepository = stationRepository,
         networkMonitor = networkMonitor,
+        restoreLastPlayState = restoreLastPlayState,
         scope = backgroundScope,
         mainDispatcher = dispatcher,
     ).also { it.start() }
@@ -371,6 +376,29 @@ class LiveStreamSupervisorImplTest {
         dispatcher.scheduler.runCurrent()
 
         verify(exactly = 0) { playerRepository.restartStation(any(), any()) }
+    }
+
+    @Test
+    fun `Given stopStation 성공, When giving up, Then 마지막 에피소드 복원을 요청한다`() = runTest {
+        coEvery { stationRepository.resolveStreamUrl(any(), any()) } returns null
+        val supervisor = supervisor()
+
+        fail(Cause.Gone)
+        dispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) { restoreLastPlayState() }
+    }
+
+    @Test
+    fun `Given stopStation returns false, When giving up, Then 복원하지 않는다`() = runTest {
+        coEvery { stationRepository.resolveStreamUrl(any(), any()) } returns null
+        every { playerRepository.stopStation(any()) } returns false
+        val supervisor = supervisor()
+
+        fail(Cause.Gone)
+        dispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 0) { restoreLastPlayState() }
     }
 
     @Test
