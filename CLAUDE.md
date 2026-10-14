@@ -271,6 +271,20 @@ Room 왕복과 `flowOn(IO)` 를 거쳐 `progress` 보다 늦게 도착한다. �
   - STT 도 구간이 바뀔 때마다 비우지 않는다. **flush(시크·EOS·리셋)로 열린 구간만 비우고,
     오버런(`PcmChunk.isContinuation`)은 stream·tracker 만 새로 열고 흘러가던 줄을 확정으로 남긴다.**
     저사양 기기에서 인식이 실시간을 못 따라가면 링(약 11초)이 넘칠 때마다 커버 전체가 사라진다.
+- **라디오(스테이션) 자막도 같은 엔진·모델·롤링 표시를 쓴다**(`ObserveStationCaptionUseCase`,
+  `StationPlayerSheet`).
+  - **스테이션 구분은 `nowPlayingStation.id` 로만 한다.** 입력은 공유 토글과 `nowPlayingStation` 의
+    (id, language) 뿐이다 — `progress`·`nowPlaying` 과 combine 하지 마라. 같은 id 가 다시 발행되면
+    (감독자 재시작) 쌍이 같아 세션이 유지된다. 화면은 `LiveCaption.subject ==
+    CaptionSubject.Station(station.id)` 일 때만 그린다(받는 중에는 caption 이 이전 스테이션의 것이다).
+  - **토글은 에피소드와 공유한다.** `isCaptionEnabled` 하나, `ToggleCaptionUseCase` 그대로다. 별도
+    스테이션 토글을 만들지 마라.
+  - **자막 대상 여부는 `Station.language`(BCP-47)로 정한다.** 영어 방송은 `en`, 나머지는 `ko`.
+    음악 채널처럼 받아쓸 말이 없는 방송은 `language = null` 로만 끈다(→ `Unsupported`).
+  - **엔진 락을 빼지 마라.** 에피소드 시트와 스테이션 시트의 ViewModel 은 서로를 기다리지 않아 앞
+    세션의 `WhileSubscribed(5s)` 꼬리와 새 세션이 겹친다.
+  - `StationPlayerViewModel.caption` 은 `state` 에 끼우지 않고 시트만 수집한다. 시트가 같은 안내를
+    띄우므로 `PlayerBar` 의 자막 이펙트는 스테이션이 올라 있는 동안(`suppressed`) 띄우지 않는다.
 - 네이티브 `.so`(onnxruntime, ML Kit)는 APK 에 들어 있어야 한다. Play 는 스토어 밖에서 받은
   실행 코드를 금지한다. 런타임에 받는 것은 모델(데이터)뿐이다. APK 는 ABI 별로 나눠
   (`splits.abi`) 릴리즈도 ABI 별로 올린다(`publish.yml`).

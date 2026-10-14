@@ -33,14 +33,18 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationSchedule
+import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.testing.model.bareOnAirProgramTestData
 import io.jacob.episodive.core.testing.model.codecOnlyStationDetailsTestData
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
+import io.jacob.episodive.core.testing.model.liveCaptionTestData
 import io.jacob.episodive.core.testing.model.onAirProgramTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
 import io.jacob.episodive.core.testing.model.stationDetailsTestData
+import io.jacob.episodive.core.testing.model.stationLiveCaptionTestData
 import io.jacob.episodive.core.ui.StationCoverImageTag
+import io.jacob.episodive.core.ui.caption.CaptionButtonState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -82,6 +86,9 @@ class StationPlayerScreenTest {
         details: StationDetailsOf? = null,
         onAir: OnAirOf? = null,
         schedule: ScheduleOf? = null,
+        liveCaption: LiveCaption? = null,
+        captionButtonState: CaptionButtonState = CaptionButtonState.Inactive,
+        onToggleCaption: () -> Unit = {},
         uriHandler: UriHandler = FakeUriHandler(),
     ) {
         composeTestRule.setContent {
@@ -92,6 +99,9 @@ class StationPlayerScreenTest {
                         details = details,
                         onAir = onAir,
                         schedule = schedule,
+                        liveCaption = { liveCaption },
+                        captionButtonState = { captionButtonState },
+                        onToggleCaption = onToggleCaption,
                         onPlayOrPause = onPlayOrPause,
                         onStop = onStop,
                         onToggleFavorite = onToggleFavorite,
@@ -121,6 +131,49 @@ class StationPlayerScreenTest {
         startMillis = LocalDateTime.of(2026, 10, 14, 9, 0).atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli(),
         endMillis = LocalDateTime.of(2026, 10, 14, 11, 0).atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli(),
     )
+
+    @Test
+    fun `Given 지금 스테이션의 자막, Then 커버 위에 그린다`() {
+        val caption = stationLiveCaptionTestData(activeState.station.id)
+        setScreen(liveCaption = caption)
+
+        composeTestRule.onNodeWithText(caption.lines.last().text, substring = true).assertExists()
+    }
+
+    @Test
+    fun `Given 다른 스테이션의 자막, Then 그리지 않는다`() {
+        // 받는 중에는 caption 이 이전 스테이션의 것이다. subject 로 걸러야 한다.
+        val caption = stationLiveCaptionTestData("other-station")
+        setScreen(liveCaption = caption)
+
+        composeTestRule.onNodeWithText(caption.lines.last().text, substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Given 에피소드 자막, Then 그리지 않는다`() {
+        val caption = liveCaptionTestData
+        setScreen(liveCaption = caption)
+
+        composeTestRule.onNodeWithText(caption.lines.last().text, substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Given 자막이 꺼져 있음, Then 켜기 설명의 토글이 보이고 누르면 콜백이 불린다`() {
+        var toggled = 0
+        setScreen(captionButtonState = CaptionButtonState.Inactive, onToggleCaption = { toggled++ })
+
+        val turnOn = context.getString(uiR.string.core_ui_caption_turn_on)
+        composeTestRule.onNodeWithContentDescription(turnOn).assertIsDisplayed().performClick()
+
+        assertEquals(1, toggled)
+    }
+
+    @Test
+    fun `Given 자막이 켜져 있음, Then 끄기 설명의 토글이 보인다`() {
+        setScreen(captionButtonState = CaptionButtonState.Active)
+
+        composeTestRule.onNodeWithContentDescription(context.getString(uiR.string.core_ui_caption_turn_off)).assertIsDisplayed()
+    }
 
     @Test
     fun `Given 지금 스테이션의 프로그램, Then 제목과 진행자와 방송 시간이 보이고 이미지를 요청한다`() {

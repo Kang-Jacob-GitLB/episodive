@@ -175,8 +175,10 @@ fun PlayerBar(
                     }
                 }
 
+                // 자막 토글은 라디오 시트도 갖는다. 스테이션이 올라 있는 동안(suppressed) 그 시트가 같은 안내를
+                // 띄우므로 여기서 또 띄우면 겹친다.
                 is PlayerEffect.CaptionDownloadStarted -> {
-                    if (!isShowPlayer) {
+                    if (!isShowPlayer && !currentSuppressed) {
                         val message = String.format(
                             captionDownloadStartedPattern,
                             Formatter.formatShortFileSize(context, effect.sizeBytes),
@@ -186,11 +188,11 @@ fun PlayerBar(
                 }
 
                 is PlayerEffect.CaptionUnsupported -> {
-                    if (!isShowPlayer) onShowSnackbar(captionUnsupportedMessage, null)
+                    if (!isShowPlayer && !currentSuppressed) onShowSnackbar(captionUnsupportedMessage, null)
                 }
 
                 is PlayerEffect.CaptionDownloadFailed -> {
-                    if (!isShowPlayer) {
+                    if (!isShowPlayer && !currentSuppressed) {
                         val message = when (effect.reason) {
                             CaptionDownloadFailure.Reason.NETWORK -> captionFailedNetworkMessage
                             CaptionDownloadFailure.Reason.STORAGE -> captionFailedStorageMessage

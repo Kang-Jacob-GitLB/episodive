@@ -1,5 +1,6 @@
 package io.jacob.episodive.feature.radio
 
+import android.text.format.Formatter
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -35,6 +36,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -54,6 +56,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
@@ -87,6 +90,9 @@ import io.jacob.episodive.core.model.SLEEP_TIMER_FADE_OUT_MS
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.art
+import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
+import io.jacob.episodive.core.model.caption.CaptionSubject
+import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
@@ -95,6 +101,10 @@ import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.SleepTimerSheet
 import io.jacob.episodive.core.ui.CardSection
 import io.jacob.episodive.core.ui.StationCover
+import io.jacob.episodive.core.ui.caption.CaptionButtonState
+import io.jacob.episodive.core.ui.caption.CaptionToggleButton
+import io.jacob.episodive.core.ui.caption.RollingCaptionOverlay
+import io.jacob.episodive.core.ui.caption.toCaptionButtonState
 import kotlinx.coroutines.launch
 import io.jacob.episodive.core.ui.R as uiR
 
@@ -130,11 +140,41 @@ fun StationPlayerSheet(
     val details by viewModel.details.collectAsStateWithLifecycle()
     val onAir by viewModel.onAir.collectAsStateWithLifecycle()
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
+    // State 를 그대로 들고 있다가 자막을 그리는 자리에서만 읽는다. 매 단어(partial)마다 시트 전체가 재구성되지 않는다.
+    val caption = viewModel.caption.collectAsStateWithLifecycle()
     val currentOnDismiss by rememberUpdatedState(onDismiss)
 
     // 정지·감독자 포기·에피소드 전환·재시작 등 스테이션이 사라지는 모든 경로를 여기서 한 번에 받는다.
     LaunchedEffect(state is StationPlayerState.Hidden) {
         if (state is StationPlayerState.Hidden) currentOnDismiss()
+    }
+
+    val context = LocalContext.current
+    val captionDownloadStartedPattern = stringResource(uiR.string.core_ui_caption_download_started)
+    val captionUnsupportedMessage = stringResource(R.string.feature_radio_caption_unsupported)
+    val captionFailedNetworkMessage = stringResource(uiR.string.core_ui_caption_download_failed_network)
+    val captionFailedStorageMessage = stringResource(uiR.string.core_ui_caption_download_failed_storage)
+    val captionFailedCorruptMessage = stringResource(uiR.string.core_ui_caption_download_failed_corrupt)
+    val captionFailedUnloadableMessage = stringResource(uiR.string.core_ui_caption_download_failed_unloadable)
+    LaunchedEffect(viewModel) {
+        viewModel.effect.collect { effect ->
+            val message = when (effect) {
+                is StationPlayerEffect.CaptionDownloadStarted -> String.format(
+                    captionDownloadStartedPattern,
+                    Formatter.formatShortFileSize(context, effect.sizeBytes),
+                )
+
+                StationPlayerEffect.CaptionUnsupported -> captionUnsupportedMessage
+                is StationPlayerEffect.CaptionDownloadFailed -> when (effect.reason) {
+                    CaptionDownloadFailure.Reason.NETWORK -> captionFailedNetworkMessage
+                    CaptionDownloadFailure.Reason.STORAGE -> captionFailedStorageMessage
+                    CaptionDownloadFailure.Reason.CORRUPT -> captionFailedCorruptMessage
+                    CaptionDownloadFailure.Reason.UNLOADABLE -> captionFailedUnloadableMessage
+                }
+            }
+            // 스낵바가 끝나길 기다리면 뒤따르는 이벤트가 줄을 선다.
+            scope.launch { snackbarHostState.showSnackbar(message = message, duration = SnackbarDuration.Short) }
+        }
     }
 
     // 마운트 시점 값을 기준으로 이후 증가분에만 반응한다. 시트를 막 연 직후 지난 신호로 닫히면 안 된다.
@@ -176,6 +216,9 @@ fun StationPlayerSheet(
                 details = details,
                 onAir = onAir,
                 schedule = schedule,
+                liveCaption = { caption.value.caption },
+                captionButtonState = { caption.value.toCaptionButtonState() },
+                onToggleCaption = { viewModel.sendAction(StationPlayerAction.ToggleCaption) },
                 onCollapse = { hideThen {} },
                 onPlayOrPause = { viewModel.sendAction(StationPlayerAction.PlayOrPause) },
                 onPrevious = { viewModel.sendAction(StationPlayerAction.Previous) },
@@ -202,6 +245,9 @@ internal fun StationPlayerScreen(
     details: StationDetailsOf? = null,
     onAir: OnAirOf? = null,
     schedule: ScheduleOf? = null,
+    liveCaption: () -> LiveCaption? = { null },
+    captionButtonState: () -> CaptionButtonState = { CaptionButtonState.Inactive },
+    onToggleCaption: () -> Unit = {},
     onCollapse: () -> Unit = {},
     onPlayOrPause: () -> Unit = {},
     onPrevious: () -> Unit = {},
@@ -285,6 +331,15 @@ internal fun StationPlayerScreen(
                                     .clip(EpisodiveShapes.playerCover),
                                 station = station,
                                 imageUrl = program?.imageUrl,
+                            )
+
+                            // 분기 없이 늘 부른다 — 조건부로 부르면 페이드가 사라진다. 다른 스테이션(또는 받는 중 이전
+                            // 스테이션)의 자막은 subject 로 걸러 그리지 않는다. 람다로만 읽어 재구성을 이 안에 가둔다.
+                            RollingCaptionOverlay(
+                                modifier = Modifier.matchParentSize(),
+                                caption = liveCaption()?.takeIf {
+                                    it.subject == CaptionSubject.Station(station.id) && it.lines.isNotEmpty()
+                                },
                             )
                         }
                     }
@@ -396,6 +451,8 @@ internal fun StationPlayerScreen(
                         state = state,
                         onToggleFavorite = onToggleFavorite,
                         onSleepTimer = { showSleepTimerSheet = true },
+                        captionButtonState = captionButtonState,
+                        onToggleCaption = onToggleCaption,
                         onStop = onStop,
                         onOpenStationList = onOpenStationList,
                     )
@@ -522,6 +579,8 @@ private fun StationControlBar(
     state: StationPlayerState.Active,
     onToggleFavorite: () -> Unit,
     onSleepTimer: () -> Unit,
+    captionButtonState: () -> CaptionButtonState,
+    onToggleCaption: () -> Unit,
     onStop: () -> Unit,
     onOpenStationList: () -> Unit,
     modifier: Modifier = Modifier,
@@ -595,6 +654,12 @@ private fun StationControlBar(
                         tint = moonTint,
                     )
                 },
+            )
+
+            CaptionToggleButton(
+                modifier = Modifier.weight(1f),
+                buttonState = captionButtonState,
+                onClick = onToggleCaption,
             )
 
             EpisodiveIconButton(

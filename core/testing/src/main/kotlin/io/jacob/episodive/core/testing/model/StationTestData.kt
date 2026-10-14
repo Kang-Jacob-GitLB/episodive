@@ -11,6 +11,7 @@ val radioStationTestData = Station(
     broadcaster = "TEST",
     kind = StationKind.RADIO,
     region = null,
+    language = "ko",
 )
 
 val regionalRadioStationTestData = Station(
@@ -19,6 +20,7 @@ val regionalRadioStationTestData = Station(
     broadcaster = "TEST",
     kind = StationKind.RADIO,
     region = "부산",
+    language = "ko",
 )
 
 /** 같은 방송사(KBS)의 전국 방송 두 개. 방송사 안 이니셜·색 규칙을 보는 테스트가 쓴다. */
@@ -28,6 +30,7 @@ val kbsFirstRadioStationTestData = Station(
     broadcaster = "KBS",
     kind = StationKind.RADIO,
     region = null,
+    language = "ko",
 )
 
 val kbsHappyRadioStationTestData = Station(
@@ -36,6 +39,7 @@ val kbsHappyRadioStationTestData = Station(
     broadcaster = "KBS",
     kind = StationKind.RADIO,
     region = null,
+    language = "ko",
 )
 
 val seoulRegionalRadioStationTestData = Station(
@@ -44,6 +48,7 @@ val seoulRegionalRadioStationTestData = Station(
     broadcaster = "마포FM",
     kind = StationKind.RADIO,
     region = "서울",
+    language = "ko",
 )
 
 val daeguRegionalRadioStationTestData = Station(
@@ -52,6 +57,7 @@ val daeguRegionalRadioStationTestData = Station(
     broadcaster = "성서공동체FM",
     kind = StationKind.RADIO,
     region = "대구",
+    language = "ko",
 )
 
 val tvStationTestData = Station(
@@ -60,6 +66,7 @@ val tvStationTestData = Station(
     broadcaster = "TEST",
     kind = StationKind.TV,
     region = null,
+    language = "ko",
 )
 
 val stationTestData = listOf(
