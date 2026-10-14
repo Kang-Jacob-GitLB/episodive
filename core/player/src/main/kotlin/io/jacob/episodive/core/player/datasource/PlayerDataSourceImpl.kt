@@ -31,6 +31,7 @@ import io.jacob.episodive.core.model.coverUrl
 import io.jacob.episodive.core.model.mapper.toDurationMillis
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -43,6 +44,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
@@ -85,6 +87,12 @@ class PlayerDataSourceImpl @Inject constructor(
     // 다시 붙을지를 가른다. 다른 스테이션으로 바뀔 때만 푼다 — 멈춘 채 복구(restartStation)가 같은
     // 항목을 다시 올려도 transition 이 나므로, 그때 풀면 재개 시 복구 시점의 버퍼부터 흐른다.
     private var stationStale = false
+
+    // 라이브 에피소드가 BEHIND_LIVE_WINDOW 로 떨어져 연달아 재합류한 횟수. READY 가 [StableReadyMillis]
+    // 동안 이어지거나 항목이 바뀌거나 상한에 닿아 포기하면 푼다. READY 즉시 풀면 "잠깐 재생 → 다시
+    // 오류" 순환이 상한을 피하므로 한동안 버텨야 한다(스테이션 감독자의 예산 복구와 같은 이유).
+    private var liveRejoinCount = 0
+    private var liveRejoinResetJob: Job? = null
 
     private val listener = object : Player.Listener {
         override fun onTimelineChanged(timeline: Timeline, reason: Int) {
@@ -140,6 +148,8 @@ class PlayerDataSourceImpl @Inject constructor(
             if (station?.id != _nowPlayingStation.value?.id) stationStale = false
             _nowPlayingStation.value = station
             _streamTitle.value = null
+            liveRejoinResetJob?.cancel()
+            liveRejoinCount = 0
             // 스테이션은 반복을 적용하지 않는다. 반복 모드가 켜져 있으면 스트림이 끊겨도 ENDED 가 아니라
             // 같은 항목의 재연결 루프(REPEAT)가 돼 Ended 실패가 나지 않는다. 사용자 값은 _repeat 에
             // 보존해 두었다가 에피소드로 돌아올 때 되돌린다. 라이브 에피소드는 반복을 그대로 둔다 —
@@ -213,6 +223,7 @@ class PlayerDataSourceImpl @Inject constructor(
         override fun onPlaybackStateChanged(playbackState: Int) {
             _playback.value = playbackState
             updateLiveState()
+            scheduleLiveRejoinReset(playbackState == Player.STATE_READY)
             _isBuffering.value = player.isBufferingToPlay()
             when (playbackState) {
                 Player.STATE_IDLE -> Timber.d("STATE_IDLE")
@@ -272,6 +283,7 @@ class PlayerDataSourceImpl @Inject constructor(
 
         override fun onPlayerError(error: PlaybackException) {
             Timber.e("errorCode: ${error.errorCode}, errorCodeName: ${error.errorCodeName}, message: ${error.message}, cause: ${error.cause}")
+            if (rejoinLiveEpisode(error)) return
             _failures.tryEmit(error.toFailure(player.currentMediaItem))
         }
 
@@ -452,6 +464,47 @@ class PlayerDataSourceImpl @Inject constructor(
             player.seekToDefaultPosition()
             player.prepare()
         }
+    }
+
+    /**
+     * READY 가 [StableReadyMillis] 이어지면 재합류 횟수를 푼다. READY 가 흔들리면(다른 상태가 오면)
+     * 대기를 취소한다. 카운터는 메인 스레드에서만 만지므로 Main 에서 돌린다.
+     */
+    private fun scheduleLiveRejoinReset(ready: Boolean) {
+        liveRejoinResetJob?.cancel()
+        liveRejoinResetJob = null
+        if (!ready || liveRejoinCount == 0) return
+        liveRejoinResetJob = scope.launch(Dispatchers.Main) {
+            delay(StableReadyMillis)
+            liveRejoinCount = 0
+        }
+    }
+
+    /**
+     * 라이브 에피소드가 창 밖으로 밀려 난 오류(BEHIND_LIVE_WINDOW)를 라이브 엣지에 재합류해 푼다.
+     * media3 가 권하는 복구(`seekToDefaultPosition` + `prepare`)다. 스테이션은 감독자
+     * (`LiveStreamSupervisor`)의 몫이라 여기서 건드리지 않는다.
+     *
+     * 이 오류는 탐색 창이 있는 미디어에서만 나므로, 라이브 판정([isLiveEpisode])이 아직 안 선
+     * 시점(준비 전 placeholder 창)의 오류도 라이브의 증거로 본다. 저장 위치 복원이 창 밖으로
+     * seek 한 경우가 그렇다. playWhenReady 는 건드리지 않아 재생 의도가 유지된다.
+     *
+     * 상한([MaxLiveRejoin])을 넘으면 처리하지 않고 false 를 돌려 일반 실패로 흘린다.
+     *
+     * @return 복구를 시작했으면 true. 이때는 실패를 내보내지 않는다.
+     */
+    private fun rejoinLiveEpisode(error: PlaybackException): Boolean {
+        if (error.errorCode != PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) return false
+        if (currentEpisode() == null) return false
+        if (liveRejoinCount >= MaxLiveRejoin) {
+            // 포기한다. 남겨 두면 외부(알림·Auto)가 다시 prepare 해도 영영 재합류하지 못한다.
+            liveRejoinCount = 0
+            return false
+        }
+        liveRejoinCount++
+        player.seekToDefaultPosition()
+        player.prepare()
+        return true
     }
 
     /**
@@ -1142,3 +1195,9 @@ class PlayerDataSourceImpl @Inject constructor(
 
 /** 알림 아트 캐시의 상한. 카탈로그 크기(36) 안팎이라 넘지 않는 안전장치다. */
 private const val StationArtworkCacheMax = 36
+
+/** 라이브 에피소드가 BEHIND_LIVE_WINDOW 로 연달아 재합류하는 횟수의 상한. */
+private const val MaxLiveRejoin = 3
+
+/** READY 가 이만큼 이어져야 재합류 횟수를 푼다. 스테이션 감독자의 STABLE_PLAYBACK_MILLIS 와 같다. */
+private const val StableReadyMillis = 30_000L
