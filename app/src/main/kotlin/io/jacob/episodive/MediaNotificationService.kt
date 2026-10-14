@@ -148,10 +148,10 @@ class MediaNotificationService : MediaSessionService() {
     }
 
     /**
-     * 재생 중인 스테이션의 프로그램 제목. 일시정지 중에는 구독하지 않는다 — 멈춘 위젯 제목 때문에 편성 루프(5분 TTL
+     * 재생 중인 스테이션의 프로그램 제목과 이미지 주소. 일시정지 중에는 구독하지 않는다 — 멈춘 위젯 제목 때문에 편성 루프(5분 TTL
      * 재조회)를 돌릴 이유가 없고, 다시 재생하면 그때 현재 제목을 새로 받는다.
      */
-    private fun currentProgramTitleFlow(): Flow<String?> =
+    private fun currentProgramTitleFlow(): Flow<Pair<String?, String?>> =
         combine(
             playerRepository.nowPlayingStation,
             playerRepository.isPlaying,
@@ -161,7 +161,7 @@ class MediaNotificationService : MediaSessionService() {
                 if (station == null) {
                     emptyFlow()
                 } else {
-                    observeOnAirProgramUseCase(station.id, includeSong = false).map { it?.title }
+                    observeOnAirProgramUseCase(station.id, includeSong = false).map { it?.title to it?.imageUrl }
                 }
             }
             .distinctUntilChanged()

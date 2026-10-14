@@ -46,13 +46,17 @@ class WidgetDataReaderImpl @Inject constructor(
         userRepository.getLastPlayState()?.episodeId
             ?.let { episodeRepository.getEpisodeById(it).first() }
 
-    /** [programTitle] 을 알면 방송사 대신 부제로 쓴다. */
-    private fun Station.toSnapshot(isPlaying: Boolean, programTitle: String? = null) = NowPlayingSnapshot(
+    /** [programTitle] 을 알면 방송사 대신 부제로, [programImageUrl] 을 알면 이니셜 아트 대신 썸네일로 쓴다. */
+    private fun Station.toSnapshot(
+        isPlaying: Boolean,
+        programTitle: String? = null,
+        programImageUrl: String? = null,
+    ) = NowPlayingSnapshot(
         episodeId = null,
         podcastId = null,
         title = name,
         feedTitle = programTitle ?: broadcaster,
-        imageUrl = null,
+        imageUrl = programImageUrl,
         isPlaying = isPlaying,
         stationId = id,
         stationArt = art,
@@ -85,23 +89,30 @@ class WidgetDataReaderImpl @Inject constructor(
         // 스테이션 여부는 nowPlayingStation 하나로만 판정한다(nowPlaying 과 combine 하지 않는다).
         playerRepository.nowPlayingStation.flatMapLatest { station ->
             if (station != null) {
-                // streamTitle·곡은 싣지 않는다. 곡마다 스냅샷이 바뀌어 위젯 갱신이 폭주한다. 프로그램 제목은 프로그램
+                // streamTitle·곡은 싣지 않는다. 곡마다 스냅샷이 바뀌어 위젯 갱신이 폭주한다. 프로그램 제목·이미지는 프로그램
                 // 경계에서만 바뀌므로 싣는다. 재생 중인 항목(MediaItem)은 건드리지 않고 이 스냅샷만 갱신한다.
                 // 네트워크로 받는 값이라 첫 값을 기다리지 않게 null 로 시작한다.
                 combine(
                     playerRepository.isPlaying,
                     observeOnAirProgram(station.id, includeSong = false).onStart { emit(null) },
-                ) { isPlaying, program -> station.toSnapshot(isPlaying, program?.title?.takeIf { it.isNotBlank() }) }
+                ) { isPlaying, program ->
+                    station.toSnapshot(
+                        isPlaying = isPlaying,
+                        programTitle = program?.title?.takeIf { it.isNotBlank() },
+                        programImageUrl = program?.imageUrl?.takeIf { it.isNotBlank() },
+                    )
+                }
             } else {
                 episodeNowPlayingFlow()
             }
         }.distinctUntilChanged { old, new ->
-            // 재생 위치(progress) 재방출 폭주 차단: 에피소드/스테이션/재생상태/팟캐스트명이 같으면 무시.
+            // 재생 위치(progress) 재방출 폭주 차단: 에피소드/스테이션/재생상태/팟캐스트명/이미지가 같으면 무시.
             // feedTitle 은 팟캐스트 비동기 로드로 뒤늦게 채워질 수 있으므로 비교에 포함한다.
             old?.episodeId == new?.episodeId &&
                 old?.stationId == new?.stationId &&
                 old?.isPlaying == new?.isPlaying &&
-                old?.feedTitle == new?.feedTitle
+                old?.feedTitle == new?.feedTitle &&
+                old?.imageUrl == new?.imageUrl
         }
 
     private fun episodeNowPlayingFlow(): Flow<NowPlayingSnapshot?> =

@@ -72,16 +72,14 @@ class EpisodiveWidget : GlanceAppWidget() {
             val artKey = artUrl to nowPlayingPx
             val isStation = snapshot?.isStation == true
             val artworkLoaded by produceState<ArtworkResult?>(null, artUrl, nowPlayingPx, isStation) {
-                // 스테이션은 비트맵도 Palette 추출도 없다. 배경은 아래에서 이니셜 아트 색으로 정한다.
-                if (isStation) {
-                    value = null
-                    return@produceState
-                }
                 val bitmap = artUrl?.let {
                     WidgetImageLoader.loadWidgetBitmap(context, it, nowPlayingPx)
                 }
-                val colors = withContext(Dispatchers.Default) {
-                    WidgetColorExtractor.colors(bitmap)
+                // 스테이션 배경은 아래에서 이니셜 아트 색으로 정하므로 Palette 를 돌리지 않는다.
+                val colors = if (isStation) {
+                    WidgetColorExtractor.colors(null)
+                } else {
+                    withContext(Dispatchers.Default) { WidgetColorExtractor.colors(bitmap) }
                 }
                 value = ArtworkResult(artKey, bitmap, colors)
             }
