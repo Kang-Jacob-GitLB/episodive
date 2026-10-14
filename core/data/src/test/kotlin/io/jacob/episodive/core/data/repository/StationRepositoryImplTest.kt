@@ -616,7 +616,8 @@ class StationRepositoryImplTest {
 
     @Test
     fun `Given song program start 이전 기록, When observeOnAir, Then song dropped`() = runTest {
-        nowMillis = tenAm
+        // 기록은 시작 1분 전, 지금은 시작 2분 뒤 — 10분 만료가 아니라 시작 조건만으로 버려진다.
+        nowMillis = morning.startMillis!! + 2 * minute
         coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(morning)
         coEvery { onAirDataSource.currentSong(any()) } returns songLog("앞 프로그램 곡", morning.startMillis!! - minute)
 
@@ -827,6 +828,40 @@ class StationRepositoryImplTest {
 
         onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
             assertEquals("앞", awaitItem()?.title)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given yesterday cache with program spanning midnight and fetch fails, When observeOnAir, Then that program is kept`() = runTest {
+        nowMillis = tenAm
+        val overnight = onAirProgramTestData("밤샘", tenAm - hour, tenAm + 26 * hour)
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(overnight)
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        nowMillis = tenAm + 24 * hour
+        coEvery { onAirDataSource.schedule(any(), any()) } throws IOException("down")
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            assertEquals("밤샘", awaitItem()?.title)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given near midnight, When observeSchedule, Then re-emits right after midnight with new day start`() = runTest {
+        nowMillis = dayStart + 24 * hour - 2 * minute
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(
+            onAirProgramTestData("밤", dayStart + 23 * hour, dayStart + 26 * hour),
+        )
+
+        onAirRepository.observeSchedule(kbsFirstRadioStationTestData.id).test {
+            assertEquals(dayStart, awaitItem().dayStartMillis)
+            // TTL(5분)이 아니라 자정에 맞춰 깬다.
+            advance(2 * minute)
+            assertEquals(dayStart + 24 * hour, awaitItem().dayStartMillis)
             cancelAndIgnoreRemainingEvents()
         }
     }

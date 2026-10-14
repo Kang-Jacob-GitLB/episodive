@@ -36,6 +36,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -146,8 +147,16 @@ class MediaNotificationService : MediaSessionService() {
         }
     }
 
+    /**
+     * 재생 중인 스테이션의 프로그램 제목. 일시정지 중에는 구독하지 않는다 — 멈춘 위젯 제목 때문에 편성 루프(5분 TTL
+     * 재조회)를 돌릴 이유가 없고, 다시 재생하면 그때 현재 제목을 새로 받는다.
+     */
     private fun currentProgramTitleFlow(): Flow<String?> =
-        playerRepository.nowPlayingStation
+        combine(
+            playerRepository.nowPlayingStation,
+            playerRepository.isPlaying,
+        ) { station, isPlaying -> station?.takeIf { isPlaying } }
+            .distinctUntilChanged()
             .flatMapLatest { station ->
                 if (station == null) {
                     emptyFlow()

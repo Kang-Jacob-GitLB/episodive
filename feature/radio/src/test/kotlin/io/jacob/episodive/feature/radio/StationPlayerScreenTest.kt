@@ -213,6 +213,12 @@ class StationPlayerScreenTest {
 
     private fun row(text: String) = composeTestRule.onNodeWithText(text, substring = true, useUnmergedTree = true)
 
+    /** "내일" 구분은 카드 라벨에 섞이지 않고 첫 내일 행의 설명으로만 읽힌다. */
+    private fun tomorrowRows() = composeTestRule.onAllNodes(
+        SemanticsMatcher("내일 행") { it.config.getOrNull(SemanticsProperties.StateDescription) == tomorrowLabel },
+        useUnmergedTree = true,
+    )
+
     private fun onAirRows() = composeTestRule.onAllNodes(
         SemanticsMatcher("방송 중 행") {
             it.config.getOrNull(SemanticsProperties.StateDescription) ==
@@ -283,12 +289,14 @@ class StationPlayerScreenTest {
         row("프로그램26").assertExists()
         row("프로그램27").assertDoesNotExist()
         row("프로그램20").assertDoesNotExist()
-        composeTestRule.onAllNodesWithText(tomorrowLabel, useUnmergedTree = true).assertCountEquals(1)
+        tomorrowRows().assertCountEquals(1)
+        // 카드(합쳐진 노드)의 라벨에는 "내일" 이 섞이지 않는다.
+        composeTestRule.onAllNodesWithText(tomorrowLabel).assertCountEquals(0)
 
         // 펼치면 내일 새벽 끝까지. 구분은 여전히 한 번이다.
         composeTestRule.onNodeWithText(scheduleTitle).performClick()
         row("프로그램28").assertExists()
-        composeTestRule.onAllNodesWithText(tomorrowLabel, useUnmergedTree = true).assertCountEquals(1)
+        tomorrowRows().assertCountEquals(1)
     }
 
     @Test
@@ -296,7 +304,7 @@ class StationPlayerScreenTest {
         setScreen(schedule = scheduleOf(), onAir = onAirOf(programs[5]))
         composeTestRule.onNodeWithText(scheduleTitle).performScrollTo()
 
-        composeTestRule.onAllNodesWithText(tomorrowLabel, useUnmergedTree = true).assertCountEquals(0)
+        tomorrowRows().assertCountEquals(0)
     }
 
     @Test
@@ -305,7 +313,7 @@ class StationPlayerScreenTest {
         setScreen(schedule = scheduleOf(listOf(crossing) + programs.drop(1)), onAir = onAirOf(crossing))
         composeTestRule.onNodeWithText(scheduleTitle).performScrollTo()
 
-        composeTestRule.onAllNodesWithText(tomorrowLabel, useUnmergedTree = true).assertCountEquals(0)
+        tomorrowRows().assertCountEquals(0)
     }
 
     @Test

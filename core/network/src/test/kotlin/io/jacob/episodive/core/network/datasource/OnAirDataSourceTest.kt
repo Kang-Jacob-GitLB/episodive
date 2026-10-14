@@ -358,4 +358,14 @@ class OnAirDataSourceTest {
 
         assertEquals(listOf("오늘 끝"), dataSource.schedule(OnAirSource.Kbs("25"), now).map { it.title })
     }
+
+    @Test
+    fun `Given MBC empty response, When schedule again, Then not cached`() = runTest {
+        server.enqueue(MockResponse().setBody("[]"))
+        server.enqueue(MockResponse().setBody("""[{"Channel":"STFM","ProgramTitle":"표준","StartTime":"0900","EndTime":"1100","LiveDays":"수"}]"""))
+
+        assertEquals(emptyList<Any>(), dataSource.schedule(OnAirSource.Mbc("STFM"), now))
+        assertEquals(listOf("표준"), dataSource.schedule(OnAirSource.Mbc("STFM"), now).map { it.title })
+        assertEquals(2, server.requestCount)
+    }
 }

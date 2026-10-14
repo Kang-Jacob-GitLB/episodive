@@ -230,8 +230,11 @@ class StationRepositoryImpl internal constructor(
                 val schedule = loadSchedule(stationId, source)
                 val nowMillis = now()
                 emit(StationSchedule(dayStartOf(nowMillis), schedule?.windowAt(nowMillis).orEmpty()))
-                // 편성표는 TTL 마다 다시 받으므로 그 주기로 다시 읽는다. 날짜가 넘어가는 순간도 그 안에서 따라간다.
-                delay(if (schedule == null) ONAIR_FAILURE_RETRY_MILLIS else SCHEDULE_TTL_MILLIS)
+                // 편성표는 TTL 마다 다시 받으므로 그 주기로 다시 읽되, 자정에는 맞춰 깬다. 날짜가 바뀌면 "오늘" 기준과
+                // "내일" 구분이 한꺼번에 밀리는데 5분 고정이면 자정 직후 그만큼 어긋난다.
+                val untilMidnight = dayStartOf(nowMillis) + DAY_MILLIS - nowMillis
+                val wait = if (schedule == null) ONAIR_FAILURE_RETRY_MILLIS else SCHEDULE_TTL_MILLIS
+                delay(minOf(wait, untilMidnight).coerceAtLeast(ONAIR_MIN_WAIT_MILLIS))
             }
         }.distinctUntilChanged()
     }
@@ -275,13 +278,14 @@ class StationRepositoryImpl internal constructor(
     /**
      * 편성표를 캐시에서 주거나 받아 온다. 날짜가 바뀌었거나 [SCHEDULE_TTL_MILLIS] 가 지났거나, 캐시에 지금 시각의
      * 항목이 없는데 마지막으로 받은 지 [SCHEDULE_REFETCH_MIN_MILLIS] 가 지났으면 다시 받는다. 다시 받다 실패해도
-     * 같은 날짜의 캐시가 있으면 그것을 쓴다(실패 자체는 캐시하지 않으므로 다음에 다시 시도한다). 캐시도 없으면 null.
+     * 같은 날짜의 캐시가 있으면 그것을 쓰고, 어제 캐시라도 지금 시각의 프로그램이 걸려 있으면 그것을 쓴다(실패 자체는 캐시하지 않으므로 다음에 다시 시도한다). 그도 없으면 null.
      */
     private suspend fun loadSchedule(stationId: String, source: OnAirSource): List<OnAirProgram>? {
         return scheduleMutexes.getOrPut(stationId) { Mutex() }.withLock {
             val nowMillis = now()
             val dateKey = Instant.ofEpochMilli(nowMillis).atZone(SEOUL).toLocalDate().toString()
-            val cached = scheduleCache[stationId]?.takeIf { it.dateKey == dateKey }
+            val previous = scheduleCache[stationId]
+            val cached = previous?.takeIf { it.dateKey == dateKey }
             if (cached != null) {
                 val age = nowMillis - cached.fetchedAtMillis
                 val fresh = age < SCHEDULE_TTL_MILLIS &&
@@ -297,7 +301,8 @@ class StationRepositoryImpl internal constructor(
                 throw e
             } catch (e: Exception) {
                 Timber.w(e, "onAir schedule failed. stationId: $stationId, source: $source")
-                cached?.programs
+                // 자정 재조회가 실패해도 어제 받은 편성에 지금 시각의 프로그램이 걸려 있으면(자정을 넘기는 방송) 그것을 쓴다.
+                cached?.programs ?: previous?.programs?.takeIf { it.currentAt(nowMillis) != null }
             }
         }
     }
@@ -328,6 +333,7 @@ class StationRepositoryImpl internal constructor(
         const val BROADCASTER_TIMEOUT_MILLIS = 5_000L
         const val DETAILS_TIMEOUT_MILLIS = 10_000L
         const val DETAILS_TTL_MILLIS = 24 * 60 * 60 * 1000L
+        const val DAY_MILLIS = 24 * 60 * 60 * 1000L
         const val SCHEDULE_WINDOW_MILLIS = 29 * 60 * 60 * 1000L
         const val SCHEDULE_TTL_MILLIS = 5 * 60 * 1000L
         const val SCHEDULE_REFETCH_MIN_MILLIS = 30_000L

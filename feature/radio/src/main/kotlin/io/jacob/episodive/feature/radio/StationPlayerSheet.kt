@@ -58,6 +58,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -754,6 +755,7 @@ private fun StationScheduleSection(
     }
     val shown = if (expanded) programs.indices else collapsedRange
     val onAirDescription = stringResource(R.string.feature_radio_schedule_on_air)
+    val tomorrowDescription = stringResource(R.string.feature_radio_schedule_tomorrow)
 
     CardSection(
         modifier = modifier.fillMaxWidth(),
@@ -769,9 +771,13 @@ private fun StationScheduleSection(
             val isCurrent = index == currentIndex
             val day = Math.floorDiv((program.startMillis ?: schedule.dayStartMillis) - schedule.dayStartMillis, DayMillis)
             // 오늘이 아닌 날로 처음 넘어가는 행 앞에만 구분을 둔다. 어제 시작한 심야 프로그램(day < 0)에는 달지 않는다.
-            if (day >= 1 && previousDay < day) {
+            val startsTomorrow = day >= 1 && previousDay < day
+            if (startsTomorrow) {
+                // 카드가 하나로 합쳐 읽히므로 이 글자가 카드 라벨에 섞이지 않게 장식으로 두고, 읽는 쪽은 다음 행의 설명이 맡는다.
                 Text(
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .clearAndSetSemantics { },
                     text = stringResource(R.string.feature_radio_schedule_tomorrow),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -784,7 +790,10 @@ private fun StationScheduleSection(
                     .fillMaxWidth()
                     .heightIn(min = 32.dp)
                     .semantics(mergeDescendants = true) {
-                        if (isCurrent) stateDescription = onAirDescription
+                        when {
+                            isCurrent -> stateDescription = onAirDescription
+                            startsTomorrow -> stateDescription = tomorrowDescription
+                        }
                     },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),

@@ -135,10 +135,6 @@ class OnAirDataSourceImpl(
         }
     }
 
-    /**
-     * SBS 웹 편성표가 쓰는 날짜별 정적 JSON(`schedule/Y/M/D/{Power|Love}.json`). 하루가 01:00 에 시작하고 자정 이후는
-     * "24:00"·"25:00" 처럼 24 이상으로 와서, 00시대 방송은 전날 파일에 있다. 그래서 어제도 받는다.
-     */
     private class MbcRaw(val dateKey: String, val rows: List<MbcScheduleResponse>)
 
     private var mbcRaw: MbcRaw? = null
@@ -146,7 +142,7 @@ class OnAirDataSourceImpl(
 
     /**
      * MBC 편성표는 전 채널·전 요일이 한 응답(수백 KB)이라 세 채널이 공유한다. 주간 고정 편성이라 날짜가 바뀔 때만 다시
-     * 받는다. 실패는 캐시하지 않는다.
+     * 받는다. 실패와 빈 응답은 캐시하지 않는다.
      */
     private suspend fun mbcRows(today: LocalDate): List<MbcScheduleResponse> = mbcMutex.withLock {
         val dateKey = today.toString()
@@ -154,9 +150,14 @@ class OnAirDataSourceImpl(
         val url = endpoints.mbc.newBuilder().addPathSegments("Schedule/schedulelist").build()
         val rows: List<MbcScheduleResponse> =
             gson.fromJson(get(url), object : TypeToken<List<MbcScheduleResponse>>() {}.type) ?: emptyList()
-        rows.also { mbcRaw = MbcRaw(dateKey, it) }
+        // 빈 응답은 정상으로 믿기 어려워 캐시하지 않는다. 다음 호출에서 다시 받는다.
+        rows.also { if (it.isNotEmpty()) mbcRaw = MbcRaw(dateKey, it) }
     }
 
+    /**
+     * SBS 웹 편성표가 쓰는 날짜별 정적 JSON(`schedule/Y/M/D/{Power|Love}.json`). 하루가 01:00 에 시작하고 자정 이후는
+     * "24:00"·"25:00" 처럼 24 이상으로 와서, 00시대 방송은 전날 파일에 있다. 그래서 어제도 받는다.
+     */
     private suspend fun sbsSchedule(source: OnAirSource.Sbs, today: LocalDate, withTomorrow: Boolean): List<OnAirProgram> {
         val name = SBS_SCHEDULE_NAMES[source.channelId] ?: return emptyList()
         val dates = listOfNotNull(today.minusDays(1), today, today.plusDays(1).takeIf { withTomorrow })
