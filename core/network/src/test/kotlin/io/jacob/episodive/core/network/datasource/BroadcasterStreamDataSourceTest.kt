@@ -1,10 +1,13 @@
 package io.jacob.episodive.core.network.datasource
 
 import com.google.gson.Gson
+import io.jacob.episodive.core.network.di.BroadcasterModule
 import io.jacob.episodive.core.network.model.BroadcasterSource
+import io.jacob.episodive.core.network.util.RadioBrowserInterceptor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
@@ -41,7 +44,10 @@ class BroadcasterStreamDataSourceTest {
     fun `Given KBS json, When resolve, Then first channel_item service_url`() = runTest {
         server.enqueue(
             MockResponse().setBody(
-                """{"channel_item":[{"service_url":"https://kbs.example/live.m3u8?sig=1"},{"service_url":"https://x"}]}"""
+                """{"channel_item":[
+                    {"media_type":"bora","service_url":"https://kbs.example/bora.m3u8"},
+                    {"media_type":"radio","service_url":"https://kbs.example/live.m3u8?sig=1"}
+                ]}"""
             )
         )
 
@@ -49,6 +55,17 @@ class BroadcasterStreamDataSourceTest {
 
         assertEquals("https://kbs.example/live.m3u8?sig=1", url)
         assertEquals("/api/v1/landing/live/channel_code/21", server.takeRequest().path)
+    }
+
+    @Test
+    fun `Given KBS json without radio item, When resolve, Then null`() = runTest {
+        server.enqueue(
+            MockResponse().setBody(
+                """{"channel_item":[{"media_type":"bora","service_url":"https://kbs.example/bora.m3u8"}]}"""
+            )
+        )
+
+        assertNull(dataSource.resolve(BroadcasterSource.Kbs("21")))
     }
 
     @Test
@@ -66,6 +83,13 @@ class BroadcasterStreamDataSourceTest {
 
         assertEquals("https://mbc.example/live.m3u8?t=1", url)
         assertEquals("/aacplay.ashx?agent=webapp&channel=sfm", server.takeRequest().path)
+    }
+
+    @Test
+    fun `Given MBC body with leading blank line and extra lines, When resolve, Then first non-empty line`() = runTest {
+        server.enqueue(MockResponse().setBody("\n  https://mbc.example/a.m3u8 \nhttps://mbc.example/b.m3u8\n"))
+
+        assertEquals("https://mbc.example/a.m3u8", dataSource.resolve(BroadcasterSource.Mbc("sfm")))
     }
 
     @Test
@@ -109,14 +133,16 @@ class BroadcasterStreamDataSourceTest {
     }
 
     @Test
-    fun `When resolve, Then no Podcast Index auth headers are sent`() = runTest {
-        server.enqueue(MockResponse().setBody("https://mbc.example/live.m3u8"))
+    fun `Given module client, When request, Then no Podcast Index auth headers and User-Agent present`() {
+        server.enqueue(MockResponse().setBody("ok"))
+        val client = BroadcasterModule.provideBroadcasterOkHttpClient()
 
-        dataSource.resolve(BroadcasterSource.Mbc("sfm"))
+        client.newCall(Request.Builder().url(server.url("/")).build()).execute().close()
 
         val headers = server.takeRequest().headers
         assertNull(headers["X-Auth-Key"])
         assertNull(headers["X-Auth-Date"])
         assertNull(headers["Authorization"])
+        assertEquals(RadioBrowserInterceptor.USER_AGENT, headers["User-Agent"])
     }
 }

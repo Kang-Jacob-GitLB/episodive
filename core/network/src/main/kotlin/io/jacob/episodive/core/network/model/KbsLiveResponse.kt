@@ -7,5 +7,6 @@ data class KbsLiveResponse(
 )
 
 data class KbsChannelItem(
+    @SerializedName("media_type") val mediaType: String? = null,
     @SerializedName("service_url") val serviceUrl: String? = null,
 )

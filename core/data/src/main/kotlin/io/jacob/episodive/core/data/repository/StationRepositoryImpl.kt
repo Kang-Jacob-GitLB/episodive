@@ -88,16 +88,24 @@ class StationRepositoryImpl internal constructor(
         // 누른 사용자를 그만큼 기다리게 하지 않도록 전체에 상한을 두고, 넘으면 fallback 으로 간다.
         val resolved = withTimeoutOrNull(RESOLVE_TIMEOUT_MILLIS) {
             // 방송사 API 는 호출할 때마다 새 서명 URL 을 준다. Radio Browser 의 URL 은 크롤 시점 토큰이라
-            // 만료돼 있는 경우가 많으므로 먼저 시도한다.
-            entry.broadcasterSource?.let { source ->
-                try {
-                    broadcasterDataSource.resolve(source)
-                        ?.takeIf { it !in excluding }
-                        ?.let { return@withTimeoutOrNull it }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Timber.w(e, "broadcaster resolve failed. stationId: $stationId, source: $source")
+            // 만료돼 있는 경우가 많으므로 먼저 시도한다. 다만 느린 방송사가 Radio Browser 후보의 예산을
+            // 다 먹지 않도록 별도 상한을 둔다.
+            //
+            // excluding 이 비어 있지 않다는 건 이미 실패한 주소를 들고 다시 조회한다는 뜻이다. 방송사는 매번
+            // 새 토큰 문자열을 줘서 excluding 으로 걸러지지 않으므로, 이때는 건너뛰고 Radio Browser 로 간다.
+            // 첫 Expired 재조회는 excluding 이 비어 있어(LiveStreamSupervisorImpl.reResolve) "만료 → 새 토큰"
+            // 경로는 그대로 방송사를 탄다.
+            if (excluding.isEmpty()) {
+                entry.broadcasterSource?.let { source ->
+                    try {
+                        withTimeoutOrNull(BROADCASTER_TIMEOUT_MILLIS) {
+                            broadcasterDataSource.resolve(source)
+                        }?.let { return@withTimeoutOrNull it }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.w(e, "broadcaster resolve failed. stationId: $stationId, source: $source")
+                    }
                 }
             }
             for (uuid in entry.radioBrowserIds) {
@@ -154,6 +162,7 @@ class StationRepositoryImpl internal constructor(
 
     private companion object {
         const val RESOLVE_TIMEOUT_MILLIS = 15_000L
+        const val BROADCASTER_TIMEOUT_MILLIS = 5_000L
         const val DETAILS_TIMEOUT_MILLIS = 10_000L
         const val DETAILS_TTL_MILLIS = 24 * 60 * 60 * 1000L
     }

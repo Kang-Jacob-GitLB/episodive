@@ -29,6 +29,7 @@ import io.mockk.runs
 import io.mockk.slot
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -217,13 +218,45 @@ class StationRepositoryImplTest {
     }
 
     @Test
-    fun `Given broadcaster hangs, When resolveStreamUrl, Then fallback after timeout`() = runTest {
+    fun `Given broadcaster hangs, When resolveStreamUrl, Then Radio Browser used after broadcaster timeout`() = runTest {
         coEvery { broadcasterDataSource.resolve(any()) } coAnswers { awaitCancellation() }
+        coEvery { remoteDataSource.resolveStreamUrl("k") } returns "https://live/k"
 
         val stream = async { broadcasterRepository.resolveStreamUrl(kbsFirstRadioStationTestData.id) }
-        advanceTimeBy(16_000)
+        advanceTimeBy(4_000)
+        runCurrent()
+        assertEquals(false, stream.isCompleted)
+        advanceTimeBy(2_000)
 
-        assertEquals(StationStream("https://fallback/k", isHls = true), stream.await())
+        assertEquals(StationStream("https://live/k", isHls = true), stream.await())
+    }
+
+    @Test
+    fun `Given broadcaster fails after delay, When resolveStreamUrl, Then Radio Browser still called`() = runTest {
+        coEvery { broadcasterDataSource.resolve(any()) } coAnswers {
+            delay(4_000)
+            throw IOException("slow")
+        }
+        coEvery { remoteDataSource.resolveStreamUrl("k") } returns "https://live/k"
+
+        val stream = async { broadcasterRepository.resolveStreamUrl(kbsFirstRadioStationTestData.id) }
+        advanceTimeBy(5_000)
+
+        assertEquals(StationStream("https://live/k", isHls = true), stream.await())
+    }
+
+    @Test
+    fun `Given excluding not empty, When resolveStreamUrl, Then broadcaster skipped`() = runTest {
+        coEvery { remoteDataSource.resolveStreamUrl("k") } returns "https://live/k"
+
+        assertEquals(
+            StationStream("https://live/k", isHls = true),
+            broadcasterRepository.resolveStreamUrl(
+                kbsFirstRadioStationTestData.id,
+                excluding = setOf("https://kbs/failed"),
+            ),
+        )
+        coVerify(exactly = 0) { broadcasterDataSource.resolve(any()) }
     }
 
     @Test
