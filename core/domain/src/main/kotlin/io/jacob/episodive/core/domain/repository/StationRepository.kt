@@ -36,6 +36,12 @@ interface StationRepository {
      */
     fun observeOnAir(stationId: String): Flow<OnAirProgram?>
 
+    /**
+     * 오늘(Asia/Seoul) 방송분, 시작 시각순. [observeOnAir] 와 같은 편성표 캐시를 쓰므로 네트워크를 따로 부르지 않는다.
+     * 자정을 넘겨 오늘로 이어지는 어제 시작 프로그램도 포함한다. 편성 정보가 없는 스테이션·실패면 빈 목록을 발행한다.
+     */
+    fun observeTodaySchedule(stationId: String): Flow<List<OnAirProgram>>
+
     /** 즐겨찾기한 순서의 역순(최신순). 카탈로그에서 빠진 스테이션은 제외된다. */
     fun getFavoriteStations(): Flow<List<Station>>
 

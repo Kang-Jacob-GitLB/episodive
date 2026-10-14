@@ -32,17 +32,12 @@ data class MbcSongResponse(
     @SerializedName("SomItem") val somItem: String? = null,
 )
 
-data class SbsOnAirResponse(
-    @SerializedName("list") val list: List<SbsOnAirChannelResponse>? = null,
-)
-
-data class SbsOnAirChannelResponse(
-    @SerializedName("channelid") val channelId: String? = null,
+data class SbsScheduleItemResponse(
     @SerializedName("title") val title: String? = null,
-    @SerializedName("starttime") val startTime: String? = null,
-    @SerializedName("endtime") val endTime: String? = null,
-    @SerializedName("thumbs") val thumbs: Map<String, String>? = null,
-    @SerializedName("thumbimg") val thumbImg: String? = null,
+    @SerializedName("bora_title") val host: String? = null,
+    @SerializedName("start_time") val startTime: String? = null,
+    @SerializedName("end_time") val endTime: String? = null,
+    @SerializedName("program_image") val image: String? = null,
 )
 
 data class CbsScheduleItemResponse(

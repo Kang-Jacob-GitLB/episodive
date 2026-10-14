@@ -210,6 +210,19 @@ class StationRepositoryImpl internal constructor(
         }
     }
 
+    override fun observeTodaySchedule(stationId: String): Flow<List<OnAirProgram>> {
+        val source = stationsById[stationId]?.onAirSource ?: return flowOf(emptyList())
+        return flow {
+            while (true) {
+                val schedule = loadSchedule(stationId, source)
+                val nowMillis = now()
+                emit(schedule?.todayAt(nowMillis).orEmpty())
+                // 편성표는 TTL 마다 다시 받으므로 그 주기로 다시 읽는다. 날짜가 넘어가는 순간도 그 안에서 따라간다.
+                delay(if (schedule == null) ONAIR_FAILURE_RETRY_MILLIS else SCHEDULE_TTL_MILLIS)
+            }
+        }.distinctUntilChanged()
+    }
+
     private fun onAirSongs(source: OnAirSource.Mbc): Flow<String?> = flow {
         var last: String? = null
         while (true) {
@@ -257,6 +270,15 @@ class StationRepositoryImpl internal constructor(
     private fun List<OnAirProgram>.currentAt(nowMillis: Long): OnAirProgram? =
         filter { (it.startMillis ?: return@filter false) <= nowMillis && nowMillis < (it.endMillis ?: return@filter false) }
             .maxByOrNull { it.startMillis ?: 0L }
+
+    /** [nowMillis] 가 속한 날(Asia/Seoul)과 겹치는 프로그램. 시각을 모르는 항목은 뺀다. 시작순. */
+    private fun List<OnAirProgram>.todayAt(nowMillis: Long): List<OnAirProgram> {
+        val dayStart = Instant.ofEpochMilli(nowMillis).atZone(SEOUL).toLocalDate().atStartOfDay(SEOUL)
+        val from = dayStart.toInstant().toEpochMilli()
+        val to = dayStart.plusDays(1).toInstant().toEpochMilli()
+        return filter { (it.startMillis ?: return@filter false) < to && (it.endMillis ?: return@filter false) > from }
+            .sortedBy { it.startMillis }
+    }
 
     private fun List<OnAirProgram>.nextStartAfter(nowMillis: Long): Long? =
         mapNotNull { it.startMillis }.filter { it > nowMillis }.minOrNull()

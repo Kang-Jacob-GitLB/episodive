@@ -8,7 +8,7 @@ import io.jacob.episodive.core.network.model.KbsScheduleDayResponse
 import io.jacob.episodive.core.network.model.MbcScheduleResponse
 import io.jacob.episodive.core.network.model.MbcSongResponse
 import io.jacob.episodive.core.network.model.OnAirSource
-import io.jacob.episodive.core.network.model.SbsOnAirResponse
+import io.jacob.episodive.core.network.model.SbsScheduleItemResponse
 import io.jacob.episodive.core.network.util.fetchBody
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -21,12 +21,13 @@ import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.coroutines.cancellation.CancellationException
 
 /** 편성표 API 호스트. 테스트에서 MockWebServer 로 돌리기 위해 갈아끼울 수 있게 뒀다. */
 data class OnAirEndpoints(
     val kbs: HttpUrl = "https://static.api.kbs.co.kr/".toHttpUrl(),
     val mbc: HttpUrl = "https://miniapi.imbc.com/".toHttpUrl(),
-    val sbs: HttpUrl = "https://apis.sbs.co.kr/".toHttpUrl(),
+    val sbs: HttpUrl = "https://static.cloud.sbs.co.kr/".toHttpUrl(),
     val cbs: HttpUrl = "https://www.cbs.co.kr/".toHttpUrl(),
 )
 
@@ -120,30 +121,43 @@ class OnAirDataSourceImpl(
         }
     }
 
+    /**
+     * SBS 웹 편성표가 쓰는 날짜별 정적 JSON(`schedule/Y/M/D/{Power|Love}.json`). 하루가 01:00 에 시작하고 자정 이후는
+     * "24:00"·"25:00" 처럼 24 이상으로 와서, 00시대 방송은 전날 파일에 있다. 그래서 어제도 받는다.
+     */
     private suspend fun sbsSchedule(source: OnAirSource.Sbs, today: LocalDate): List<OnAirProgram> {
-        val url = endpoints.sbs.newBuilder()
-            .addPathSegments("play-api/1.0/onair/channels")
-            .addQueryParameter("v_type", "2")
-            .build()
-        val channel = gson.fromJson(get(url), SbsOnAirResponse::class.java)
-            ?.list
-            ?.firstOrNull { it.channelId == source.channelId }
-            ?: return emptyList()
-        val title = channel.title?.trim()?.takeIf { it.isNotEmpty() } ?: return emptyList()
-        val range = parseHhmmRange(today, channel.startTime, channel.endTime, colon = true)
-        // subtitle 은 "SBS" 고정이라 진행자로 쓰지 않는다.
-        return listOf(
-            OnAirProgram(
-                title = title,
-                host = null,
-                imageUrl = channel.thumbs?.get("1280").toHttpsUrl()
-                    ?: channel.thumbs?.get("640").toHttpsUrl()
-                    ?: channel.thumbImg.toHttpsUrl(),
-                startMillis = range?.first,
-                endMillis = range?.second,
-                song = null,
-            )
-        )
+        val name = SBS_SCHEDULE_NAMES[source.channelId] ?: return emptyList()
+        return listOf(today.minusDays(1), today).flatMap { date ->
+            val url = endpoints.sbs.newBuilder()
+                .addPathSegments("schedule/${date.year}/${date.monthValue}/${date.dayOfMonth}/$name.json")
+                .build()
+            // 어제 파일이 없어도 오늘 편성은 보여 준다. 오늘 것이 없으면 그대로 실패로 올린다.
+            val body = if (date == today) {
+                get(url)
+            } else {
+                try {
+                    get(url)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    return@flatMap emptyList()
+                }
+            }
+            val items: List<SbsScheduleItemResponse> =
+                gson.fromJson(body, object : TypeToken<List<SbsScheduleItemResponse>>() {}.type) ?: emptyList()
+            items.mapNotNull { item ->
+                val title = item.title?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                val range = parseHhmmRange(date, item.startTime, item.endTime, colon = true)
+                OnAirProgram(
+                    title = title,
+                    host = item.host.cleaned(),
+                    imageUrl = item.image.toHttpsUrl(),
+                    startMillis = range?.first,
+                    endMillis = range?.second,
+                    song = null,
+                )
+            }
+        }
     }
 
     private suspend fun cbsSchedule(source: OnAirSource.Cbs, today: LocalDate): List<OnAirProgram> {
@@ -242,6 +256,8 @@ class OnAirDataSourceImpl(
         val SEOUL: ZoneId = ZoneId.of("Asia/Seoul")
         const val DAY_MILLIS = 24 * 60 * 60 * 1000L
         const val CBS_ORIGIN = "https://www.cbs.co.kr"
+        /** SBS 편성표 파일 이름. */
+        val SBS_SCHEDULE_NAMES = mapOf("S07" to "Power", "S08" to "Love")
         val SONG_SYMBOLS = charArrayOf('♬', '♪', '♩', '♫')
     }
 }

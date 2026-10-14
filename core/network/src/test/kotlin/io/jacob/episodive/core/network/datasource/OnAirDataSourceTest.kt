@@ -126,44 +126,57 @@ class OnAirDataSourceTest {
     }
 
     @Test
-    fun `Given SBS onair list, When schedule, Then picks channel and prefers 1280 thumb and handles 24-00`() = runTest {
+    fun `Given SBS schedule files, When schedule, Then reads Power json for yesterday and today with 24h overflow and host`() = runTest {
         server.enqueue(
             MockResponse().setBody(
-                """{"list":[
-                  {"channelid":"S08","title":"러브FM 프로","starttime":"09:00","endtime":"11:00",
-                   "thumbs":{"640":"https://s/l640.jpg"}},
-                  {"channelid":"S07","title":"뮤직하이","subtitle":"SBS","starttime":"23:00","endtime":"24:00",
-                   "thumbs":{"640":"https://s/640.jpg","1280":"https://s/1280.jpg"},"thumbimg":"https://s/270.jpg"}
-                ]}"""
+                """[{"start_time":"23:00","end_time":"25:00","title":"어제 심야","bora_title":"","program_image":"http://s/y.jpg"}]"""
+            )
+        )
+        server.enqueue(
+            MockResponse().setBody(
+                """[{"start_time":"01:00","end_time":"03:00","title":" 새벽 ","bora_title":"DJ 미란이","program_image":"http://s/d.jpg"},
+                   {"start_time":"23:00","end_time":"24:00","title":"뮤직하이","bora_title":"","program_image":"https://s/m.jpg"}]"""
             )
         )
 
-        val power = dataSource.schedule(OnAirSource.Sbs("S07"), now).single()
+        val result = dataSource.schedule(OnAirSource.Sbs("S07"), now)
 
-        assertEquals("뮤직하이", power.title)
-        assertNull(power.host)
-        assertEquals("https://s/1280.jpg", power.imageUrl)
-        assertEquals(millis(2026, 10, 14, 23, 0), power.startMillis)
-        assertEquals(millis(2026, 10, 15, 0, 0), power.endMillis)
+        assertEquals(listOf("어제 심야", "새벽", "뮤직하이"), result.map { it.title })
+        assertEquals(millis(2026, 10, 13, 23, 0), result[0].startMillis)
+        assertEquals(millis(2026, 10, 14, 1, 0), result[0].endMillis)
+        assertNull(result[0].host)
+        assertEquals("https://s/y.jpg", result[0].imageUrl)
+        assertEquals("DJ 미란이", result[1].host)
+        assertEquals(millis(2026, 10, 15, 0, 0), result[2].endMillis)
+        assertEquals("/schedule/2026/10/13/Power.json", server.takeRequest().path)
+        assertEquals("/schedule/2026/10/14/Power.json", server.takeRequest().path)
     }
 
     @Test
-    fun `Given SBS 640 only, When schedule, Then falls back to 640 then thumbimg`() = runTest {
-        server.enqueue(
-            MockResponse().setBody(
-                """{"list":[{"channelid":"S08","title":"러브","starttime":"09:00","endtime":"11:00",
-                  "thumbs":{"640":"https://s/640.jpg"},"thumbimg":"https://s/270.jpg"}]}"""
-            )
-        )
-        assertEquals("https://s/640.jpg", dataSource.schedule(OnAirSource.Sbs("S08"), now).single().imageUrl)
+    fun `Given SBS S08, When schedule, Then Love json and missing yesterday is tolerated`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(403))
+        server.enqueue(MockResponse().setBody("""[{"start_time":"09:00","end_time":"11:00","title":"러브","program_image":""}]"""))
 
-        server.enqueue(
-            MockResponse().setBody(
-                """{"list":[{"channelid":"S08","title":"러브","starttime":"09:00","endtime":"11:00",
-                  "thumbimg":"https://s/270.jpg"}]}"""
-            )
-        )
-        assertEquals("https://s/270.jpg", dataSource.schedule(OnAirSource.Sbs("S08"), now).single().imageUrl)
+        val result = dataSource.schedule(OnAirSource.Sbs("S08"), now)
+
+        assertEquals(listOf("러브"), result.map { it.title })
+        assertNull(result[0].imageUrl)
+        server.takeRequest()
+        assertEquals("/schedule/2026/10/14/Love.json", server.takeRequest().path)
+    }
+
+    @Test(expected = java.io.IOException::class)
+    fun `Given SBS today file fails, When schedule, Then throws`() = runTest {
+        server.enqueue(MockResponse().setBody("[]"))
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        dataSource.schedule(OnAirSource.Sbs("S07"), now)
+    }
+
+    @Test
+    fun `Given unknown SBS channel, When schedule, Then empty without request`() = runTest {
+        assertEquals(emptyList<Any>(), dataSource.schedule(OnAirSource.Sbs("S99"), now))
+        assertEquals(0, server.requestCount)
     }
 
     @Test
