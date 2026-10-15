@@ -16,14 +16,18 @@ import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCa
 import io.jacob.episodive.core.model.DataError
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationListing
 import io.jacob.episodive.core.model.StationListingSource
 import io.jacob.episodive.core.model.asDataError
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -36,10 +40,11 @@ import timber.log.Timber
 import javax.inject.Inject
 
 private const val RecentStationLimit = 10
+private const val PendingGraceMillis = 200L
 
 @HiltViewModel
 class RadioViewModel @Inject constructor(
-    getStationsUseCase: GetStationsUseCase,
+    private val getStationsUseCase: GetStationsUseCase,
     getFavoriteStationsUseCase: GetFavoriteStationsUseCase,
     getRecentStationsUseCase: GetRecentStationsUseCase,
     observeStationProgramImagesUseCase: ObserveStationProgramImagesUseCase,
@@ -51,28 +56,61 @@ class RadioViewModel @Inject constructor(
     // 재시도는 소스 체인을 통째로 재구독해야 한다. 아래 체인은 전부 콜드 Flow 라 재구독해도 부작용이 없다.
     private val retryTrigger = MutableStateFlow(0)
 
+    /**
+     * 전체 목록만 따로 감싼다. 해외 목록은 네트워크라 느리거나 실패할 수 있는데, 그것이 즐겨찾기·최근(DB)까지 막거나
+     * 화면 전체를 오류로 만들면 안 된다. 구독하자마자 [ListingResult.Pending] 을 흘려 즐겨찾기·최근이 바로 보이게 하고,
+     * 실패는 [ListingResult.Failed] 로 바꿔 인기 섹션 자리에서만 알린다.
+     */
+    private fun listingResults(): Flow<ListingResult> {
+        val upstream = getStationsUseCase(StationKind.RADIO)
+            .map<StationListing, ListingResult> { ListingResult.Loaded(it) }
+            .catch { e ->
+                Timber.w(e, "라디오 전체 목록을 불러오지 못했다")
+                emit(ListingResult.Failed)
+            }
+        // 첫 값이 곧바로 오는 한국 카탈로그에서 "로딩 문구 → 목록" 이 깜빡이지 않도록, 잠깐 기다려도 안 올 때만 Pending 을 흘린다.
+        return channelFlow {
+            val pending = launch {
+                delay(PendingGraceMillis)
+                send(ListingResult.Pending)
+            }
+            upstream.collect {
+                pending.cancel()
+                send(it)
+            }
+        }
+    }
+
     // 스테이션 여부는 nowPlayingStation 하나로만 가른다. nowPlaying(에피소드)과 섞지 않는다.
+    // 화면 전체 Error 는 즐겨찾기·최근·플레이어 상태 같은 로컬 소스의 실패에만 쓴다.
     val state: StateFlow<RadioState> = retryTrigger.flatMapLatest {
         combine(
-            getStationsUseCase(StationKind.RADIO),
+            listingResults(),
             getFavoriteStationsUseCase(),
             getRecentStationsUseCase(RecentStationLimit),
             playerRepository.nowPlayingStation,
             playerRepository.isPlaying,
             playerRepository.isBuffering,
             stationPlaybackController.pendingStationId,
-        ) { listing, favorites, recents, nowPlayingStation, isPlaying, isBuffering, pendingId ->
+        ) { result, favorites, recents, nowPlayingStation, isPlaying, isBuffering, pendingId ->
+            val listing = (result as? ListingResult.Loaded)?.listing
             // 큐레이션(한국)은 전국/지역으로 가르고, 해외는 인기 목록 하나다. 해외 스테이션은 region 이 주(州)라
             // 전국/지역 구분의 근거가 아니다.
-            val curated = listing.source == StationListingSource.Curated
+            val curated = listing?.source == StationListingSource.Curated
+            val stations = listing?.stations.orEmpty()
             RadioState.Success(
                 favorites = favorites,
                 recents = recents,
-                nationwide = if (curated) listing.stations.filter { it.region == null } else emptyList(),
-                regional = if (curated) listing.stations.filter { it.region != null } else emptyList(),
-                popular = if (curated) emptyList() else listing.stations,
-                listingSource = listing.source,
-                countryCode = listing.countryCode,
+                nationwide = if (curated) stations.filter { it.region == null } else emptyList(),
+                regional = if (curated) stations.filter { it.region != null } else emptyList(),
+                popular = if (listing != null && !curated) stations else emptyList(),
+                listingStatus = when (result) {
+                    is ListingResult.Pending -> RadioListingStatus.Pending
+                    is ListingResult.Failed -> RadioListingStatus.Failed
+                    is ListingResult.Loaded -> RadioListingStatus.Loaded
+                },
+                listingSource = listing?.source ?: StationListingSource.Curated,
+                countryCode = listing?.countryCode ?: "KR",
                 favoriteIds = favorites.mapTo(HashSet()) { it.id },
                 nowPlayingStationId = nowPlayingStation?.id,
                 isPlaying = isPlaying,
@@ -173,6 +211,8 @@ sealed interface RadioState {
         val regional: List<Station>,
         /** 해외 국가의 인기 방송. 큐레이션(한국)이면 비어 있고 [nationwide]·[regional] 이 채워진다. */
         val popular: List<Station> = emptyList(),
+        /** 전체 목록의 상태. 즐겨찾기·최근과 따로 오므로 [Pending]·[Failed] 여도 위 섹션들은 그대로 그린다. */
+        val listingStatus: RadioListingStatus = RadioListingStatus.Loaded,
         val listingSource: StationListingSource = StationListingSource.Curated,
         /** 전체 목록의 기준 국가(ISO alpha-2). */
         val countryCode: String = "KR",
@@ -185,6 +225,14 @@ sealed interface RadioState {
     ) : RadioState
 
     data class Error(val error: DataError) : RadioState
+}
+
+enum class RadioListingStatus { Pending, Loaded, Failed }
+
+private sealed interface ListingResult {
+    data object Pending : ListingResult
+    data class Loaded(val listing: StationListing) : ListingResult
+    data object Failed : ListingResult
 }
 
 sealed interface RadioAction {

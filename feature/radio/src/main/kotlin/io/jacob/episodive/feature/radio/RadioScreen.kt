@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -19,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -139,6 +141,7 @@ internal fun RadioScreen(
                 programImages = programImages,
                 onStationClick = onStationClick,
                 onToggleFavorite = onToggleFavorite,
+                onRetry = onRetry,
             )
 
             is RadioState.Error -> ErrorScreen(
@@ -158,6 +161,7 @@ private fun RadioList(
     programImages: Map<String, String>,
     onStationClick: (Station) -> Unit,
     onToggleFavorite: (String) -> Unit,
+    onRetry: () -> Unit,
 ) {
     val dimension = LocalDimensionTheme.current
     val statusOf = { station: Station ->
@@ -175,7 +179,7 @@ private fun RadioList(
     val regionalTitle = stringResource(R.string.feature_radio_section_regional)
     val popularTitle = stringResource(
         R.string.feature_radio_section_popular_format,
-        countryDisplayName(state.countryCode),
+        countryDisplayName(state.countryCode, stringResource(R.string.feature_radio_display_language)),
     )
     val popularEmptyText = stringResource(R.string.feature_radio_popular_empty)
 
@@ -189,6 +193,7 @@ private fun RadioList(
         state.regional.groupItemCount() +
         state.popular.groupItemCount() +
         (if (state.isPopularEmpty) 2 else 0) +
+        (if (state.listingStatus != RadioListingStatus.Loaded) 1 else 0) +
         1
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -260,6 +265,17 @@ private fun RadioList(
                 onToggleFavorite = onToggleFavorite,
             )
 
+            // 전체 목록은 즐겨찾기·최근과 따로 온다. 기다리는 중이거나 받지 못했으면 이 자리에서만 알리고(화면 전체가
+            // 오류가 되지 않는다), 위 섹션은 그대로 보인다.
+            if (state.listingStatus != RadioListingStatus.Loaded) {
+                item(key = "listing-status", contentType = "status") {
+                    ListingStatusRow(
+                        status = state.listingStatus,
+                        onRetry = onRetry,
+                    )
+                }
+            }
+
             if (state.isPopularEmpty) {
                 item(key = "header:popular-empty", contentType = "header") {
                     SectionHeader(title = popularTitle)
@@ -301,11 +317,48 @@ private fun RadioList(
 }
 
 private val RadioState.Success.isPopularEmpty: Boolean
-    get() = listingSource == StationListingSource.RadioBrowser && popular.isEmpty()
+    get() = listingStatus == RadioListingStatus.Loaded &&
+        listingSource == StationListingSource.RadioBrowser &&
+        popular.isEmpty()
 
-/** 로케일에 맞춘 국가 이름. 모르는 코드면 코드를 그대로 쓴다. */
-private fun countryDisplayName(countryCode: String): String =
-    Locale("", countryCode).displayCountry.ifBlank { countryCode }
+/**
+ * 앱 언어에 맞춘 국가 이름. 언어 태그를 리소스(`feature_radio_display_language`)에서 읽어 JVM 기본 로케일과 무관하게
+ * 한다 — 앱 문구와 같은 언어로 나와야 하고, 테스트가 기기 설정에 기대지 않는다. 모르는 코드면 코드를 그대로 쓴다.
+ */
+private fun countryDisplayName(countryCode: String, languageTag: String): String =
+    Locale("", countryCode).getDisplayCountry(Locale.forLanguageTag(languageTag)).ifBlank { countryCode }
+
+@Composable
+private fun ListingStatusRow(
+    status: RadioListingStatus,
+    onRetry: () -> Unit,
+) {
+    val dimension = LocalDimensionTheme.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = dimension.screenPadding),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (status == RadioListingStatus.Failed) {
+            Text(
+                modifier = Modifier.weight(1f),
+                text = stringResource(R.string.feature_radio_listing_failed),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = onRetry) {
+                Text(text = stringResource(R.string.feature_radio_listing_retry))
+            }
+        } else {
+            Text(
+                text = stringResource(R.string.feature_radio_listing_loading),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
 
 /** [stationGroup] 이 내보내는 항목 수 — 비어 있으면 헤더도 없다. */
 private fun List<Station>.groupItemCount(): Int = if (isEmpty()) 0 else size + 1

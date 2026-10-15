@@ -23,6 +23,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
@@ -30,6 +31,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -149,20 +152,65 @@ class RadioViewModelTest {
     }
 
     @Test
-    fun `Given 해외 목록을 받지 못함, Then Error 이고 다시 시도하면 목록이 나온다`() = runTest {
+    fun `Given 해외 목록이 아직 오지 않음, Then 즐겨찾기와 최근은 바로 보이고 목록은 Pending 이다`() = runTest {
+        val viewModel = createViewModel(
+            favorites = listOf(a),
+            recents = listOf(b),
+            listing = flow { awaitCancellation() },
+        )
+
+        viewModel.state.test {
+            // 첫 값을 잠깐 기다린 뒤(깜빡임 방지) Pending 으로 먼저 그린다.
+            advanceTimeBy(1_000)
+            runCurrent()
+            val state = expectMostRecentItem() as RadioState.Success
+
+            assertEquals(RadioListingStatus.Pending, state.listingStatus)
+            assertEquals(listOf(a), state.favorites)
+            assertEquals(listOf(b), state.recents)
+            assertTrue(state.popular.isEmpty())
+        }
+    }
+
+    @Test
+    fun `Given 해외 목록을 받지 못함, Then 화면 전체 Error 가 아니라 Failed 이고 즐겨찾기는 남으며 다시 시도하면 목록이 나온다`() = runTest {
         var attempt = 0
         val listing = flow {
             if (attempt++ == 0) throw IOException("offline")
             emit(popularStationListingTestData("US"))
         }
-        val viewModel = createViewModel(listing = listing)
+        val viewModel = createViewModel(favorites = listOf(a), listing = listing)
         subscribe(viewModel)
 
-        assertTrue(viewModel.state.value is RadioState.Error)
+        val failed = success(viewModel)
+        assertEquals(RadioListingStatus.Failed, failed.listingStatus)
+        assertEquals(listOf(a), failed.favorites)
 
         viewModel.sendAction(RadioAction.Retry)
 
-        assertTrue(viewModel.state.value is RadioState.Success)
+        val loaded = success(viewModel)
+        assertEquals(RadioListingStatus.Loaded, loaded.listingStatus)
+        assertEquals(popularStationListingTestData("US").stations, loaded.popular)
+    }
+
+    @Test
+    fun `Given 즐겨찾기를 읽다 실패, Then 화면 전체 Error 다`() = runTest {
+        val viewModel = createViewModel()
+        every { getFavoriteStationsUseCase() } returns flow { throw IllegalStateException("db") }
+        val failing = RadioViewModel(
+            getStationsUseCase = getStationsUseCase,
+            getFavoriteStationsUseCase = getFavoriteStationsUseCase,
+            getRecentStationsUseCase = getRecentStationsUseCase,
+            observeStationProgramImagesUseCase = observeStationProgramImagesUseCase,
+            toggleFavoriteStationUseCase = toggleFavoriteStationUseCase,
+            stationPlaybackController = stationPlaybackController,
+            playerRepository = playerRepository,
+        )
+
+        failing.state.test {
+            assertTrue(expectMostRecentItem() is RadioState.Error)
+        }
+        assertEquals(RadioState.Loading, viewModel.state.value)
     }
 
     @Test

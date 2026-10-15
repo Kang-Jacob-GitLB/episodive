@@ -10,20 +10,23 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationListing
 import io.jacob.episodive.core.model.StationListingSource
-import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.curatedStationListingTestData
 import io.jacob.episodive.core.testing.model.popularStationListingTestData
+import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.ui.StationCoverImageTag
 import io.jacob.episodive.core.ui.R as uiR
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 class RadioScreenTest {
@@ -43,6 +46,8 @@ class RadioScreenTest {
         pendingStationId: String? = null,
         programImages: Map<String, String> = emptyMap(),
         listing: StationListing = curatedStationListingTestData,
+        listingStatus: RadioListingStatus = RadioListingStatus.Loaded,
+        onRetry: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             EpisodiveTheme {
@@ -61,6 +66,7 @@ class RadioScreenTest {
                             emptyList()
                         },
                         popular = if (listing.source == StationListingSource.Curated) emptyList() else listing.stations,
+                        listingStatus = listingStatus,
                         listingSource = listing.source,
                         countryCode = listing.countryCode,
                         favoriteIds = favorites.map { it.id }.toSet(),
@@ -73,7 +79,7 @@ class RadioScreenTest {
                     onBackClick = {},
                     onStationClick = {},
                     onToggleFavorite = {},
-                    onRetry = {},
+                    onRetry = onRetry,
                 )
             }
         }
@@ -192,5 +198,57 @@ class RadioScreenTest {
         composeTestRule
             .onNodeWithText(context.getString(R.string.feature_radio_section_nationwide))
             .assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "ko")
+    fun `Given 한국어 리소스, Then 국가 이름도 한국어다`() {
+        setScreen(listing = popularStationListingTestData("US"))
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.feature_radio_section_popular_format, "미국"))
+            .assertExists()
+    }
+
+    @Test
+    fun `Given 전체 목록을 기다리는 중, Then 즐겨찾기는 보이고 인기 섹션 자리에 로딩 문구가 있다`() {
+        setScreen(
+            favorites = listOf(a),
+            listing = popularStationListingTestData("US", emptyList()),
+            listingStatus = RadioListingStatus.Pending,
+        )
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.feature_radio_section_favorites))
+            .assertExists()
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.feature_radio_listing_loading))
+            .assertExists()
+        composeTestRule
+            .onAllNodesWithText(context.getString(R.string.feature_radio_popular_empty))
+            .assertCountEquals(0)
+    }
+
+    @Test
+    fun `Given 전체 목록 실패, Then 인라인 오류와 다시 시도 버튼이 있고 누르면 재시도한다`() {
+        var retried = 0
+        setScreen(
+            favorites = listOf(a),
+            listing = popularStationListingTestData("US", emptyList()),
+            listingStatus = RadioListingStatus.Failed,
+            onRetry = { retried++ },
+        )
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.feature_radio_section_favorites))
+            .assertExists()
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.feature_radio_listing_failed))
+            .assertExists()
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.feature_radio_listing_retry))
+            .performClick()
+
+        assertEquals(1, retried)
     }
 }

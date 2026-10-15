@@ -15,22 +15,41 @@ import io.jacob.episodive.core.domain.usecase.station.ObserveStationProgramImage
 import io.jacob.episodive.core.model.DataError
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationListing
+import io.jacob.episodive.core.model.StationListingSource
 import io.jacob.episodive.core.model.asDataError
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 private const val HomeRadioMaxStations = 10
 private const val HomeRadioMinStations = 8
+private const val RetryBaseMillis = 1_000L
+private const val RetryMaxMillis = 30_000L
+private const val PendingGraceMillis = 200L
+
+/** 목록을 기다리는 동안. 출처를 아직 모르므로 입구를 강제하지 않는다. */
+private val PendingListing = StationListing("", StationListingSource.Curated, emptyList())
+
+/** 해외 목록을 받지 못했을 때. 카탈로그는 실패하지 않으므로 해외다. */
+private val FailedListing = StationListing("", StationListingSource.RadioBrowser, emptyList())
+
+/** 1·2·4·8·16초, 이후 30초. */
+private fun retryDelayMillis(attempt: Long): Long =
+    (RetryBaseMillis shl attempt.coerceAtMost(5L).toInt()).coerceAtMost(RetryMaxMillis)
 
 /**
  * 홈의 라디오 섹션. [HomeViewModel] 의 state combine 에 넣지 않는다 — 한국 카탈로그는 늘 내용이 있어, 섞으면
@@ -49,32 +68,60 @@ class HomeRadioViewModel @Inject constructor(
 ) : ViewModel() {
 
     /**
-     * 채우기용 전체 목록. 해외 목록을 받지 못해도(오프라인 등) 섹션이 오류가 되지 않게 빈 목록으로 돌려, 즐겨찾기·최근만으로
-     * 그린다. 한국 카탈로그는 메모리라 실패하지 않는다.
+     * 채우기용 전체 목록. 해외 목록은 네트워크라 늦게 오거나 실패할 수 있어, 즐겨찾기·최근이 기다리지 않도록 구독하자마자
+     * 빈 목록을 흘려 먼저 그리게 한다. 실패하면 빈 목록을 흘린 뒤 1·2·4…초(최대 30초) 간격으로 다시 구독해 복구한다 —
+     * 유스케이스를 통째로 다시 구독하므로 그사이 바뀐 국가도 따라간다. 한국 카탈로그는 메모리라 실패하지 않는다.
+     *
+     * 출처가 해외인 채 비어 있으면([HomeRadioState.Success.isEntranceOnly]) 홈이 헤더와 "더 보기" 입구만 남긴다.
+     * 입구를 닫으면 사용자가 라디오 화면에 들어갈 길이 없어진다.
      */
-    private fun catalogStations(getStationsUseCase: GetStationsUseCase): Flow<List<Station>> =
+    private fun catalogListing(getStationsUseCase: GetStationsUseCase): Flow<StationListing> =
         getStationsUseCase(StationKind.RADIO)
-            .map { it.stations }
-            .catch { e ->
-                Timber.w(e, "홈 라디오 전체 목록을 불러오지 못했다")
-                emit(emptyList())
+            .retryWhen { cause, attempt ->
+                if (cause is CancellationException) return@retryWhen false
+                Timber.w(cause, "홈 라디오 전체 목록을 불러오지 못했다. attempt: $attempt")
+                emit(FailedListing)
+                delay(retryDelayMillis(attempt))
+                true
             }
+            .withPendingAfterGrace()
+
+    /**
+     * 첫 값이 [PendingGraceMillis] 안에 오지 않으면 [PendingListing] 을 먼저 흘려 즐겨찾기·최근이 기다리지 않게 한다.
+     * 곧바로 흘리지 않는 것은 한국 카탈로그처럼 바로 오는 목록에서 "즐겨찾기만 → 채워짐" 두 번 그려 깜빡이는 것을
+     * 피하기 위해서다.
+     */
+    private fun Flow<StationListing>.withPendingAfterGrace(): Flow<StationListing> {
+        val upstream = this
+        return channelFlow {
+            val pending = launch {
+                delay(PendingGraceMillis)
+                send(PendingListing)
+            }
+            upstream.collect {
+                pending.cancel()
+                send(it)
+            }
+        }
+    }
 
     val state: StateFlow<HomeRadioState> = combine(
         getFavoriteStationsUseCase(),
         getRecentStationsUseCase(HomeRadioMaxStations),
-        catalogStations(getStationsUseCase),
+        catalogListing(getStationsUseCase),
         playerRepository.nowPlayingStation,
         playerRepository.isPlaying,
         playerRepository.isBuffering,
         stationPlaybackController.pendingStationId,
-    ) { favorites, recents, catalog, nowPlayingStation, isPlaying, isBuffering, pendingId ->
+    ) { favorites, recents, listing, nowPlayingStation, isPlaying, isBuffering, pendingId ->
         val mine = (favorites + recents).distinctBy { it.id }.take(HomeRadioMaxStations)
         // 한두 번 들은 기록만으로는 섹션이 휑하다. 모자라면 카탈로그로 최소 개수까지 채운다.
         val taken = mine.mapTo(HashSet()) { it.id }
-        val filler = catalog.filter { it.id !in taken }.take((HomeRadioMinStations - mine.size).coerceAtLeast(0))
+        val filler = listing.stations.filter { it.id !in taken }.take((HomeRadioMinStations - mine.size).coerceAtLeast(0))
+        val stations = mine + filler
         HomeRadioState.Success(
-            stations = mine + filler,
+            stations = stations,
+            isEntranceOnly = stations.isEmpty() && listing.source == StationListingSource.RadioBrowser,
             nowPlayingStationId = nowPlayingStation?.id,
             isPlaying = isPlaying,
             isBuffering = isBuffering,
@@ -129,6 +176,11 @@ sealed interface HomeRadioState {
     data object Loading : HomeRadioState
     data class Success(
         val stations: List<Station>,
+        /**
+         * 보여 줄 스테이션이 없지만 해외 목록이라 섹션 헤더와 "더 보기" 입구는 남겨야 한다. 라디오 화면으로 가는 유일한
+         * 길이다. 한국 카탈로그는 늘 채워져 있어 거짓이다.
+         */
+        val isEntranceOnly: Boolean = false,
         val nowPlayingStationId: String?,
         val isPlaying: Boolean,
         val isBuffering: Boolean,

@@ -17,6 +17,7 @@ import io.jacob.episodive.core.domain.usecase.caption.ToggleCaptionUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetStationUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveScheduleUseCase
@@ -40,6 +41,8 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
@@ -63,6 +66,7 @@ class StationPlayerViewModel @Inject constructor(
     private val stationPlaybackController: StationPlaybackController,
     private val getStationsUseCase: GetStationsUseCase,
     private val getFavoriteStationsUseCase: GetFavoriteStationsUseCase,
+    private val getStationUseCase: GetStationUseCase,
     private val getRecentStationsUseCase: GetRecentStationsUseCase,
     private val toggleFavoriteStationUseCase: ToggleFavoriteStationUseCase,
     private val getStationDetailsUseCase: GetStationDetailsUseCase,
@@ -75,34 +79,52 @@ class StationPlayerViewModel @Inject constructor(
 ) : ViewModel() {
 
     /**
-     * 현재 국가의 전체 목록. 해외 목록을 받지 못해도 시트가 죽지 않게 빈 목록으로 돌린다 — 지금 듣는 스테이션은
-     * 플레이어가 들고 있고, 즐겨찾기·최근으로도 찾는다.
+     * 현재 국가의 전체 목록. 해외 목록은 네트워크라 늦게 오거나 실패할 수 있다 — 구독하자마자 빈 목록을 흘려
+     * 즐겨찾기·재생 상태로 시트가 먼저 그려지게 하고, 실패는 빈 목록으로 둔다(지금 듣는 스테이션은 플레이어가
+     * 들고 있고 즐겨찾기·최근으로도 찾는다). 공유해 두어 [step] 이 새로 구독해(해외면 요청을 다시 돌려) 기다리지
+     * 않고 지금 값을 읽는다.
      */
-    private fun allStations(): Flow<List<Station>> =
-        getStationsUseCase(StationKind.RADIO)
-            .map { it.stations }
-            .catch { e ->
-                Timber.w(e, "스테이션 전체 목록을 불러오지 못했다")
-                emit(emptyList())
-            }
+    private val allStations: StateFlow<List<Station>> = getStationsUseCase(StationKind.RADIO)
+        .map { it.stations }
+        .catch { e ->
+            Timber.w(e, "스테이션 전체 목록을 불러오지 못했다")
+            emit(emptyList())
+        }
+        .onStart { emit(emptyList()) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = emptyList(),
+        )
+
+    /**
+     * 받는 중인 스테이션을 저장소에서 찾은 결과. 목록 사본으로는 못 찾는 경우(다른 나라의 최근, 순위 변동으로 빠진 것)를
+     * 위한 것이라 목록에서 바로 찾을 수 있으면 쓰이지 않는다. 구독하자마자 null 을 흘려 조회를 기다리지 않고 시작한다.
+     * 어느 id 의 결과인지 함께 싣는다 — 조회가 끝나기 전에 받는 스테이션이 바뀌면 낡은 결과를 쓰지 않게 한다.
+     */
+    private val pendingLookup: Flow<PendingLookup?> = stationPlaybackController.pendingStationId
+        .mapLatest { id -> id?.let { PendingLookup(it, getStationUseCase(it)) } }
+        .onStart { emit(null) }
 
     val state: StateFlow<StationPlayerState> = combine(
         playerRepository.nowPlayingStation,
         stationPlaybackController.pendingStationId,
+        pendingLookup,
         playerRepository.streamTitle,
         playerRepository.isPlaying,
         playerRepository.isBuffering,
         getFavoriteStationsUseCase(),
-        allStations(),
+        allStations,
         getRecentStationsUseCase(RecentStationLimit),
         sleepTimer.remainingMs,
-    ) { playing, pendingId, streamTitle, isPlaying, isBuffering, favorites, stations, recents, sleepTimerRemainingMs ->
+    ) { playing, pendingId, lookup, streamTitle, isPlaying, isBuffering, favorites, stations, recents, sleepTimerRemainingMs ->
         // 받는 중인 스테이션을 먼저 보여 준다. 그동안 플레이어는 이전 스테이션을 그대로 들고 있다.
-        // 다른 나라에서 들었던 최근 방송은 현재 국가의 목록에 없으므로 최근도 본다(안 그러면 Loading 에 고착된다).
+        // 목록에서 바로 찾고, 없으면 저장소 조회 결과를 쓴다.
         val pending = pendingId?.let { id ->
             stations.firstOrNull { it.id == id }
                 ?: favorites.firstOrNull { it.id == id }
                 ?: recents.firstOrNull { it.id == id }
+                ?: lookup?.takeIf { it.id == id }?.station
         }
         val station = pending ?: playing
         when {
@@ -110,7 +132,7 @@ class StationPlayerViewModel @Inject constructor(
             // 받는 중인 스테이션을 목록에서 아직 못 찾았고 들고 있는 것도 없다. 사라진 것이 아니라 준비 중이다.
             station == null -> StationPlayerState.Loading
             else -> {
-                val ring = stationRing(station.id, favorites, stations)
+                val ring = stationRing(station.id, favorites, stations, recents)
                 StationPlayerState.Active(
                     station = station,
                     isPending = pending != null,
@@ -265,7 +287,8 @@ class StationPlayerViewModel @Inject constructor(
         val ring = stationRing(
             anchorId = anchorId,
             favorites = getFavoriteStationsUseCase().first(),
-            all = allStations().first(),
+            all = allStations.value,
+            recents = getRecentStationsUseCase(RecentStationLimit).first(),
         )
         ring.neighbor(anchorId, delta)?.let { stationPlaybackController.play(it.id) }
     }
@@ -299,6 +322,8 @@ class StationPlayerViewModel @Inject constructor(
         }
     }
 }
+
+private class PendingLookup(val id: String, val station: Station?)
 
 sealed interface StationPlayerState {
     data object Loading : StationPlayerState

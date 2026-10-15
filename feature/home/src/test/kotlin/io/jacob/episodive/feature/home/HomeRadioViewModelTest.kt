@@ -11,11 +11,13 @@ import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.StationListing
 import io.jacob.episodive.core.testing.model.curatedStationListingTestData
+import io.jacob.episodive.core.testing.model.popularStationListingTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
@@ -23,6 +25,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -204,19 +208,84 @@ class HomeRadioViewModelTest {
     }
 
     @Test
-    fun `Given 해외 목록을 받지 못함, Then 오류가 아니라 즐겨찾기와 최근만으로 Success 다`() = runTest {
+    fun `Given 해외 목록이 아직 오지 않음, Then 기다리지 않고 즐겨찾기와 최근으로 먼저 그린다`() = runTest {
         val viewModel = createViewModel(
             favorites = listOf(station(1)),
             recents = listOf(station(2)),
-            listing = flow { throw java.io.IOException("offline") },
+            listing = flow { awaitCancellation() },
         )
 
         viewModel.state.test {
-            val state = expectMostRecentItem()
+            // 목록의 첫 값을 잠깐 기다린 뒤(깜빡임 방지) 기다리지 않고 먼저 그린다.
+            advanceTimeBy(1_000)
+            runCurrent()
             assertEquals(
                 listOf("s1", "s2"),
-                (state as HomeRadioState.Success).stations.map { it.id },
+                (expectMostRecentItem() as HomeRadioState.Success).stations.map { it.id },
             )
+        }
+    }
+
+    @Test
+    fun `Given 해외 목록을 받지 못함, Then 오류가 아니라 즐겨찾기와 최근만으로 Success 고 백오프로 복구한다`() = runTest {
+        var attempt = 0
+        val recovered = popularStationListingTestData("US", (0 until 3).map(::station))
+        val listing = flow {
+            if (attempt++ < 2) throw java.io.IOException("offline")
+            emit(recovered)
+        }
+        val viewModel = createViewModel(
+            favorites = listOf(station(9)),
+            listing = listing,
+        )
+
+        viewModel.state.test {
+            assertEquals(
+                listOf("s9"),
+                (expectMostRecentItem() as HomeRadioState.Success).stations.map { it.id },
+            )
+
+            // 1초 뒤 첫 재시도도 실패하고, 그로부터 2초 뒤 두 번째 재시도에서 복구한다.
+            advanceTimeBy(1_000)
+            runCurrent()
+            assertEquals(2, attempt)
+            advanceTimeBy(2_000)
+            runCurrent()
+            assertEquals(3, attempt)
+
+            assertEquals(
+                listOf("s9", "s0", "s1", "s2"),
+                (expectMostRecentItem() as HomeRadioState.Success).stations.map { it.id },
+            )
+        }
+    }
+
+    @Test
+    fun `Given 해외 목록이 비어 있고 즐겨찾기도 없음, Then 입구만 남기는 상태다`() = runTest {
+        val viewModel = createViewModel(listing = flowOf(popularStationListingTestData("US", emptyList())))
+
+        viewModel.state.test {
+            val state = expectMostRecentItem() as HomeRadioState.Success
+            assertTrue(state.stations.isEmpty())
+            assertTrue(state.isEntranceOnly)
+        }
+    }
+
+    @Test
+    fun `Given 해외 목록을 받지 못하고 즐겨찾기도 없음, Then 입구만 남기는 상태다`() = runTest {
+        val viewModel = createViewModel(listing = flow { throw java.io.IOException("offline") })
+
+        viewModel.state.test {
+            assertTrue((expectMostRecentItem() as HomeRadioState.Success).isEntranceOnly)
+        }
+    }
+
+    @Test
+    fun `Given 한국 카탈로그, Then 입구만 남기는 상태가 아니다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            assertEquals(false, (expectMostRecentItem() as HomeRadioState.Success).isEntranceOnly)
         }
     }
 }

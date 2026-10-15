@@ -62,4 +62,16 @@ class StationRingTest {
         assertNull(emptyList<io.jacob.episodive.core.model.Station>().neighbor(a.id, 1))
         assertNull(listOf(a, b).neighbor(regionalRadioStationTestData.id, 1))
     }
+
+    @Test
+    fun `Given 기준이 전체 목록에 없고 최근에 둘 이상, Then 최근을 돈다`() {
+        val recents = listOf(b, c)
+
+        assertEquals(recents, stationRing(b.id, emptyList(), listOf(a), recents))
+    }
+
+    @Test
+    fun `Given 기준이 전체 목록에도 없고 최근은 하나뿐, Then 전체다`() {
+        assertEquals(listOf(a), stationRing(b.id, emptyList(), listOf(a), listOf(b)))
+    }
 }

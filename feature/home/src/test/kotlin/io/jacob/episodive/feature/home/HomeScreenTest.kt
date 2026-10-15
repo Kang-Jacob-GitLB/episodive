@@ -50,6 +50,7 @@ class HomeScreenTest {
         liveEpisodes: List<Episode> = liveEpisodeTestDataList,
         channels: List<Channel> = channelTestDataList,
         radio: List<Station> = emptyList(),
+        radioEntranceOnly: Boolean = false,
         onRadioMore: () -> Unit = {},
         onPlayEpisode: (Episode) -> Unit = {},
         onResumeEpisode: (Episode) -> Unit = {},
@@ -89,6 +90,7 @@ class HomeScreenTest {
                     liveEpisodes = SectionState.Success(liveEpisodes),
                     channels = SectionState.Success(channels),
                     radio = SectionState.Success(radio),
+                    radioEntranceOnly = radioEntranceOnly,
                     onRadioMore = onRadioMore,
                     onPlayEpisode = onPlayEpisode,
                     onResumeEpisode = onResumeEpisode,
@@ -305,6 +307,29 @@ class HomeScreenTest {
             liveEpisodes = emptyList(),
             channels = emptyList(),
             radio = radioStationsTestData,
+            onRadioMore = { radioMoreCount++ },
+        )
+
+        composeTestRule.onNodeWithText("Radio").assertExists()
+        composeTestRule.onNodeWithContentDescription("See all Radio").performClick()
+
+        assertEquals(1, radioMoreCount)
+    }
+
+    @Test
+    fun whenRadioEmptyButEntranceOnly_headerAndMoreActionRemain() {
+        var radioMoreCount = 0
+        setHomeScreen(
+            userRecentPodcasts = emptyList(),
+            randomEpisodes = emptyList(),
+            userTrendingPodcasts = emptyList(),
+            followedPodcasts = emptyList(),
+            localTrendingPodcasts = emptyList(),
+            foreignTrendingPodcasts = emptyList(),
+            liveEpisodes = emptyList(),
+            channels = emptyList(),
+            radio = emptyList(),
+            radioEntranceOnly = true,
             onRadioMore = { radioMoreCount++ },
         )
 
