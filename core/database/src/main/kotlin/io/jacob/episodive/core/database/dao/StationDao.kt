@@ -108,6 +108,10 @@ interface StationDao {
     @Upsert
     suspend fun upsertRemoteStation(station: RadioBrowserStationEntity)
 
+    /** 메타 한 건. 즐겨찾기·최근에 오른 적이 없거나 정리돼 없으면 null. */
+    @Query("SELECT * FROM radio_browser_stations WHERE stationId = :stationId")
+    suspend fun getRemoteStation(stationId: String): RadioBrowserStationEntity?
+
     /** 즐겨찾기·최근 어디에도 없는 Radio Browser 메타를 지운다. */
     @Query(
         "DELETE FROM radio_browser_stations WHERE stationId NOT IN " +

@@ -25,6 +25,11 @@ class KoreanStationCatalogTest {
     }
 
     @Test
+    fun `Given catalog, Then station ids never contain a colon so they cannot clash with rb ids`() {
+        assertTrue(entries.none { it.station.id.contains(':') })
+    }
+
+    @Test
     fun `Given catalog, Then 모든 language 는 null 이거나 자막 언어로 변환되고 영어 방송 넷은 en 이다`() {
         entries.forEach { entry ->
             val language = entry.station.language

@@ -18,4 +18,13 @@ class StationRemoteDataSourceImpl @Inject constructor(
         Timber.i("getStationDetails stationUuids: $stationUuids")
         return radioBrowserApi.getStationsByUuid(stationUuids.joinToString(","))
     }
+
+    override suspend fun getStationsByCountry(countryCode: String): List<StationDetailsResponse> {
+        Timber.i("getStationsByCountry countryCode: $countryCode")
+        return radioBrowserApi.searchStations(countryCode, COUNTRY_SEARCH_LIMIT)
+    }
+
+    private companion object {
+        const val COUNTRY_SEARCH_LIMIT = 200
+    }
 }

@@ -33,13 +33,14 @@ class PlayStationUseCase @Inject constructor(
     private val supervisor: LiveStreamSupervisor,
 ) {
     suspend operator fun invoke(stationId: String): PlayStationResult {
+        // getStation 은 해외 스테이션이면 Room 을 기다릴 수 있다. 그 대기 중의 끼어듦도 잡도록 가장 먼저 읽는다.
+        val requestCount = playerRepository.playRequestCount()
         val station = stationRepository.getStation(stationId) ?: return PlayStationResult.Unavailable
 
         // 감독자는 Application 이 아니라 여기서 처음 깨운다. Application.onCreate 에서 주입하면
         // WorkManager 로 깬 프로세스에서도 ExoPlayer 가 만들어진다.
         supervisor.start()
 
-        val requestCount = playerRepository.playRequestCount()
         val stream = stationRepository.resolveStreamUrl(stationId)
         // 알림 아트를 IO 에서 미리 그린다(메인에서 그리지 않게). 이 대기도 끼어듦 판정에 들어가도록 아래 확인보다 앞에 둔다. 실패해도 재생은 막지 않는다 —
         // playStation 이 메인에서 그리는 폴백을 가진다.

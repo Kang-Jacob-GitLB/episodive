@@ -103,4 +103,32 @@ class StationArtTest {
         assertEquals(0.30f, StationArt("KBS", color).textRatio, 0f)
         assertEquals(0.25f, StationArt("ABCD", color).textRatio, 0f)
     }
+
+    @Test
+    fun `Given 방송사가 빈 해외 스테이션, Then 이름이 색의 근거가 되고 호출마다 같다`() {
+        val a = station("Jazz FM", broadcaster = "")
+        assertEquals(a.art.colorArgb, station("Jazz FM", broadcaster = "").art.colorArgb)
+        assertEquals(
+            station("Jazz FM", broadcaster = "Jazz FM").art.colorArgb,
+            a.art.colorArgb,
+        )
+        assertNotEquals(a.art.colorArgb, station("Radio Paradise", broadcaster = "").art.colorArgb)
+    }
+
+    @Test
+    fun `Given 방송사가 빈 스테이션, Then 이름의 첫 토큰에서 이니셜을 뽑는다`() {
+        assertEquals("Jazz", station("Jazz FM", broadcaster = "").art.initials)
+    }
+
+    @Test
+    fun `Given 기타 문자로 시작하는 이름, Then 첫 글자를 대문자로 쓴다`() {
+        assertEquals("Р", station("радио Рекорд", broadcaster = "").art.initials)
+        assertEquals("É", station("école radio", broadcaster = "").art.initials)
+        assertEquals("日", station("日本放送", broadcaster = "").art.initials)
+    }
+
+    @Test
+    fun `Given 글자가 아닌 기호로 시작하는 이름, Then 자리표시 문자다`() {
+        assertEquals("·", station("***", broadcaster = "").art.initials)
+    }
 }

@@ -1,10 +1,15 @@
 package io.jacob.episodive.core.data.repository
 
 import io.jacob.episodive.core.data.radio.KoreanStationCatalog
+import io.jacob.episodive.core.data.radio.RemoteStation
 import io.jacob.episodive.core.data.radio.StationCatalogEntry
+import io.jacob.episodive.core.data.radio.isRadioBrowserStationId
 import io.jacob.episodive.core.data.radio.mergeStationDetails
 import io.jacob.episodive.core.data.radio.normalizeSchedule
+import io.jacob.episodive.core.data.radio.radioBrowserUuid
+import io.jacob.episodive.core.data.radio.toRemoteStations
 import io.jacob.episodive.core.database.dao.StationDao
+import io.jacob.episodive.core.database.model.RadioBrowserStationEntity
 import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.model.OnAirProgram
@@ -12,6 +17,8 @@ import io.jacob.episodive.core.model.OnAirRefresh
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationListing
+import io.jacob.episodive.core.model.StationListingSource
 import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.network.datasource.BroadcasterStreamDataSource
@@ -24,6 +31,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -33,6 +41,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
+import java.io.IOException
 import java.time.Instant
 import java.time.ZoneId
 import java.util.concurrent.ConcurrentHashMap
@@ -51,14 +60,72 @@ class StationRepositoryImpl internal constructor(
 
     private val stationsById = catalog.associateBy { it.station.id }
 
-    override fun getStations(kind: StationKind): Flow<List<Station>> {
-        return flowOf(
-            catalog.map { it.station }.filter { it.kind == kind }
-        )
+    private class CachedListing(val stations: List<RemoteStation>, val fetchedAtMillis: Long)
+
+    // 해외 목록은 메모리 캐시만 둔다. 인기 순위라 앱을 다시 켜면 다시 받아도 되고, 토큰이 붙은 주소를 DB 에 남기지 않는다.
+    private val listingCache = ConcurrentHashMap<String, CachedListing>()
+
+    // 국가별 락. 전역 락이면 느린 국가 하나가 다른 국가의 갱신까지 막는다.
+    private val listingMutexes = ConcurrentHashMap<String, Mutex>()
+
+    // 지금까지 목록에서 본 해외 스테이션. 목록에서 고른 스테이션을 재생·즐겨찾기할 때 주소(재생 대체)와 메타(저장)를 얻는다.
+    private val knownRemote = ConcurrentHashMap<String, RemoteStation>()
+
+    override fun getStationListing(kind: StationKind, countryCode: String?): Flow<StationListing> {
+        val country = countryCode?.trim()?.uppercase()?.takeIf { COUNTRY_CODE.matches(it) } ?: CURATED_COUNTRY
+        if (country == CURATED_COUNTRY || kind != StationKind.RADIO) {
+            return flowOf(
+                StationListing(
+                    countryCode = CURATED_COUNTRY,
+                    source = StationListingSource.Curated,
+                    stations = catalog.map { it.station }.filter { it.kind == kind },
+                )
+            )
+        }
+        return flow {
+            emit(
+                StationListing(
+                    countryCode = country,
+                    source = StationListingSource.RadioBrowser,
+                    stations = loadCountry(country).map { it.station },
+                )
+            )
+        }
     }
 
+    /**
+     * 국가의 목록을 캐시에서 주거나 받아 온다. [LISTING_TTL_MILLIS] 안이면 그대로 쓰고, 지났으면 다시 받는다.
+     * 받다 실패하면(시간 초과 포함) 이전 값이 있으면 그것을 주고 캐시 시각은 갱신하지 않아 다음에 다시 시도한다.
+     * 이전 값이 없으면 예외를 던진다 — 실패를 빈 목록으로 캐시하지 않는다.
+     */
+    private suspend fun loadCountry(country: String): List<RemoteStation> = withContext(ioDispatcher) {
+        listingMutexes.getOrPut(country) { Mutex() }.withLock {
+            val cached = listingCache[country]
+            if (cached != null && now() - cached.fetchedAtMillis < LISTING_TTL_MILLIS) return@withLock cached.stations
+            try {
+                val fetched = withTimeoutOrNull(LISTING_TIMEOUT_MILLIS) {
+                    remoteDataSource.getStationsByCountry(country).toRemoteStations()
+                } ?: throw IOException("station listing timed out. country: $country")
+                listingCache[country] = CachedListing(fetched, now())
+                fetched.forEach { knownRemote[it.station.id] = it }
+                fetched
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "getStationsByCountry failed. country: $country")
+                cached?.stations ?: throw e
+            }
+        }
+    }
+
+    // 조인과 Room 조회에서 본 메타. 재시작 뒤처럼 목록(knownRemote)을 본 적 없는 스테이션도 해제 → 실행 취소로 다시
+    // 더할 수 있게 한다. 메타 없이 더하면 조인에서 버려져 즐겨찾기가 조용히 사라진다.
+    private val rememberedMeta = ConcurrentHashMap<String, RadioBrowserStationEntity>()
+
     override fun getFavoriteStations(): Flow<List<Station>> {
-        return stationDao.getFavoriteStationIds().map { it.toStations() }
+        return stationDao.getFavoriteStationsWithMeta().map { rows ->
+            rows.mapNotNull { stationOf(it.stationId, it.meta) }
+        }
     }
 
     override fun isFavorite(stationId: String): Flow<Boolean> {
@@ -66,38 +133,97 @@ class StationRepositoryImpl internal constructor(
     }
 
     override suspend fun toggleFavorite(stationId: String): Boolean {
-        return stationDao.toggleFavorite(stationId)
+        if (!stationId.isRadioBrowserStationId()) return stationDao.toggleFavorite(stationId)
+        val meta = metaOf(stationId)
+        if (meta != null) return stationDao.toggleFavoriteWithMeta(meta)
+        // 메타를 끝내 못 얻은 해외 스테이션은 더하지 않는다(메타 없는 행은 목록에서 버려진다). 해제는 허용한다.
+        Timber.w("no meta for remote station. stationId: $stationId")
+        return if (stationDao.isFavorite(stationId).first()) stationDao.toggleFavorite(stationId) else false
     }
 
+    /** 메타를 목록(메모리) → 앞서 본 메타 → Room 순으로 찾는다. 없으면 null. */
+    private suspend fun metaOf(stationId: String): RadioBrowserStationEntity? =
+        knownRemote[stationId]?.toEntity()
+            ?: rememberedMeta[stationId]
+            ?: roomMetaOf(stationId)
+
+    /** Room 의 메타 한 건. 읽기에 실패해도 호출한 쪽의 흐름(재생·표시)을 막지 않으려 null 로 돌린다. */
+    private suspend fun roomMetaOf(stationId: String): RadioBrowserStationEntity? =
+        try {
+            withContext(ioDispatcher) { stationDao.getRemoteStation(stationId) }
+                ?.also { rememberedMeta[stationId] = it }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "getRemoteStation failed. stationId: $stationId")
+            null
+        }
+
     override fun getRecentStations(limit: Int): Flow<List<Station>> {
-        // 카탈로그에 없는 id 가 섞여 있어도 limit 개를 채우도록 조인 뒤에 자른다.
-        return stationDao.getRecentStationIds().map { it.toStations().take(limit) }
+        // 조인에서 빠지는 id 가 섞여 있어도 limit 개를 채우도록 조인 뒤에 자른다.
+        return stationDao.getRecentStationsWithMeta().map { rows ->
+            rows.mapNotNull { stationOf(it.stationId, it.meta) }.take(limit)
+        }
     }
 
     override suspend fun markPlayed(stationId: String) {
-        stationDao.recordPlayed(
-            recent = RecentStationEntity(
-                stationId = stationId,
-                playedAtMillis = Clock.System.now().toEpochMilliseconds(),
-            ),
-            keep = StationRepository.MAX_RECENT_STATIONS,
-        )
+        val playedAtMillis = Clock.System.now().toEpochMilliseconds()
+        val meta = if (stationId.isRadioBrowserStationId()) {
+            // 메타를 못 얻은 해외 스테이션은 기록하지 않는다(메타 없는 행은 목록에서 버려진다).
+            metaOf(stationId) ?: return
+        } else {
+            null
+        }
+        if (meta != null) {
+            stationDao.recordPlayedWithMeta(meta, playedAtMillis, StationRepository.MAX_RECENT_STATIONS)
+        } else {
+            stationDao.recordPlayed(
+                recent = RecentStationEntity(stationId = stationId, playedAtMillis = playedAtMillis),
+                keep = StationRepository.MAX_RECENT_STATIONS,
+            )
+        }
     }
 
     /**
-     * 저장된 id 를 카탈로그와 조인한다. 카탈로그에서 빠진(종료·개편된) 스테이션의 id 는 DB 에 남아
-     * 있을 수 있는데, 재생할 방법이 없으므로 에러로 올리지 않고 조용히 뺀다. 순서는 [ids] 를 따른다.
+     * 저장된 id 를 카탈로그와 조인한다. 카탈로그가 먼저이고, 없으면 해외 메타로 만든다. 카탈로그에서 빠진(종료·개편된)
+     * 스테이션이거나 메타가 정리된 id 는 재생할 방법이 없으므로 에러로 올리지 않고 조용히 뺀다.
      */
-    private fun List<String>.toStations(): List<Station> {
-        return mapNotNull { stationsById[it]?.station }
+    private fun stationOf(stationId: String, meta: RadioBrowserStationEntity?): Station? {
+        meta?.let { rememberedMeta[stationId] = it }
+        return stationsById[stationId]?.station ?: meta?.toStation()
     }
 
-    override fun getStation(stationId: String): Station? = stationsById[stationId]?.station
+    private fun RemoteStation.toEntity() = RadioBrowserStationEntity(
+        stationId = station.id,
+        uuid = uuid,
+        name = station.name,
+        region = station.region,
+        language = station.language,
+        isHls = isHls,
+        savedAtMillis = now(),
+    )
+
+    private fun RadioBrowserStationEntity.toStation() = Station(
+        id = stationId,
+        name = name,
+        broadcaster = "",
+        kind = StationKind.RADIO,
+        region = region,
+        language = language,
+    )
+
+    override suspend fun getStation(stationId: String): Station? {
+        stationsById[stationId]?.let { return it.station }
+        if (!stationId.isRadioBrowserStationId()) return null
+        knownRemote[stationId]?.let { return it.station }
+        return rememberedMeta[stationId]?.toStation() ?: roomMetaOf(stationId)?.toStation()
+    }
 
     override suspend fun resolveStreamUrl(
         stationId: String,
         excluding: Set<String>,
     ): StationStream? = withContext(ioDispatcher) {
+        if (stationId.isRadioBrowserStationId()) return@withContext resolveRemoteStreamUrl(stationId, excluding)
         val entry = stationsById[stationId] ?: return@withContext null
 
         // 후보마다 OkHttp 의 callTimeout 이 걸려 있어도 후보가 여럿이면 합이 길어진다. 재생 버튼을
@@ -141,6 +267,35 @@ class StationRepositoryImpl internal constructor(
         (resolved ?: entry.fallbackUrl?.takeIf { it !in excluding })?.let { StationStream(url = it, isHls = entry.isHls) }
     }
 
+    /**
+     * 해외 스테이션의 주소. `/json/url` 이 준 https 주소를 먼저 쓰고, 실패하거나 http 이거나 이미 실패한 주소면
+     * 목록에서 받아 둔 `url_resolved`(https 만 남긴 것)로 간다. 둘 다 안 되면 null.
+     * https 가 아닌 주소는 cleartext 허용 호스트가 아니라 재생 시점에 조용히 실패하므로 아예 올리지 않는다.
+     */
+    private suspend fun resolveRemoteStreamUrl(stationId: String, excluding: Set<String>): StationStream? {
+        val known = knownRemote[stationId]
+        val resolved = withTimeoutOrNull(RESOLVE_TIMEOUT_MILLIS) {
+            try {
+                remoteDataSource.resolveStreamUrl(stationId.radioBrowserUuid())
+                    ?.takeIf { it.startsWith("https://", ignoreCase = true) && it !in excluding }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "resolveStreamUrl failed. stationId: $stationId")
+                null
+            }
+        }
+        val url = resolved ?: known?.urlResolved?.takeIf { it !in excluding } ?: return null
+        val isHls = known?.isHls
+            ?: rememberedMeta[stationId]?.isHls
+            ?: roomMetaOf(stationId)?.isHls
+            ?: false
+        return StationStream(
+            url = url,
+            isHls = isHls || url.substringBefore('?').endsWith(".m3u8", ignoreCase = true),
+        )
+    }
+
     private class CachedDetails(val details: StationDetails?, val fetchedAtMillis: Long)
 
     // 메모리 캐시만 둔다. 부가 정보라 앱을 다시 켜면 다시 받아도 되고, Room 스키마를 늘릴 값어치가 없다.
@@ -148,7 +303,9 @@ class StationRepositoryImpl internal constructor(
     private val detailsMutex = Mutex()
 
     override suspend fun getStationDetails(stationId: String): StationDetails? = withContext(ioDispatcher) {
-        val entry = stationsById[stationId] ?: return@withContext null
+        val uuids = stationsById[stationId]?.radioBrowserIds
+            ?: stationId.takeIf { it.isRadioBrowserStationId() }?.let { listOf(it.radioBrowserUuid()) }
+            ?: return@withContext null
 
         // 같은 스테이션을 동시에 부르면 한 번만 받도록 락 안에서 확인하고 받는다. 상세는 부가 정보라
         // 직렬화돼도 상관없다.
@@ -159,8 +316,8 @@ class StationRepositoryImpl internal constructor(
 
             val fetched = withTimeoutOrNull(DETAILS_TIMEOUT_MILLIS) {
                 try {
-                    val responses = remoteDataSource.getStationDetails(entry.radioBrowserIds)
-                    Fetched(mergeStationDetails(entry.radioBrowserIds, responses))
+                    val responses = remoteDataSource.getStationDetails(uuids)
+                    Fetched(mergeStationDetails(uuids, responses))
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -346,6 +503,10 @@ class StationRepositoryImpl internal constructor(
         mapNotNull { it.startMillis }.filter { it > nowMillis }.minOrNull()
 
     private companion object {
+        const val CURATED_COUNTRY = "KR"
+        val COUNTRY_CODE = Regex("[A-Z]{2}")
+        const val LISTING_TTL_MILLIS = 6 * 60 * 60 * 1000L
+        const val LISTING_TIMEOUT_MILLIS = 10_000L
         const val RESOLVE_TIMEOUT_MILLIS = 15_000L
         const val BROADCASTER_TIMEOUT_MILLIS = 5_000L
         const val DETAILS_TIMEOUT_MILLIS = 10_000L
