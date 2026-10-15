@@ -9,6 +9,11 @@ import io.jacob.episodive.core.common.combine
 import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.StationPlaybackController
+import io.jacob.episodive.core.domain.usecase.caption.CaptionToggleResult
+import io.jacob.episodive.core.domain.usecase.caption.ObserveCaptionDownloadFailuresUseCase
+import io.jacob.episodive.core.domain.usecase.caption.ObserveStationCaptionUseCase
+import io.jacob.episodive.core.domain.usecase.caption.StationCaption
+import io.jacob.episodive.core.domain.usecase.caption.ToggleCaptionUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
@@ -20,20 +25,27 @@ import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.StationSchedule
+import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
+import io.jacob.episodive.core.model.caption.LiveCaptionState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+import timber.log.Timber
 
 /**
  * 라디오 전용 플레이어 시트의 상태. 에피소드용 `PlayerViewModel` 은 스테이션이 올라 있는 동안 Error 라
@@ -52,6 +64,9 @@ class StationPlayerViewModel @Inject constructor(
     private val observeOnAirProgramUseCase: ObserveOnAirProgramUseCase,
     private val observeScheduleUseCase: ObserveScheduleUseCase,
     private val sleepTimer: SleepTimer,
+    observeStationCaptionUseCase: ObserveStationCaptionUseCase,
+    private val toggleCaptionUseCase: ToggleCaptionUseCase,
+    observeCaptionDownloadFailuresUseCase: ObserveCaptionDownloadFailuresUseCase,
 ) : ViewModel() {
 
     val state: StateFlow<StationPlayerState> = combine(
@@ -158,10 +173,38 @@ class StationPlayerViewModel @Inject constructor(
             initialValue = null,
         )
 
+    /**
+     * 자막 상태(스테이션 id 가 붙는다). `state` 에 끼우지 않는다 — 시트가 이 StateFlow 를 수집하는 동안만 인식이 돈다. 시트가 닫히면
+     * `WhileSubscribed(5s)` 뒤 세션이 끝난다. 토글은 에피소드와 공유하는 `isCaptionEnabled` 하나다.
+     */
+    val caption: StateFlow<StationCaption> = observeStationCaptionUseCase()
+        // catch 로 끝내면 토글이 죽는다(저장값은 켜짐인데 화면은 꺼짐으로 굳는다). 짧은 백오프로 재구독하며,
+        // stateIn 이 재시도 대기 중에도 마지막 값을 들고 있다.
+        .retryWhen { cause, attempt ->
+            Timber.w(cause, "스테이션 자막 스트림이 끊겼다 - 재구독 시도 ${attempt + 1}")
+            val backoffMs = (1_000L shl attempt.toInt().coerceIn(0, 5)).coerceAtMost(30_000L)
+            delay(backoffMs)
+            true
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = StationCaption(stationId = null, state = LiveCaptionState.Initial),
+        )
+
     private val _action = MutableSharedFlow<StationPlayerAction>(extraBufferCapacity = 1)
+
+    private val _effect = MutableSharedFlow<StationPlayerEffect>(extraBufferCapacity = 1)
+    val effect = _effect.asSharedFlow()
 
     init {
         handleActions()
+        // 모델 다운로드·로드 실패는 caption 에 담기지 않는 일회성 이벤트다.
+        viewModelScope.launch {
+            observeCaptionDownloadFailuresUseCase()
+                .catch { Timber.w(it, "자막 다운로드 실패 스트림이 끊겼다") }
+                .collect { failure -> _effect.emit(StationPlayerEffect.CaptionDownloadFailed(failure.reason)) }
+        }
     }
 
     // 즐겨찾기 토글은 따로 띄운다. 여기서 기다리면 그동안 이전/다음 연타가 줄을 선다.
@@ -175,6 +218,7 @@ class StationPlayerViewModel @Inject constructor(
                 is StationPlayerAction.ToggleFavorite -> toggleFavorite()
                 is StationPlayerAction.SetSleepTimer -> sleepTimer.start(action.durationMs)
                 is StationPlayerAction.CancelSleepTimer -> sleepTimer.cancel()
+                is StationPlayerAction.ToggleCaption -> toggleCaption()
             }
         }
     }
@@ -203,6 +247,25 @@ class StationPlayerViewModel @Inject constructor(
             all = getStationsUseCase(StationKind.RADIO).first(),
         )
         ring.neighbor(anchorId, delta)?.let { stationPlaybackController.play(it.id) }
+    }
+
+    // 받는 중이거나 caption 이 아직 이전 스테이션의 값이면 토글 판정이 어긋난다. 무시한다.
+    private fun toggleCaption() {
+        val active = state.value as? StationPlayerState.Active ?: return
+        val current = caption.value
+        if (active.isPending || current.stationId != active.station.id) return
+        viewModelScope.launch {
+            when (val result = toggleCaptionUseCase(current.state)) {
+                is CaptionToggleResult.DownloadStarted ->
+                    _effect.emit(StationPlayerEffect.CaptionDownloadStarted(result.sizeBytes))
+
+                CaptionToggleResult.UnsupportedLanguage -> _effect.emit(StationPlayerEffect.CaptionUnsupported)
+
+                CaptionToggleResult.Enabled,
+                CaptionToggleResult.Disabled,
+                CaptionToggleResult.DownloadCancelled -> {}
+            }
+        }
     }
 
     /** 토글을 직렬화한다. 이전 값을 읽고 쓰는 사이에 두 번째 토글이 끼면 한 번이 사라진다. */
@@ -264,5 +327,13 @@ sealed interface StationPlayerAction {
     data object Next : StationPlayerAction
     data object ToggleFavorite : StationPlayerAction
     data class SetSleepTimer(val durationMs: Long) : StationPlayerAction
+    data object ToggleCaption : StationPlayerAction
     data object CancelSleepTimer : StationPlayerAction
+}
+
+/** 시트의 스낵바로 알릴 일회성 이벤트. */
+sealed interface StationPlayerEffect {
+    data class CaptionDownloadStarted(val sizeBytes: Long) : StationPlayerEffect
+    data object CaptionUnsupported : StationPlayerEffect
+    data class CaptionDownloadFailed(val reason: CaptionDownloadFailure.Reason) : StationPlayerEffect
 }

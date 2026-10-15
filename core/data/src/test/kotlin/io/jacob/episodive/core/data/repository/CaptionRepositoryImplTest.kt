@@ -10,6 +10,7 @@ import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
 import io.jacob.episodive.core.model.caption.CaptionLanguage
 import io.jacob.episodive.core.model.caption.CaptionModelState
 import io.jacob.episodive.core.model.caption.CaptionSession
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.testing.model.captionLineOf
 import io.jacob.episodive.core.testing.model.liveCaptionTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -101,7 +102,7 @@ class CaptionRepositoryImplTest {
     fun `Given the model is not installed, When liveCaptions, Then it completes without emitting`() = runTest {
         every { captionModelManager.installed(CaptionLanguage.ENGLISH) } returns null
 
-        repository.liveCaptions(episodeId = 1L, language = CaptionLanguage.ENGLISH).test {
+        repository.liveCaptions(subject = CaptionSubject.Episode(1L), language = CaptionLanguage.ENGLISH).test {
             awaitComplete()
         }
         verify(exactly = 0) { liveCaptionEngine.session(any(), any()) }
@@ -119,11 +120,11 @@ class CaptionRepositoryImplTest {
         )
         every { captionModelManager.installed(CaptionLanguage.ENGLISH) } returns model
         val running = CaptionSession.Running(
-            liveCaptionTestData.copy(episodeId = 1L, lines = listOf(captionLineOf(id = 0L, text = "hello", isFinal = false))),
+            liveCaptionTestData.copy(subject = CaptionSubject.Episode(1L), lines = listOf(captionLineOf(id = 0L, text = "hello", isFinal = false))),
         )
-        every { liveCaptionEngine.session(1L, model) } returns flowOf(CaptionSession.Loading, running)
+        every { liveCaptionEngine.session(CaptionSubject.Episode(1L), model) } returns flowOf(CaptionSession.Loading, running)
 
-        repository.liveCaptions(episodeId = 1L, language = CaptionLanguage.ENGLISH).test {
+        repository.liveCaptions(subject = CaptionSubject.Episode(1L), language = CaptionLanguage.ENGLISH).test {
             assertEquals(CaptionSession.Loading, awaitItem())
             assertEquals(running, awaitItem())
             awaitComplete()
@@ -141,9 +142,9 @@ class CaptionRepositoryImplTest {
             maxLineChars = 80,
         )
         every { captionModelManager.installed(CaptionLanguage.ENGLISH) } returns model
-        every { liveCaptionEngine.session(1L, model) } returns flowOf(CaptionSession.Unloadable)
+        every { liveCaptionEngine.session(CaptionSubject.Episode(1L), model) } returns flowOf(CaptionSession.Unloadable)
 
-        repository.liveCaptions(episodeId = 1L, language = CaptionLanguage.ENGLISH).test {
+        repository.liveCaptions(subject = CaptionSubject.Episode(1L), language = CaptionLanguage.ENGLISH).test {
             assertEquals(CaptionSession.Unloadable, awaitItem())
             awaitComplete()
         }
@@ -158,10 +159,10 @@ class CaptionRepositoryImplTest {
             every { captionTranslatorFactory.create("en", "ko") } returns null
             val cues = flowOf("hello", "world")
 
-            repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
+            repository.translatedCues(subject = CaptionSubject.Episode(1L), sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
                 assertEquals(
                     liveCaptionTestData.copy(
-                        episodeId = 1L,
+                        subject = CaptionSubject.Episode(1L),
                         lines = listOf(captionLineOf(id = 0L, text = "hello", isFinal = true)),
                         translations = emptyList(),
                         isTranslating = false,
@@ -171,7 +172,7 @@ class CaptionRepositoryImplTest {
                 // 늦게 온 cue 도 앞줄을 밀어내지 않고 롤링 창에 함께 쌓인다.
                 assertEquals(
                     liveCaptionTestData.copy(
-                        episodeId = 1L,
+                        subject = CaptionSubject.Episode(1L),
                         lines = listOf(
                             captionLineOf(id = 0L, text = "hello", isFinal = true),
                             captionLineOf(id = 1L, text = "world", isFinal = true),
@@ -190,7 +191,7 @@ class CaptionRepositoryImplTest {
         every { captionTranslatorFactory.create("en", "ko") } returns null
         val cues = flowOf("hello", "", "world")
 
-        repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
+        repository.translatedCues(subject = CaptionSubject.Episode(1L), sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
             assertEquals(listOf(captionLineOf(id = 0L, text = "hello", isFinal = true)), awaitItem()?.lines)
             // 빈 cue 는 새 방출을 내지 않고 건너뛴다 — 그 다음 cue 가 앞줄 뒤에 그대로 이어붙는다.
             assertEquals(
@@ -207,7 +208,7 @@ class CaptionRepositoryImplTest {
             val translator = FakeCaptionTranslator { text -> "$text-번역" }
             every { captionTranslatorFactory.create("en", "ko") } returns translator
 
-            repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = flowOf("hello"), seeks = emptyFlow()).test {
+            repository.translatedCues(subject = CaptionSubject.Episode(1L), sourceLanguageTag = "en", cues = flowOf("hello"), seeks = emptyFlow()).test {
                 val original = awaitItem()
                 assertEquals(listOf(captionLineOf(id = 0L, text = "hello", isFinal = true)), original?.lines)
                 assertTrue(original?.translations.orEmpty().isEmpty())
@@ -238,7 +239,7 @@ class CaptionRepositoryImplTest {
             every { captionTranslatorFactory.create("en", "ko") } returns translator
             val cues = MutableSharedFlow<String>(extraBufferCapacity = 1)
 
-            repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
+            repository.translatedCues(subject = CaptionSubject.Episode(1L), sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
                 cues.emit("first")
                 val firstOriginal = awaitItem()
                 assertEquals(listOf(captionLineOf(id = 0L, text = "first", isFinal = true)), firstOriginal?.lines)
@@ -271,7 +272,7 @@ class CaptionRepositoryImplTest {
         val cues = MutableSharedFlow<String>(extraBufferCapacity = 1)
         val seeks = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
-        repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = cues, seeks = seeks).test {
+        repository.translatedCues(subject = CaptionSubject.Episode(1L), sourceLanguageTag = "en", cues = cues, seeks = seeks).test {
             cues.emit("hello")
             assertEquals(listOf(captionLineOf(id = 0L, text = "hello", isFinal = true)), awaitItem()?.lines)
 
@@ -288,7 +289,7 @@ class CaptionRepositoryImplTest {
         val cues = MutableSharedFlow<String>(extraBufferCapacity = 1)
         val seeks = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
-        repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = cues, seeks = seeks).test {
+        repository.translatedCues(subject = CaptionSubject.Episode(1L), sourceLanguageTag = "en", cues = cues, seeks = seeks).test {
             cues.emit("hello")
             awaitItem()
 
@@ -323,7 +324,7 @@ class CaptionRepositoryImplTest {
         val cues = MutableSharedFlow<String>(extraBufferCapacity = 1)
         val seeks = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
-        repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = cues, seeks = seeks).test {
+        repository.translatedCues(subject = CaptionSubject.Episode(1L), sourceLanguageTag = "en", cues = cues, seeks = seeks).test {
             cues.emit("hello")
             awaitItem()
             firstTranslationStarted.await()
@@ -356,7 +357,7 @@ class CaptionRepositoryImplTest {
             every { captionTranslatorFactory.create("en", "ko") } returns translator
             val cues = MutableSharedFlow<String>(extraBufferCapacity = 1)
 
-            repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
+            repository.translatedCues(subject = CaptionSubject.Episode(1L), sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
                 cues.emit("hello")
                 awaitItem() // 원문 "hello"
                 translationStarted.await()
@@ -403,7 +404,7 @@ class CaptionRepositoryImplTest {
             every { captionTranslatorFactory.create("en", "ko") } returns translator
             val cues = MutableSharedFlow<String>(extraBufferCapacity = 1)
 
-            repository.translatedCues(episodeId = 1L, sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
+            repository.translatedCues(subject = CaptionSubject.Episode(1L), sourceLanguageTag = "en", cues = cues, seeks = emptyFlow()).test {
                 cues.emit("hello")
                 awaitItem() // 원문 "hello"
                 helloStarted.await()

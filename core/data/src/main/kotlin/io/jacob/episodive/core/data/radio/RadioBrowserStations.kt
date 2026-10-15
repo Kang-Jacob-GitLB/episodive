@@ -21,15 +21,12 @@ internal fun String.radioBrowserUuid(): String = removePrefix(RADIO_BROWSER_ID_P
 /**
  * 국가별 목록에서 걸러 낸 스테이션 하나. [urlResolved] 는 크롤 시점의 주소라 토큰이 붙어 만료될 수 있으므로
  * 메모리에서만 들고, 재생 직전에 `/json/url` 이 실패했을 때의 대체로만 쓴다. DB 에는 싣지 않는다.
- *
- * @property language 표시에 쓰지는 않지만 메타 표에 남기는 언어 코드(소문자 첫 토큰)
  */
 internal data class RemoteStation(
     val station: Station,
     val uuid: String,
     val urlResolved: String,
     val isHls: Boolean,
-    val language: String?,
 )
 
 /**
@@ -82,10 +79,11 @@ private fun StationDetailsResponse.toRemoteStationOrNull(): RemoteStation? {
             broadcaster = "",
             kind = StationKind.RADIO,
             region = state?.trim()?.takeIf { it.isNotEmpty() },
+            // 자막 인식 언어의 근거. languagecodes 는 "en,es" 처럼 여럿일 수 있어 첫 토큰만 쓴다.
+            language = languageCodes?.substringBefore(',')?.trim()?.lowercase()?.takeIf { it.isNotEmpty() },
         ),
         uuid = uuid,
         urlResolved = url,
         isHls = isHls,
-        language = languageCodes?.substringBefore(',')?.trim()?.lowercase()?.takeIf { it.isNotEmpty() },
     )
 }

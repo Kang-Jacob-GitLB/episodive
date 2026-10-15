@@ -1,5 +1,6 @@
 package io.jacob.episodive.core.caption.engine
 
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.testing.model.captionLineOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -7,7 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CaptionPresenterTest {
-    private val presenter = CaptionPresenter(episodeId = 1L, maxLines = 3)
+    private val presenter = CaptionPresenter(subject = CaptionSubject.Episode(1L), maxLines = 3)
 
     private fun line(id: Long, text: String, isFinal: Boolean) = captionLineOf(id, text, isFinal)
 
@@ -118,7 +119,7 @@ class CaptionPresenterTest {
 
     @Test
     fun `isTranslating is passed through as given`() {
-        val translating = CaptionPresenter(episodeId = 1L, isTranslating = true)
+        val translating = CaptionPresenter(subject = CaptionSubject.Episode(1L), isTranslating = true)
 
         val shown = translating.onFinalized(line(0, "Hello.", isFinal = true))
 

@@ -10,6 +10,7 @@ import io.jacob.episodive.core.model.caption.CaptionAvailability
 import io.jacob.episodive.core.model.caption.CaptionLanguage
 import io.jacob.episodive.core.model.caption.CaptionModelState
 import io.jacob.episodive.core.model.caption.CaptionSession
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.liveCaptionTestData
@@ -154,7 +155,7 @@ class ObserveLiveCaptionUseCaseTest {
             every { playerRepository.cue } returns flowOf("cue")
             every { playerRepository.seeks } returns emptyFlow()
             every {
-                captionRepository.translatedCues(transcriptEpisode.id, transcriptEpisode.feedLanguage, any(), any())
+                captionRepository.translatedCues(CaptionSubject.Episode(transcriptEpisode.id), transcriptEpisode.feedLanguage, any(), any())
             } returns flowOf(liveCaptionTestData)
 
             // When & Then
@@ -164,7 +165,7 @@ class ObserveLiveCaptionUseCaseTest {
                 assertEquals(liveCaptionTestData, state.caption)
                 cancelAndIgnoreRemainingEvents()
             }
-            coVerify(exactly = 1) { captionRepository.translatedCues(transcriptEpisode.id, transcriptEpisode.feedLanguage, any(), any()) }
+            coVerify(exactly = 1) { captionRepository.translatedCues(CaptionSubject.Episode(transcriptEpisode.id), transcriptEpisode.feedLanguage, any(), any()) }
             coVerify(exactly = 0) { captionRepository.modelState(any()) }
             coVerify(exactly = 0) { captionRepository.liveCaptions(any(), any()) }
         }
@@ -180,7 +181,7 @@ class ObserveLiveCaptionUseCaseTest {
             every { playerRepository.progress } returns progressFlow
             every { playerRepository.nowPlaying } returns nowPlayingFlow
             every { captionRepository.modelState(CaptionLanguage.KOREAN) } returns flowOf(CaptionModelState.Installed)
-            every { captionRepository.liveCaptions(koreanEpisode.id, CaptionLanguage.KOREAN) } returns flow {
+            every { captionRepository.liveCaptions(CaptionSubject.Episode(koreanEpisode.id), CaptionLanguage.KOREAN) } returns flow {
                 try {
                     emit(CaptionSession.Running(caption = null))
                     awaitCancellation()
@@ -188,7 +189,7 @@ class ObserveLiveCaptionUseCaseTest {
                     firstSessionCancelled = true
                 }
             }
-            every { captionRepository.liveCaptions(anotherKoreanEpisode.id, CaptionLanguage.KOREAN) } returns flow {
+            every { captionRepository.liveCaptions(CaptionSubject.Episode(anotherKoreanEpisode.id), CaptionLanguage.KOREAN) } returns flow {
                 emit(CaptionSession.Running(caption = null))
                 awaitCancellation()
             }
@@ -210,8 +211,8 @@ class ObserveLiveCaptionUseCaseTest {
 
                 cancelAndIgnoreRemainingEvents()
             }
-            coVerify(exactly = 1) { captionRepository.liveCaptions(koreanEpisode.id, CaptionLanguage.KOREAN) }
-            coVerify(exactly = 1) { captionRepository.liveCaptions(anotherKoreanEpisode.id, CaptionLanguage.KOREAN) }
+            coVerify(exactly = 1) { captionRepository.liveCaptions(CaptionSubject.Episode(koreanEpisode.id), CaptionLanguage.KOREAN) }
+            coVerify(exactly = 1) { captionRepository.liveCaptions(CaptionSubject.Episode(anotherKoreanEpisode.id), CaptionLanguage.KOREAN) }
         }
 
     @Test
@@ -225,7 +226,7 @@ class ObserveLiveCaptionUseCaseTest {
             every { playerRepository.progress } returns progressFlow
             every { playerRepository.nowPlaying } returns flowOf(koreanEpisode)
             every { captionRepository.modelState(CaptionLanguage.KOREAN) } returns modelStateFlow
-            every { captionRepository.liveCaptions(koreanEpisode.id, CaptionLanguage.KOREAN) } returns flow {
+            every { captionRepository.liveCaptions(CaptionSubject.Episode(koreanEpisode.id), CaptionLanguage.KOREAN) } returns flow {
                 sessionOpenCount++
                 emit(CaptionSession.Running(caption = null))
                 awaitCancellation()

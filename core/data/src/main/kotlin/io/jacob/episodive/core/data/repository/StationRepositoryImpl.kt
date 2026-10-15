@@ -198,7 +198,7 @@ class StationRepositoryImpl internal constructor(
         uuid = uuid,
         name = station.name,
         region = station.region,
-        language = language,
+        language = station.language,
         isHls = isHls,
         savedAtMillis = now(),
     )
@@ -209,6 +209,7 @@ class StationRepositoryImpl internal constructor(
         broadcaster = "",
         kind = StationKind.RADIO,
         region = region,
+        language = language,
     )
 
     override suspend fun getStation(stationId: String): Station? {

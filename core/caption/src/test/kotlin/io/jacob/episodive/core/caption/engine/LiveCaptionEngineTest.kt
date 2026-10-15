@@ -3,6 +3,7 @@ package io.jacob.episodive.core.caption.engine
 import io.jacob.episodive.core.caption.asset.InstalledCaptionModel
 import io.jacob.episodive.core.model.caption.CaptionLanguage
 import io.jacob.episodive.core.model.caption.CaptionSession
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.player.audio.PcmChunk
 import io.jacob.episodive.core.player.audio.SpeechPcmSource
 import kotlinx.coroutines.CompletableDeferred
@@ -30,7 +31,7 @@ class LiveCaptionEngineTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
-    private val episodeId = 5778530L
+    private val subject = CaptionSubject.Episode(5778530L)
 
     // RecognizerCache 가 `.loading` 마커를 encoderPath 의 상위 디렉터리에 실제로 쓴다 — 존재하지
     // 않는 경로("/fake/...")를 쓰면 그 쓰기 자체가 (권한 없음으로) 실패해 acquire() 가 조용히
@@ -71,7 +72,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1, rateHz = 16_000))
@@ -106,7 +107,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -138,7 +139,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -177,7 +178,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -223,7 +224,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -269,7 +270,7 @@ class LiveCaptionEngineTest {
             )
 
             val results = mutableListOf<CaptionSession>()
-            backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+            backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
             pump()
 
             pcm.enqueue(chunk(segment = 1))
@@ -308,7 +309,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -347,7 +348,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -379,7 +380,7 @@ class LiveCaptionEngineTest {
         )
 
         pcm.enqueue(chunk(segment = 1))
-        val job = backgroundScope.launch(dispatcher) { engine.session(episodeId, model).collect { } }
+        val job = backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { } }
         pump()
         assertTrue(pcm.startCaptureCalled)
 
@@ -392,6 +393,141 @@ class LiveCaptionEngineTest {
 
         pump(steps = 60) // keep-alive(1s) 를 넘긴다
         assertTrue("keep-alive 가 지나면 캐시가 인식기를 닫아야 한다", recognizer.closed)
+    }
+
+    @Test
+    fun `겹친 두 세션은 첫 세션이 캡처를 멈춘 뒤에야 두 번째가 캡처를 시작한다`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val events = mutableListOf<String>()
+        val pcm = FakeSpeechPcmSource(events)
+        val recognizers = RecognizerCache(FakeEngineRecognizerFactory(events), dispatcher)
+        val engine = LiveCaptionEngine(
+            pcm, recognizers, FakeCaptionTranslatorFactory(null), DeviceLanguageProvider { "en" }, dispatcher,
+        )
+
+        val first = backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { } }
+        pump()
+        val second = backgroundScope.launch(dispatcher) {
+            engine.session(CaptionSubject.Station("kbs-cool-fm"), model).collect { }
+        }
+        pump(steps = 5)
+
+        assertEquals(
+            "첫 세션이 도는 동안 두 번째는 캡처를 시작하면 안 된다",
+            listOf("startCapture"),
+            events.filter { it.endsWith("Capture") },
+        )
+
+        first.cancel()
+        pump(steps = 5)
+
+        assertEquals(
+            "두 번째 startCapture 는 첫 세션의 stopCapture 뒤에만 온다",
+            listOf("startCapture", "stopCapture", "startCapture"),
+            events.filter { it.endsWith("Capture") },
+        )
+        second.cancel()
+        pump()
+        assertEquals(
+            listOf("startCapture", "stopCapture", "startCapture", "stopCapture"),
+            events.filter { it.endsWith("Capture") },
+        )
+    }
+
+    @Test
+    fun `락을 기다리다 취소된 세션은 캡처를 건드리지 않는다`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val events = mutableListOf<String>()
+        val pcm = FakeSpeechPcmSource(events)
+        val recognizers = RecognizerCache(FakeEngineRecognizerFactory(events), dispatcher)
+        val engine = LiveCaptionEngine(
+            pcm, recognizers, FakeCaptionTranslatorFactory(null), DeviceLanguageProvider { "en" }, dispatcher,
+        )
+
+        val first = backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { } }
+        pump()
+        val waiting = backgroundScope.launch(dispatcher) {
+            engine.session(CaptionSubject.Station("kbs-cool-fm"), model).collect { }
+        }
+        pump(steps = 3)
+        waiting.cancel()
+        pump(steps = 3)
+
+        assertEquals(
+            "기다리던 세션의 취소가 돌고 있는 세션의 캡처를 끄면 안 된다",
+            listOf("startCapture"),
+            events.filter { it.endsWith("Capture") },
+        )
+        first.cancel()
+        pump()
+        assertEquals(listOf("startCapture", "stopCapture"), events.filter { it.endsWith("Capture") })
+    }
+
+    @Test
+    fun `락을 기다리는 세션도 Loading 을 먼저 내보낸다`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val events = mutableListOf<String>()
+        val pcm = FakeSpeechPcmSource(events)
+        val recognizers = RecognizerCache(FakeEngineRecognizerFactory(events), dispatcher)
+        val engine = LiveCaptionEngine(
+            pcm, recognizers, FakeCaptionTranslatorFactory(null), DeviceLanguageProvider { "en" }, dispatcher,
+        )
+
+        val first = backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { } }
+        pump()
+        val waitingResults = mutableListOf<CaptionSession>()
+        val waiting = backgroundScope.launch(dispatcher) {
+            engine.session(CaptionSubject.Station("kbs-cool-fm"), model).collect { waitingResults.add(it) }
+        }
+        pump(steps = 3)
+
+        assertEquals(listOf<CaptionSession>(CaptionSession.Loading), waitingResults)
+        assertEquals(listOf("startCapture"), events.filter { it.endsWith("Capture") })
+        waiting.cancel()
+        first.cancel()
+        pump()
+    }
+
+    @Test
+    fun `다른 언어 두 세션은 첫 인식기가 첫 세션 stream 이 닫힌 뒤에만 닫힌다`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val events = mutableListOf<String>()
+        val pcm = FakeSpeechPcmSource(events)
+        val recognizers = RecognizerCache(FakeEngineRecognizerFactory(events), dispatcher)
+        val engine = LiveCaptionEngine(
+            pcm, recognizers, FakeCaptionTranslatorFactory(null), DeviceLanguageProvider { "en" }, dispatcher,
+        )
+        val koDir = tempFolder.newFolder("ko")
+        val koModel = InstalledCaptionModel(
+            language = CaptionLanguage.KOREAN,
+            encoderPath = File(koDir, "encoder.onnx").path,
+            decoderPath = File(koDir, "decoder.onnx").path,
+            joinerPath = File(koDir, "joiner.onnx").path,
+            tokensPath = File(koDir, "tokens.txt").path,
+            maxLineChars = 200,
+        )
+
+        val first = backgroundScope.launch(dispatcher) { engine.session(subject, model).collect { } }
+        pcm.enqueue(chunk(segment = 1))
+        pump()
+        val second = backgroundScope.launch(dispatcher) {
+            engine.session(CaptionSubject.Station("kbs-cool-fm"), koModel).collect { }
+        }
+        pump(steps = 5)
+
+        assertFalse("열린 stream 이 있는 동안 en 인식기를 닫으면 안 된다", "closeRecognizer:en" in events)
+        assertFalse("두 번째 세션은 아직 인식기를 만들면 안 된다", "createRecognizer:ko" in events)
+
+        first.cancel()
+        pump(steps = 5)
+
+        val relevant = events.filter { it.startsWith("close") || it.startsWith("createRecognizer") }
+        assertEquals(
+            listOf("createRecognizer:en", "closeStream:en", "closeRecognizer:en", "createRecognizer:ko"),
+            relevant,
+        )
+        second.cancel()
+        pump()
     }
 
     @Test
@@ -412,7 +548,7 @@ class LiveCaptionEngineTest {
             // translators.create() 가 던지는 예외는 세션 안에서 잡지 않는다 — 여기서 삼켜
             // collect 가 그 예외로 죽지 않게만 한다. 검증 대상은 그 예외가 나는 동안에도
             // startCapture()~stopCapture() 사이의 정리가 끝까지 갔는가이다.
-            runCatching { engine.session(episodeId, model).collect { } }
+            runCatching { engine.session(subject, model).collect { } }
         }
         pump()
 
@@ -449,7 +585,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        backgroundScope.launch(dispatcher) { engine.session(episodeId, koModel).collect { results.add(it) } }
+        backgroundScope.launch(dispatcher) { engine.session(subject, koModel).collect { results.add(it) } }
         pump()
 
         pcm.enqueue(chunk(segment = 1))
@@ -494,7 +630,7 @@ class LiveCaptionEngineTest {
         )
 
         val results = mutableListOf<CaptionSession>()
-        engine.session(episodeId, model).collect { results.add(it) }
+        engine.session(subject, model).collect { results.add(it) }
 
         assertEquals(listOf(CaptionSession.Loading), results)
         assertTrue(
@@ -506,7 +642,7 @@ class LiveCaptionEngineTest {
     }
 }
 
-private class FakeSpeechPcmSource : SpeechPcmSource {
+private class FakeSpeechPcmSource(private val events: MutableList<String>? = null) : SpeechPcmSource {
     var startCaptureCalled = false
         private set
     var stopCaptureCalled = false
@@ -519,16 +655,22 @@ private class FakeSpeechPcmSource : SpeechPcmSource {
 
     override fun startCapture() {
         startCaptureCalled = true
+        events?.add("startCapture")
     }
 
     override fun stopCapture() {
         stopCaptureCalled = true
+        events?.add("stopCapture")
     }
 
     override fun poll(): PcmChunk? = if (queue.isEmpty()) null else queue.removeFirst()
 }
 
-private class FakeRecognitionStream(override val sampleRateHz: Int) : RecognitionStream {
+private class FakeRecognitionStream(
+    override val sampleRateHz: Int,
+    private val name: String = "",
+    private val events: MutableList<String>? = null,
+) : RecognitionStream {
     var closed = false
         private set
     var resetCount = 0
@@ -556,27 +698,34 @@ private class FakeRecognitionStream(override val sampleRateHz: Int) : Recognitio
 
     override fun close() {
         closed = true
+        events?.add("closeStream:$name")
     }
 }
 
-private class FakeEngineRecognizer : SpeechRecognizer {
+private class FakeEngineRecognizer(
+    private val name: String = "",
+    private val events: MutableList<String>? = null,
+) : SpeechRecognizer {
     val createdStreams = mutableListOf<FakeRecognitionStream>()
     var closed = false
         private set
 
     override fun createStream(sampleRateHz: Int): RecognitionStream =
-        FakeRecognitionStream(sampleRateHz).also { createdStreams.add(it) }
+        FakeRecognitionStream(sampleRateHz, name, events).also { createdStreams.add(it) }
 
     override fun close() {
         closed = true
+        events?.add("closeRecognizer:$name")
     }
 }
 
-private class FakeEngineRecognizerFactory : SpeechRecognizerFactory {
+private class FakeEngineRecognizerFactory(private val events: MutableList<String>? = null) : SpeechRecognizerFactory {
     val created = mutableListOf<FakeEngineRecognizer>()
 
-    override fun create(model: InstalledCaptionModel): SpeechRecognizer =
-        FakeEngineRecognizer().also { created.add(it) }
+    override fun create(model: InstalledCaptionModel): SpeechRecognizer {
+        events?.add("createRecognizer:${model.language.value}")
+        return FakeEngineRecognizer(model.language.value, events).also { created.add(it) }
+    }
 }
 
 private class FakeCaptionTranslator(private val result: String?) : CaptionTranslator {

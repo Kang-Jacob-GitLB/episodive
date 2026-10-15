@@ -259,7 +259,7 @@ class StationRepositoryImplTest {
             RadioBrowserStationEntity("rb:u9", "u9", "Saved", "Texas", "en", false, 1L)
 
         assertEquals(
-            Station("rb:u9", "Saved", "", StationKind.RADIO, "Texas"),
+            Station("rb:u9", "Saved", "", StationKind.RADIO, "Texas", "en"),
             repository.getStation("rb:u9"),
         )
     }
@@ -352,7 +352,7 @@ class StationRepositoryImplTest {
 
         repository.getFavoriteStations().test {
             assertEquals(
-                listOf(Station("rb:u9", "Saved", "", StationKind.RADIO, "Texas"), radioStationTestData),
+                listOf(Station("rb:u9", "Saved", "", StationKind.RADIO, "Texas", "en"), radioStationTestData),
                 awaitItem(),
             )
             awaitComplete()

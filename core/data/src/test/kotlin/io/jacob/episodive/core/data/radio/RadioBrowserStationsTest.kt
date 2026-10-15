@@ -30,7 +30,7 @@ class RadioBrowserStationsTest {
         assertEquals("u1", remote.uuid)
         assertEquals("https://s.example/live", remote.urlResolved)
         assertFalse(remote.isHls)
-        assertEquals("en", remote.language)
+        assertEquals("en", remote.station.language)
     }
 
     @Test
@@ -38,7 +38,7 @@ class RadioBrowserStationsTest {
         val remote = listOf(remoteResponseTestData("u1", "A", state = " ", languageCodes = "")).toRemoteStations().single()
 
         assertNull(remote.station.region)
-        assertNull(remote.language)
+        assertNull(remote.station.language)
     }
 
     @Test
