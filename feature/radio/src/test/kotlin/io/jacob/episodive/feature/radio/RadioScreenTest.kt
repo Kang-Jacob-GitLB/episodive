@@ -13,8 +13,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationListing
+import io.jacob.episodive.core.model.StationListingSource
 import io.jacob.episodive.core.testing.model.radioStationTestData
-import io.jacob.episodive.core.testing.model.radioStationsTestData
+import io.jacob.episodive.core.testing.model.curatedStationListingTestData
+import io.jacob.episodive.core.testing.model.popularStationListingTestData
 import io.jacob.episodive.core.ui.StationCoverImageTag
 import io.jacob.episodive.core.ui.R as uiR
 import org.junit.Rule
@@ -39,6 +42,7 @@ class RadioScreenTest {
         isPlaying: Boolean = false,
         pendingStationId: String? = null,
         programImages: Map<String, String> = emptyMap(),
+        listing: StationListing = curatedStationListingTestData,
     ) {
         composeTestRule.setContent {
             EpisodiveTheme {
@@ -46,8 +50,19 @@ class RadioScreenTest {
                     state = RadioState.Success(
                         favorites = favorites,
                         recents = recents,
-                        nationwide = radioStationsTestData.filter { it.region == null },
-                        regional = radioStationsTestData.filter { it.region != null },
+                        nationwide = if (listing.source == StationListingSource.Curated) {
+                            listing.stations.filter { it.region == null }
+                        } else {
+                            emptyList()
+                        },
+                        regional = if (listing.source == StationListingSource.Curated) {
+                            listing.stations.filter { it.region != null }
+                        } else {
+                            emptyList()
+                        },
+                        popular = if (listing.source == StationListingSource.Curated) emptyList() else listing.stations,
+                        listingSource = listing.source,
+                        countryCode = listing.countryCode,
                         favoriteIds = favorites.map { it.id }.toSet(),
                         nowPlayingStationId = nowPlayingStationId,
                         isPlaying = isPlaying,
@@ -140,5 +155,42 @@ class RadioScreenTest {
         setScreen(favorites = listOf(a), programImages = mapOf(a.id to "https://img.example.com/a.jpg"))
 
         composeTestRule.onAllNodes(hasTestTag(StationCoverImageTag), useUnmergedTree = true).assertCountEquals(2)
+    }
+
+    @Test
+    fun `Given 해외 인기 목록, Then 인기 섹션만 있고 전국과 지역 섹션은 없다`() {
+        setScreen(listing = popularStationListingTestData("US"))
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.feature_radio_section_popular_format, "United States"))
+            .assertExists()
+        composeTestRule
+            .onAllNodesWithText(context.getString(R.string.feature_radio_section_nationwide))
+            .assertCountEquals(0)
+        composeTestRule
+            .onAllNodesWithText(context.getString(R.string.feature_radio_section_regional))
+            .assertCountEquals(0)
+        composeTestRule.onNodeWithText("Radio One").assertExists()
+    }
+
+    @Test
+    fun `Given 해외 인기 목록이 비어 있음, Then 안내 문구가 나온다`() {
+        setScreen(listing = popularStationListingTestData("US", emptyList()))
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.feature_radio_popular_empty))
+            .assertExists()
+    }
+
+    @Test
+    fun `Given 한국 큐레이션 목록, Then 인기 섹션과 안내 문구는 없다`() {
+        setScreen()
+
+        composeTestRule
+            .onAllNodesWithText(context.getString(R.string.feature_radio_popular_empty))
+            .assertCountEquals(0)
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.feature_radio_section_nationwide))
+            .assertExists()
     }
 }

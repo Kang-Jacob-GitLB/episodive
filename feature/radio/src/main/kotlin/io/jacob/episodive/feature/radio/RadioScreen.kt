@@ -1,6 +1,5 @@
 package io.jacob.episodive.feature.radio
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +44,7 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.model.StationListingSource
 import io.jacob.episodive.core.model.isRetryable
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
@@ -55,6 +56,7 @@ import io.jacob.episodive.core.ui.asUiMessage
 import io.jacob.episodive.core.ui.stationCardStatus
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.util.Locale
 import io.jacob.episodive.core.ui.R as uiR
 
 @Composable
@@ -168,6 +170,15 @@ private fun RadioList(
         )
     }
 
+    // LazyListScope 안에서는 stringResource 를 부를 수 없어 미리 읽어 둔다.
+    val nationwideTitle = stringResource(R.string.feature_radio_section_nationwide)
+    val regionalTitle = stringResource(R.string.feature_radio_section_regional)
+    val popularTitle = stringResource(
+        R.string.feature_radio_section_popular_format,
+        countryDisplayName(state.countryCode),
+    )
+    val popularEmptyText = stringResource(R.string.feature_radio_popular_empty)
+
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     // 아래 LazyColumn 이 내보내는 항목 수와 같아야 스크롤바 위치가 맞는다. 섹션을 더하거나 빼면
@@ -176,6 +187,8 @@ private fun RadioList(
         (if (state.recents.isNotEmpty()) 1 else 0) +
         state.nationwide.groupItemCount() +
         state.regional.groupItemCount() +
+        state.popular.groupItemCount() +
+        (if (state.isPopularEmpty) 2 else 0) +
         1
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -214,7 +227,7 @@ private fun RadioList(
 
             stationGroup(
                 headerKey = "header:nationwide",
-                title = R.string.feature_radio_section_nationwide,
+                titleText = nationwideTitle,
                 stations = state.nationwide,
                 state = state,
                 statusOf = statusOf,
@@ -225,7 +238,7 @@ private fun RadioList(
 
             stationGroup(
                 headerKey = "header:regional",
-                title = R.string.feature_radio_section_regional,
+                titleText = regionalTitle,
                 stations = state.regional,
                 state = state,
                 statusOf = statusOf,
@@ -233,6 +246,35 @@ private fun RadioList(
                 onStationClick = onStationClick,
                 onToggleFavorite = onToggleFavorite,
             )
+
+            // 해외 인기 목록. 받은 것이 하나도 없으면(필터에 다 걸렸거나 그 국가에 방송이 없다) 안내 문구를 둔다.
+            // 목록을 못 받은 실패는 이 화면이 아니라 Error 상태다.
+            stationGroup(
+                headerKey = "header:popular",
+                titleText = popularTitle,
+                stations = state.popular,
+                state = state,
+                statusOf = statusOf,
+                programImages = programImages,
+                onStationClick = onStationClick,
+                onToggleFavorite = onToggleFavorite,
+            )
+
+            if (state.isPopularEmpty) {
+                item(key = "header:popular-empty", contentType = "header") {
+                    SectionHeader(title = popularTitle)
+                }
+                item(key = "popular-empty", contentType = "empty") {
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = dimension.screenPadding),
+                        text = popularEmptyText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
 
             item(key = "space") {
                 // 미니플레이어 높이 + 마진만큼 비워야 마지막 항목이 가리지 않는다.
@@ -258,12 +300,19 @@ private fun RadioList(
     }
 }
 
+private val RadioState.Success.isPopularEmpty: Boolean
+    get() = listingSource == StationListingSource.RadioBrowser && popular.isEmpty()
+
+/** 로케일에 맞춘 국가 이름. 모르는 코드면 코드를 그대로 쓴다. */
+private fun countryDisplayName(countryCode: String): String =
+    Locale("", countryCode).displayCountry.ifBlank { countryCode }
+
 /** [stationGroup] 이 내보내는 항목 수 — 비어 있으면 헤더도 없다. */
 private fun List<Station>.groupItemCount(): Int = if (isEmpty()) 0 else size + 1
 
 private fun LazyListScope.stationGroup(
     headerKey: String,
-    @StringRes title: Int,
+    titleText: String,
     stations: List<Station>,
     state: RadioState.Success,
     programImages: Map<String, String>,
@@ -274,7 +323,7 @@ private fun LazyListScope.stationGroup(
     if (stations.isEmpty()) return
 
     item(key = headerKey, contentType = "header") {
-        SectionHeader(title = stringResource(title))
+        SectionHeader(title = titleText)
     }
 
     items(

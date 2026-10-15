@@ -16,6 +16,7 @@ import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCa
 import io.jacob.episodive.core.model.DataError
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationListingSource
 import io.jacob.episodive.core.model.asDataError
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,12 +61,18 @@ class RadioViewModel @Inject constructor(
             playerRepository.isPlaying,
             playerRepository.isBuffering,
             stationPlaybackController.pendingStationId,
-        ) { stations, favorites, recents, nowPlayingStation, isPlaying, isBuffering, pendingId ->
+        ) { listing, favorites, recents, nowPlayingStation, isPlaying, isBuffering, pendingId ->
+            // 큐레이션(한국)은 전국/지역으로 가르고, 해외는 인기 목록 하나다. 해외 스테이션은 region 이 주(州)라
+            // 전국/지역 구분의 근거가 아니다.
+            val curated = listing.source == StationListingSource.Curated
             RadioState.Success(
                 favorites = favorites,
                 recents = recents,
-                nationwide = stations.filter { it.region == null },
-                regional = stations.filter { it.region != null },
+                nationwide = if (curated) listing.stations.filter { it.region == null } else emptyList(),
+                regional = if (curated) listing.stations.filter { it.region != null } else emptyList(),
+                popular = if (curated) emptyList() else listing.stations,
+                listingSource = listing.source,
+                countryCode = listing.countryCode,
                 favoriteIds = favorites.mapTo(HashSet()) { it.id },
                 nowPlayingStationId = nowPlayingStation?.id,
                 isPlaying = isPlaying,
@@ -85,10 +92,10 @@ class RadioViewModel @Inject constructor(
     /**
      * 스테이션 id → 지금 방송 중인 프로그램 이미지. `state` 와 따로 둔다 — 네트워크로 받고 프로그램 경계마다 바뀌는 값이라
      * 섞으면 재생 상태·목록과 얽혀 매번 목록 전체가 다시 만들어진다. 화면이 구독하는 동안(WhileSubscribed)만 받는다.
-     * 구독 대상은 카탈로그의 라디오 전체다. 즐겨찾기·최근은 그 부분집합이다.
+     * 구독 대상은 전체 목록의 라디오다(해외 목록은 편성 정보가 없어 곧바로 null 이다). 즐겨찾기·최근은 그 부분집합이다.
      */
     val programImages: StateFlow<Map<String, String>> = getStationsUseCase(StationKind.RADIO)
-        .map { stations -> stations.mapTo(LinkedHashSet()) { it.id } }
+        .map { listing -> listing.stations.mapTo(LinkedHashSet()) { it.id } }
         .distinctUntilChanged()
         .flatMapLatest { ids -> observeStationProgramImagesUseCase(ids.toList()) }
         .catch { e ->
@@ -164,6 +171,11 @@ sealed interface RadioState {
         val nationwide: List<Station>,
         /** 지역·공동체 방송. */
         val regional: List<Station>,
+        /** 해외 국가의 인기 방송. 큐레이션(한국)이면 비어 있고 [nationwide]·[regional] 이 채워진다. */
+        val popular: List<Station> = emptyList(),
+        val listingSource: StationListingSource = StationListingSource.Curated,
+        /** 전체 목록의 기준 국가(ISO alpha-2). */
+        val countryCode: String = "KR",
         /** [favorites] 에서 파생한다. 행마다 즐겨찾기 여부를 따로 구독하지 않는다. */
         val favoriteIds: Set<String>,
         val nowPlayingStationId: String?,

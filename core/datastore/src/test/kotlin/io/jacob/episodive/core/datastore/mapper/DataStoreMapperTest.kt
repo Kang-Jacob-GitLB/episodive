@@ -296,4 +296,20 @@ class DataStoreMapperTest {
             assertEquals(1f, backToUserData.speed)
         }
     }
+
+    @Test
+    fun `country is carried both ways and may be null`() {
+        val withCountry = UserPreferences(
+            isFirstLaunch = false,
+            language = "en",
+            country = "US",
+            categories = emptyList(),
+            speed = 1f,
+            isCaptionEnabled = false,
+        )
+
+        assertEquals("US", withCountry.toUserData().country)
+        assertEquals("US", withCountry.toUserData().toUserPreferences().country)
+        assertEquals(null, withCountry.copy(country = null).toUserData().country)
+    }
 }

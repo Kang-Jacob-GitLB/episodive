@@ -407,7 +407,7 @@ class PlayerDataSourceImpl @Inject constructor(
         val mediaMetadata = MediaMetadata.Builder()
             .setTitle(name)
             .setDisplayTitle(name)
-            .setArtist(broadcaster)
+            .setArtist(broadcaster.takeIf { it.isNotBlank() })
             .setMediaType(MediaMetadata.MEDIA_TYPE_RADIO_STATION)
             .setIsPlayable(true)
             .setArtworkData(stationArtwork(), MediaMetadata.PICTURE_TYPE_FRONT_COVER)

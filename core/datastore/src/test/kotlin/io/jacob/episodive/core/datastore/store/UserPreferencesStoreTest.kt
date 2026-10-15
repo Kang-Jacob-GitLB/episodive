@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.Repeat
+import io.jacob.episodive.core.model.countryOrNull
 import io.jacob.episodive.core.testing.util.DisabledOnWindows
 import io.jacob.episodive.core.testing.util.DisabledOnWindowsRule
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -173,6 +174,7 @@ class UserPreferencesStoreTest {
 
         assertTrue(result.isFirstLaunch)
         assertEquals(Locale.getDefault().language, result.language)
+        assertEquals(Locale.getDefault().countryOrNull(), result.country)
         assertTrue(result.categories.isEmpty())
         assertFalse(result.isCaptionEnabled)
     }

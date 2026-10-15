@@ -295,6 +295,15 @@ Room 왕복과 `flowOn(IO)` 를 거쳐 `progress` 보다 늦게 도착한다. �
 의 `media3-exoplayer-hls`). 에피소드와 같은 플레이어·같은 `progress` 를 쓰므로 아래를 어기면 에피소드의
 이어듣기 지점이나 배속이 조용히 망가진다.
 
+- **스테이션 id 는 두 종류다. 카탈로그 slug(`kbs-1radio`, `:` 없음)와 Radio Browser 스테이션 `rb:{uuid}`.**
+  한국(`UserData.country` 가 KR 이거나 null)은 큐레이션 카탈로그(`KoreanStationCatalog`: 방송사 API·편성·이미지)이고,
+  그 밖의 국가는 Radio Browser 국가별 인기 목록(상위 50, `StationListing.source`)이다. 판정은 기기 로케일 국가
+  (`Locale.getDefault().country`, `[A-Z]{2}` 아니면 null)이며 **국가는 "전체 목록" 에만 영향을 준다.** `getStation`·즐겨찾기·
+  최근·재생 주소·상세는 국가와 무관하다(한국 즐겨찾기는 en-US 에서도 남는다). 목록·재생 주소·상세의 **rb 스테이션은
+  https 만** 쓴다(`/json/url` 이 http 를 주면 목록에서 받아 둔 `url_resolved` 로, 그것도 없으면 재생 불가).
+  메타(이름·지역·언어·isHls)는 즐겨찾기·최근에 올릴 때만 `radio_browser_stations` 에 저장하고 **스트림 URL 은 저장하지 않는다.**
+  rb id 는 `*WithMeta` DAO 로만 더한다(메타 없는 행은 조인에서 버려진다). 방송사(`broadcaster`)가 빈 해외 스테이션은
+  부제·알림 아티스트를 비우고 아트 색은 이름으로 정한다.
 - **스테이션 여부는 `nowPlayingStation` 하나로만 가른다.** `nowPlaying` 과 `combine` 하지 마라. 둘은
   `onMediaItemTransition` 의 같은 자리에서 함께 바뀌는 배타 쌍인데, 서로 다른 Flow 를 따로 구독하면
   재생 위치 저장 규약에서 겪은 것과 같은 어긋난 순간을 본다. `MediaNotificationService` 도 두 수집기가

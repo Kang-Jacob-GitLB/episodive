@@ -9,6 +9,7 @@ import io.jacob.episodive.core.domain.usecase.caption.ObserveStationCaptionUseCa
 import io.jacob.episodive.core.domain.usecase.caption.StationCaption
 import io.jacob.episodive.core.domain.usecase.caption.ToggleCaptionUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
@@ -16,12 +17,14 @@ import io.jacob.episodive.core.domain.usecase.station.ObserveScheduleUseCase
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationListing
 import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
 import io.jacob.episodive.core.model.caption.CaptionLanguage
 import io.jacob.episodive.core.model.caption.LiveCaptionState
 import io.jacob.episodive.core.testing.model.bareOnAirProgramTestData
 import io.jacob.episodive.core.testing.model.codecOnlyStationDetailsTestData
+import io.jacob.episodive.core.testing.model.curatedStationListingTestData
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
 import io.jacob.episodive.core.testing.model.kbsHappyRadioStationTestData
 import io.jacob.episodive.core.testing.model.onAirProgramTestData
@@ -33,9 +36,12 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -46,6 +52,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.io.IOException
 
 class StationPlayerViewModelTest {
 
@@ -56,6 +63,7 @@ class StationPlayerViewModelTest {
     private val stationPlaybackController = mockk<StationPlaybackController>(relaxed = true)
     private val getStationsUseCase = mockk<GetStationsUseCase>()
     private val getFavoriteStationsUseCase = mockk<GetFavoriteStationsUseCase>()
+    private val getRecentStationsUseCase = mockk<GetRecentStationsUseCase>()
     private val toggleFavoriteStationUseCase = mockk<ToggleFavoriteStationUseCase>(relaxed = true)
     private val getStationDetailsUseCase = mockk<GetStationDetailsUseCase>()
     private val observeOnAirProgramUseCase = mockk<ObserveOnAirProgramUseCase>()
@@ -76,6 +84,8 @@ class StationPlayerViewModelTest {
     private val isBuffering = MutableStateFlow(false)
     private val favorites = MutableStateFlow<List<Station>>(emptyList())
     private val stations = MutableStateFlow(listOf(a, b, c))
+    private val recents = MutableStateFlow<List<Station>>(emptyList())
+    private var listingFlow: Flow<StationListing>? = null
     private val sleepRemaining = MutableStateFlow<Long?>(null)
     private val captionState = MutableStateFlow(StationCaption(null, LiveCaptionState.Initial))
     private val captionFailures = MutableSharedFlow<CaptionDownloadFailure>(extraBufferCapacity = 1)
@@ -88,7 +98,9 @@ class StationPlayerViewModelTest {
         every { playerRepository.isBuffering } returns isBuffering
         every { stationPlaybackController.pendingStationId } returns pendingStationId
         every { getFavoriteStationsUseCase() } returns favorites
-        every { getStationsUseCase(StationKind.RADIO) } returns stations
+        every { getStationsUseCase(StationKind.RADIO) } returns
+            (listingFlow ?: stations.map { curatedStationListingTestData.copy(stations = it) })
+        every { getRecentStationsUseCase(any()) } returns recents
         every { sleepTimer.remainingMs } returns sleepRemaining
         every { observeOnAirProgramUseCase(any()) } returns flowOf(null)
         every { observeScheduleUseCase(any()) } returns flowOf(StationSchedule(0L, emptyList()))
@@ -101,6 +113,7 @@ class StationPlayerViewModelTest {
             stationPlaybackController = stationPlaybackController,
             getStationsUseCase = getStationsUseCase,
             getFavoriteStationsUseCase = getFavoriteStationsUseCase,
+            getRecentStationsUseCase = getRecentStationsUseCase,
             toggleFavoriteStationUseCase = toggleFavoriteStationUseCase,
             getStationDetailsUseCase = getStationDetailsUseCase,
             observeOnAirProgramUseCase = observeOnAirProgramUseCase,
@@ -161,6 +174,32 @@ class StationPlayerViewModelTest {
         assertEquals(b, s.station)
         assertTrue(s.isPending)
         assertNull(s.streamTitle)
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 현재 국가 목록에 없는 최근 스테이션을 받는 중, Then 최근에서 찾아 Loading 에 고착되지 않는다`() = runTest {
+        val abroad = radioStationTestData.copy(id = "rb:u9", name = "Abroad", broadcaster = "", language = "en")
+        recents.value = listOf(abroad)
+        pendingStationId.value = abroad.id
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+
+        val s = viewModel.activeState()
+        assertEquals(abroad, s.station)
+        assertTrue(s.isPending)
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 전체 목록을 받지 못함, Then 시트는 죽지 않고 즐겨찾기에서 찾는다`() = runTest {
+        listingFlow = flow { throw IOException("offline") }
+        favorites.value = listOf(b)
+        pendingStationId.value = b.id
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+
+        assertEquals(b, viewModel.activeState().station)
         job.cancel()
     }
 

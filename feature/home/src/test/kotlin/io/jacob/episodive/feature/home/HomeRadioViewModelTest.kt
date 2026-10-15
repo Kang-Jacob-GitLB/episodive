@@ -9,11 +9,14 @@ import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveStationProgramImagesUseCase
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationListing
+import io.jacob.episodive.core.testing.model.curatedStationListingTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -47,10 +50,11 @@ class HomeRadioViewModelTest {
         favorites: List<Station> = emptyList(),
         recents: List<Station> = emptyList(),
         catalog: List<Station> = (0 until 12).map(::station),
+        listing: Flow<StationListing> = flowOf(curatedStationListingTestData.copy(stations = catalog)),
     ): HomeRadioViewModel {
         every { getFavoriteStationsUseCase() } returns flowOf(favorites)
         every { getRecentStationsUseCase(any()) } returns flowOf(recents)
-        every { getStationsUseCase(StationKind.RADIO) } returns flowOf(catalog)
+        every { getStationsUseCase(StationKind.RADIO) } returns listing
         every { playerRepository.nowPlayingStation } returns nowPlayingStation
         every { playerRepository.isPlaying } returns MutableStateFlow(false)
         every { playerRepository.isBuffering } returns MutableStateFlow(false)
@@ -129,9 +133,9 @@ class HomeRadioViewModelTest {
     }
 
     @Test
-    fun `Given 목록을 읽다 실패, Then Error 상태다`() = runTest {
+    fun `Given 즐겨찾기를 읽다 실패, Then Error 상태다`() = runTest {
         val viewModel = createViewModel()
-        every { getStationsUseCase(StationKind.RADIO) } returns flow { throw IllegalStateException("boom") }
+        every { getFavoriteStationsUseCase() } returns flow { throw IllegalStateException("boom") }
         val failing = HomeRadioViewModel(
             getStationsUseCase = getStationsUseCase,
             getFavoriteStationsUseCase = getFavoriteStationsUseCase,
@@ -197,5 +201,22 @@ class HomeRadioViewModelTest {
 
         // 로딩 중의 빈 구성 한 번을 빼면, 섹션이 채워진 뒤로는 구독이 한 번뿐이다.
         verify(exactly = 1) { observeStationProgramImagesUseCase(match { it.isNotEmpty() }) }
+    }
+
+    @Test
+    fun `Given 해외 목록을 받지 못함, Then 오류가 아니라 즐겨찾기와 최근만으로 Success 다`() = runTest {
+        val viewModel = createViewModel(
+            favorites = listOf(station(1)),
+            recents = listOf(station(2)),
+            listing = flow { throw java.io.IOException("offline") },
+        )
+
+        viewModel.state.test {
+            val state = expectMostRecentItem()
+            assertEquals(
+                listOf("s1", "s2"),
+                (state as HomeRadioState.Success).stations.map { it.id },
+            )
+        }
     }
 }

@@ -13,7 +13,7 @@ import io.jacob.episodive.core.domain.usecase.station.ObserveStationProgramImage
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.testing.model.radioStationTestData
-import io.jacob.episodive.core.testing.model.radioStationsTestData
+import io.jacob.episodive.core.testing.model.curatedStationListingTestData
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -65,7 +65,7 @@ class RadioRouteTest {
     }
 
     private fun createViewModel(): RadioViewModel {
-        every { getStationsUseCase(StationKind.RADIO) } returns flowOf(radioStationsTestData)
+        every { getStationsUseCase(StationKind.RADIO) } returns flowOf(curatedStationListingTestData)
         every { getFavoriteStationsUseCase() } returns flowOf(emptyList())
         every { getRecentStationsUseCase(any()) } returns flowOf(emptyList())
         every { playerRepository.nowPlayingStation } returns MutableStateFlow(null)

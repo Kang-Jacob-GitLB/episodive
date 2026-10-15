@@ -16,6 +16,7 @@ import io.jacob.episodive.core.model.DataError
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.asDataError
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +33,7 @@ private const val HomeRadioMaxStations = 10
 private const val HomeRadioMinStations = 8
 
 /**
- * 홈의 라디오 섹션. [HomeViewModel] 의 state combine 에 넣지 않는다 — 카탈로그라 늘 내용이 있어, 섞으면
+ * 홈의 라디오 섹션. [HomeViewModel] 의 state combine 에 넣지 않는다 — 한국 카탈로그는 늘 내용이 있어, 섞으면
  * 오프라인 오류 화면 판정이 영영 켜지지 않는다.
  *
  * 재생 요청의 직렬화는 [StationPlaybackController] 가 앱 전역에서 한다 — 여기서는 위임만 한다.
@@ -47,10 +48,22 @@ class HomeRadioViewModel @Inject constructor(
     @param:Player(EpisodivePlayers.Main) playerRepository: PlayerRepository,
 ) : ViewModel() {
 
+    /**
+     * 채우기용 전체 목록. 해외 목록을 받지 못해도(오프라인 등) 섹션이 오류가 되지 않게 빈 목록으로 돌려, 즐겨찾기·최근만으로
+     * 그린다. 한국 카탈로그는 메모리라 실패하지 않는다.
+     */
+    private fun catalogStations(getStationsUseCase: GetStationsUseCase): Flow<List<Station>> =
+        getStationsUseCase(StationKind.RADIO)
+            .map { it.stations }
+            .catch { e ->
+                Timber.w(e, "홈 라디오 전체 목록을 불러오지 못했다")
+                emit(emptyList())
+            }
+
     val state: StateFlow<HomeRadioState> = combine(
         getFavoriteStationsUseCase(),
         getRecentStationsUseCase(HomeRadioMaxStations),
-        getStationsUseCase(StationKind.RADIO),
+        catalogStations(getStationsUseCase),
         playerRepository.nowPlayingStation,
         playerRepository.isPlaying,
         playerRepository.isBuffering,

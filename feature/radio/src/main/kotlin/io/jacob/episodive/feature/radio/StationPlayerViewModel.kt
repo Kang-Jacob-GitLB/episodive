@@ -15,6 +15,7 @@ import io.jacob.episodive.core.domain.usecase.caption.ObserveStationCaptionUseCa
 import io.jacob.episodive.core.domain.usecase.caption.StationCaption
 import io.jacob.episodive.core.domain.usecase.caption.ToggleCaptionUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
@@ -28,6 +29,7 @@ import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
 import io.jacob.episodive.core.model.caption.LiveCaptionState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -47,6 +49,8 @@ import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import timber.log.Timber
 
+private const val RecentStationLimit = 10
+
 /**
  * 라디오 전용 플레이어 시트의 상태. 에피소드용 `PlayerViewModel` 은 스테이션이 올라 있는 동안 Error 라
  * 쓸 수 없다 — 에피소드 id·재생 위치 저장을 쥐고 있어 여기서 섞지 않는다.
@@ -59,6 +63,7 @@ class StationPlayerViewModel @Inject constructor(
     private val stationPlaybackController: StationPlaybackController,
     private val getStationsUseCase: GetStationsUseCase,
     private val getFavoriteStationsUseCase: GetFavoriteStationsUseCase,
+    private val getRecentStationsUseCase: GetRecentStationsUseCase,
     private val toggleFavoriteStationUseCase: ToggleFavoriteStationUseCase,
     private val getStationDetailsUseCase: GetStationDetailsUseCase,
     private val observeOnAirProgramUseCase: ObserveOnAirProgramUseCase,
@@ -69,6 +74,18 @@ class StationPlayerViewModel @Inject constructor(
     observeCaptionDownloadFailuresUseCase: ObserveCaptionDownloadFailuresUseCase,
 ) : ViewModel() {
 
+    /**
+     * 현재 국가의 전체 목록. 해외 목록을 받지 못해도 시트가 죽지 않게 빈 목록으로 돌린다 — 지금 듣는 스테이션은
+     * 플레이어가 들고 있고, 즐겨찾기·최근으로도 찾는다.
+     */
+    private fun allStations(): Flow<List<Station>> =
+        getStationsUseCase(StationKind.RADIO)
+            .map { it.stations }
+            .catch { e ->
+                Timber.w(e, "스테이션 전체 목록을 불러오지 못했다")
+                emit(emptyList())
+            }
+
     val state: StateFlow<StationPlayerState> = combine(
         playerRepository.nowPlayingStation,
         stationPlaybackController.pendingStationId,
@@ -76,12 +93,16 @@ class StationPlayerViewModel @Inject constructor(
         playerRepository.isPlaying,
         playerRepository.isBuffering,
         getFavoriteStationsUseCase(),
-        getStationsUseCase(StationKind.RADIO),
+        allStations(),
+        getRecentStationsUseCase(RecentStationLimit),
         sleepTimer.remainingMs,
-    ) { playing, pendingId, streamTitle, isPlaying, isBuffering, favorites, stations, sleepTimerRemainingMs ->
+    ) { playing, pendingId, streamTitle, isPlaying, isBuffering, favorites, stations, recents, sleepTimerRemainingMs ->
         // 받는 중인 스테이션을 먼저 보여 준다. 그동안 플레이어는 이전 스테이션을 그대로 들고 있다.
+        // 다른 나라에서 들었던 최근 방송은 현재 국가의 목록에 없으므로 최근도 본다(안 그러면 Loading 에 고착된다).
         val pending = pendingId?.let { id ->
-            stations.firstOrNull { it.id == id } ?: favorites.firstOrNull { it.id == id }
+            stations.firstOrNull { it.id == id }
+                ?: favorites.firstOrNull { it.id == id }
+                ?: recents.firstOrNull { it.id == id }
         }
         val station = pending ?: playing
         when {
@@ -244,7 +265,7 @@ class StationPlayerViewModel @Inject constructor(
         val ring = stationRing(
             anchorId = anchorId,
             favorites = getFavoriteStationsUseCase().first(),
-            all = getStationsUseCase(StationKind.RADIO).first(),
+            all = allStations().first(),
         )
         ring.neighbor(anchorId, delta)?.let { stationPlaybackController.play(it.id) }
     }
