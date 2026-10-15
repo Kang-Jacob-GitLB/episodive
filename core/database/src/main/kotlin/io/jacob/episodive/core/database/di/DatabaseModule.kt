@@ -13,6 +13,7 @@ import io.jacob.episodive.core.database.migration.Migration8to9
 import io.jacob.episodive.core.database.migration.Migration10to11
 import io.jacob.episodive.core.database.migration.Migration11to12
 import io.jacob.episodive.core.database.migration.Migration12to13
+import io.jacob.episodive.core.database.migration.Migration13to14
 import io.jacob.episodive.core.database.migration.Migration9to10
 import javax.inject.Singleton
 
@@ -29,7 +30,7 @@ object DatabaseModule {
             EpisodiveDatabase::class.java,
             "episodive-database",
         ).apply {
-            addMigrations(Migration8to9, Migration9to10, Migration10to11, Migration11to12, Migration12to13)
+            addMigrations(Migration8to9, Migration9to10, Migration10to11, Migration11to12, Migration12to13, Migration13to14)
             if (BuildConfig.DEBUG) {
                 fallbackToDestructiveMigrationFrom(true, 3)
             }

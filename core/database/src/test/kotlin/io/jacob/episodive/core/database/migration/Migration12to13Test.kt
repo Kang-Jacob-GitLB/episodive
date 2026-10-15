@@ -77,7 +77,7 @@ class Migration12to13Test {
 
     private fun openAtCurrentVersion(): EpisodiveDatabase =
         Room.databaseBuilder(context, EpisodiveDatabase::class.java, TEST_DB)
-            .addMigrations(Migration12to13)
+            .addMigrations(Migration12to13, Migration13to14)
             .allowMainThreadQueries()
             .build()
 

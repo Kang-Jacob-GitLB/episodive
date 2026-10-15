@@ -5,6 +5,7 @@ import io.jacob.episodive.core.database.RoomDatabaseRule
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -171,6 +172,154 @@ class StationDaoTest {
 
         dao.getRecentStationIds().test {
             assertEquals(listOf(first), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    private val remoteA = remoteStationIdsTestData[0]
+    private val remoteB = remoteStationIdsTestData[1]
+
+    @Test
+    fun `Given favorites with and without meta, When getFavoriteStationsWithMeta, Then newest first and meta joined`() = runTest {
+        val meta = radioBrowserStationEntityOf(remoteA)
+        dao.upsertRemoteStation(meta)
+        dao.addFavorite(favoriteStationEntityOf(first, 1))
+        dao.addFavorite(favoriteStationEntityOf(remoteA, 3))
+        dao.addFavorite(favoriteStationEntityOf(remoteB, 2))
+
+        dao.getFavoriteStationsWithMeta().test {
+            val items = awaitItem()
+            assertEquals(listOf(remoteA, remoteB, first), items.map { it.stationId })
+            assertEquals(meta, items[0].meta)
+            assertNull(items[1].meta)
+            assertNull(items[2].meta)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given recents with and without meta, When getRecentStationsWithMeta, Then newest first and meta joined`() = runTest {
+        val meta = radioBrowserStationEntityOf(remoteA)
+        dao.upsertRemoteStation(meta)
+        dao.upsertRecent(recentStationEntityOf(first, 1))
+        dao.upsertRecent(recentStationEntityOf(remoteA, 3))
+        dao.upsertRecent(recentStationEntityOf(remoteB, 2))
+
+        dao.getRecentStationsWithMeta().test {
+            val items = awaitItem()
+            assertEquals(listOf(remoteA, remoteB, first), items.map { it.stationId })
+            assertEquals(meta, items[0].meta)
+            assertNull(items[1].meta)
+            assertNull(items[2].meta)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given meta, When upsertRemoteStation again, Then replaced`() = runTest {
+        dao.addFavorite(favoriteStationEntityOf(remoteA))
+        dao.upsertRemoteStation(radioBrowserStationEntityOf(remoteA, name = "Old"))
+        dao.upsertRemoteStation(radioBrowserStationEntityOf(remoteA, name = "New"))
+
+        dao.getFavoriteStationsWithMeta().test {
+            assertEquals("New", awaitItem().single().meta?.name)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given meta only in favorite, When unfavorited, Then meta is deleted`() = runTest {
+        dao.toggleFavoriteWithMeta(radioBrowserStationEntityOf(remoteA))
+
+        assertFalse(dao.toggleFavoriteWithMeta(radioBrowserStationEntityOf(remoteA)))
+
+        dao.upsertRecent(recentStationEntityOf(remoteA))
+        dao.getRecentStationsWithMeta().test {
+            assertNull(awaitItem().single().meta)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given meta also in recent, When unfavorited, Then meta is kept`() = runTest {
+        dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), recentStationEntityOf(remoteA, 1), keep = 10)
+        assertTrue(dao.toggleFavoriteWithMeta(radioBrowserStationEntityOf(remoteA)))
+
+        assertFalse(dao.toggleFavorite(remoteA))
+
+        dao.getRecentStationsWithMeta().test {
+            assertEquals(remoteA, awaitItem().single().meta?.stationId)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given meta in favorite, When recent is trimmed away, Then meta is kept`() = runTest {
+        dao.toggleFavoriteWithMeta(radioBrowserStationEntityOf(remoteA))
+        dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), recentStationEntityOf(remoteA, 1), keep = 1)
+
+        dao.recordPlayed(recentStationEntityOf(first, 2), keep = 1)
+
+        dao.getFavoriteStationsWithMeta().test {
+            assertEquals(remoteA, awaitItem().single().meta?.stationId)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given meta only in recent, When trimmed away by recordPlayed, Then meta is deleted`() = runTest {
+        dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), recentStationEntityOf(remoteA, 1), keep = 1)
+
+        dao.recordPlayed(recentStationEntityOf(first, 2), keep = 1)
+
+        // 메타가 지워졌는지는 다시 즐겨찾기에 올렸을 때 조인 결과로 본다.
+        dao.addFavorite(favoriteStationEntityOf(remoteA))
+        dao.getFavoriteStationsWithMeta().test {
+            assertNull(awaitItem().single().meta)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given orphan meta, When deleteOrphanRemoteStations, Then only unreferenced rows are deleted`() = runTest {
+        dao.upsertRemoteStation(radioBrowserStationEntityOf(remoteA))
+        dao.upsertRemoteStation(radioBrowserStationEntityOf(remoteB))
+        dao.addFavorite(favoriteStationEntityOf(remoteA))
+
+        dao.deleteOrphanRemoteStations()
+
+        dao.addFavorite(favoriteStationEntityOf(remoteB))
+        dao.getFavoriteStationsWithMeta().test {
+            val byId = awaitItem().associateBy { it.stationId }
+            assertEquals(remoteA, byId.getValue(remoteA).meta?.stationId)
+            assertNull(byId.getValue(remoteB).meta)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `When toggleFavoriteWithMeta adds, Then favorite and meta appear in one emission`() = runTest {
+        dao.getFavoriteStationsWithMeta().test {
+            assertEquals(emptyList<String>(), awaitItem().map { it.stationId })
+
+            assertTrue(dao.toggleFavoriteWithMeta(radioBrowserStationEntityOf(remoteA)))
+
+            val item = awaitItem().single()
+            assertEquals(remoteA, item.meta?.stationId)
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `When recordPlayedWithMeta, Then recent and meta appear in one emission`() = runTest {
+        dao.getRecentStationsWithMeta().test {
+            assertEquals(emptyList<String>(), awaitItem().map { it.stationId })
+
+            dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), recentStationEntityOf(remoteA, 1), keep = 5)
+
+            assertEquals(remoteA, awaitItem().single().meta?.stationId)
+            expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
     }

@@ -3,6 +3,7 @@
 package io.jacob.episodive.core.database.dao
 
 import io.jacob.episodive.core.database.model.FavoriteStationEntity
+import io.jacob.episodive.core.database.model.RadioBrowserStationEntity
 import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
@@ -16,6 +17,25 @@ internal fun favoriteStationEntityOf(stationId: String, millisAfterBase: Long = 
 
 internal fun recentStationEntityOf(stationId: String, millisAfterBase: Long = 0) =
     RecentStationEntity(stationId = stationId, playedAtMillis = BASE_MILLIS + millisAfterBase)
+
+/** 해외 스테이션 메타. [stationId] 는 `rb:` 접두어가 붙은 `Station.id` 다. */
+internal fun radioBrowserStationEntityOf(
+    stationId: String,
+    name: String = "Radio $stationId",
+    region: String? = "California",
+    language: String? = "en",
+    isHls: Boolean = false,
+) = RadioBrowserStationEntity(
+    stationId = stationId,
+    uuid = stationId.removePrefix("rb:"),
+    name = name,
+    region = region,
+    language = language,
+    isHls = isHls,
+    savedAtMillis = BASE_MILLIS,
+)
+
+internal val remoteStationIdsTestData = listOf("rb:uuid-1", "rb:uuid-2")
 
 internal val stationIdsTestData = listOf(
     radioStationTestData.id,
