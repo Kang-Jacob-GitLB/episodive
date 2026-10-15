@@ -16,6 +16,7 @@ import io.jacob.episodive.core.model.caption.CaptionLanguage
 import io.jacob.episodive.core.model.caption.CaptionLine
 import io.jacob.episodive.core.model.caption.CaptionModelState
 import io.jacob.episodive.core.model.caption.CaptionSession
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.model.caption.LiveCaption
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -72,13 +73,13 @@ class CaptionRepositoryImpl @Inject constructor(
         applicationScope.launch(ioDispatcher) { manager().cancel(language) }
     }
 
-    override fun liveCaptions(episodeId: Long, language: CaptionLanguage): Flow<CaptionSession> = flow {
+    override fun liveCaptions(subject: CaptionSubject, language: CaptionLanguage): Flow<CaptionSession> = flow {
         // installed() 는 store.installed() 로 파일 stat 을 한다. manager() 는 `.get()` 만
         // ioDispatcher 위에서 부르고 리턴하므로, 뒤이은 installed() 호출은 이 flow 의 수집
         // 컨텍스트(대개 메인)에서 돈다 — withContext 로 감싸 IO 를 IO 디스패처에 묶는다.
         val model = withContext(ioDispatcher) { manager().installed(language) } ?: return@flow
         emitAll(
-            liveCaptionEngine.session(episodeId, model).onEach { session ->
+            liveCaptionEngine.session(subject, model).onEach { session ->
                 if (session is CaptionSession.Unloadable) {
                     // 인식기를 올리지 못했다 — 설치본을 지우고(NotInstalled 로 되돌리고) 실패를
                     // 알린다. Manager 문서 참고. invalidate() 가 파일을 지우므로 이것도 IO.
@@ -94,7 +95,7 @@ class CaptionRepositoryImpl @Inject constructor(
      * true)로만 들어온다는 점만 다르다.
      */
     override fun translatedCues(
-        episodeId: Long,
+        subject: CaptionSubject,
         sourceLanguageTag: String,
         cues: Flow<String>,
         seeks: Flow<Unit>,
@@ -102,7 +103,7 @@ class CaptionRepositoryImpl @Inject constructor(
         val translator = captionTranslatorFactory.create(sourceLanguageTag, deviceLanguageProvider.languageTag())
         // 늦게 온 번역을 presenter 가 거절해도 현재 값을 한 번 더 돌려준다 — 같은 값은 흘리지 않는다
         // (엔진의 `lastSent` 와 같은 규칙).
-        return channelFlow { collectTranslatedCues(cues, seeks, translator, episodeId) }
+        return channelFlow { collectTranslatedCues(cues, seeks, translator, subject) }
             .distinctUntilChanged()
     }
 
@@ -129,12 +130,12 @@ class CaptionRepositoryImpl @Inject constructor(
         cues: Flow<String>,
         seeks: Flow<Unit>,
         translator: CaptionTranslator?,
-        episodeId: Long,
+        subject: CaptionSubject,
     ) {
         // 모델 다운로드가 걸릴 수 있어 STT/원문 방출을 막지 않도록 따로 띄운다. 준비 전에
         // translate() 를 부르면 CaptionTranslator 계약상 null 이 오므로 원문만 먼저 나간다.
         translator?.let { t -> launch { t.prepare() } }
-        val presenter = CaptionPresenter(episodeId, isTranslating = translator != null)
+        val presenter = CaptionPresenter(subject, isTranslating = translator != null)
         var nextLineId = 0L
         val presenterLock = Mutex()
         val events = merge(cues.map { CueEvent.Cue(it) }, seeks.map { CueEvent.Seek })

@@ -3,6 +3,11 @@ package io.jacob.episodive.feature.radio
 import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.StationPlaybackController
+import io.jacob.episodive.core.domain.usecase.caption.CaptionToggleResult
+import io.jacob.episodive.core.domain.usecase.caption.ObserveCaptionDownloadFailuresUseCase
+import io.jacob.episodive.core.domain.usecase.caption.ObserveStationCaptionUseCase
+import io.jacob.episodive.core.domain.usecase.caption.StationCaption
+import io.jacob.episodive.core.domain.usecase.caption.ToggleCaptionUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
@@ -12,6 +17,9 @@ import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCa
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.StationSchedule
+import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
+import io.jacob.episodive.core.model.caption.CaptionLanguage
+import io.jacob.episodive.core.model.caption.LiveCaptionState
 import io.jacob.episodive.core.testing.model.bareOnAirProgramTestData
 import io.jacob.episodive.core.testing.model.codecOnlyStationDetailsTestData
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
@@ -25,8 +33,10 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -51,6 +61,9 @@ class StationPlayerViewModelTest {
     private val observeOnAirProgramUseCase = mockk<ObserveOnAirProgramUseCase>()
     private val observeScheduleUseCase = mockk<ObserveScheduleUseCase>()
     private val sleepTimer = mockk<SleepTimer>(relaxed = true)
+    private val observeStationCaptionUseCase = mockk<ObserveStationCaptionUseCase>()
+    private val toggleCaptionUseCase = mockk<ToggleCaptionUseCase>()
+    private val observeCaptionDownloadFailuresUseCase = mockk<ObserveCaptionDownloadFailuresUseCase>()
 
     private val a = radioStationTestData
     private val b = kbsFirstRadioStationTestData
@@ -64,6 +77,9 @@ class StationPlayerViewModelTest {
     private val favorites = MutableStateFlow<List<Station>>(emptyList())
     private val stations = MutableStateFlow(listOf(a, b, c))
     private val sleepRemaining = MutableStateFlow<Long?>(null)
+    private val captionState = MutableStateFlow(StationCaption(null, LiveCaptionState.Initial))
+    private val captionFailures = MutableSharedFlow<CaptionDownloadFailure>(extraBufferCapacity = 1)
+    private var captionSubscriptions = 0
 
     private fun createViewModel(): StationPlayerViewModel {
         every { playerRepository.nowPlayingStation } returns nowPlayingStation
@@ -76,6 +92,8 @@ class StationPlayerViewModelTest {
         every { sleepTimer.remainingMs } returns sleepRemaining
         every { observeOnAirProgramUseCase(any()) } returns flowOf(null)
         every { observeScheduleUseCase(any()) } returns flowOf(StationSchedule(0L, emptyList()))
+        every { observeStationCaptionUseCase() } returns captionState.onStart { captionSubscriptions++ }
+        every { observeCaptionDownloadFailuresUseCase() } returns captionFailures
         // play 가 pending 을 즉시 세우는 컨트롤러를 흉내 낸다. 두 번째 호출이 이 값을 기준으로 삼아야 한다.
         every { stationPlaybackController.play(any()) } answers { pendingStationId.value = firstArg() }
         return StationPlayerViewModel(
@@ -88,6 +106,9 @@ class StationPlayerViewModelTest {
             observeOnAirProgramUseCase = observeOnAirProgramUseCase,
             observeScheduleUseCase = observeScheduleUseCase,
             sleepTimer = sleepTimer,
+            observeStationCaptionUseCase = observeStationCaptionUseCase,
+            toggleCaptionUseCase = toggleCaptionUseCase,
+            observeCaptionDownloadFailuresUseCase = observeCaptionDownloadFailuresUseCase,
         )
     }
 
@@ -405,6 +426,110 @@ class StationPlayerViewModelTest {
 
         verify(exactly = 1) { observeScheduleUseCase(a.id) }
         job.cancel()
+    }
+
+    private fun TestScope.launchCollectCaption(viewModel: StationPlayerViewModel) =
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.caption.collect {}
+        }
+
+    private fun TestScope.collectEffects(viewModel: StationPlayerViewModel): List<StationPlayerEffect> {
+        val effects = mutableListOf<StationPlayerEffect>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.effect.collect { effects.add(it) } }
+        return effects
+    }
+
+    @Test
+    fun `Given caption 을 수집하지 않음, Then 자막 흐름을 구독하지 않는다`() = runTest {
+        nowPlayingStation.value = a
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+
+        assertEquals(0, captionSubscriptions)
+        assertEquals(LiveCaptionState.Initial, viewModel.caption.value.state)
+
+        val captionJob = launchCollectCaption(viewModel)
+        assertEquals(1, captionSubscriptions)
+        captionJob.cancel()
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 모델 다운로드가 시작됨, When 자막 토글, Then 시작 effect 가 나간다`() = runTest {
+        nowPlayingStation.value = a
+        captionState.value = StationCaption(a.id, LiveCaptionState.Initial)
+        coEvery { toggleCaptionUseCase(any()) } returns CaptionToggleResult.DownloadStarted(1234L)
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+        val captionJob = launchCollectCaption(viewModel)
+        val effects = collectEffects(viewModel)
+
+        viewModel.sendAction(StationPlayerAction.ToggleCaption)
+
+        assertEquals(listOf<StationPlayerEffect>(StationPlayerEffect.CaptionDownloadStarted(1234L)), effects)
+        captionJob.cancel()
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 지원하지 않는 언어, When 자막 토글, Then Unsupported effect 가 나간다`() = runTest {
+        nowPlayingStation.value = a
+        captionState.value = StationCaption(a.id, LiveCaptionState.Initial)
+        coEvery { toggleCaptionUseCase(any()) } returns CaptionToggleResult.UnsupportedLanguage
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+        val captionJob = launchCollectCaption(viewModel)
+        val effects = collectEffects(viewModel)
+
+        viewModel.sendAction(StationPlayerAction.ToggleCaption)
+
+        assertEquals(listOf<StationPlayerEffect>(StationPlayerEffect.CaptionUnsupported), effects)
+        captionJob.cancel()
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 스테이션을 받는 중, When 자막 토글, Then 무시한다`() = runTest {
+        nowPlayingStation.value = a
+        pendingStationId.value = b.id
+        coEvery { toggleCaptionUseCase(any()) } returns CaptionToggleResult.Enabled
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+
+        viewModel.sendAction(StationPlayerAction.ToggleCaption)
+
+        coVerify(exactly = 0) { toggleCaptionUseCase(any()) }
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 자막이 아직 이전 스테이션의 값, When 자막 토글, Then 무시한다`() = runTest {
+        // 스테이션이 a 로 바뀌었지만 caption 은 아직 b 의 값이다.
+        nowPlayingStation.value = a
+        captionState.value = StationCaption(b.id, LiveCaptionState.Initial)
+        coEvery { toggleCaptionUseCase(any()) } returns CaptionToggleResult.Enabled
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+        val captionJob = launchCollectCaption(viewModel)
+
+        viewModel.sendAction(StationPlayerAction.ToggleCaption)
+
+        coVerify(exactly = 0) { toggleCaptionUseCase(any()) }
+        captionJob.cancel()
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 모델 다운로드 실패, Then 실패 effect 가 나간다`() = runTest {
+        val viewModel = createViewModel()
+        val effects = collectEffects(viewModel)
+
+        captionFailures.emit(CaptionDownloadFailure(CaptionLanguage.KOREAN, CaptionDownloadFailure.Reason.NETWORK))
+
+        assertEquals(
+            listOf<StationPlayerEffect>(StationPlayerEffect.CaptionDownloadFailed(CaptionDownloadFailure.Reason.NETWORK)),
+            effects,
+        )
     }
 
     private fun TestScope.launchCollectSchedule(viewModel: StationPlayerViewModel) =

@@ -40,7 +40,7 @@ object PlayerModule {
 
     /**
      * Main 플레이어에는 라이브 자막(STT)이 먹을 PCM 을 엿듣는 [SpeechAudioTap] 을 붙인다.
-     * 전체 에피소드를 듣는 화면이 Main 뿐이라 자막도 여기서만 필요하다.
+     * 에피소드와 라디오(스테이션) 재생이 모두 Main 이라 자막도 여기서만 필요하다.
      */
     @Provides
     @Singleton

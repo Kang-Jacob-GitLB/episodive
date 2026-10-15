@@ -1,6 +1,7 @@
 package io.jacob.episodive.core.caption.engine
 
 import io.jacob.episodive.core.model.caption.CaptionLine
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.model.caption.LiveCaption
 
 /**
@@ -19,7 +20,7 @@ import io.jacob.episodive.core.model.caption.LiveCaption
  * @param isTranslating 이 세션이 번역을 하는가. 그대로 [LiveCaption.isTranslating] 으로 실린다.
  */
 class CaptionPresenter(
-    private val episodeId: Long,
+    private val subject: CaptionSubject,
     private val isTranslating: Boolean = false,
     private val maxLines: Int = DefaultMaxLines,
 ) {
@@ -42,7 +43,7 @@ class CaptionPresenter(
         val lines = displayedLines()
         if (lines.isEmpty() && translations.isEmpty()) return null
         return LiveCaption(
-            episodeId = episodeId,
+            subject = subject,
             lines = lines,
             translations = translations.toList(),
             isTranslating = isTranslating,

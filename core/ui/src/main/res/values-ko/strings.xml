@@ -165,4 +165,13 @@
         <item>롤플레잉</item>
         <item>암호화폐</item>
     </string-array>
+
+    <string name="core_ui_caption_turn_on">자막 켜기</string>
+    <string name="core_ui_caption_turn_off">자막 끄기</string>
+    <string name="core_ui_caption_downloading">자막 모델 받는 중</string>
+    <string name="core_ui_caption_download_started">자막 모델(%s)을 받는 중</string>
+    <string name="core_ui_caption_download_failed_network">자막 모델을 받지 못했어요. 연결을 확인해 주세요</string>
+    <string name="core_ui_caption_download_failed_storage">저장 공간이 부족해 자막 모델을 받지 못했어요</string>
+    <string name="core_ui_caption_download_failed_corrupt">자막 모델 파일이 손상됐어요. 다시 시도해 주세요</string>
+    <string name="core_ui_caption_download_failed_unloadable">자막 모델을 불러오지 못했어요</string>
 </resources>

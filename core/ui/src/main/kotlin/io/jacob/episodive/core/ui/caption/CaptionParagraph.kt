@@ -1,4 +1,4 @@
-package io.jacob.episodive.feature.player
+package io.jacob.episodive.core.ui.caption
 
 import io.jacob.episodive.core.model.caption.CaptionLine
 

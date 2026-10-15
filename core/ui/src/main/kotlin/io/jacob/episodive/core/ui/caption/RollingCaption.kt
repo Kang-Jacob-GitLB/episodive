@@ -1,4 +1,4 @@
-package io.jacob.episodive.feature.player
+package io.jacob.episodive.core.ui.caption
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animate
@@ -47,6 +47,7 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveShapes
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
 import io.jacob.episodive.core.model.caption.CaptionLine
+import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.model.caption.LiveCaption
 import io.jacob.episodive.core.testing.model.liveCaptionTestData
 import kotlinx.coroutines.CoroutineScope
@@ -102,7 +103,7 @@ fun RollingCaptionOverlay(
         ) {
             RollingCaptionLines(
                 modifier = Modifier.weight(1f),
-                episodeId = shown.episodeId,
+                subject = shown.subject,
                 lines = shown.lines,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = Color.White,
@@ -116,7 +117,7 @@ fun RollingCaptionOverlay(
 
                 RollingCaptionLines(
                     modifier = Modifier.weight(1f),
-                    episodeId = shown.episodeId,
+                    subject = shown.subject,
                     lines = shown.translations,
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.85f),
@@ -148,7 +149,7 @@ fun RollingCaptionOverlay(
 @Composable
 private fun RollingCaptionLines(
     modifier: Modifier = Modifier,
-    episodeId: Long,
+    subject: CaptionSubject,
     lines: List<CaptionLine>,
     style: TextStyle,
     color: Color,
@@ -156,7 +157,7 @@ private fun RollingCaptionLines(
     val scope = rememberCoroutineScope()
     // 발화 id 는 에피소드(세션)마다 0 부터 다시 매겨진다. 앞 에피소드의 페이드아웃 중에 다음
     // 에피소드 줄이 들어오면 같은 id 를 앵커로 잘못 잡으므로, 에피소드가 바뀌면 새로 시작한다.
-    val rolling = remember(scope, episodeId) { RollingOffset(scope) }
+    val rolling = remember(scope, subject) { RollingOffset(scope) }
     val lineSpacingPx = with(LocalDensity.current) { LineSpacing.roundToPx() }
     val paragraphs = remember(lines) { captionParagraphs(lines) }
     // 문단 끝에 글자가 붙을 때 앞 줄들의 줄바꿈이 다시 계산되지 않게 greedy 로 고정한다 —

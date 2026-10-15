@@ -168,4 +168,13 @@
         <item>Role-Playing</item>
         <item>Cryptocurrency</item>
     </string-array>
+
+    <string name="core_ui_caption_turn_on">Turn on captions</string>
+    <string name="core_ui_caption_turn_off">Turn off captions</string>
+    <string name="core_ui_caption_downloading">Downloading caption model</string>
+    <string name="core_ui_caption_download_started">Downloading caption model (%s)</string>
+    <string name="core_ui_caption_download_failed_network">Couldn\'t download the caption model. Check your connection.</string>
+    <string name="core_ui_caption_download_failed_storage">Not enough storage to download the caption model.</string>
+    <string name="core_ui_caption_download_failed_corrupt">The caption model download was corrupted. Try again.</string>
+    <string name="core_ui_caption_download_failed_unloadable">Couldn\'t load the caption model.</string>
 </resources>

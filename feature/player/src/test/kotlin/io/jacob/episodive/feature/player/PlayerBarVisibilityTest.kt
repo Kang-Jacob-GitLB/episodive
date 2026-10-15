@@ -21,4 +21,19 @@ class PlayerBarVisibilityTest {
         assertFalse(isPlayerBarVisible(hasEpisode = false, suppressed = false))
         assertFalse(isPlayerBarVisible(hasEpisode = false, suppressed = true))
     }
+
+    @Test
+    fun `Given 라디오 시트가 열려 있음, Then 자막 안내를 바가 띄우지 않는다`() {
+        assertFalse(shouldShowCaptionNotice(isShowPlayer = false, noticeOwnedBySheet = true))
+    }
+
+    @Test
+    fun `Given 스테이션이 올라 있고 시트가 닫혀 있음, Then 자막 안내를 바가 띄운다`() {
+        assertTrue(shouldShowCaptionNotice(isShowPlayer = false, noticeOwnedBySheet = false))
+    }
+
+    @Test
+    fun `Given 에피소드 시트가 열려 있음, Then 자막 안내를 바가 띄우지 않는다`() {
+        assertFalse(shouldShowCaptionNotice(isShowPlayer = true, noticeOwnedBySheet = false))
+    }
 }
