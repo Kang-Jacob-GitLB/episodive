@@ -8,6 +8,9 @@ import io.jacob.episodive.core.model.Station
  *
  * 기준이 즐겨찾기 밖이면 전체를 돈다 — 즐겨찾기 목록에서 기준을 못 찾아 "이전/다음"이 죽는 일이 없게 한다.
  * 기준이 전체 목록에도 없으면(다른 나라에서 들은 최근 방송) 최근 목록을 돈다. 거기에도 없으면 [all] 이다.
+ *
+ * 최근 목록은 **id 순으로 정렬해** 돈다. 최근은 재생할 때마다 맨 앞으로 옮겨져서, 들어온 순서 그대로 돌면 다음을
+ * 누를 때마다 순서가 바뀌어 두 스테이션 사이만 오간다.
  */
 internal fun stationRing(
     anchorId: String,
@@ -17,7 +20,7 @@ internal fun stationRing(
 ): List<Station> = when {
     favorites.size >= 2 && favorites.any { it.id == anchorId } -> favorites
     all.any { it.id == anchorId } -> all
-    recents.size >= 2 && recents.any { it.id == anchorId } -> recents
+    recents.size >= 2 && recents.any { it.id == anchorId } -> recents.sortedBy { it.id }
     else -> all
 }
 

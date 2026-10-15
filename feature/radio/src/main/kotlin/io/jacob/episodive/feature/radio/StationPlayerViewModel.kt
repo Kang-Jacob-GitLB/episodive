@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.common.combine
+import io.jacob.episodive.core.common.retryNetworkWithBackoff
 import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.StationPlaybackController
@@ -79,18 +80,17 @@ class StationPlayerViewModel @Inject constructor(
 ) : ViewModel() {
 
     /**
-     * 현재 국가의 전체 목록. 해외 목록은 네트워크라 늦게 오거나 실패할 수 있다 — 구독하자마자 빈 목록을 흘려
-     * 즐겨찾기·재생 상태로 시트가 먼저 그려지게 하고, 실패는 빈 목록으로 둔다(지금 듣는 스테이션은 플레이어가
-     * 들고 있고 즐겨찾기·최근으로도 찾는다). 공유해 두어 [step] 이 새로 구독해(해외면 요청을 다시 돌려) 기다리지
-     * 않고 지금 값을 읽는다.
+     * 현재 국가의 전체 목록. 해외 목록은 네트워크라 늦게 오거나 실패할 수 있다 — 첫 값이 올 때까지는 빈 목록
+     * ([stateIn] 의 초기값)으로 즐겨찾기·재생 상태만으로 시트가 먼저 그려지게 한다. 네트워크 실패는 빈 목록을 두고
+     * 1·2·4…최대 30초 간격으로 다시 구독해 복구한다(지금 듣는 스테이션은 플레이어가 들고 있고 즐겨찾기·최근으로도
+     * 찾는다). 공유해 두어 [step] 이 새로 구독해(해외면 요청을 다시 돌려) 기다리지 않고 지금 값을 읽는다.
      */
     private val allStations: StateFlow<List<Station>> = getStationsUseCase(StationKind.RADIO)
         .map { it.stations }
-        .catch { e ->
-            Timber.w(e, "스테이션 전체 목록을 불러오지 못했다")
+        .retryNetworkWithBackoff { cause ->
+            Timber.w(cause, "스테이션 전체 목록을 불러오지 못했다")
             emit(emptyList())
         }
-        .onStart { emit(emptyList()) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),

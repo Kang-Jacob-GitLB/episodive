@@ -1848,10 +1848,13 @@ class PlayerDataSourceImplTest {
         )
     }
 
-    private fun playStationAndCapture(stream: StationStream = hlsStream): MediaItem {
+    private fun playStationAndCapture(
+        stream: StationStream = hlsStream,
+        target: Station = station,
+    ): MediaItem {
         val captured = slot<MediaItem>()
         every { player.setMediaItem(capture(captured)) } just Runs
-        dataSource.playStation(station, stream)
+        dataSource.playStation(target, stream)
         return captured.captured
     }
 
@@ -2012,6 +2015,20 @@ class PlayerDataSourceImplTest {
         assertEquals(null, metadata.artworkUri)
         assertEquals(true, metadata.isPlayable)
         assertEquals(MediaItem.ClippingConfiguration.UNSET, item.clippingConfiguration)
+    }
+
+    @Test
+    fun `Given station without broadcaster, When playStation called, Then artist falls back to region`() {
+        val item = playStationAndCapture(target = station.copy(broadcaster = "", region = "California"))
+
+        assertEquals("California", item.mediaMetadata.artist)
+    }
+
+    @Test
+    fun `Given station without broadcaster and region, When playStation called, Then artist is null`() {
+        val item = playStationAndCapture(target = station.copy(broadcaster = "", region = null))
+
+        assertEquals(null, item.mediaMetadata.artist)
     }
 
     @Test

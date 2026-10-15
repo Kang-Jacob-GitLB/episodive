@@ -240,6 +240,30 @@ class StationPlayerViewModelTest {
     }
 
     @Test
+    fun `Given 최근 목록이 재생마다 앞으로 옮겨짐, When Next 를 연달아, Then 최근 세 방송을 모두 돈다`() = runTest {
+        val r1 = radioStationTestData.copy(id = "rb:u1", name = "Abroad 1", broadcaster = "")
+        val r2 = radioStationTestData.copy(id = "rb:u2", name = "Abroad 2", broadcaster = "")
+        val r3 = radioStationTestData.copy(id = "rb:u3", name = "Abroad 3", broadcaster = "")
+        nowPlayingStation.value = r1
+        recents.value = listOf(r1, r2, r3)
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+        // 재생하면 markPlayed 처럼 그 스테이션이 최근의 맨 앞으로 간다.
+        every { stationPlaybackController.play(any()) } answers {
+            val id = firstArg<String>()
+            pendingStationId.value = id
+            recents.value = recents.value.sortedByDescending { it.id == id }
+        }
+
+        repeat(3) { viewModel.sendAction(StationPlayerAction.Next) }
+
+        verify(exactly = 1) { stationPlaybackController.play(r2.id) }
+        verify(exactly = 1) { stationPlaybackController.play(r3.id) }
+        verify(exactly = 1) { stationPlaybackController.play(r1.id) }
+        job.cancel()
+    }
+
+    @Test
     fun `Given 전체 목록을 받지 못함, Then 시트는 죽지 않고 즐겨찾기에서 찾는다`() = runTest {
         listingFlow = flow { throw IOException("offline") }
         favorites.value = listOf(b)

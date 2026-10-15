@@ -67,7 +67,18 @@ class StationRingTest {
     fun `Given 기준이 전체 목록에 없고 최근에 둘 이상, Then 최근을 돈다`() {
         val recents = listOf(b, c)
 
-        assertEquals(recents, stationRing(b.id, emptyList(), listOf(a), recents))
+        assertEquals(recents.sortedBy { it.id }, stationRing(b.id, emptyList(), listOf(a), recents))
+    }
+
+    @Test
+    fun `Given 최근 순서가 재생마다 바뀜, Then 최근 링의 순서는 같다`() {
+        val abc = listOf(a, b, c)
+        val reordered = listOf(c, a, b)
+
+        assertEquals(
+            stationRing(a.id, emptyList(), emptyList(), abc),
+            stationRing(a.id, emptyList(), emptyList(), reordered),
+        )
     }
 
     @Test

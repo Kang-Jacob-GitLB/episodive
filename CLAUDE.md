@@ -303,7 +303,7 @@ Room 왕복과 `flowOn(IO)` 를 거쳐 `progress` 보다 늦게 도착한다. �
   https 만** 쓴다(`/json/url` 이 http 를 주면 목록에서 받아 둔 `url_resolved` 로, 그것도 없으면 재생 불가).
   메타(이름·지역·언어·isHls)는 즐겨찾기·최근에 올릴 때만 `radio_browser_stations` 에 저장하고 **스트림 URL 은 저장하지 않는다.**
   rb id 는 `*WithMeta` DAO 로만 더한다(메타 없는 행은 조인에서 버려진다). 방송사(`broadcaster`)가 빈 해외 스테이션은
-  부제·알림 아티스트를 비우고 아트 색은 이름으로 정한다.
+  부제·알림 아티스트는 방송사 대신 지역을 쓰고(둘 다 없으면 비운다) 아트 색은 이름으로 정한다.
   알려진 한계: 국가는 `UserData` 가 다시 만들어질 때 읽는다(`language` 와 같다). 프로세스가 살아 있는 채 시스템 언어·지역을
   바꾸면 무관한 저장이 한 번 있어야 반영된다.
 - **스테이션 여부는 `nowPlayingStation` 하나로만 가른다.** `nowPlaying` 과 `combine` 하지 마라. 둘은

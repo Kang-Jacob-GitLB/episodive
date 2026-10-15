@@ -18,6 +18,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
@@ -258,6 +259,56 @@ class HomeRadioViewModelTest {
                 (expectMostRecentItem() as HomeRadioState.Success).stations.map { it.id },
             )
         }
+    }
+
+    @Test
+    fun `Given 해외 목록이 아직 오지 않고 내 방송도 없음, Then 섹션 자리를 비우지 않고 Loading 을 유지한다`() = runTest {
+        val viewModel = createViewModel(listing = flow { awaitCancellation() })
+
+        viewModel.state.test {
+            advanceTimeBy(1_000)
+            runCurrent()
+            assertEquals(HomeRadioState.Loading, expectMostRecentItem())
+        }
+    }
+
+    @Test
+    fun `Given 해외 목록이 오래 걸린 뒤 도착, Then Loading 에서 곧바로 채워진 Success 가 된다`() = runTest {
+        val listing = flow {
+            delay(5_000)
+            emit(popularStationListingTestData("US", (0 until 3).map(::station)))
+        }
+        val viewModel = createViewModel(listing = listing)
+
+        viewModel.state.test {
+            advanceTimeBy(1_000)
+            runCurrent()
+            assertEquals(HomeRadioState.Loading, expectMostRecentItem())
+
+            advanceTimeBy(5_000)
+            runCurrent()
+            assertEquals(
+                listOf("s0", "s1", "s2"),
+                (expectMostRecentItem() as HomeRadioState.Success).stations.map { it.id },
+            )
+        }
+    }
+
+    @Test
+    fun `Given 네트워크가 아닌 목록 실패, Then 재시도하지 않고 입구만 남긴다`() = runTest {
+        var attempt = 0
+        val listing = flow<StationListing> {
+            attempt++
+            throw IllegalStateException("boom")
+        }
+        val viewModel = createViewModel(listing = listing)
+
+        viewModel.state.test {
+            advanceTimeBy(60_000)
+            runCurrent()
+            assertTrue((expectMostRecentItem() as HomeRadioState.Success).isEntranceOnly)
+        }
+        assertEquals(1, attempt)
     }
 
     @Test

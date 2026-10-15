@@ -253,7 +253,7 @@ private fun RadioList(
             )
 
             // 해외 인기 목록. 받은 것이 하나도 없으면(필터에 다 걸렸거나 그 국가에 방송이 없다) 안내 문구를 둔다.
-            // 목록을 못 받은 실패는 이 화면이 아니라 Error 상태다.
+            // 목록을 못 받은 실패는 아래 인라인 줄(listing-status)이 알린다. 화면 전체 Error 는 즐겨찾기·최근 같은 로컬 소스 실패뿐이다.
             stationGroup(
                 headerKey = "header:popular",
                 titleText = popularTitle,

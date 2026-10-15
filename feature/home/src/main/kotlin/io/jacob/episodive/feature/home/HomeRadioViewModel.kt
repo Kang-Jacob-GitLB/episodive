@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.common.combine
+import io.jacob.episodive.core.common.retryNetworkWithBackoff
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
@@ -28,28 +29,25 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
 
 private const val HomeRadioMaxStations = 10
 private const val HomeRadioMinStations = 8
-private const val RetryBaseMillis = 1_000L
-private const val RetryMaxMillis = 30_000L
 private const val PendingGraceMillis = 200L
 
-/** 목록을 기다리는 동안. 출처를 아직 모르므로 입구를 강제하지 않는다. */
-private val PendingListing = StationListing("", StationListingSource.Curated, emptyList())
+/** 채우기용 전체 목록의 상태. 해외 목록은 아직 안 왔거나 받지 못할 수 있다. */
+private sealed interface CatalogState {
+    /** 첫 값을 기다리는 중. 출처를 아직 모른다. */
+    data object Pending : CatalogState
 
-/** 해외 목록을 받지 못했을 때. 카탈로그는 실패하지 않으므로 해외다. */
-private val FailedListing = StationListing("", StationListingSource.RadioBrowser, emptyList())
+    /** 해외 목록을 받지 못했다. 카탈로그는 실패하지 않으므로 해외다. */
+    data object Failed : CatalogState
 
-/** 1·2·4·8·16초, 이후 30초. */
-private fun retryDelayMillis(attempt: Long): Long =
-    (RetryBaseMillis shl attempt.coerceAtMost(5L).toInt()).coerceAtMost(RetryMaxMillis)
+    data class Loaded(val listing: StationListing) : CatalogState
+}
 
 /**
  * 홈의 라디오 섹션. [HomeViewModel] 의 state combine 에 넣지 않는다 — 한국 카탈로그는 늘 내용이 있어, 섞으면
@@ -68,35 +66,26 @@ class HomeRadioViewModel @Inject constructor(
 ) : ViewModel() {
 
     /**
-     * 채우기용 전체 목록. 해외 목록은 네트워크라 늦게 오거나 실패할 수 있어, 즐겨찾기·최근이 기다리지 않도록 구독하자마자
-     * 빈 목록을 흘려 먼저 그리게 한다. 실패하면 빈 목록을 흘린 뒤 1·2·4…초(최대 30초) 간격으로 다시 구독해 복구한다 —
-     * 유스케이스를 통째로 다시 구독하므로 그사이 바뀐 국가도 따라간다. 한국 카탈로그는 메모리라 실패하지 않는다.
+     * 채우기용 전체 목록. 해외 목록은 네트워크라 늦게 오거나 실패할 수 있어, 즐겨찾기·최근이 기다리지 않도록 첫 값이
+     * [PendingGraceMillis] 안에 오지 않으면 [CatalogState.Pending] 을 먼저 흘린다. 곧바로 흘리지 않는 것은 한국 카탈로그처럼
+     * 바로 오는 목록에서 "즐겨찾기만 → 채워짐" 으로 두 번 그려 깜빡이는 것을 피하기 위해서다.
+     * 네트워크 실패는 [CatalogState.Failed] 를 흘린 뒤 1·2·4…최대 30초 간격으로 다시 구독해 복구한다 — 유스케이스를 통째로
+     * 다시 구독하므로 그사이 바뀐 국가도 따라간다.
      *
      * 출처가 해외인 채 비어 있으면([HomeRadioState.Success.isEntranceOnly]) 홈이 헤더와 "더 보기" 입구만 남긴다.
      * 입구를 닫으면 사용자가 라디오 화면에 들어갈 길이 없어진다.
      */
-    private fun catalogListing(getStationsUseCase: GetStationsUseCase): Flow<StationListing> =
-        getStationsUseCase(StationKind.RADIO)
-            .retryWhen { cause, attempt ->
-                if (cause is CancellationException) return@retryWhen false
-                Timber.w(cause, "홈 라디오 전체 목록을 불러오지 못했다. attempt: $attempt")
-                emit(FailedListing)
-                delay(retryDelayMillis(attempt))
-                true
+    private fun catalogState(getStationsUseCase: GetStationsUseCase): Flow<CatalogState> {
+        val upstream = getStationsUseCase(StationKind.RADIO)
+            .map<StationListing, CatalogState> { CatalogState.Loaded(it) }
+            .retryNetworkWithBackoff { cause ->
+                Timber.w(cause, "홈 라디오 전체 목록을 불러오지 못했다")
+                emit(CatalogState.Failed)
             }
-            .withPendingAfterGrace()
-
-    /**
-     * 첫 값이 [PendingGraceMillis] 안에 오지 않으면 [PendingListing] 을 먼저 흘려 즐겨찾기·최근이 기다리지 않게 한다.
-     * 곧바로 흘리지 않는 것은 한국 카탈로그처럼 바로 오는 목록에서 "즐겨찾기만 → 채워짐" 두 번 그려 깜빡이는 것을
-     * 피하기 위해서다.
-     */
-    private fun Flow<StationListing>.withPendingAfterGrace(): Flow<StationListing> {
-        val upstream = this
         return channelFlow {
             val pending = launch {
                 delay(PendingGraceMillis)
-                send(PendingListing)
+                send(CatalogState.Pending)
             }
             upstream.collect {
                 pending.cancel()
@@ -108,20 +97,25 @@ class HomeRadioViewModel @Inject constructor(
     val state: StateFlow<HomeRadioState> = combine(
         getFavoriteStationsUseCase(),
         getRecentStationsUseCase(HomeRadioMaxStations),
-        catalogListing(getStationsUseCase),
+        catalogState(getStationsUseCase),
         playerRepository.nowPlayingStation,
         playerRepository.isPlaying,
         playerRepository.isBuffering,
         stationPlaybackController.pendingStationId,
-    ) { favorites, recents, listing, nowPlayingStation, isPlaying, isBuffering, pendingId ->
+    ) { favorites, recents, catalog, nowPlayingStation, isPlaying, isBuffering, pendingId ->
         val mine = (favorites + recents).distinctBy { it.id }.take(HomeRadioMaxStations)
+        // 목록을 기다리는데 보여 줄 내 방송도 없으면 섹션 자리를 비우지 않고 Loading(스켈레톤)을 유지한다. 비웠다가
+        // 목록이 오면 다시 나타나 아래가 밀린다.
+        if (catalog is CatalogState.Pending && mine.isEmpty()) return@combine HomeRadioState.Loading
+        val listing = (catalog as? CatalogState.Loaded)?.listing
+        val isRemoteSource = catalog is CatalogState.Failed || listing?.source == StationListingSource.RadioBrowser
         // 한두 번 들은 기록만으로는 섹션이 휑하다. 모자라면 카탈로그로 최소 개수까지 채운다.
         val taken = mine.mapTo(HashSet()) { it.id }
-        val filler = listing.stations.filter { it.id !in taken }.take((HomeRadioMinStations - mine.size).coerceAtLeast(0))
+        val filler = listing?.stations.orEmpty().filter { it.id !in taken }.take((HomeRadioMinStations - mine.size).coerceAtLeast(0))
         val stations = mine + filler
         HomeRadioState.Success(
             stations = stations,
-            isEntranceOnly = stations.isEmpty() && listing.source == StationListingSource.RadioBrowser,
+            isEntranceOnly = stations.isEmpty() && isRemoteSource,
             nowPlayingStationId = nowPlayingStation?.id,
             isPlaying = isPlaying,
             isBuffering = isBuffering,
