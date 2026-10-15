@@ -5,15 +5,27 @@ import io.jacob.episodive.core.model.OnAirRefresh
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationListing
 import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.StationStream
 import kotlinx.coroutines.flow.Flow
 
 interface StationRepository {
-    fun getStations(kind: StationKind): Flow<List<Station>>
+    /**
+     * 국가별 전체 목록. [countryCode] 가 null 이거나 `KR`(또는 두 글자 알파벳이 아닌 값)이면 앱이 고른
+     * 카탈로그([io.jacob.episodive.core.model.StationListingSource.Curated])이고, 그 밖의 국가는 Radio Browser 의
+     * 인기 목록이다. 국가는 이 목록에만 영향을 준다 — [getStation]·즐겨찾기·최근·재생 주소는 국가와 무관하다.
+     *
+     * 해외 목록은 메모리에 캐시하며(국가별 6시간) 받지 못하면 이전 값을 주고, 이전 값도 없으면 Flow 가 예외로
+     * 끝난다. 호출한 쪽이 그 경우를 빈 목록으로 그리면 된다. [kind] 가 라디오가 아니면 국가와 무관하게 카탈로그다.
+     */
+    fun getStationListing(kind: StationKind, countryCode: String?): Flow<StationListing>
 
-    /** 카탈로그에 있는 스테이션. 메모리에서 바로 답한다. 모르는 id 면 null. */
-    fun getStation(stationId: String): Station?
+    /**
+     * 스테이션 하나. 카탈로그 → 지금까지 받은 해외 목록(메모리) → 즐겨찾기·최근에 남긴 해외 메타(Room) 순으로
+     * 찾는다. 모르는 id 면 null.
+     */
+    suspend fun getStation(stationId: String): Station?
 
     /**
      * 재생 직전에 부른다. 알 수 없는 방송국이거나 주소를 못 얻으면 null.
@@ -53,7 +65,7 @@ interface StationRepository {
      */
     fun observeSchedule(stationId: String): Flow<StationSchedule>
 
-    /** 즐겨찾기한 순서의 역순(최신순). 카탈로그에서 빠진 스테이션은 제외된다. */
+    /** 즐겨찾기한 순서의 역순(최신순). 카탈로그에도 해외 메타에도 없는 스테이션은 제외된다. */
     fun getFavoriteStations(): Flow<List<Station>>
 
     fun isFavorite(stationId: String): Flow<Boolean>
@@ -62,7 +74,7 @@ interface StationRepository {
     suspend fun toggleFavorite(stationId: String): Boolean
 
     /**
-     * 최근 들은 순. 카탈로그에서 빠진 스테이션은 제외된다. [limit] 은 최대 [MAX_RECENT_STATIONS] 까지
+     * 최근 들은 순. 카탈로그에도 해외 메타에도 없는 스테이션은 제외된다. [limit] 은 최대 [MAX_RECENT_STATIONS] 까지
      * 의미가 있다 — 그보다 많이는 보관하지 않는다.
      */
     fun getRecentStations(limit: Int): Flow<List<Station>>

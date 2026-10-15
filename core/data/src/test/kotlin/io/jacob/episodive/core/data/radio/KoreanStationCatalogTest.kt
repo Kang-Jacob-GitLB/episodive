@@ -24,6 +24,11 @@ class KoreanStationCatalogTest {
     }
 
     @Test
+    fun `Given catalog, Then station ids never contain a colon so they cannot clash with rb ids`() {
+        assertTrue(entries.none { it.station.id.contains(':') })
+    }
+
+    @Test
     fun `Given catalog, Then every entry has radioBrowserIds and none are shared`() {
         assertTrue(entries.all { it.radioBrowserIds.isNotEmpty() })
         val all = entries.flatMap { it.radioBrowserIds }

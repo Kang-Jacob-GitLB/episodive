@@ -21,3 +21,28 @@ internal val stationDetailsResponsesTestData = listOf(
         bitrate = 128,
     ),
 )
+
+/** 국가별 목록에서 통과하는 응답. 통과하지 못하게 만들려면 해당 인자만 바꾼다. */
+internal fun remoteResponseTestData(
+    uuid: String,
+    name: String,
+    url: String? = "https://listed/$uuid",
+    codec: String? = "MP3",
+    hls: Int? = 0,
+    lastCheckOk: Int? = 1,
+    sslError: Int? = 0,
+    clickCount: Int? = 100,
+    state: String? = null,
+    languageCodes: String? = null,
+) = StationDetailsResponse(
+    stationUuid = uuid,
+    name = name,
+    urlResolved = url,
+    codec = codec,
+    hls = hls,
+    lastCheckOk = lastCheckOk,
+    sslError = sslError,
+    clickCount = clickCount,
+    state = state,
+    languageCodes = languageCodes,
+)

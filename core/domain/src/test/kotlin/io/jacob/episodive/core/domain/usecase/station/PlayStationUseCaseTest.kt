@@ -38,7 +38,7 @@ class PlayStationUseCaseTest {
         every { playerRepository.playRequestCount() } returns 7L
         every { playerRepository.playStation(any(), any()) } just Runs
         coEvery { playerRepository.prepareStationArtwork(any()) } just Runs
-        every { stationRepository.getStation(station.id) } returns station
+        coEvery { stationRepository.getStation(station.id) } returns station
         coEvery { stationRepository.resolveStreamUrl(station.id) } returns stream
         coEvery { stationRepository.markPlayed(any()) } just Runs
     }
@@ -80,7 +80,7 @@ class PlayStationUseCaseTest {
 
     @Test
     fun `Given unknown station, When invoke, Then Unavailable without touching player`() = runTest {
-        every { stationRepository.getStation("unknown") } returns null
+        coEvery { stationRepository.getStation("unknown") } returns null
 
         val result = useCase("unknown")
 

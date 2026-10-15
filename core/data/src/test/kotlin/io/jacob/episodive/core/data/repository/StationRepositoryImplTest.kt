@@ -6,14 +6,21 @@ import io.jacob.episodive.core.data.radio.broadcasterRadioEntryTestData
 import io.jacob.episodive.core.data.radio.hlsRadioEntryTestData
 import io.jacob.episodive.core.data.radio.onAirKbsEntryTestData
 import io.jacob.episodive.core.data.radio.onAirMbcEntryTestData
+import io.jacob.episodive.core.data.radio.remoteResponseTestData
 import io.jacob.episodive.core.data.radio.stationCatalogEntryTestData
 import io.jacob.episodive.core.data.radio.stationDetailsResponsesTestData
 import io.jacob.episodive.core.database.dao.StationDao
+import io.jacob.episodive.core.database.model.FavoriteStationWithMeta
+import io.jacob.episodive.core.database.model.RadioBrowserStationEntity
 import io.jacob.episodive.core.database.model.RecentStationEntity
+import io.jacob.episodive.core.database.model.RecentStationWithMeta
 import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.OnAirRefresh
+import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationListing
+import io.jacob.episodive.core.model.StationListingSource
 import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.network.datasource.BroadcasterStreamDataSource
@@ -40,6 +47,7 @@ import io.mockk.slot
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -75,16 +83,331 @@ class StationRepositoryImplTest {
         now = { nowMillis },
     )
 
+    private fun favoriteRowsOf(vararg ids: String) =
+        ids.mapIndexed { index, id -> FavoriteStationWithMeta(id, index.toLong(), null) }
+
     private val repository = repositoryOf(stationCatalogEntryTestData)
 
     private val broadcasterRepository = repositoryOf(listOf(broadcasterRadioEntryTestData))
 
     @Test
-    fun `Given catalog, When getStations RADIO, Then only radio in catalog order`() = runTest {
-        repository.getStations(StationKind.RADIO).test {
-            assertEquals(listOf(radioStationTestData, regionalRadioStationTestData), awaitItem())
+    fun `Given catalog, When getStationListing RADIO, Then only radio in catalog order as Curated KR`() = runTest {
+        repository.getStationListing(StationKind.RADIO, "KR").test {
+            assertEquals(
+                StationListing(
+                    countryCode = "KR",
+                    source = StationListingSource.Curated,
+                    stations = listOf(radioStationTestData, regionalRadioStationTestData),
+                ),
+                awaitItem(),
+            )
             awaitComplete()
         }
+    }
+
+    @Test
+    fun `Given null or malformed country, When getStationListing, Then curated catalog without remote call`() = runTest {
+        listOf(null, "", "korea", "1A").forEach { country ->
+            repository.getStationListing(StationKind.RADIO, country).test {
+                val listing = awaitItem()
+                assertEquals(StationListingSource.Curated, listing.source)
+                assertEquals("KR", listing.countryCode)
+                awaitComplete()
+            }
+        }
+        coVerify(exactly = 0) { remoteDataSource.getStationsByCountry(any()) }
+    }
+
+    @Test
+    fun `Given lowercase kr, When getStationListing, Then curated catalog`() = runTest {
+        repository.getStationListing(StationKind.RADIO, "kr").test {
+            assertEquals(StationListingSource.Curated, awaitItem().source)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `Given TV kind and foreign country, When getStationListing, Then curated catalog`() = runTest {
+        repository.getStationListing(StationKind.TV, "US").test {
+            val listing = awaitItem()
+            assertEquals(StationListingSource.Curated, listing.source)
+            assertEquals(listOf(tvStationTestData), listing.stations)
+            awaitComplete()
+        }
+        coVerify(exactly = 0) { remoteDataSource.getStationsByCountry(any()) }
+    }
+
+    @Test
+    fun `Given US, When getStationListing, Then Radio Browser filtered list`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns
+            listOf(remoteResponseTestData("u1", "Radio One"), remoteResponseTestData("bad", "Broken", lastCheckOk = 0))
+
+        repository.getStationListing(StationKind.RADIO, "us").test {
+            val listing = awaitItem()
+            assertEquals("US", listing.countryCode)
+            assertEquals(StationListingSource.RadioBrowser, listing.source)
+            assertEquals(listOf("rb:u1"), listing.stations.map { it.id })
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `Given within TTL, When getStationListing twice, Then remote called once`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns listOf(remoteResponseTestData("u1", "Radio One"))
+
+        repository.getStationListing(StationKind.RADIO, "US").test { awaitItem(); awaitComplete() }
+        nowMillis += 6 * 60 * 60 * 1000L - 1
+        repository.getStationListing(StationKind.RADIO, "US").test { awaitItem(); awaitComplete() }
+
+        coVerify(exactly = 1) { remoteDataSource.getStationsByCountry("US") }
+    }
+
+    @Test
+    fun `Given TTL expired, When getStationListing, Then refetched`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns listOf(remoteResponseTestData("u1", "Radio One"))
+
+        repository.getStationListing(StationKind.RADIO, "US").test { awaitItem(); awaitComplete() }
+        nowMillis += 6 * 60 * 60 * 1000L
+        repository.getStationListing(StationKind.RADIO, "US").test { awaitItem(); awaitComplete() }
+
+        coVerify(exactly = 2) { remoteDataSource.getStationsByCountry("US") }
+    }
+
+    @Test
+    fun `Given different countries, When getStationListing, Then cached separately`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns listOf(remoteResponseTestData("u1", "Radio One"))
+        coEvery { remoteDataSource.getStationsByCountry("JP") } returns listOf(remoteResponseTestData("j1", "Radio Jay"))
+
+        repository.getStationListing(StationKind.RADIO, "US").test { awaitItem(); awaitComplete() }
+        repository.getStationListing(StationKind.RADIO, "JP").test {
+            assertEquals(listOf("rb:j1"), awaitItem().stations.map { it.id })
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `Given first fetch fails, When getStationListing, Then throws and failure is not cached`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } throws IOException("down") andThen
+            listOf(remoteResponseTestData("u1", "Radio One"))
+
+        repository.getStationListing(StationKind.RADIO, "US").test {
+            assertEquals(IOException::class, awaitError()::class)
+        }
+        repository.getStationListing(StationKind.RADIO, "US").test {
+            assertEquals(listOf("rb:u1"), awaitItem().stations.map { it.id })
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `Given cached list and refetch fails, When getStationListing, Then previous value and retried next time`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns
+            listOf(remoteResponseTestData("u1", "Radio One")) andThenThrows IOException("down") andThen
+            listOf(remoteResponseTestData("u2", "Radio Two"))
+
+        repository.getStationListing(StationKind.RADIO, "US").test { awaitItem(); awaitComplete() }
+        nowMillis += 7 * 60 * 60 * 1000L
+        repository.getStationListing(StationKind.RADIO, "US").test {
+            assertEquals(listOf("rb:u1"), awaitItem().stations.map { it.id })
+            awaitComplete()
+        }
+        // 실패로는 캐시 시각이 갱신되지 않아 바로 다시 시도한다.
+        repository.getStationListing(StationKind.RADIO, "US").test {
+            assertEquals(listOf("rb:u2"), awaitItem().stations.map { it.id })
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `Given a hanging request, When getStationListing, Then times out after 10 seconds`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } coAnswers { awaitCancellation() }
+
+        repository.getStationListing(StationKind.RADIO, "US").test {
+            assertEquals(IOException::class, awaitError()::class)
+        }
+        assertEquals(10_000L, testScheduler.currentTime)
+    }
+
+    @Test
+    fun `Given concurrent collectors of the same country, When getStationListing, Then fetched once`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } coAnswers {
+            delay(100)
+            listOf(remoteResponseTestData("u1", "Radio One"))
+        }
+
+        val a = async { repository.getStationListing(StationKind.RADIO, "US").first() }
+        val b = async { repository.getStationListing(StationKind.RADIO, "US").first() }
+        a.await()
+        b.await()
+
+        coVerify(exactly = 1) { remoteDataSource.getStationsByCountry("US") }
+    }
+
+    @Test
+    fun `Given listed remote station, When getStation, Then found from memory without dao`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns listOf(remoteResponseTestData("u1", "Radio One"))
+        repository.getStationListing(StationKind.RADIO, "US").first()
+
+        assertEquals("Radio One", repository.getStation("rb:u1")?.name)
+        coVerify(exactly = 0) { stationDao.getRemoteStation(any()) }
+    }
+
+    @Test
+    fun `Given remote station only in room, When getStation, Then built from meta`() = runTest {
+        coEvery { stationDao.getRemoteStation("rb:u9") } returns
+            RadioBrowserStationEntity("rb:u9", "u9", "Saved", "Texas", "en", false, 1L)
+
+        assertEquals(
+            Station("rb:u9", "Saved", "", StationKind.RADIO, "Texas"),
+            repository.getStation("rb:u9"),
+        )
+    }
+
+    @Test
+    fun `Given unknown remote id, When getStation, Then null`() = runTest {
+        coEvery { stationDao.getRemoteStation(any()) } returns null
+
+        assertNull(repository.getStation("rb:none"))
+    }
+
+    @Test
+    fun `Given listed remote station and good url, When resolveStreamUrl, Then json url wins`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns
+            listOf(remoteResponseTestData("u1", "Radio One", url = "https://listed/u1", hls = 1))
+        repository.getStationListing(StationKind.RADIO, "US").first()
+        coEvery { remoteDataSource.resolveStreamUrl("u1") } returns "https://fresh/u1"
+
+        assertEquals(StationStream("https://fresh/u1", isHls = true), repository.resolveStreamUrl("rb:u1"))
+    }
+
+    @Test
+    fun `Given json url is http, When resolveStreamUrl, Then falls back to listed https url`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns
+            listOf(remoteResponseTestData("u1", "Radio One", url = "https://listed/u1"))
+        repository.getStationListing(StationKind.RADIO, "US").first()
+        coEvery { remoteDataSource.resolveStreamUrl("u1") } returns "http://insecure/u1"
+
+        assertEquals(StationStream("https://listed/u1", isHls = false), repository.resolveStreamUrl("rb:u1"))
+    }
+
+    @Test
+    fun `Given json url is http and nothing listed, When resolveStreamUrl, Then null`() = runTest {
+        coEvery { remoteDataSource.resolveStreamUrl("u7") } returns "http://insecure/u7"
+
+        assertNull(repository.resolveStreamUrl("rb:u7"))
+    }
+
+    @Test
+    fun `Given json url already failed, When resolveStreamUrl, Then excluded url is skipped`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns
+            listOf(remoteResponseTestData("u1", "Radio One", url = "https://listed/u1"))
+        repository.getStationListing(StationKind.RADIO, "US").first()
+        coEvery { remoteDataSource.resolveStreamUrl("u1") } returns "https://fresh/u1"
+
+        assertEquals(
+            StationStream("https://listed/u1", isHls = false),
+            repository.resolveStreamUrl("rb:u1", excluding = setOf("https://fresh/u1")),
+        )
+        assertNull(repository.resolveStreamUrl("rb:u1", excluding = setOf("https://fresh/u1", "https://listed/u1")))
+    }
+
+    @Test
+    fun `Given json url throws and not listed, When resolveStreamUrl, Then null and hls from meta is not needed`() = runTest {
+        coEvery { remoteDataSource.resolveStreamUrl("u7") } throws IOException("down")
+
+        assertNull(repository.resolveStreamUrl("rb:u7"))
+    }
+
+    @Test
+    fun `Given restarted app with remote favorite, When resolveStreamUrl, Then isHls from room meta`() = runTest {
+        coEvery { remoteDataSource.resolveStreamUrl("u9") } returns "https://fresh/u9"
+        coEvery { stationDao.getRemoteStation("rb:u9") } returns
+            RadioBrowserStationEntity("rb:u9", "u9", "Saved", null, null, true, 1L)
+
+        assertEquals(StationStream("https://fresh/u9", isHls = true), repository.resolveStreamUrl("rb:u9"))
+    }
+
+    @Test
+    fun `Given remote id, When getStationDetails, Then requests the uuid and merges`() = runTest {
+        coEvery { remoteDataSource.getStationDetails(listOf("u1")) } returns
+            listOf(remoteResponseTestData("u1", "Radio One"))
+
+        val details = repository.getStationDetails("rb:u1")
+
+        assertEquals("MP3", details?.codec)
+        coVerify(exactly = 1) { remoteDataSource.getStationDetails(listOf("u1")) }
+    }
+
+    @Test
+    fun `Given remote favorite and catalog favorite, When getFavoriteStations, Then catalog first else meta else dropped`() = runTest {
+        every { stationDao.getFavoriteStationsWithMeta() } returns flowOf(
+            listOf(
+                FavoriteStationWithMeta("rb:u9", 4L, RadioBrowserStationEntity("rb:u9", "u9", "Saved", "Texas", "en", false, 1L)),
+                FavoriteStationWithMeta(radioStationTestData.id, 3L, null),
+                FavoriteStationWithMeta("rb:gone", 2L, null),
+                FavoriteStationWithMeta("removed-station", 1L, null),
+            )
+        )
+
+        repository.getFavoriteStations().test {
+            assertEquals(
+                listOf(Station("rb:u9", "Saved", "", StationKind.RADIO, "Texas"), radioStationTestData),
+                awaitItem(),
+            )
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `Given a country change, When getFavoriteStations, Then catalog favorites stay`() = runTest {
+        every { stationDao.getFavoriteStationsWithMeta() } returns
+            flowOf(listOf(FavoriteStationWithMeta(radioStationTestData.id, 3L, null)))
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns listOf(remoteResponseTestData("u1", "Radio One"))
+
+        repository.getStationListing(StationKind.RADIO, "US").first()
+
+        repository.getFavoriteStations().test {
+            assertEquals(listOf(radioStationTestData), awaitItem())
+            awaitComplete()
+        }
+        assertEquals(radioStationTestData, repository.getStation(radioStationTestData.id))
+    }
+
+    @Test
+    fun `Given listed remote station, When toggleFavorite, Then meta is saved with it`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns
+            listOf(remoteResponseTestData("u1", "Radio One", state = "Texas", languageCodes = "EN,es"))
+        repository.getStationListing(StationKind.RADIO, "US").first()
+        val meta = slot<RadioBrowserStationEntity>()
+        coEvery { stationDao.toggleFavoriteWithMeta(capture(meta)) } returns true
+
+        assertEquals(true, repository.toggleFavorite("rb:u1"))
+
+        assertEquals("rb:u1", meta.captured.stationId)
+        assertEquals("u1", meta.captured.uuid)
+        assertEquals("Radio One", meta.captured.name)
+        assertEquals("Texas", meta.captured.region)
+        assertEquals("en", meta.captured.language)
+        assertEquals(1_000_000L, meta.captured.savedAtMillis)
+        coVerify(exactly = 0) { stationDao.toggleFavorite(any()) }
+    }
+
+    @Test
+    fun `Given listed remote station, When markPlayed, Then meta is saved with the record`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns listOf(remoteResponseTestData("u1", "Radio One"))
+        repository.getStationListing(StationKind.RADIO, "US").first()
+        coEvery { stationDao.recordPlayedWithMeta(any(), any(), any()) } just runs
+
+        repository.markPlayed("rb:u1")
+
+        coVerify(exactly = 1) {
+            stationDao.recordPlayedWithMeta(
+                match { it.stationId == "rb:u1" },
+                any(),
+                StationRepository.MAX_RECENT_STATIONS,
+            )
+        }
+        coVerify(exactly = 0) { stationDao.recordPlayed(any(), any()) }
     }
 
     @Test
@@ -284,12 +607,12 @@ class StationRepositoryImplTest {
     }
 
     @Test
-    fun `Given known id, When getStation, Then catalog station`() {
+    fun `Given known id, When getStation, Then catalog station`() = runTest {
         assertEquals(radioStationTestData, repository.getStation(radioStationTestData.id))
     }
 
     @Test
-    fun `Given unknown id, When getStation, Then null`() {
+    fun `Given unknown id, When getStation, Then null`() = runTest {
         assertNull(repository.getStation("unknown"))
     }
 
@@ -300,8 +623,8 @@ class StationRepositoryImplTest {
 
     @Test
     fun `Given favorite ids, When getFavoriteStations, Then joined with catalog in dao order`() = runTest {
-        every { stationDao.getFavoriteStationIds() } returns
-            flowOf(listOf(regionalRadioStationTestData.id, radioStationTestData.id))
+        every { stationDao.getFavoriteStationsWithMeta() } returns
+            flowOf(favoriteRowsOf(regionalRadioStationTestData.id, radioStationTestData.id))
 
         repository.getFavoriteStations().test {
             assertEquals(listOf(regionalRadioStationTestData, radioStationTestData), awaitItem())
@@ -311,8 +634,8 @@ class StationRepositoryImplTest {
 
     @Test
     fun `Given id missing from catalog, When getFavoriteStations, Then silently excluded`() = runTest {
-        every { stationDao.getFavoriteStationIds() } returns
-            flowOf(listOf("removed-station", radioStationTestData.id))
+        every { stationDao.getFavoriteStationsWithMeta() } returns
+            flowOf(favoriteRowsOf("removed-station", radioStationTestData.id))
 
         repository.getFavoriteStations().test {
             assertEquals(listOf(radioStationTestData), awaitItem())
@@ -322,8 +645,9 @@ class StationRepositoryImplTest {
 
     @Test
     fun `Given missing ids mixed in, When getRecentStations with limit, Then limit filled after join`() = runTest {
-        every { stationDao.getRecentStationIds() } returns flowOf(
+        every { stationDao.getRecentStationsWithMeta() } returns flowOf(
             listOf("removed-1", "removed-2", tvStationTestData.id, radioStationTestData.id, regionalRadioStationTestData.id)
+                .mapIndexed { index, id -> RecentStationWithMeta(id, index.toLong(), null) }
         )
 
         repository.getRecentStations(limit = 2).test {
