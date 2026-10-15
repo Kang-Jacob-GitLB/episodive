@@ -2,6 +2,7 @@ package io.jacob.episodive.core.data.radio
 
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.art
+import io.jacob.episodive.core.model.caption.toCaptionLanguage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -21,6 +22,16 @@ class KoreanStationCatalogTest {
     fun `Given catalog, Then station ids are unique`() {
         val ids = entries.map { it.station.id }
         assertEquals(ids.size, ids.toSet().size)
+    }
+
+    @Test
+    fun `Given catalog, Then 모든 language 는 null 이거나 자막 언어로 변환되고 영어 방송 넷은 en 이다`() {
+        entries.forEach { entry ->
+            val language = entry.station.language
+            assertTrue(entry.station.id, language == null || language.toCaptionLanguage() != null)
+        }
+        val english = entries.filter { it.station.language == "en" }.map { it.station.id }.toSet()
+        assertEquals(setOf("tbs-efm", "arirang-radio", "afn-humphreys", "befm"), english)
     }
 
     @Test

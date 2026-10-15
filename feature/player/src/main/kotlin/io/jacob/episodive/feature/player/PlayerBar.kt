@@ -73,6 +73,7 @@ fun PlayerBar(
     onNowPlayingChange: (Long?) -> Unit = {},
     onIsPlayingChange: (Boolean) -> Unit = {},
     suppressed: Boolean = false,
+    captionNoticeOwnedBySheet: Boolean = false,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -139,6 +140,7 @@ fun PlayerBar(
     // 수집은 한 번만 시작하므로 suppressed 를 그대로 읽으면 첫 컴포지션의 값에 갇힌다. 스테이션이 올라오거나
     // 내려가도 만료 안내가 중복되거나 빠지지 않게 읽는 시점의 값을 쓴다.
     val currentSuppressed by rememberUpdatedState(suppressed)
+    val currentCaptionNoticeOwnedBySheet by rememberUpdatedState(captionNoticeOwnedBySheet)
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -175,8 +177,10 @@ fun PlayerBar(
                     }
                 }
 
+                // 자막 토글은 라디오 시트도 갖는다. 그 시트가 **열려 있는 동안**은 시트가 같은 안내를 띄우므로
+                // 여기서 또 띄우면 겹친다. 스테이션이 올라 있기만 하고 시트가 닫혀 있으면 여기가 띄운다.
                 is PlayerEffect.CaptionDownloadStarted -> {
-                    if (!isShowPlayer) {
+                    if (shouldShowCaptionNotice(isShowPlayer, currentCaptionNoticeOwnedBySheet)) {
                         val message = String.format(
                             captionDownloadStartedPattern,
                             Formatter.formatShortFileSize(context, effect.sizeBytes),
@@ -186,11 +190,13 @@ fun PlayerBar(
                 }
 
                 is PlayerEffect.CaptionUnsupported -> {
-                    if (!isShowPlayer) onShowSnackbar(captionUnsupportedMessage, null)
+                    if (shouldShowCaptionNotice(isShowPlayer, currentCaptionNoticeOwnedBySheet)) {
+                        onShowSnackbar(captionUnsupportedMessage, null)
+                    }
                 }
 
                 is PlayerEffect.CaptionDownloadFailed -> {
-                    if (!isShowPlayer) {
+                    if (shouldShowCaptionNotice(isShowPlayer, currentCaptionNoticeOwnedBySheet)) {
                         val message = when (effect.reason) {
                             CaptionDownloadFailure.Reason.NETWORK -> captionFailedNetworkMessage
                             CaptionDownloadFailure.Reason.STORAGE -> captionFailedStorageMessage
@@ -395,3 +401,11 @@ private fun PlayerBarPreview() {
  */
 internal fun isPlayerBarVisible(hasEpisode: Boolean, suppressed: Boolean): Boolean =
     hasEpisode && !suppressed
+
+/**
+ * 자막 안내(다운로드 시작·실패·미지원)를 이 바가 띄울지. 에피소드 시트가 열려 있으면([isShowPlayer]) 그 시트가
+ * 띄우고, 라디오 시트가 열려 있으면([noticeOwnedBySheet]) 그 시트가 띄운다. 스테이션이 올라 있다는 것만으로는
+ * 막지 않는다 — 시트를 닫은 채 받던 모델이 실패하면 알릴 곳이 여기뿐이다.
+ */
+internal fun shouldShowCaptionNotice(isShowPlayer: Boolean, noticeOwnedBySheet: Boolean): Boolean =
+    !isShowPlayer && !noticeOwnedBySheet

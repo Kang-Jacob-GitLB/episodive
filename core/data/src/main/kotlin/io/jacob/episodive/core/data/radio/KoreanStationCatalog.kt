@@ -35,6 +35,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "KBS",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "6d4a1b58-b7c6-11e9-acb2-52543be04c81",
@@ -52,6 +53,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "KBS",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "9b3576ec-7f67-11e9-aa30-52543be04c81",
@@ -69,6 +71,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "KBS",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "e3d4515f-eb35-40e2-aeb9-dc48e9ba910c",
@@ -89,6 +92,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "KBS",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "d06a6392-127d-40f8-b52d-fc610bc97178",
@@ -108,6 +112,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "MBC",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "fc4c247a-7f66-11e9-aa30-52543be04c81",
@@ -124,6 +129,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "MBC",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "730d9f95-57a3-4eec-94a2-ed270baa64c8",
@@ -141,6 +147,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "MBC",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "01335461-d022-4ad8-9fbc-1bd3ef534def",
@@ -157,6 +164,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "SBS",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "1cc29b79-7be3-11e9-aa30-52543be04c81",
@@ -173,6 +181,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "SBS",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "0fc7173f-5106-4c47-9156-621124fb0803",
@@ -190,6 +199,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "CBS",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "3058649c-068d-43e8-8c47-4a5a89dbdc4c",
@@ -205,6 +215,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "CBS",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "3043d560-4358-4583-9e29-9fce6777a09c",
@@ -222,6 +233,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "CBS",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "9b8512b7-436d-4da8-8777-633ad9b6671f",
@@ -237,6 +249,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "EBS",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "4540380c-8d7c-49da-b0dc-699c1fb30ebc",
@@ -252,6 +265,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "YTN",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "10fbdfdd-2a6f-49fb-a035-8963c57f52e8",
@@ -266,6 +280,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "TBS",
                 kind = StationKind.RADIO,
                 region = "서울",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "6ad5927a-7ef7-456c-ad54-059873ff9f28",
@@ -280,6 +295,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "TBS",
                 kind = StationKind.RADIO,
                 region = "서울",
+                language = "en",
             ),
             radioBrowserIds = listOf(
                 "e89958f1-bc76-44fe-b681-841b5ec4ceae",
@@ -294,6 +310,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "국악방송",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "2f47d2d9-ac17-49cd-9e1c-b5b295800e37",
@@ -311,6 +328,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "국방홍보원",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "3df9fa02-ae92-4423-8f01-e007129c00ee",
@@ -325,6 +343,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "CPBC",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "38b5da3e-1859-47f3-9fb3-38e34741a84a",
@@ -339,6 +358,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "극동방송",
                 kind = StationKind.RADIO,
                 region = "서울",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "a5e6a0b8-b68e-4931-80c6-1861299fad86",
@@ -353,6 +373,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "극동방송",
                 kind = StationKind.RADIO,
                 region = "제주",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "e9307192-2116-4d23-a2a2-93a0e662150a",
@@ -367,6 +388,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "경인방송",
                 kind = StationKind.RADIO,
                 region = "경기·인천",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "d9db0a16-9100-4917-b5f5-bd48a42a1e70",
@@ -381,6 +403,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "OBS",
                 kind = StationKind.RADIO,
                 region = "경기·인천",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "c60ab0ce-723c-43a9-85a4-ff544710f27f",
@@ -395,6 +418,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "TBN",
                 kind = StationKind.RADIO,
                 region = "경기·인천",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "f9ab75ae-a4ce-440a-8b29-1dab8ba76f5c",
@@ -409,6 +433,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "TBN",
                 kind = StationKind.RADIO,
                 region = "울산",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "6240924d-bc3a-4cd6-8e09-399dbdeb0a36",
@@ -423,6 +448,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "아리랑국제방송",
                 kind = StationKind.RADIO,
                 region = null,
+                language = "en",
             ),
             radioBrowserIds = listOf(
                 "dad75d66-3246-434f-b16c-83854fe573a0",
@@ -439,6 +465,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "AFN",
                 kind = StationKind.RADIO,
                 region = "평택",
+                language = "en",
             ),
             radioBrowserIds = listOf(
                 "1ade2300-f75f-4dcd-aa77-06d276537c0e",
@@ -453,6 +480,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "MBC충북",
                 kind = StationKind.RADIO,
                 region = "충북",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "3a6cf532-d730-4b92-91bf-f3d5434a2159",
@@ -467,6 +495,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "MBC충북",
                 kind = StationKind.RADIO,
                 region = "충북",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "db7b598f-2428-4b7f-bae3-677091ab4648",
@@ -481,6 +510,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "안동MBC",
                 kind = StationKind.RADIO,
                 region = "경북",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "1814c6bf-528b-446d-8f40-f5261a2b3b7b",
@@ -495,6 +525,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "안동MBC",
                 kind = StationKind.RADIO,
                 region = "경북",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "b2b7599e-16b9-4225-9ffa-263b0cb541a6",
@@ -509,6 +540,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "BeFM",
                 kind = StationKind.RADIO,
                 region = "부산",
+                language = "en",
             ),
             radioBrowserIds = listOf(
                 "0cbefa4e-77f0-4b98-bfdf-37a32aeb0c8b",
@@ -523,6 +555,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "전주공동체라디오",
                 kind = StationKind.RADIO,
                 region = "전북",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "1a512cf7-f77c-49c0-b42d-4e3db0656b6a",
@@ -537,6 +570,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "마포FM",
                 kind = StationKind.RADIO,
                 region = "서울",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "1c5e70a7-491a-455a-b1b3-48f4b8241155",
@@ -552,6 +586,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "성서공동체FM",
                 kind = StationKind.RADIO,
                 region = "대구",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "4edaf384-7c48-4852-a390-c879e2fc41aa",
@@ -566,6 +601,7 @@ internal object KoreanStationCatalog {
                 broadcaster = "수원공동체라디오",
                 kind = StationKind.RADIO,
                 region = "경기",
+                language = "ko",
             ),
             radioBrowserIds = listOf(
                 "7702bb1f-26bf-4df6-9209-5f10fb847058",

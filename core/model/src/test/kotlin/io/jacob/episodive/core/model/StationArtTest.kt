@@ -22,6 +22,7 @@ class StationArtTest {
         broadcaster = broadcaster,
         kind = StationKind.RADIO,
         region = region,
+        language = "ko",
     )
 
     @Test
