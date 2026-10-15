@@ -31,6 +31,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -117,6 +118,10 @@ class StationRepositoryImpl internal constructor(
         }
     }
 
+    // 조인과 Room 조회에서 본 메타. 재시작 뒤처럼 목록(knownRemote)을 본 적 없는 스테이션도 해제 → 실행 취소로 다시
+    // 더할 수 있게 한다. 메타 없이 더하면 조인에서 버려져 즐겨찾기가 조용히 사라진다.
+    private val rememberedMeta = ConcurrentHashMap<String, RadioBrowserStationEntity>()
+
     override fun getFavoriteStations(): Flow<List<Station>> {
         return stationDao.getFavoriteStationsWithMeta().map { rows ->
             rows.mapNotNull { stationOf(it.stationId, it.meta) }
@@ -128,11 +133,31 @@ class StationRepositoryImpl internal constructor(
     }
 
     override suspend fun toggleFavorite(stationId: String): Boolean {
-        // 해외 스테이션을 새로 즐겨찾기할 때만 메타가 필요하다. 목록에서 본 적이 없으면(앱 재시작 뒤 최근에서 고른
-        // 경우) 최근에 남아 있는 메타를 그대로 쓰므로 메타 없이 토글한다.
-        val meta = knownRemote[stationId]?.toEntity()
-        return if (meta != null) stationDao.toggleFavoriteWithMeta(meta) else stationDao.toggleFavorite(stationId)
+        if (!stationId.isRadioBrowserStationId()) return stationDao.toggleFavorite(stationId)
+        val meta = metaOf(stationId)
+        if (meta != null) return stationDao.toggleFavoriteWithMeta(meta)
+        // 메타를 끝내 못 얻은 해외 스테이션은 더하지 않는다(메타 없는 행은 목록에서 버려진다). 해제는 허용한다.
+        Timber.w("no meta for remote station. stationId: $stationId")
+        return if (stationDao.isFavorite(stationId).first()) stationDao.toggleFavorite(stationId) else false
     }
+
+    /** 메타를 목록(메모리) → 앞서 본 메타 → Room 순으로 찾는다. 없으면 null. */
+    private suspend fun metaOf(stationId: String): RadioBrowserStationEntity? =
+        knownRemote[stationId]?.toEntity()
+            ?: rememberedMeta[stationId]
+            ?: roomMetaOf(stationId)
+
+    /** Room 의 메타 한 건. 읽기에 실패해도 호출한 쪽의 흐름(재생·표시)을 막지 않으려 null 로 돌린다. */
+    private suspend fun roomMetaOf(stationId: String): RadioBrowserStationEntity? =
+        try {
+            withContext(ioDispatcher) { stationDao.getRemoteStation(stationId) }
+                ?.also { rememberedMeta[stationId] = it }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "getRemoteStation failed. stationId: $stationId")
+            null
+        }
 
     override fun getRecentStations(limit: Int): Flow<List<Station>> {
         // 조인에서 빠지는 id 가 섞여 있어도 limit 개를 채우도록 조인 뒤에 자른다.
@@ -143,7 +168,12 @@ class StationRepositoryImpl internal constructor(
 
     override suspend fun markPlayed(stationId: String) {
         val playedAtMillis = Clock.System.now().toEpochMilliseconds()
-        val meta = knownRemote[stationId]?.toEntity()
+        val meta = if (stationId.isRadioBrowserStationId()) {
+            // 메타를 못 얻은 해외 스테이션은 기록하지 않는다(메타 없는 행은 목록에서 버려진다).
+            metaOf(stationId) ?: return
+        } else {
+            null
+        }
         if (meta != null) {
             stationDao.recordPlayedWithMeta(meta, playedAtMillis, StationRepository.MAX_RECENT_STATIONS)
         } else {
@@ -158,8 +188,10 @@ class StationRepositoryImpl internal constructor(
      * 저장된 id 를 카탈로그와 조인한다. 카탈로그가 먼저이고, 없으면 해외 메타로 만든다. 카탈로그에서 빠진(종료·개편된)
      * 스테이션이거나 메타가 정리된 id 는 재생할 방법이 없으므로 에러로 올리지 않고 조용히 뺀다.
      */
-    private fun stationOf(stationId: String, meta: RadioBrowserStationEntity?): Station? =
-        stationsById[stationId]?.station ?: meta?.toStation()
+    private fun stationOf(stationId: String, meta: RadioBrowserStationEntity?): Station? {
+        meta?.let { rememberedMeta[stationId] = it }
+        return stationsById[stationId]?.station ?: meta?.toStation()
+    }
 
     private fun RemoteStation.toEntity() = RadioBrowserStationEntity(
         stationId = station.id,
@@ -183,7 +215,7 @@ class StationRepositoryImpl internal constructor(
         stationsById[stationId]?.let { return it.station }
         if (!stationId.isRadioBrowserStationId()) return null
         knownRemote[stationId]?.let { return it.station }
-        return withContext(ioDispatcher) { stationDao.getRemoteStation(stationId)?.toStation() }
+        return rememberedMeta[stationId]?.toStation() ?: roomMetaOf(stationId)?.toStation()
     }
 
     override suspend fun resolveStreamUrl(
@@ -254,7 +286,8 @@ class StationRepositoryImpl internal constructor(
         }
         val url = resolved ?: known?.urlResolved?.takeIf { it !in excluding } ?: return null
         val isHls = known?.isHls
-            ?: stationDao.getRemoteStation(stationId)?.isHls
+            ?: rememberedMeta[stationId]?.isHls
+            ?: roomMetaOf(stationId)?.isHls
             ?: false
         return StationStream(
             url = url,

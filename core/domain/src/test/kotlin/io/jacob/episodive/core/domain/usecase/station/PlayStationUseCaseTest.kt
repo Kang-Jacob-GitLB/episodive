@@ -112,6 +112,23 @@ class PlayStationUseCaseTest {
         assertEquals(PlayStationResult.Superseded, result)
     }
 
+    // 해외 스테이션은 getStation 이 Room 을 기다린다. 그 사이의 끼어듦도 Superseded 여야 한다.
+    @Test
+    fun `Given user played something while getStation is pending, When invoke, Then Superseded and not played`() = runTest {
+        var count = 7L
+        every { playerRepository.playRequestCount() } answers { count }
+        coEvery { stationRepository.getStation(station.id) } coAnswers {
+            count = 8L
+            station
+        }
+
+        val result = useCase(station.id)
+
+        assertEquals(PlayStationResult.Superseded, result)
+        verify(exactly = 0) { playerRepository.playStation(any(), any()) }
+        coVerify(exactly = 0) { stationRepository.markPlayed(any()) }
+    }
+
     @Test
     fun `Given markPlayed throws, When invoke, Then still Started`() = runTest {
         coEvery { stationRepository.markPlayed(any()) } throws IllegalStateException("db")

@@ -59,6 +59,7 @@ import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import java.io.IOException
+import kotlin.coroutines.cancellation.CancellationException
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -390,6 +391,109 @@ class StationRepositoryImplTest {
         assertEquals("en", meta.captured.language)
         assertEquals(1_000_000L, meta.captured.savedAtMillis)
         coVerify(exactly = 0) { stationDao.toggleFavorite(any()) }
+    }
+
+    private val savedMetaTestData = RadioBrowserStationEntity("rb:u9", "u9", "Saved", "Texas", "en", false, 1L)
+
+    // 재시작 뒤: 목록을 본 적 없는 즐겨찾기를 해제했다가 실행 취소로 다시 더한다. 메타 없이 더하면 조인에서 버려진다.
+    @Test
+    fun `Given remote favorite seen only through the join, When toggleFavorite, Then re-added with the remembered meta`() = runTest {
+        every { stationDao.getFavoriteStationsWithMeta() } returns
+            flowOf(listOf(FavoriteStationWithMeta("rb:u9", 1L, savedMetaTestData)))
+        repository.getFavoriteStations().first()
+        coEvery { stationDao.toggleFavoriteWithMeta(any()) } returns false andThen true
+
+        assertEquals(false, repository.toggleFavorite("rb:u9"))
+        assertEquals(true, repository.toggleFavorite("rb:u9"))
+
+        coVerify(exactly = 2) { stationDao.toggleFavoriteWithMeta(savedMetaTestData) }
+        coVerify(exactly = 0) { stationDao.toggleFavorite(any()) }
+    }
+
+    @Test
+    fun `Given remote meta only in room, When toggleFavorite, Then meta is read from room`() = runTest {
+        coEvery { stationDao.getRemoteStation("rb:u9") } returns savedMetaTestData
+        coEvery { stationDao.toggleFavoriteWithMeta(any()) } returns true
+
+        assertEquals(true, repository.toggleFavorite("rb:u9"))
+
+        coVerify(exactly = 1) { stationDao.toggleFavoriteWithMeta(savedMetaTestData) }
+    }
+
+    @Test
+    fun `Given remote id without any meta, When toggleFavorite on a non favorite, Then refused and nothing written`() = runTest {
+        coEvery { stationDao.getRemoteStation("rb:u9") } returns null
+        every { stationDao.isFavorite("rb:u9") } returns flowOf(false)
+
+        assertEquals(false, repository.toggleFavorite("rb:u9"))
+
+        coVerify(exactly = 0) { stationDao.toggleFavorite(any()) }
+        coVerify(exactly = 0) { stationDao.toggleFavoriteWithMeta(any()) }
+    }
+
+    @Test
+    fun `Given remote id without any meta, When toggleFavorite on a favorite, Then removal is allowed`() = runTest {
+        coEvery { stationDao.getRemoteStation("rb:u9") } returns null
+        every { stationDao.isFavorite("rb:u9") } returns flowOf(true)
+        coEvery { stationDao.toggleFavorite("rb:u9") } returns false
+
+        assertEquals(false, repository.toggleFavorite("rb:u9"))
+
+        coVerify(exactly = 1) { stationDao.toggleFavorite("rb:u9") }
+    }
+
+    @Test
+    fun `Given remote id without any meta, When markPlayed, Then nothing is recorded`() = runTest {
+        coEvery { stationDao.getRemoteStation("rb:u9") } returns null
+
+        repository.markPlayed("rb:u9")
+
+        coVerify(exactly = 0) { stationDao.recordPlayed(any(), any()) }
+        coVerify(exactly = 0) { stationDao.recordPlayedWithMeta(any(), any(), any()) }
+    }
+
+    @Test
+    fun `Given remote meta in room, When markPlayed, Then recorded with that meta`() = runTest {
+        coEvery { stationDao.getRemoteStation("rb:u9") } returns savedMetaTestData
+        coEvery { stationDao.recordPlayedWithMeta(any(), any(), any()) } just runs
+
+        repository.markPlayed("rb:u9")
+
+        coVerify(exactly = 1) {
+            stationDao.recordPlayedWithMeta(savedMetaTestData, any(), StationRepository.MAX_RECENT_STATIONS)
+        }
+    }
+
+    @Test
+    fun `Given room read fails, When getStation of a remote id, Then null`() = runTest {
+        coEvery { stationDao.getRemoteStation("rb:u9") } throws IllegalStateException("db")
+
+        assertNull(repository.getStation("rb:u9"))
+    }
+
+    @Test
+    fun `Given room read fails, When resolveStreamUrl of an unlisted remote id, Then still resolves with isHls false`() = runTest {
+        coEvery { remoteDataSource.resolveStreamUrl("u9") } returns "https://fresh/u9"
+        coEvery { stationDao.getRemoteStation("rb:u9") } throws IllegalStateException("db")
+
+        assertEquals(StationStream("https://fresh/u9", isHls = false), repository.resolveStreamUrl("rb:u9"))
+    }
+
+    @Test
+    fun `Given cached list, When the refetch is cancelled, Then cancellation propagates without fallback`() = runTest {
+        coEvery { remoteDataSource.getStationsByCountry("US") } returns
+            listOf(remoteResponseTestData("u1", "Radio One")) andThenThrows CancellationException("cancelled")
+        repository.getStationListing(StationKind.RADIO, "US").first()
+        nowMillis += 7 * 60 * 60 * 1000L
+
+        var thrown: Throwable? = null
+        try {
+            repository.getStationListing(StationKind.RADIO, "US").first()
+        } catch (e: CancellationException) {
+            thrown = e
+        }
+
+        assertEquals("cancelled", thrown?.message)
     }
 
     @Test
