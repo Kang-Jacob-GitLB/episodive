@@ -28,6 +28,7 @@ import io.jacob.episodive.core.database.model.PodcastEntity
 import io.jacob.episodive.core.database.model.PodcastFtsEntity
 import io.jacob.episodive.core.database.model.PodcastGroupEntity
 import io.jacob.episodive.core.database.model.PodcastWithExtrasView
+import io.jacob.episodive.core.database.model.RadioBrowserStationEntity
 import io.jacob.episodive.core.database.model.RecentSearchEntity
 import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.database.model.SavedEpisodeEntity
@@ -57,12 +58,13 @@ import io.jacob.episodive.core.database.util.RecentSearchTypeConverter
         SavedEpisodeEntity::class,
         FavoriteStationEntity::class,
         RecentStationEntity::class,
+        RadioBrowserStationEntity::class,
     ],
     views = [
         PodcastWithExtrasView::class,
         EpisodeWithExtrasView::class,
     ],
-    version = 13,
+    version = 14,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3, spec = AutoMigration2to3::class),

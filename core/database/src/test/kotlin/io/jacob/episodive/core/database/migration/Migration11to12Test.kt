@@ -75,8 +75,8 @@ class Migration11to12Test {
 
     private fun openAtCurrentVersion(): EpisodiveDatabase =
         Room.databaseBuilder(context, EpisodiveDatabase::class.java, TEST_DB)
-            // 현재 버전이 13 이라 열 때 12→13 까지 이어서 돈다. 이 테스트가 보는 것은 11→12 의 결과다.
-            .addMigrations(Migration11to12, Migration12to13)
+            // 현재 버전까지 이어서 돈다. 이 테스트가 보는 것은 11→12 의 결과다.
+            .addMigrations(Migration11to12, Migration12to13, Migration13to14)
             .allowMainThreadQueries()
             .build()
 
