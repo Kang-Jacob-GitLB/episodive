@@ -242,7 +242,7 @@ class StationDaoTest {
 
     @Test
     fun `Given meta also in recent, When unfavorited, Then meta is kept`() = runTest {
-        dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), recentStationEntityOf(remoteA, 1), keep = 10)
+        dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), playedAtMillis = 1L, keep = 10)
         assertTrue(dao.toggleFavoriteWithMeta(radioBrowserStationEntityOf(remoteA)))
 
         assertFalse(dao.toggleFavorite(remoteA))
@@ -256,7 +256,7 @@ class StationDaoTest {
     @Test
     fun `Given meta in favorite, When recent is trimmed away, Then meta is kept`() = runTest {
         dao.toggleFavoriteWithMeta(radioBrowserStationEntityOf(remoteA))
-        dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), recentStationEntityOf(remoteA, 1), keep = 1)
+        dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), playedAtMillis = 1L, keep = 1)
 
         dao.recordPlayed(recentStationEntityOf(first, 2), keep = 1)
 
@@ -268,7 +268,7 @@ class StationDaoTest {
 
     @Test
     fun `Given meta only in recent, When trimmed away by recordPlayed, Then meta is deleted`() = runTest {
-        dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), recentStationEntityOf(remoteA, 1), keep = 1)
+        dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), playedAtMillis = 1L, keep = 1)
 
         dao.recordPlayed(recentStationEntityOf(first, 2), keep = 1)
 
@@ -316,10 +316,24 @@ class StationDaoTest {
         dao.getRecentStationsWithMeta().test {
             assertEquals(emptyList<String>(), awaitItem().map { it.stationId })
 
-            dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), recentStationEntityOf(remoteA, 1), keep = 5)
+            dao.recordPlayedWithMeta(radioBrowserStationEntityOf(remoteA), playedAtMillis = 1L, keep = 5)
 
             assertEquals(remoteA, awaitItem().single().meta?.stationId)
             expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Given meta only in favorite, When unfavorited with plain toggleFavorite, Then meta is deleted`() = runTest {
+        dao.toggleFavoriteWithMeta(radioBrowserStationEntityOf(remoteA))
+
+        assertFalse(dao.toggleFavorite(remoteA))
+
+        // 메타가 지워졌는지는 다시 즐겨찾기에 올렸을 때 조인 결과로 본다.
+        dao.addFavorite(favoriteStationEntityOf(remoteA))
+        dao.getFavoriteStationsWithMeta().test {
+            assertNull(awaitItem().single().meta)
             cancelAndIgnoreRemainingEvents()
         }
     }

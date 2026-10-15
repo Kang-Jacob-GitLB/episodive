@@ -33,7 +33,10 @@ interface StationDao {
     @Query("DELETE FROM favorite_stations WHERE stationId = :stationId")
     suspend fun removeFavorite(stationId: String)
 
-    /** 바뀐 뒤의 상태를 돌려준다. true 면 즐겨찾기됨. */
+    /**
+     * 바뀐 뒤의 상태를 돌려준다. true 면 즐겨찾기됨.
+     * `rb:` id 는 [toggleFavoriteWithMeta] 로만 더한다 — 메타 없는 행은 조인에서 버려져 목록에 보이지 않는다.
+     */
     @Transaction
     suspend fun toggleFavorite(stationId: String): Boolean {
         return if (isFavorite(stationId).first()) {
@@ -120,7 +123,10 @@ interface StationDao {
     )
     suspend fun trimRecent(keep: Int)
 
-    /** 기록과 정리를 한 트랜잭션으로 묶어, Flow 가 정리 전의 중간 상태를 한 번 더 내보내지 않게 한다. */
+    /**
+     * 기록과 정리를 한 트랜잭션으로 묶어, Flow 가 정리 전의 중간 상태를 한 번 더 내보내지 않게 한다.
+     * `rb:` id 는 [recordPlayedWithMeta] 로만 기록한다 — 메타 없는 행은 조인에서 버려져 목록에 보이지 않는다.
+     */
     @Transaction
     suspend fun recordPlayed(recent: RecentStationEntity, keep: Int) {
         upsertRecent(recent)
@@ -128,10 +134,13 @@ interface StationDao {
         deleteOrphanRemoteStations()
     }
 
-    /** [recordPlayed] 와 같되 [meta] 를 같은 트랜잭션에서 upsert 한다. 정리는 맨 끝이라 방금 넣은 메타는 남는다. */
+    /**
+     * [recordPlayed] 와 같되 [meta] 를 같은 트랜잭션에서 upsert 한다. 정리는 맨 끝이라 방금 넣은 메타는 남는다.
+     * 기록의 id 는 [meta] 의 것을 쓴다 — 둘이 어긋날 길을 두지 않으려 [RecentStationEntity] 를 받지 않는다.
+     */
     @Transaction
-    suspend fun recordPlayedWithMeta(meta: RadioBrowserStationEntity, recent: RecentStationEntity, keep: Int) {
+    suspend fun recordPlayedWithMeta(meta: RadioBrowserStationEntity, playedAtMillis: Long, keep: Int) {
         upsertRemoteStation(meta)
-        recordPlayed(recent, keep)
+        recordPlayed(RecentStationEntity(stationId = meta.stationId, playedAtMillis = playedAtMillis), keep)
     }
 }
