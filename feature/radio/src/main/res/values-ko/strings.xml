@@ -18,4 +18,7 @@
     <string name="feature_radio_info_bitrate_format">%1$dkbps</string>
     <string name="feature_radio_info_open_homepage">웹사이트 열기</string>
     <string name="feature_radio_info_source">Radio Browser 제공</string>
+    <string name="feature_radio_schedule_title">편성표</string>
+    <string name="feature_radio_schedule_on_air">지금 방송 중</string>
+    <string name="feature_radio_schedule_tomorrow">내일</string>
 </resources>

@@ -8,6 +8,7 @@ import io.jacob.episodive.core.domain.repository.UserRepository
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetUserRecentPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
 import io.jacob.episodive.core.domain.widget.NowPlayingSnapshot
 import io.jacob.episodive.core.domain.widget.PodcastSnapshot
 import io.jacob.episodive.core.domain.widget.WidgetDataReader
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,6 +34,7 @@ class WidgetDataReaderImpl @Inject constructor(
     private val userRepository: UserRepository,
     private val episodeRepository: EpisodeRepository,
     @param:Player(EpisodivePlayers.Main) private val playerRepository: PlayerRepository,
+    private val observeOnAirProgram: ObserveOnAirProgramUseCase,
 ) : WidgetDataReader {
 
     /**
@@ -43,11 +46,12 @@ class WidgetDataReaderImpl @Inject constructor(
         userRepository.getLastPlayState()?.episodeId
             ?.let { episodeRepository.getEpisodeById(it).first() }
 
-    private fun Station.toSnapshot(isPlaying: Boolean) = NowPlayingSnapshot(
+    /** [programTitle] 을 알면 방송사 대신 부제로 쓴다. */
+    private fun Station.toSnapshot(isPlaying: Boolean, programTitle: String? = null) = NowPlayingSnapshot(
         episodeId = null,
         podcastId = null,
         title = name,
-        feedTitle = broadcaster,
+        feedTitle = programTitle ?: broadcaster,
         imageUrl = null,
         isPlaying = isPlaying,
         stationId = id,
@@ -81,8 +85,13 @@ class WidgetDataReaderImpl @Inject constructor(
         // 스테이션 여부는 nowPlayingStation 하나로만 판정한다(nowPlaying 과 combine 하지 않는다).
         playerRepository.nowPlayingStation.flatMapLatest { station ->
             if (station != null) {
-                // streamTitle 은 싣지 않는다. 곡마다 스냅샷이 바뀌어 위젯 갱신이 폭주한다.
-                playerRepository.isPlaying.map { station.toSnapshot(it) }
+                // streamTitle·곡은 싣지 않는다. 곡마다 스냅샷이 바뀌어 위젯 갱신이 폭주한다. 프로그램 제목은 프로그램
+                // 경계에서만 바뀌므로 싣는다. 재생 중인 항목(MediaItem)은 건드리지 않고 이 스냅샷만 갱신한다.
+                // 네트워크로 받는 값이라 첫 값을 기다리지 않게 null 로 시작한다.
+                combine(
+                    playerRepository.isPlaying,
+                    observeOnAirProgram(station.id, includeSong = false).onStart { emit(null) },
+                ) { isPlaying, program -> station.toSnapshot(isPlaying, program?.title?.takeIf { it.isNotBlank() }) }
             } else {
                 episodeNowPlayingFlow()
             }

@@ -10,6 +10,8 @@ import io.jacob.episodive.core.common.EpisodiveDispatchers
 import io.jacob.episodive.core.network.BuildConfig
 import io.jacob.episodive.core.network.datasource.BroadcasterStreamDataSource
 import io.jacob.episodive.core.network.datasource.BroadcasterStreamDataSourceImpl
+import io.jacob.episodive.core.network.datasource.OnAirDataSource
+import io.jacob.episodive.core.network.datasource.OnAirDataSourceImpl
 import io.jacob.episodive.core.network.util.RadioBrowserInterceptor
 import kotlinx.coroutines.CoroutineDispatcher
 import okhttp3.OkHttpClient
@@ -57,6 +59,20 @@ object BroadcasterModule {
         @Dispatcher(EpisodiveDispatchers.IO) ioDispatcher: CoroutineDispatcher,
     ): BroadcasterStreamDataSource {
         return BroadcasterStreamDataSourceImpl(
+            callFactory = okHttpClient,
+            gson = gson,
+            ioDispatcher = ioDispatcher,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideOnAirDataSource(
+        @BroadcasterOkHttpClient okHttpClient: OkHttpClient,
+        gson: Gson,
+        @Dispatcher(EpisodiveDispatchers.IO) ioDispatcher: CoroutineDispatcher,
+    ): OnAirDataSource {
+        return OnAirDataSourceImpl(
             callFactory = okHttpClient,
             gson = gson,
             ioDispatcher = ioDispatcher,

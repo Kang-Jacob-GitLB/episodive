@@ -27,14 +27,19 @@ import io.jacob.episodive.core.domain.usecase.episode.GetMostRecentPlayedEpisode
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.player.WidgetPlayPauseUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Station
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
@@ -63,6 +68,9 @@ class MediaNotificationService : MediaSessionService() {
 
     @Inject
     lateinit var widgetUpdater: WidgetUpdater
+
+    @Inject
+    lateinit var observeOnAirProgramUseCase: ObserveOnAirProgramUseCase
 
     private var mediaSession: MediaSession? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -132,9 +140,31 @@ class MediaNotificationService : MediaSessionService() {
                 getNowPlayingUseCase().map { it?.id }.distinctUntilChanged(),
                 playerRepository.nowPlayingStation.map { it?.id }.distinctUntilChanged(),
                 playerRepository.isPlaying.distinctUntilChanged(),
+                // 위젯 부제의 프로그램 제목. Glance 세션은 곧 닫히므로 프로그램 경계에서 갱신을 건 쪽이 있어야 한다.
+                // 곡은 빼고(includeSong = false) 제목만 본다 — 백그라운드 재생 내내 곡 폴링이 돌면 안 된다.
+                currentProgramTitleFlow(),
             ).collectLatest { widgetUpdater.notifyNowPlayingChanged() }
         }
     }
+
+    /**
+     * 재생 중인 스테이션의 프로그램 제목. 일시정지 중에는 구독하지 않는다 — 멈춘 위젯 제목 때문에 편성 루프(5분 TTL
+     * 재조회)를 돌릴 이유가 없고, 다시 재생하면 그때 현재 제목을 새로 받는다.
+     */
+    private fun currentProgramTitleFlow(): Flow<String?> =
+        combine(
+            playerRepository.nowPlayingStation,
+            playerRepository.isPlaying,
+        ) { station, isPlaying -> station?.takeIf { isPlaying } }
+            .distinctUntilChanged()
+            .flatMapLatest { station ->
+                if (station == null) {
+                    emptyFlow()
+                } else {
+                    observeOnAirProgramUseCase(station.id, includeSong = false).map { it?.title }
+                }
+            }
+            .distinctUntilChanged()
 
     @UnstableApi
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

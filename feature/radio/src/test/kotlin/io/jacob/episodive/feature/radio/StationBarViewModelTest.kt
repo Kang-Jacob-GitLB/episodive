@@ -5,7 +5,12 @@ import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.LiveStreamSupervisor
 import io.jacob.episodive.core.domain.station.StationPlaybackController
+import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Station
+import io.jacob.episodive.core.testing.model.bareOnAirProgramTestData
+import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
+import io.jacob.episodive.core.testing.model.onAirProgramTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
 import io.mockk.every
@@ -35,6 +40,8 @@ class StationBarViewModelTest {
     private val isBuffering = MutableStateFlow(false)
     private val unplayable = MutableSharedFlow<Station>(extraBufferCapacity = 1)
     private val unavailable = MutableSharedFlow<Station>(extraBufferCapacity = 1)
+    private val observeOnAirProgramUseCase = mockk<ObserveOnAirProgramUseCase>()
+    private val onAir = MutableStateFlow<OnAirProgram?>(null)
     private val sleepTimer = mockk<SleepTimer>()
     private val sleepTimerExpired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
@@ -46,7 +53,10 @@ class StationBarViewModelTest {
         every { supervisor.unplayable } returns unplayable
         every { stationPlaybackController.unavailable } returns unavailable
         every { sleepTimer.expired } returns sleepTimerExpired
-        return StationBarViewModel(playerRepository, supervisor, stationPlaybackController, sleepTimer)
+        every { observeOnAirProgramUseCase(any()) } returns onAir
+        return StationBarViewModel(
+            playerRepository, supervisor, stationPlaybackController, sleepTimer, observeOnAirProgramUseCase,
+        )
     }
 
     @Test
@@ -80,6 +90,46 @@ class StationBarViewModelTest {
 
             nowPlayingStation.value = null
             assertEquals(StationBarState.Hidden, expectMostRecentItem())
+        }
+    }
+
+    @Test
+    fun `Given 프로그램 정보가 도착함, Then Active 에 프로그램이 실린다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            assertEquals(StationBarState.Hidden, awaitItem())
+
+            // 프로그램을 기다리느라 바가 늦게 뜨지 않는다.
+            nowPlayingStation.value = radioStationTestData
+            assertEquals(
+                StationBarState.Active(radioStationTestData, null, isPlaying = false, isBuffering = false),
+                expectMostRecentItem(),
+            )
+
+            onAir.value = onAirProgramTestData
+            assertEquals(
+                StationBarState.Active(
+                    radioStationTestData, null, isPlaying = false, isBuffering = false, program = onAirProgramTestData,
+                ),
+                expectMostRecentItem(),
+            )
+        }
+    }
+
+    @Test
+    fun `Given 스테이션이 바뀜, Then 새 스테이션의 프로그램으로 바뀐다`() = runTest {
+        val viewModel = createViewModel()
+        every { observeOnAirProgramUseCase(radioStationTestData.id) } returns MutableStateFlow(onAirProgramTestData)
+        every { observeOnAirProgramUseCase(kbsFirstRadioStationTestData.id) } returns MutableStateFlow(bareOnAirProgramTestData)
+
+        viewModel.state.test {
+            awaitItem()
+            nowPlayingStation.value = radioStationTestData
+            assertEquals(onAirProgramTestData, (expectMostRecentItem() as StationBarState.Active).program)
+
+            nowPlayingStation.value = kbsFirstRadioStationTestData
+            assertEquals(bareOnAirProgramTestData, (expectMostRecentItem() as StationBarState.Active).program)
         }
     }
 

@@ -3,7 +3,9 @@
 package io.jacob.episodive.core.data.radio
 
 import io.jacob.episodive.core.network.model.BroadcasterSource
+import io.jacob.episodive.core.network.model.OnAirSource
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
+import io.jacob.episodive.core.testing.model.kbsHappyRadioStationTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
 import io.jacob.episodive.core.testing.model.tvStationTestData
@@ -38,6 +40,24 @@ internal val broadcasterRadioEntryTestData = StationCatalogEntry(
     isHls = true,
     fallbackUrl = "https://fallback/k",
     broadcasterSource = BroadcasterSource.Kbs("21"),
+)
+
+/** 편성표 소스(KBS)가 있는 항목. 공용 목록에는 넣지 않고 편성 테스트만 따로 쓴다. */
+internal val onAirKbsEntryTestData = StationCatalogEntry(
+    station = kbsFirstRadioStationTestData,
+    radioBrowserIds = listOf("k"),
+    isHls = true,
+    fallbackUrl = null,
+    onAirSource = OnAirSource.Kbs("21"),
+)
+
+/** 곡을 주는 MBC 편성표 소스가 있는 항목. */
+internal val onAirMbcEntryTestData = StationCatalogEntry(
+    station = kbsHappyRadioStationTestData,
+    radioBrowserIds = listOf("m"),
+    isHls = true,
+    fallbackUrl = null,
+    onAirSource = OnAirSource.Mbc("FM4U"),
 )
 
 internal val stationCatalogEntryTestData = listOf(

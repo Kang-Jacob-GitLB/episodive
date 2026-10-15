@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -45,6 +46,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,14 +54,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
@@ -75,8 +82,10 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveShapes
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.theme.LocalDimensionTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.SLEEP_TIMER_FADE_OUT_MS
 import io.jacob.episodive.core.model.StationDetails
+import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
@@ -84,7 +93,8 @@ import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
 import io.jacob.episodive.core.testing.model.stationDetailsTestData
 import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.SleepTimerSheet
-import io.jacob.episodive.core.ui.StationArt
+import io.jacob.episodive.core.ui.CardSection
+import io.jacob.episodive.core.ui.StationCover
 import kotlinx.coroutines.launch
 import io.jacob.episodive.core.ui.R as uiR
 
@@ -92,8 +102,11 @@ import io.jacob.episodive.core.ui.R as uiR
 private val StationControlBarHeight = 52.dp
 private val StationControlBarShape = RoundedCornerShape(26.dp)
 
-/** 곡명 한 줄의 높이. 곡명이 있든 없든 이 높이를 비워 두어 아래 버튼이 움직이지 않게 한다. */
-private val StreamTitleHeight = 24.dp
+/** 곡명 한 줄의 높이. 글꼴 배율을 따르도록 sp 로 둔다(dp 면 큰 글꼴에서 줄이 잘린다). 곡명이 있든 없든 이 높이를 비워 두어 아래 버튼이 움직이지 않게 한다. */
+private val StreamTitleHeight = 24.sp
+
+/** 지금 방송 중인 프로그램 줄의 자리 높이. 프로그램 정보 유무와 무관하게 비워 둔다. */
+private val ProgramLineHeight = 22.sp
 
 /**
  * 라디오 전용 플레이어 시트. 에피소드 플레이어(`PlayerBottomSheet`)와 같은 모양의 시트지만 탐색바·시간·배속이 없다
@@ -115,6 +128,8 @@ fun StationPlayerSheet(
     val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val details by viewModel.details.collectAsStateWithLifecycle()
+    val onAir by viewModel.onAir.collectAsStateWithLifecycle()
+    val schedule by viewModel.schedule.collectAsStateWithLifecycle()
     val currentOnDismiss by rememberUpdatedState(onDismiss)
 
     // 정지·감독자 포기·에피소드 전환·재시작 등 스테이션이 사라지는 모든 경로를 여기서 한 번에 받는다.
@@ -159,6 +174,8 @@ fun StationPlayerSheet(
             StationPlayerScreen(
                 state = s,
                 details = details,
+                onAir = onAir,
+                schedule = schedule,
                 onCollapse = { hideThen {} },
                 onPlayOrPause = { viewModel.sendAction(StationPlayerAction.PlayOrPause) },
                 onPrevious = { viewModel.sendAction(StationPlayerAction.Previous) },
@@ -183,6 +200,8 @@ internal fun StationPlayerScreen(
     state: StationPlayerState.Active,
     modifier: Modifier = Modifier,
     details: StationDetailsOf? = null,
+    onAir: OnAirOf? = null,
+    schedule: ScheduleOf? = null,
     onCollapse: () -> Unit = {},
     onPlayOrPause: () -> Unit = {},
     onPrevious: () -> Unit = {},
@@ -197,6 +216,8 @@ internal fun StationPlayerScreen(
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
     val station = state.station
     val art = remember(station) { station.art }
+    // 늦게 오는 이전 스테이션의 프로그램은 그리지 않는다.
+    val program = onAir?.takeIf { it.stationId == station.id }?.program
     var showSleepTimerSheet by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -258,11 +279,12 @@ internal fun StationPlayerScreen(
                                     spotColor = Color.Black,
                                 ),
                         ) {
-                            StationArt(
+                            StationCover(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .clip(EpisodiveShapes.playerCover),
                                 station = station,
+                                imageUrl = program?.imageUrl,
                             )
                         }
                     }
@@ -292,6 +314,25 @@ internal fun StationPlayerScreen(
                             maxLines = 1,
                         )
 
+                        // 프로그램 줄도 높이를 늘 비워 둔다. 프로그램 정보가 늦게 오거나 없어도 아래 버튼이 움직이지 않는다.
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(with(LocalDensity.current) { ProgramLineHeight.toDp() }),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            program?.let {
+                                FadingEdgeText(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    text = it.titleWithHost(),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
+
                         Row(
                             modifier = Modifier.padding(top = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -303,17 +344,25 @@ internal fun StationPlayerScreen(
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            program?.timeRangeText()?.let { range ->
+                                Text(
+                                    text = range,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                                )
+                            }
                         }
 
                         // 곡명이 없을 때도 높이를 비워 둔다. 있다 없다 하면 아래 버튼이 곡이 바뀔 때마다 움직인다.
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(StreamTitleHeight),
+                                .height(with(LocalDensity.current) { StreamTitleHeight.toDp() }),
                             contentAlignment = Alignment.Center,
                         ) {
                             AnimatedContent(
-                                targetState = state.streamTitle?.takeIf { it.isNotBlank() },
+                                // 곡을 주는 방송사(MBC)는 그것이 먼저다. 아니면 스트림이 싣는 제목.
+                                targetState = (program?.song ?: state.streamTitle)?.takeIf { it.isNotBlank() },
                                 transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
                                 label = "StreamTitle",
                             ) { title ->
@@ -358,13 +407,17 @@ internal fun StationPlayerScreen(
         // 내용은 지금 보이는 스테이션의 상세일 때만 그린다.
         item {
             val shown = details?.takeIf { it.stationId == station.id }?.details
-            if (shown != null) {
+            val shownSchedule = schedule?.takeIf { it.stationId == station.id }?.schedule
+            // 상세도 편성표도 없으면 구분선까지 통째로 숨긴다.
+            if (shown != null || !shownSchedule?.programs.isNullOrEmpty()) {
                 StationInfoSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = dimension.screenPadding)
                         .padding(top = 8.dp, bottom = systemBarsPadding.calculateBottomPadding() + 32.dp),
                     details = shown,
+                    schedule = shownSchedule,
+                    current = program,
                 )
             }
         }
@@ -579,13 +632,15 @@ private fun StationControlBar(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun StationInfoSection(
-    details: StationDetails,
+    details: StationDetails?,
     modifier: Modifier = Modifier,
+    schedule: StationSchedule? = null,
+    current: OnAirProgram? = null,
 ) {
     val uriHandler = LocalUriHandler.current
     val quality = listOfNotNull(
-        details.codec,
-        details.bitrateKbps?.let { stringResource(R.string.feature_radio_info_bitrate_format, it) },
+        details?.codec,
+        details?.bitrateKbps?.let { stringResource(R.string.feature_radio_info_bitrate_format, it) },
     ).joinToString(" · ").takeIf { it.isNotEmpty() }
 
     Column(
@@ -594,7 +649,7 @@ internal fun StationInfoSection(
     ) {
         HorizontalDivider()
 
-        details.homepage?.let { homepage ->
+        details?.homepage?.let { homepage ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -635,7 +690,12 @@ internal fun StationInfoSection(
             )
         }
 
-        if (details.tags.isNotEmpty()) {
+        // 링크(와 음질)와 태그 사이. 편성표를 모르면 섹션 통째로 없다 — 간격은 Column 이 알아서 접는다.
+        if (schedule != null && schedule.programs.isNotEmpty()) {
+            StationScheduleSection(schedule = schedule, current = current)
+        }
+
+        if (details != null && details.tags.isNotEmpty()) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -654,13 +714,110 @@ internal fun StationInfoSection(
             }
         }
 
-        Text(
-            text = stringResource(R.string.feature_radio_info_source),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        // 출처는 Radio Browser 정보를 그릴 때만 밝힌다.
+        if (details != null) {
+            Text(
+                text = stringResource(R.string.feature_radio_info_source),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
+
+/** 접힌 편성표가 현재 방송 앞에 보이는 개수. */
+private const val ScheduleBefore = 1
+
+/** 접힌 편성표가 현재 방송 뒤에 보이는 개수. */
+private const val ScheduleAfter = 4
+
+private const val DayMillis = 24 * 60 * 60 * 1000L
+
+/**
+ * 편성표 카드. 에피소드 플레이어의 정보 카드와 같은 [CardSection] 이라 헤더를 누르면 펼쳐진다. 접힌 상태에서는 지금
+ * 방송 앞뒤 몇 개만 보이고(날짜를 넘어가도 이어진다), 현재를 모르면 처음부터 같은 개수만 보인다. 펼치면 내일 새벽까지
+ * 전부 보인다. 지금 방송 행은 [current] 와 같은 칸인지로 가린다 — 시계를 따로 읽지 않으므로 경계 시각에 미니바·시트의
+ * 현재 방송과 어긋나지 않는다. 날짜가 바뀌는 행 앞에는 "내일" 구분이 붙는다.
+ */
+@Composable
+private fun StationScheduleSection(
+    schedule: StationSchedule,
+    current: OnAirProgram?,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val programs = schedule.programs
+    val currentIndex = programs.indexOfFirst { it.isSameSlotAs(current) }
+    val collapsedRange = if (currentIndex >= 0) {
+        maxOf(0, currentIndex - ScheduleBefore)..minOf(programs.lastIndex, currentIndex + ScheduleAfter)
+    } else {
+        0..minOf(programs.lastIndex, ScheduleBefore + ScheduleAfter)
+    }
+    val shown = if (expanded) programs.indices else collapsedRange
+    val onAirDescription = stringResource(R.string.feature_radio_schedule_on_air)
+    val tomorrowDescription = stringResource(R.string.feature_radio_schedule_tomorrow)
+
+    CardSection(
+        modifier = modifier.fillMaxWidth(),
+        title = stringResource(R.string.feature_radio_schedule_title),
+        expanded = expanded,
+        onClick = { expanded = !expanded },
+        // 정보 영역이 이미 화면 여백 안이라 카드 바깥 여백은 두지 않는다.
+        outerPadding = PaddingValues(0.dp),
+    ) {
+        var previousDay = Long.MIN_VALUE
+        shown.forEach { index ->
+            val program = programs[index]
+            val isCurrent = index == currentIndex
+            val day = Math.floorDiv((program.startMillis ?: schedule.dayStartMillis) - schedule.dayStartMillis, DayMillis)
+            // 오늘이 아닌 날로 처음 넘어가는 행 앞에만 구분을 둔다. 어제 시작한 심야 프로그램(day < 0)에는 달지 않는다.
+            val startsTomorrow = day >= 1 && previousDay < day
+            if (startsTomorrow) {
+                // 카드가 하나로 합쳐 읽히므로 이 글자가 카드 라벨에 섞이지 않게 장식으로 두고, 읽는 쪽은 다음 행의 설명이 맡는다.
+                Text(
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .clearAndSetSemantics { },
+                    text = stringResource(R.string.feature_radio_schedule_tomorrow),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            previousDay = day
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 32.dp)
+                    .semantics(mergeDescendants = true) {
+                        when {
+                            isCurrent -> stateDescription = onAirDescription
+                            startsTomorrow -> stateDescription = tomorrowDescription
+                        }
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = program.startTimeText(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = program.titleWithHost(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
 
 private val DisplayHostPrefix = Regex("^(https?://)?(www\\.)?", RegexOption.IGNORE_CASE)
 
