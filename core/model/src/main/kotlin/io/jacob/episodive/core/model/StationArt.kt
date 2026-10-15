@@ -63,8 +63,10 @@ private val GenericTails = listOf("FM", "AM", "라디오", "방송")
 private const val NoInitial = "·"
 
 private fun Station.stationColorIndex(): Int {
-    val family = FamilyBroadcasters.firstOrNull { broadcaster.contains(it, ignoreCase = true) }
-        ?: broadcaster
+    // 방송사를 모르는 스테이션(해외 목록)은 이름이 색의 근거다.
+    val owner = broadcaster.ifBlank { name }
+    val family = FamilyBroadcasters.firstOrNull { owner.contains(it, ignoreCase = true) }
+        ?: owner
     return ExplicitColorIndex[family] ?: Math.floorMod(family.hashCode(), StationArtPalette.size)
 }
 
@@ -81,7 +83,8 @@ private fun Station.stationInitials(): String {
 
     val tokens = stripped.split(' ', '\t').filter { it.isNotEmpty() && it.uppercase() !in GenericWords }
     // 일반어뿐이면(EBS FM, YTN 라디오) 방송사명 자체가 이니셜의 근거다.
-    val base = tokens.firstOrNull() ?: broadcaster.trim().split(' ').firstOrNull { it.isNotEmpty() }.orEmpty()
+    val base = tokens.firstOrNull()
+        ?: broadcaster.ifBlank { name }.trim().split(' ').firstOrNull { it.isNotEmpty() }.orEmpty()
     return initialsOf(base.removeGenericTail())
 }
 
@@ -112,6 +115,8 @@ private fun initialsOf(token: String): String {
             if (alnum.length <= 4) alnum else alnum.take(3)
         }
 
+        // 키릴·일본어·악센트 Latin 등. 대소문자가 있는 글자는 대문자로 올린다.
+        first.isLetter() -> first.toString().uppercase()
         else -> NoInitial
     }
 }

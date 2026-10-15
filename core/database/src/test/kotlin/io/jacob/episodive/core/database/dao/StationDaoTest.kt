@@ -337,4 +337,13 @@ class StationDaoTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `Given meta, When getRemoteStation, Then returns it and null for unknown`() = runTest {
+        val meta = radioBrowserStationEntityOf(remoteA)
+        dao.upsertRemoteStation(meta)
+
+        assertEquals(meta, dao.getRemoteStation(remoteA))
+        assertNull(dao.getRemoteStation(remoteB))
+    }
 }

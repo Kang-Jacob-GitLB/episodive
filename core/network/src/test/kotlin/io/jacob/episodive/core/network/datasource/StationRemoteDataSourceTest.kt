@@ -106,9 +106,47 @@ class StationRemoteDataSourceTest {
         assertEquals(StationDetailsResponse(stationUuid = "a"), details)
     }
 
+    @Test
+    fun `Given country code, When getStationsByCountry called, Then search query is fixed and fields parsed`() = runTest {
+        // Given
+        server.enqueue(
+            MockResponse().setBody(
+                """[{"stationuuid":"u1","name":"Radio One","url_resolved":"https://s.example/live","state":"California",""" +
+                    """"languagecodes":"en,es","codec":"MP3","hls":0,"lastcheckok":1,"ssl_error":0,"clickcount":99,"is_https":true}]"""
+            )
+        )
+
+        // When
+        val stations = dataSource.getStationsByCountry("US")
+
+        // Then
+        val url = server.takeRequest().requestUrl
+        assertEquals("/json/stations/search", url?.encodedPath)
+        assertEquals("US", url?.queryParameter("countrycode"))
+        assertEquals("true", url?.queryParameter("hidebroken"))
+        assertEquals("clickcount", url?.queryParameter("order"))
+        assertEquals("true", url?.queryParameter("reverse"))
+        assertEquals("200", url?.queryParameter("limit"))
+        assertEquals(
+            StationDetailsResponse(
+                stationUuid = "u1",
+                name = "Radio One",
+                urlResolved = "https://s.example/live",
+                state = "California",
+                languageCodes = "en,es",
+                codec = "MP3",
+                hls = 0,
+                lastCheckOk = 1,
+                sslError = 0,
+                clickCount = 99,
+            ),
+            stations.single(),
+        )
+    }
+
     // 응답 테스트 데이터는 이 모듈 안에 둔다 — :core:testing 은 network 모델을 알지 못한다.
     private val stationDetailsJsonTestData = """
-        [{"stationuuid":"a","homepage":"https://radio.example.com","tags":"news,talk","codec":"AAC","bitrate":128,"language":"korean","name":"ignored"}]
+        [{"stationuuid":"a","homepage":"https://radio.example.com","tags":"news,talk","codec":"AAC","bitrate":128,"language":"korean","name":"Radio A"}]
     """.trimIndent()
 
     private val stationDetailsResponseTestData = StationDetailsResponse(
@@ -118,5 +156,6 @@ class StationRemoteDataSourceTest {
         codec = "AAC",
         bitrate = 128,
         language = "korean",
+        name = "Radio A",
     )
 }

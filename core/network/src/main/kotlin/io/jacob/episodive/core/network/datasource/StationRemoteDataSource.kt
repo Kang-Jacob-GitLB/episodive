@@ -8,4 +8,7 @@ interface StationRemoteDataSource {
 
     /** uuid 에 해당하는 레코드들. 응답 순서는 보장되지 않고, 모르는 uuid 는 빠진다. */
     suspend fun getStationDetails(stationUuids: List<String>): List<StationDetailsResponse>
+
+    /** 국가([countryCode], ISO alpha-2)의 인기 스테이션. 서버가 준 순서(인기순) 그대로이며 걸러내지 않은 원본이다. */
+    suspend fun getStationsByCountry(countryCode: String): List<StationDetailsResponse>
 }
