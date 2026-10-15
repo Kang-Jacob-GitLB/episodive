@@ -3,30 +3,46 @@ package io.jacob.episodive.core.data.repository
 import io.jacob.episodive.core.data.radio.KoreanStationCatalog
 import io.jacob.episodive.core.data.radio.StationCatalogEntry
 import io.jacob.episodive.core.data.radio.mergeStationDetails
+import io.jacob.episodive.core.data.radio.normalizeSchedule
 import io.jacob.episodive.core.database.dao.StationDao
 import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.domain.repository.StationRepository
+import io.jacob.episodive.core.model.OnAirProgram
+import io.jacob.episodive.core.model.OnAirRefresh
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.StationStream
 import io.jacob.episodive.core.network.datasource.BroadcasterStreamDataSource
+import io.jacob.episodive.core.network.datasource.OnAirDataSource
 import io.jacob.episodive.core.network.datasource.StationRemoteDataSource
+import io.jacob.episodive.core.network.model.OnAirSongLog
+import io.jacob.episodive.core.network.model.OnAirSource
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
+import java.time.Instant
+import java.time.ZoneId
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 
 class StationRepositoryImpl internal constructor(
     private val remoteDataSource: StationRemoteDataSource,
     private val broadcasterDataSource: BroadcasterStreamDataSource,
+    private val onAirDataSource: OnAirDataSource,
     private val stationDao: StationDao,
     private val catalog: List<StationCatalogEntry>,
     private val ioDispatcher: CoroutineDispatcher,
@@ -160,10 +176,189 @@ class StationRepositoryImpl internal constructor(
 
     private class Fetched(val details: StationDetails?)
 
+    private class CachedSchedule(
+        val programs: List<OnAirProgram>,
+        val dateKey: String,
+        val fetchedAtMillis: Long,
+    )
+
+    // 편성표도 메모리 캐시만 둔다. 실패는 캐시하지 않는다.
+    private val scheduleCache = ConcurrentHashMap<String, CachedSchedule>()
+
+    // 스테이션별 락. 전역 락이면 느린 방송사 하나가 다른 스테이션의 갱신까지 막는다.
+    private val scheduleMutexes = ConcurrentHashMap<String, Mutex>()
+
+    override fun observeOnAir(
+        stationId: String,
+        includeSong: Boolean,
+        refresh: OnAirRefresh,
+    ): Flow<OnAirProgram?> {
+        val source = stationsById[stationId]?.onAirSource ?: return flowOf(null)
+        val programs = onAirPrograms(stationId, source, refresh)
+        // 곡은 프로그램 경계와 상관없이 바뀌므로 따로 폴링해 얹는다. 곡을 주는 방송사는 MBC 뿐이다.
+        val flow = if (includeSong && source is OnAirSource.Mbc) {
+            // 곡 응답을 기다리느라 프로그램이 늦지 않게 null 로 시작한다.
+            combine(programs, onAirSongs(source).onStart { emit(null) }) { program, log ->
+                // "마지막 기록 곡" 이라 이 프로그램이 시작하기 전에 기록된 곡은 앞 프로그램의 것이다.
+                val song = log?.takeIf { (it.loggedAtMillis ?: return@takeIf false) >= (program?.startMillis ?: Long.MAX_VALUE) }
+                program?.copy(song = song?.text)
+            }
+        } else {
+            programs
+        }
+        return flow.distinctUntilChanged()
+    }
+
+    private fun onAirPrograms(
+        stationId: String,
+        source: OnAirSource,
+        refresh: OnAirRefresh,
+    ): Flow<OnAirProgram?> = flow {
+        val boundaryOnly = refresh == OnAirRefresh.Boundary
+        while (true) {
+            val schedule = loadSchedule(stationId, source, allowStale = boundaryOnly)
+            val nowMillis = now()
+            val current = schedule?.currentAt(nowMillis)
+            emit(current)
+
+            // 임시 편성으로 끝 시각이 어긋나도 따라가도록 끝 시각까지 가더라도 SCHEDULE_TTL 이상은 자지 않는다.
+            // 현재 항목이 없으면 다음 항목의 시작까지, 다음도 없으면 재시도 간격만큼 기다린다.
+            val untilChange = when {
+                schedule == null -> ONAIR_FAILURE_RETRY_MILLIS
+                current != null -> (current.endMillis ?: Long.MAX_VALUE) - nowMillis
+                else -> (schedule.nextStartAfter(nowMillis) ?: (nowMillis + ONAIR_FAILURE_RETRY_MILLIS)) - nowMillis
+            }
+            // Boundary 는 TTL 로 깨지 않고 프로그램 끝까지 잔다. 하루를 넘기지는 않는다(날짜가 바뀌면 편성표를 새로 받는다).
+            val maxWait = if (boundaryOnly) DAY_MILLIS else SCHEDULE_TTL_MILLIS
+            delay(untilChange.coerceIn(ONAIR_MIN_WAIT_MILLIS, maxWait))
+        }
+    }
+
+    override fun observeSchedule(stationId: String): Flow<StationSchedule> {
+        val source = stationsById[stationId]?.onAirSource
+            ?: return flowOf(StationSchedule(dayStartOf(now()), emptyList()))
+        return flow {
+            while (true) {
+                val schedule = loadSchedule(stationId, source)
+                val nowMillis = now()
+                emit(StationSchedule(dayStartOf(nowMillis), schedule?.windowAt(nowMillis).orEmpty()))
+                // 편성표는 TTL 마다 다시 받으므로 그 주기로 다시 읽되, 자정에는 맞춰 깬다. 날짜가 바뀌면 "오늘" 기준과
+                // "내일" 구분이 한꺼번에 밀리는데 5분 고정이면 자정 직후 그만큼 어긋난다.
+                val untilMidnight = dayStartOf(nowMillis) + DAY_MILLIS - nowMillis
+                val wait = if (schedule == null) ONAIR_FAILURE_RETRY_MILLIS else SCHEDULE_TTL_MILLIS
+                delay(minOf(wait, untilMidnight).coerceAtLeast(ONAIR_MIN_WAIT_MILLIS))
+            }
+        }.distinctUntilChanged()
+    }
+
+    private class CachedSong(val log: OnAirSongLog?, val fetchedAtMillis: Long)
+
+    private val songCache = ConcurrentHashMap<String, CachedSong>()
+    private val songMutexes = ConcurrentHashMap<String, Mutex>()
+
+    /**
+     * 곡 로그를 [SONG_POLL_MILLIS] 마다 읽어 발행한다. 기록된 지 [SONG_MAX_AGE_MILLIS] 가 지난 곡은 버린다 — 요청이
+     * 계속 실패하는 동안 직전 곡을 무기한 보이지 않으려는 것이고, 정상 응답이어도 같은 기준이다.
+     */
+    private fun onAirSongs(source: OnAirSource.Mbc): Flow<OnAirSongLog?> = flow {
+        while (true) {
+            emit(loadSong(source)?.takeIf { log -> log.loggedAtMillis?.let { now() - it <= SONG_MAX_AGE_MILLIS } == true })
+            delay(SONG_POLL_MILLIS)
+        }
+    }
+
+    /**
+     * 같은 채널을 여러 곳(시트·미니바)에서 구독해도 [SONG_CACHE_MILLIS] 안에는 한 번만 부른다. 실패하면 마지막으로 받은
+     * 값을 돌려주되(만료는 호출한 쪽이 건다) 캐시 시각은 갱신하지 않아 다음 호출에서 다시 시도한다.
+     */
+    private suspend fun loadSong(source: OnAirSource.Mbc): OnAirSongLog? {
+        return songMutexes.getOrPut(source.channel) { Mutex() }.withLock {
+            val nowMillis = now()
+            val cached = songCache[source.channel]
+            if (cached != null && nowMillis - cached.fetchedAtMillis < SONG_CACHE_MILLIS) return@withLock cached.log
+            try {
+                onAirDataSource.currentSong(source).also { songCache[source.channel] = CachedSong(it, nowMillis) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "currentSong failed. source: $source")
+                cached?.log
+            }
+        }
+    }
+
+    /**
+     * 편성표를 캐시에서 주거나 받아 온다. 날짜가 바뀌었거나 [SCHEDULE_TTL_MILLIS] 가 지났거나([allowStale] 이면 TTL 은 보지 않는다), 캐시에 지금 시각의
+     * 항목이 없는데 마지막으로 받은 지 [SCHEDULE_REFETCH_MIN_MILLIS] 가 지났으면 다시 받는다. 다시 받다 실패해도
+     * 같은 날짜의 캐시가 있으면 그것을 쓰고, 어제 캐시라도 지금 시각의 프로그램이 걸려 있으면 그것을 쓴다(실패 자체는 캐시하지 않으므로 다음에 다시 시도한다). 그도 없으면 null.
+     */
+    private suspend fun loadSchedule(
+        stationId: String,
+        source: OnAirSource,
+        allowStale: Boolean = false,
+    ): List<OnAirProgram>? {
+        return scheduleMutexes.getOrPut(stationId) { Mutex() }.withLock {
+            val nowMillis = now()
+            val dateKey = Instant.ofEpochMilli(nowMillis).atZone(SEOUL).toLocalDate().toString()
+            val previous = scheduleCache[stationId]
+            val cached = previous?.takeIf { it.dateKey == dateKey }
+            if (cached != null) {
+                val age = nowMillis - cached.fetchedAtMillis
+                // allowStale 이면 TTL 이 지나도 지금 프로그램이 캐시에 있는 한 그대로 쓴다.
+                val fresh = (allowStale || age < SCHEDULE_TTL_MILLIS) &&
+                    (cached.programs.currentAt(nowMillis) != null || age < SCHEDULE_REFETCH_MIN_MILLIS)
+                if (fresh) return@withLock cached.programs
+            }
+            try {
+                // 조각·필러를 다듬은 뒤 캐시한다. 편성 목록과 현재 프로그램이 같은 목록을 본다.
+                onAirDataSource.schedule(source, nowMillis).normalizeSchedule().also {
+                    scheduleCache[stationId] = CachedSchedule(it, dateKey, nowMillis)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "onAir schedule failed. stationId: $stationId, source: $source")
+                // 자정 재조회가 실패해도 어제 받은 편성에 지금 시각의 프로그램이 걸려 있으면(자정을 넘기는 방송) 그것을 쓴다.
+                cached?.programs ?: previous?.programs?.takeIf { it.currentAt(nowMillis) != null }
+            }
+        }
+    }
+
+    private fun List<OnAirProgram>.currentAt(nowMillis: Long): OnAirProgram? =
+        filter { (it.startMillis ?: return@filter false) <= nowMillis && nowMillis < (it.endMillis ?: return@filter false) }
+            .maxByOrNull { it.startMillis ?: 0L }
+
+    private fun dayStartOf(nowMillis: Long): Long =
+        Instant.ofEpochMilli(nowMillis).atZone(SEOUL).toLocalDate().atStartOfDay(SEOUL).toInstant().toEpochMilli()
+
+    /**
+     * [nowMillis] 가 속한 날 00:00 부터 [SCHEDULE_WINDOW_MILLIS] 안에 걸리는 프로그램. 시각을 모르는 항목은 뺀다. 시작순.
+     * 끝은 내일 05:00 — KBS 의 방송일(05:00~29:00)과 같은 선이다.
+     */
+    private fun List<OnAirProgram>.windowAt(nowMillis: Long): List<OnAirProgram> {
+        val from = dayStartOf(nowMillis)
+        val to = from + SCHEDULE_WINDOW_MILLIS
+        return filter { (it.startMillis ?: return@filter false) < to && (it.endMillis ?: return@filter false) > from }
+            .sortedBy { it.startMillis }
+    }
+
+    private fun List<OnAirProgram>.nextStartAfter(nowMillis: Long): Long? =
+        mapNotNull { it.startMillis }.filter { it > nowMillis }.minOrNull()
+
     private companion object {
         const val RESOLVE_TIMEOUT_MILLIS = 15_000L
         const val BROADCASTER_TIMEOUT_MILLIS = 5_000L
         const val DETAILS_TIMEOUT_MILLIS = 10_000L
         const val DETAILS_TTL_MILLIS = 24 * 60 * 60 * 1000L
+        const val DAY_MILLIS = 24 * 60 * 60 * 1000L
+        const val SCHEDULE_WINDOW_MILLIS = 29 * 60 * 60 * 1000L
+        const val SCHEDULE_TTL_MILLIS = 5 * 60 * 1000L
+        const val SCHEDULE_REFETCH_MIN_MILLIS = 30_000L
+        const val ONAIR_FAILURE_RETRY_MILLIS = 60_000L // 실패·편성 공백 뒤 재시도
+        const val ONAIR_MIN_WAIT_MILLIS = 1_000L
+        const val SONG_POLL_MILLIS = 45_000L
+        const val SONG_CACHE_MILLIS = 30_000L
+        const val SONG_MAX_AGE_MILLIS = 10 * 60 * 1000L
+        val SEOUL: ZoneId = ZoneId.of("Asia/Seoul")
     }
 }

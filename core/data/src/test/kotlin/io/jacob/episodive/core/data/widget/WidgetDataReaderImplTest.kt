@@ -7,10 +7,13 @@ import io.jacob.episodive.core.domain.repository.UserRepository
 import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetUserRecentPodcastsUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.testing.model.episodeTestData
+import io.jacob.episodive.core.testing.model.onAirProgramTestData
 import io.jacob.episodive.core.testing.model.podcastTestDataList
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.util.MainDispatcherRule
@@ -36,10 +39,12 @@ class WidgetDataReaderImplTest {
     private val userRepository = mockk<UserRepository>(relaxed = true)
     private val episodeRepository = mockk<EpisodeRepository>(relaxed = true)
     private val playerRepository = mockk<PlayerRepository>(relaxed = true)
+    private val observeOnAirProgram = mockk<ObserveOnAirProgramUseCase>()
 
     init {
         // 기본은 스테이션 없음. relaxed mock 의 빈 Flow 는 바로 완료돼 에피소드 경로까지 닫아 버린다.
         every { playerRepository.nowPlayingStation } returns MutableStateFlow(null)
+        every { observeOnAirProgram(any(), any()) } returns flowOf(null)
     }
 
     private val reader = WidgetDataReaderImpl(
@@ -49,6 +54,7 @@ class WidgetDataReaderImplTest {
         userRepository = userRepository,
         episodeRepository = episodeRepository,
         playerRepository = playerRepository,
+        observeOnAirProgram = observeOnAirProgram,
     )
 
     @Test
@@ -132,6 +138,53 @@ class WidgetDataReaderImplTest {
                 assertNull(snapshot.podcastId)
                 assertEquals(true, snapshot.isStation)
                 assertEquals(true, snapshot.isPlaying)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `Given a station with on-air program, when nowPlayingFlow collected, then program title replaces broadcaster`() =
+        runTest {
+            val program = MutableStateFlow<OnAirProgram?>(null)
+            every { playerRepository.nowPlayingStation } returns MutableStateFlow(radioStationTestData)
+            every { playerRepository.isPlaying } returns MutableStateFlow(true)
+            every { observeOnAirProgram(radioStationTestData.id, false) } returns program
+
+            reader.nowPlayingFlow().test {
+                val initial = awaitItem()!!
+                assertEquals(radioStationTestData.broadcaster, initial.feedTitle)
+                assertNull(initial.imageUrl)
+
+                program.value = onAirProgramTestData
+                val withProgram = awaitItem()!!
+                assertEquals(onAirProgramTestData.title, withProgram.feedTitle)
+                // 프로그램 이미지가 이니셜 아트 대신 썸네일이 된다. 위젯은 에피소드와 같은 경로로 비트맵화한다.
+                assertEquals(onAirProgramTestData.imageUrl, withProgram.imageUrl)
+
+                // 곡만 바뀌면 스냅샷은 그대로다.
+                program.value = onAirProgramTestData.copy(song = "곡 - 가수")
+                expectNoEvents()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `Given same title but image changes, when nowPlayingFlow collected, then new snapshot is emitted`() =
+        runTest {
+            val program = MutableStateFlow<OnAirProgram?>(onAirProgramTestData)
+            every { playerRepository.nowPlayingStation } returns MutableStateFlow(radioStationTestData)
+            every { playerRepository.isPlaying } returns MutableStateFlow(true)
+            every { observeOnAirProgram(radioStationTestData.id, false) } returns program
+
+            reader.nowPlayingFlow().test {
+                // 첫 응답을 기다리지 않고 null 로 시작하므로 초기 발행이 한두 번일 수 있다. 마지막 것을 기준으로 삼는다.
+                assertEquals(onAirProgramTestData.imageUrl, expectMostRecentItem()!!.imageUrl)
+                program.value = onAirProgramTestData.copy(imageUrl = "https://img.example.com/other.jpg")
+                assertEquals("https://img.example.com/other.jpg", awaitItem()!!.imageUrl)
+
+                // 이미지가 사라지면 이니셜 아트로 돌아간다.
+                program.value = onAirProgramTestData.copy(imageUrl = null)
+                assertNull(awaitItem()!!.imageUrl)
                 cancelAndIgnoreRemainingEvents()
             }
         }

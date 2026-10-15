@@ -9,6 +9,8 @@ import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.LiveStreamSupervisor
 import io.jacob.episodive.core.domain.station.StationPlaybackController
+import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Station
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,6 +35,7 @@ class StationBarViewModel @Inject constructor(
     supervisor: LiveStreamSupervisor,
     private val stationPlaybackController: StationPlaybackController,
     sleepTimer: SleepTimer,
+    observeOnAirProgramUseCase: ObserveOnAirProgramUseCase,
 ) : ViewModel() {
 
     // 스테이션 여부는 nowPlayingStation 하나로만 가른다. nowPlaying(에피소드)과 combine 하면 전환 순간
@@ -45,12 +49,16 @@ class StationBarViewModel @Inject constructor(
                     playerRepository.streamTitle,
                     playerRepository.isPlaying,
                     playerRepository.isBuffering,
-                ) { streamTitle, isPlaying, isBuffering ->
+                    // 네트워크로 받는 값이라 늦게 온다. 첫 값을 기다리느라 바가 뜨지 못하지 않게 null 로 시작한다.
+                    // 이 스테이션이 바뀌면 flatMapLatest 가 구독을 끊으므로 다른 스테이션의 프로그램이 섞이지 않는다.
+                    observeOnAirProgramUseCase(station.id).onStart { emit(null) },
+                ) { streamTitle, isPlaying, isBuffering, program ->
                     StationBarState.Active(
                         station = station,
                         streamTitle = streamTitle,
                         isPlaying = isPlaying,
                         isBuffering = isBuffering,
+                        program = program,
                     )
                 }
             }
@@ -109,6 +117,8 @@ sealed interface StationBarState {
         val streamTitle: String?,
         val isPlaying: Boolean,
         val isBuffering: Boolean,
+        /** 지금 방송 중인 프로그램. 모르면 null. */
+        val program: OnAirProgram? = null,
     ) : StationBarState
 }
 

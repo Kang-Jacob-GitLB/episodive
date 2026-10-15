@@ -61,6 +61,20 @@ class KoreanStationCatalogTest {
     }
 
     @Test
+    fun `Given catalog, Then onAirSource 는 KBS·MBC·SBS·CBS 전국 12채널만 갖는다`() {
+        val withSource = entries.filter { it.onAirSource != null }.map { it.station.id }
+        assertEquals(
+            setOf(
+                "kbs-1radio", "kbs-happyfm", "kbs-classicfm", "kbs-coolfm",
+                "mbc-sfm", "mbc-fm4u", "mbc-allthatmusic",
+                "sbs-powerfm", "sbs-lovefm",
+                "cbs-sfm", "cbs-musicfm", "cbs-joy4u",
+            ),
+            withSource.toSet(),
+        )
+    }
+
+    @Test
     fun `Given catalog, Then every station is radio`() {
         assertTrue(entries.all { it.station.kind == StationKind.RADIO })
     }

@@ -11,6 +11,7 @@ import io.jacob.episodive.core.domain.station.StationPlaybackController
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.ObserveStationProgramImagesUseCase
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
 import io.jacob.episodive.core.model.DataError
 import io.jacob.episodive.core.model.Station
@@ -22,7 +23,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -38,6 +41,7 @@ class RadioViewModel @Inject constructor(
     getStationsUseCase: GetStationsUseCase,
     getFavoriteStationsUseCase: GetFavoriteStationsUseCase,
     getRecentStationsUseCase: GetRecentStationsUseCase,
+    observeStationProgramImagesUseCase: ObserveStationProgramImagesUseCase,
     private val toggleFavoriteStationUseCase: ToggleFavoriteStationUseCase,
     private val stationPlaybackController: StationPlaybackController,
     @param:Player(EpisodivePlayers.Main) playerRepository: PlayerRepository,
@@ -77,6 +81,26 @@ class RadioViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = RadioState.Loading
     )
+
+    /**
+     * 스테이션 id → 지금 방송 중인 프로그램 이미지. `state` 와 따로 둔다 — 네트워크로 받고 프로그램 경계마다 바뀌는 값이라
+     * 섞으면 재생 상태·목록과 얽혀 매번 목록 전체가 다시 만들어진다. 화면이 구독하는 동안(WhileSubscribed)만 받는다.
+     * 구독 대상은 카탈로그의 라디오 전체다. 즐겨찾기·최근은 그 부분집합이다.
+     */
+    val programImages: StateFlow<Map<String, String>> = getStationsUseCase(StationKind.RADIO)
+        .map { stations -> stations.mapTo(LinkedHashSet()) { it.id } }
+        .distinctUntilChanged()
+        .flatMapLatest { ids -> observeStationProgramImagesUseCase(ids.toList()) }
+        .catch { e ->
+            // 부가 정보라 실패해도 목록은 이니셜 아트로 그대로 보인다.
+            Timber.w(e, "프로그램 이미지를 불러오지 못했다")
+            emit(emptyMap())
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyMap(),
+        )
 
     private val _action = MutableSharedFlow<RadioAction>(extraBufferCapacity = 1)
 

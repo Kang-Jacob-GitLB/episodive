@@ -46,6 +46,7 @@ import io.jacob.episodive.core.network.datasource.EpisodeRemoteDataSource
 import io.jacob.episodive.core.network.datasource.FeedRemoteDataSource
 import io.jacob.episodive.core.network.datasource.PodcastRemoteDataSource
 import io.jacob.episodive.core.network.datasource.SoundbiteRemoteDataSource
+import io.jacob.episodive.core.network.datasource.OnAirDataSource
 import io.jacob.episodive.core.network.datasource.StationRemoteDataSource
 import io.jacob.episodive.core.player.datasource.PlayerDataSource
 import kotlinx.coroutines.CoroutineDispatcher
@@ -170,12 +171,14 @@ object RepositoryModule {
     fun provideStationRepository(
         stationRemoteDataSource: StationRemoteDataSource,
         broadcasterStreamDataSource: BroadcasterStreamDataSource,
+        onAirDataSource: OnAirDataSource,
         stationDao: StationDao,
         @Dispatcher(EpisodiveDispatchers.IO) ioDispatcher: CoroutineDispatcher,
     ): StationRepository {
         return StationRepositoryImpl(
             remoteDataSource = stationRemoteDataSource,
             broadcasterDataSource = broadcasterStreamDataSource,
+            onAirDataSource = onAirDataSource,
             stationDao = stationDao,
             catalog = KoreanStationCatalog.entries,
             ioDispatcher = ioDispatcher,

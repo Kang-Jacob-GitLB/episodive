@@ -3,7 +3,6 @@ package io.jacob.episodive.feature.player
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,7 +15,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,7 +35,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -89,7 +86,6 @@ import io.jacob.episodive.core.designsystem.component.EpisodiveSwipeDismissSnack
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.EpisodiveSeeker
 import io.jacob.episodive.core.designsystem.component.EpisodiveTextButton
-import io.jacob.episodive.core.designsystem.component.EpisodiveViewToggleHeader
 import io.jacob.episodive.core.designsystem.component.FadingEdgeText
 import io.jacob.episodive.core.designsystem.component.HtmlTextContainer
 import io.jacob.episodive.core.designsystem.component.MorphIcon
@@ -119,6 +115,7 @@ import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.episodeTestDataList
 import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.ui.R as uiR
+import io.jacob.episodive.core.ui.CardSection
 import io.jacob.episodive.core.ui.ChapterItem
 import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.PodcastSimpleItem
@@ -1095,51 +1092,6 @@ private fun ControlPanelBottom(
                         )
                     }
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CardSection(
-    modifier: Modifier = Modifier,
-    title: String,
-    expanded: Boolean,
-    onClick: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Box(
-        modifier = modifier
-            .padding(16.dp)
-    ) {
-        Card(
-            modifier = Modifier
-                .animateContentSize(),
-            onClick = onClick,
-            shape = MaterialTheme.shapes.extraLarge,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp, horizontal = 24.dp),
-            ) {
-                // 버튼이 아니라 표시용 헤더다. 카드 전체가 이미 클릭 대상이라 여기에
-                // 버튼을 겹쳐 두면 클릭 지점이 둘로 갈린다 — 제목이나 아이콘을 누르면
-                // 리플이 그 언저리에만 번지고, 스크린리더도 같은 동작을 두 번 읽는다.
-                EpisodiveViewToggleHeader(
-                    modifier = Modifier.padding(bottom = 4.dp),
-                    expanded = expanded,
-                    contentPadding = PaddingValues(0.dp),
-                    text = {
-                        Text(
-                            modifier = Modifier.weight(1f),
-                            text = title,
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        )
-                    }
-                )
-
-                content()
             }
         }
     }

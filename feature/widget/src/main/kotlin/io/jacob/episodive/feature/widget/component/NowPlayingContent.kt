@@ -124,7 +124,8 @@ private fun NowPlayingHeader(
     ) {
         val contentDescription = context.getString(R.string.feature_widget_now_playing_artwork_desc)
         val stationArt = snapshot?.stationArt
-        if (stationArt != null) {
+        if (stationArt != null && artwork == null) {
+            // 프로그램 이미지가 없거나 받지 못했으면 이니셜 아트 그대로다.
             StationThumbnail(art = stationArt, sizeDp = thumbDp)
         } else {
             WidgetThumbnail(

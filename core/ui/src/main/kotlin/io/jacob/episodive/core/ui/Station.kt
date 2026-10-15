@@ -35,7 +35,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -45,6 +49,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.MorphIcon
 import io.jacob.episodive.core.designsystem.component.SectionHeader
@@ -115,6 +121,39 @@ fun StationArt(
     }
 }
 
+/** [StationCover] 의 프로그램 이미지 노드 태그. 이미지를 요청했는지 테스트가 가른다. */
+const val StationCoverImageTag = "StationCoverImage"
+
+/**
+ * 스테이션 커버. 프로그램 이미지가 있으면 그것을 꽉 채워 그리고, 없거나 받는 동안·실패했을 때는 이니셜 아트
+ * ([StationArt]) 를 그대로 둔다. 아트를 늘 아래에 깔아 두므로 이미지가 늦게 와도 빈 칸이 생기지 않는다.
+ */
+@Composable
+fun StationCover(
+    station: Station,
+    imageUrl: String?,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier) {
+        StationArt(station = station, modifier = Modifier.fillMaxSize())
+
+        if (imageUrl != null && !LocalInspectionMode.current) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .crossfade(true)
+                    .build(),
+                // 장식이다. 프로그램 제목은 곁의 텍스트가 읽는다.
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag(StationCoverImageTag),
+            )
+        }
+    }
+}
+
 // 플레이어 시트의 큰 커버까지 비율대로 키울 수 있게 넉넉히 둔다. 무한 제약에서 폰트가 발산하는 것만 막으면 된다.
 private val StationArtMaxSide = 480.dp
 
@@ -125,6 +164,7 @@ private fun StationArtWithStatus(
     status: StationCardStatus,
     size: Dp,
     modifier: Modifier = Modifier,
+    imageUrl: String? = null,
 ) {
     Box(
         modifier = modifier
@@ -132,7 +172,8 @@ private fun StationArtWithStatus(
             .clip(RoundedCornerShape(size * StationArtCornerRatio)),
         contentAlignment = Alignment.Center,
     ) {
-        StationArt(station = station, modifier = Modifier.fillMaxSize())
+        // 프로그램 이미지가 있으면 그것을, 없거나 받는 동안·실패하면 이니셜 아트를 보인다.
+        StationCover(station = station, imageUrl = imageUrl, modifier = Modifier.fillMaxSize())
 
         if (status != StationCardStatus.Idle) {
             Box(
@@ -211,6 +252,7 @@ fun StationsSection(
     statusOf: (Station) -> StationCardStatus,
     onStationClick: (Station) -> Unit,
     onMore: (() -> Unit)? = null,
+    imageUrlOf: (Station) -> String? = { null },
 ) {
     SectionHeader(
         modifier = modifier,
@@ -258,6 +300,7 @@ fun StationsSection(
                     modifier = Modifier.animateItem(),
                     station = station,
                     status = statusOf(station),
+                    imageUrl = imageUrlOf(station),
                     onClick = { onStationClick(station) },
                 )
             }
@@ -300,6 +343,7 @@ fun StationTile(
     station: Station,
     status: StationCardStatus,
     onClick: () -> Unit,
+    imageUrl: String? = null,
 ) {
     Column(
         modifier = Modifier
@@ -307,7 +351,7 @@ fun StationTile(
             .then(modifier)
             .stationCardSemantics(status, onClick),
     ) {
-        StationArtWithStatus(station = station, status = status, size = StationTileSize)
+        StationArtWithStatus(station = station, status = status, size = StationTileSize, imageUrl = imageUrl)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -354,6 +398,7 @@ fun StationRow(
     isFavorite: Boolean,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
+    imageUrl: String? = null,
 ) {
     val dimension = LocalDimensionTheme.current
 
@@ -373,7 +418,7 @@ fun StationRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            StationArtWithStatus(station = station, status = status, size = StationRowArtSize)
+            StationArtWithStatus(station = station, status = status, size = StationRowArtSize, imageUrl = imageUrl)
 
             Column(
                 modifier = Modifier.weight(1f),
