@@ -226,7 +226,8 @@ Room 왕복과 `flowOn(IO)` 를 거쳐 `progress` 보다 늦게 도착한다. �
 
 - **에피소드 구분은 `progress.episodeId` 로만 한다.** 재생 위치 저장 규약과 같은 이유다.
   `ObserveLiveCaptionUseCase` 는 `nowPlaying.id == progress.episodeId` 일 때만 세션을 열고,
-  화면은 `LiveCaption.episodeId == progress.episodeId` 일 때만 그린다.
+  화면은 `progress.episodeId` 가 null 이 아니고 `LiveCaption.subject == CaptionSubject.Episode(progress.episodeId)` 일 때만 그린다(편의 getter 로 우회하지 마라 — 둘 다 null 이면 스테이션 자막이 샌다).
+- **엔진 세션은 `Mutex` 로 한 번에 하나만 돈다**(`LiveCaptionEngine`). 락을 빼지 마라. `SpeechAudioTap` 은 SPSC 라 늦게 끝난 세션의 `stopCapture` 가 새 세션 캡처를 끄고, `RecognizerCache.acquire` 는 다른 언어 요청 시 쓰던 인식기를 즉시 `close()` 해 열린 stream 아래 네이티브 객체가 닫히며, 두 ViewModel 의 flow 는 서로를 기다리지 않는다. `Loading` 은 락 앞에서 보낸다.
 - **sherpa stream 하나에는 샘플레이트 하나만 넣는다.** 같은 stream 에 다른 레이트를 넣으면
   네이티브가 `exit(-1)` 로 **프로세스를 죽인다**(예외가 아니다). 그래서 탭은 flush·오버런마다
   구간(segment)을 끊고, 엔진은 구간이 바뀌면 stream 을 새로 만든다. `recognizer.reset` 으로
