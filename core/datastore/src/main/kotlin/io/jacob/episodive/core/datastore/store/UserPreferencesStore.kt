@@ -12,6 +12,7 @@ import io.jacob.episodive.core.datastore.model.UserPreferences
 import io.jacob.episodive.core.model.Category
 import io.jacob.episodive.core.model.LastPlayState
 import io.jacob.episodive.core.model.Repeat
+import io.jacob.episodive.core.model.countryOrNull
 import io.jacob.episodive.core.model.mapper.toCategories
 import io.jacob.episodive.core.model.mapper.toCommaString
 import kotlinx.coroutines.flow.Flow
@@ -89,6 +90,7 @@ class UserPreferencesStore @Inject constructor(
             UserPreferences(
                 isFirstLaunch = preferences[UserPreferencesKeys.isFirstLaunch] ?: true,
                 language = Locale.getDefault().language,
+                country = Locale.getDefault().countryOrNull(),
                 categories = preferences[UserPreferencesKeys.categories]?.toCategories()
                     ?: emptyList(),
                 speed = preferences[UserPreferencesKeys.speed] ?: 1f,

@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.model.OnAirProgram
+import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.testing.model.bareOnAirProgramTestData
 import io.jacob.episodive.core.testing.model.onAirProgramTestData
 import io.jacob.episodive.core.testing.model.radioStationTestData
@@ -31,6 +32,7 @@ class StationBarTest {
     private fun setBar(
         streamTitle: String? = null,
         program: OnAirProgram? = null,
+        station: Station = radioStationTestData,
         isPlaying: Boolean = true,
         isBuffering: Boolean = false,
         onStop: () -> Unit = {},
@@ -40,7 +42,7 @@ class StationBarTest {
             EpisodiveTheme {
                 StationBarContent(
                     state = StationBarState.Active(
-                        station = radioStationTestData,
+                        station = station,
                         streamTitle = streamTitle,
                         program = program,
                         isPlaying = isPlaying,
@@ -68,6 +70,21 @@ class StationBarTest {
         setBar(streamTitle = "  ")
 
         composeTestRule.onNodeWithText(radioStationTestData.broadcaster, substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `Given 방송사가 빈 해외 스테이션, Then 부제로 지역을 보여 준다`() {
+        setBar(station = radioStationTestData.copy(broadcaster = "", region = "California"))
+
+        composeTestRule.onNodeWithText("California", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `Given 방송사도 지역도 빈 스테이션, Then 이름과 LIVE 만 보이고 크래시하지 않는다`() {
+        setBar(station = radioStationTestData.copy(broadcaster = "", region = null))
+
+        composeTestRule.onNodeWithText(radioStationTestData.name, substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("LIVE").assertIsDisplayed()
     }
 
     @Test

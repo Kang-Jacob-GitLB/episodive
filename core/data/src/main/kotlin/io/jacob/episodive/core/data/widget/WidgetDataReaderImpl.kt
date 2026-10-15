@@ -55,7 +55,7 @@ class WidgetDataReaderImpl @Inject constructor(
         episodeId = null,
         podcastId = null,
         title = name,
-        feedTitle = programTitle ?: broadcaster,
+        feedTitle = programTitle ?: broadcaster.ifBlank { region.orEmpty() },
         imageUrl = programImageUrl,
         isPlaying = isPlaying,
         stationId = id,

@@ -360,7 +360,9 @@ internal fun StationPlayerScreen(
 
                         FadingEdgeText(
                             modifier = Modifier.fillMaxWidth(),
-                            text = station.region?.let { "${station.broadcaster} · $it" } ?: station.broadcaster,
+                            // 방송사를 모르는 해외 스테이션은 지역만, 둘 다 없으면 빈 줄이다(높이는 그대로 둔다).
+                            text = listOfNotNull(station.broadcaster.takeIf { it.isNotBlank() }, station.region)
+                                .joinToString(" · "),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,

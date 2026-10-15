@@ -64,6 +64,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.jacob.episodive.core.designsystem.component.EpisodiveDragHandle
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconButton
+import io.jacob.episodive.core.designsystem.component.SectionHeader
 import io.jacob.episodive.core.designsystem.component.SkeletonBox
 import io.jacob.episodive.core.designsystem.component.SkeletonContainer
 import io.jacob.episodive.core.designsystem.component.SkeletonCover
@@ -157,6 +158,7 @@ internal fun HomeRoute(
             liveEpisodes = s.liveEpisodes,
             channels = s.channels,
             // 오류는 빈 응답과 똑같이 섹션을 건너뛴다(SectionState.Error 의 관례).
+            radioEntranceOnly = (radio as? HomeRadioState.Success)?.isEntranceOnly == true,
             radio = when (val r = radio) {
                 is HomeRadioState.Loading -> SectionState.Loading
                 is HomeRadioState.Success -> SectionState.Success(r.stations)
@@ -211,6 +213,8 @@ internal fun HomeScreen(
     channels: SectionState<Channel>,
     // 기본값은 "섹션 없음" 이다. 라디오를 모르는 호출부는 이 섹션이 아예 보이지 않는다.
     radio: SectionState<Station> = SectionState.Success(emptyList()),
+    // 해외 목록이 비어도 헤더와 "더 보기" 입구는 남긴다(라디오 화면으로 가는 유일한 길).
+    radioEntranceOnly: Boolean = false,
     radioStatusOf: (Station) -> StationCardStatus = { StationCardStatus.Idle },
     radioImageOf: (Station) -> String? = { null },
     onStationClick: (Station) -> Unit = {},
@@ -311,15 +315,22 @@ internal fun HomeScreen(
                             key: String,
                             state: SectionState<T>,
                             skeleton: @Composable LazyItemScope.() -> Unit,
+                            emptyContent: (@Composable LazyItemScope.() -> Unit)? = null,
                             content: @Composable LazyItemScope.(List<T>) -> Unit,
                         ) {
+                            // 비어 있어도 그릴 내용이 있는 섹션만 건너뛰지 않는다.
+                            var showEmptyContent = false
                             val items = when (state) {
                                 // 아직 오지 않았다 — 자리를 잡아 둔다. 비워 두면 도착하는
                                 // 순간 아래가 통째로 밀려, 누르려던 카드가 손가락 밑에서
                                 // 움직인다. 랜덤 에피소드는 위에서 둘째라 특히 그렇다.
                                 is SectionState.Loading -> null
 
-                                is SectionState.Success -> state.items.ifEmpty { return }
+                                is SectionState.Success -> state.items.ifEmpty {
+                                    if (emptyContent == null) return
+                                    showEmptyContent = true
+                                    state.items
+                                }
 
                                 // 실패는 빈 응답과 똑같이 건너뛴다. RemoteUpdater 가 예외를
                                 // 올리는 것은 캐시조차 없을 때뿐이라 대신 보여줄 것이 없고,
@@ -339,7 +350,11 @@ internal fun HomeScreen(
                             }
                             sectionRendered = true
                             item(key = "section:$key") {
-                                if (items == null) skeleton() else content(items)
+                                when {
+                                    showEmptyContent -> emptyContent?.invoke(this)
+                                    items == null -> skeleton()
+                                    else -> content(items)
+                                }
                             }
                         }
 
@@ -414,6 +429,20 @@ internal fun HomeScreen(
                             key = HomeRadioSectionKey,
                             state = radio,
                             skeleton = { StationsSectionSkeleton(hasAction = true) },
+                            emptyContent = if (radioEntranceOnly) {
+                                {
+                                    val title = stringResource(R.string.feature_home_section_radio)
+                                    SectionHeader(
+                                        title = title,
+                                        actionIcon = EpisodiveIcons.CaretRight,
+                                        actionIconContentDescription =
+                                            stringResource(uiR.string.core_ui_section_more_format, title),
+                                        onActionClick = onRadioMore,
+                                    )
+                                }
+                            } else {
+                                null
+                            },
                         ) { items ->
                             StationsSection(
                                 title = stringResource(R.string.feature_home_section_radio),

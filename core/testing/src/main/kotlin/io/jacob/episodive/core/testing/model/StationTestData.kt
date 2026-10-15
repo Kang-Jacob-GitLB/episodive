@@ -3,6 +3,8 @@ package io.jacob.episodive.core.testing.model
 import io.jacob.episodive.core.model.PlaybackFailure
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationListing
+import io.jacob.episodive.core.model.StationListingSource
 import io.jacob.episodive.core.model.StationStream
 
 val radioStationTestData = Station(
@@ -99,4 +101,24 @@ val playbackFailureTestData = PlaybackFailure(
     cause = PlaybackFailure.Cause.Gone,
     stationId = radioStationTestData.id,
     streamUrl = icecastStreamTestData.url,
+)
+
+/** 한국 큐레이션 카탈로그 목록. [radioStationsTestData] 를 그대로 싣는다. */
+val curatedStationListingTestData = StationListing(
+    countryCode = "KR",
+    source = StationListingSource.Curated,
+    stations = radioStationsTestData,
+)
+
+/** 해외 국가의 인기 목록. 방송사가 빈 스테이션이다. */
+fun popularStationListingTestData(
+    countryCode: String = "US",
+    stations: List<Station> = listOf(
+        radioStationTestData.copy(id = "rb:u1", name = "Radio One", broadcaster = "", region = "California", language = "en"),
+        radioStationTestData.copy(id = "rb:u2", name = "Radio Two", broadcaster = "", region = null, language = null),
+    ),
+) = StationListing(
+    countryCode = countryCode,
+    source = StationListingSource.RadioBrowser,
+    stations = stations,
 )

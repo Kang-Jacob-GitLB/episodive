@@ -8,4 +8,5 @@ data class UserPreferences(
     val categories: List<Category>,
     val speed: Float,
     val isCaptionEnabled: Boolean,
+    val country: String? = null,
 )

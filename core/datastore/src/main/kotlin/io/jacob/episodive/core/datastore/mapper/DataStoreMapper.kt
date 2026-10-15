@@ -7,6 +7,7 @@ fun UserPreferences.toUserData(): UserData =
     UserData(
         isFirstLaunch = isFirstLaunch,
         language = language,
+        country = country,
         categories = categories,
         speed = speed,
         isCaptionEnabled = isCaptionEnabled,
@@ -16,6 +17,7 @@ fun UserData.toUserPreferences(): UserPreferences =
     UserPreferences(
         isFirstLaunch = isFirstLaunch,
         language = language,
+        country = country,
         categories = categories,
         speed = speed,
         isCaptionEnabled = isCaptionEnabled,

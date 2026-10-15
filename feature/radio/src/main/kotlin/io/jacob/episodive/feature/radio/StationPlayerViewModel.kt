@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.jacob.episodive.core.common.EpisodivePlayers
 import io.jacob.episodive.core.common.Player
 import io.jacob.episodive.core.common.combine
+import io.jacob.episodive.core.common.retryNetworkWithBackoff
 import io.jacob.episodive.core.domain.player.SleepTimer
 import io.jacob.episodive.core.domain.repository.PlayerRepository
 import io.jacob.episodive.core.domain.station.StationPlaybackController
@@ -15,7 +16,9 @@ import io.jacob.episodive.core.domain.usecase.caption.ObserveStationCaptionUseCa
 import io.jacob.episodive.core.domain.usecase.caption.StationCaption
 import io.jacob.episodive.core.domain.usecase.caption.ToggleCaptionUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetStationUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveScheduleUseCase
@@ -28,6 +31,7 @@ import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
 import io.jacob.episodive.core.model.caption.LiveCaptionState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +42,8 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
@@ -46,6 +52,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import timber.log.Timber
+
+private const val RecentStationLimit = 10
 
 /**
  * 라디오 전용 플레이어 시트의 상태. 에피소드용 `PlayerViewModel` 은 스테이션이 올라 있는 동안 Error 라
@@ -59,6 +67,8 @@ class StationPlayerViewModel @Inject constructor(
     private val stationPlaybackController: StationPlaybackController,
     private val getStationsUseCase: GetStationsUseCase,
     private val getFavoriteStationsUseCase: GetFavoriteStationsUseCase,
+    private val getStationUseCase: GetStationUseCase,
+    private val getRecentStationsUseCase: GetRecentStationsUseCase,
     private val toggleFavoriteStationUseCase: ToggleFavoriteStationUseCase,
     private val getStationDetailsUseCase: GetStationDetailsUseCase,
     private val observeOnAirProgramUseCase: ObserveOnAirProgramUseCase,
@@ -69,19 +79,52 @@ class StationPlayerViewModel @Inject constructor(
     observeCaptionDownloadFailuresUseCase: ObserveCaptionDownloadFailuresUseCase,
 ) : ViewModel() {
 
+    /**
+     * 현재 국가의 전체 목록. 해외 목록은 네트워크라 늦게 오거나 실패할 수 있다 — 첫 값이 올 때까지는 빈 목록
+     * ([stateIn] 의 초기값)으로 즐겨찾기·재생 상태만으로 시트가 먼저 그려지게 한다. 네트워크 실패는 빈 목록을 두고
+     * 1·2·4…최대 30초 간격으로 다시 구독해 복구한다(지금 듣는 스테이션은 플레이어가 들고 있고 즐겨찾기·최근으로도
+     * 찾는다). 공유해 두어 [step] 이 새로 구독해(해외면 요청을 다시 돌려) 기다리지 않고 지금 값을 읽는다.
+     */
+    private val allStations: StateFlow<List<Station>> = getStationsUseCase(StationKind.RADIO)
+        .map { it.stations }
+        .retryNetworkWithBackoff { cause ->
+            Timber.w(cause, "스테이션 전체 목록을 불러오지 못했다")
+            emit(emptyList())
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = emptyList(),
+        )
+
+    /**
+     * 받는 중인 스테이션을 저장소에서 찾은 결과. 목록 사본으로는 못 찾는 경우(다른 나라의 최근, 순위 변동으로 빠진 것)를
+     * 위한 것이라 목록에서 바로 찾을 수 있으면 쓰이지 않는다. 구독하자마자 null 을 흘려 조회를 기다리지 않고 시작한다.
+     * 어느 id 의 결과인지 함께 싣는다 — 조회가 끝나기 전에 받는 스테이션이 바뀌면 낡은 결과를 쓰지 않게 한다.
+     */
+    private val pendingLookup: Flow<PendingLookup?> = stationPlaybackController.pendingStationId
+        .mapLatest { id -> id?.let { PendingLookup(it, getStationUseCase(it)) } }
+        .onStart { emit(null) }
+
     val state: StateFlow<StationPlayerState> = combine(
         playerRepository.nowPlayingStation,
         stationPlaybackController.pendingStationId,
+        pendingLookup,
         playerRepository.streamTitle,
         playerRepository.isPlaying,
         playerRepository.isBuffering,
         getFavoriteStationsUseCase(),
-        getStationsUseCase(StationKind.RADIO),
+        allStations,
+        getRecentStationsUseCase(RecentStationLimit),
         sleepTimer.remainingMs,
-    ) { playing, pendingId, streamTitle, isPlaying, isBuffering, favorites, stations, sleepTimerRemainingMs ->
+    ) { playing, pendingId, lookup, streamTitle, isPlaying, isBuffering, favorites, stations, recents, sleepTimerRemainingMs ->
         // 받는 중인 스테이션을 먼저 보여 준다. 그동안 플레이어는 이전 스테이션을 그대로 들고 있다.
+        // 목록에서 바로 찾고, 없으면 저장소 조회 결과를 쓴다.
         val pending = pendingId?.let { id ->
-            stations.firstOrNull { it.id == id } ?: favorites.firstOrNull { it.id == id }
+            stations.firstOrNull { it.id == id }
+                ?: favorites.firstOrNull { it.id == id }
+                ?: recents.firstOrNull { it.id == id }
+                ?: lookup?.takeIf { it.id == id }?.station
         }
         val station = pending ?: playing
         when {
@@ -89,7 +132,7 @@ class StationPlayerViewModel @Inject constructor(
             // 받는 중인 스테이션을 목록에서 아직 못 찾았고 들고 있는 것도 없다. 사라진 것이 아니라 준비 중이다.
             station == null -> StationPlayerState.Loading
             else -> {
-                val ring = stationRing(station.id, favorites, stations)
+                val ring = stationRing(station.id, favorites, stations, recents)
                 StationPlayerState.Active(
                     station = station,
                     isPending = pending != null,
@@ -244,7 +287,8 @@ class StationPlayerViewModel @Inject constructor(
         val ring = stationRing(
             anchorId = anchorId,
             favorites = getFavoriteStationsUseCase().first(),
-            all = getStationsUseCase(StationKind.RADIO).first(),
+            all = allStations.value,
+            recents = getRecentStationsUseCase(RecentStationLimit).first(),
         )
         ring.neighbor(anchorId, delta)?.let { stationPlaybackController.play(it.id) }
     }
@@ -278,6 +322,8 @@ class StationPlayerViewModel @Inject constructor(
         }
     }
 }
+
+private class PendingLookup(val id: String, val station: Station?)
 
 sealed interface StationPlayerState {
     data object Loading : StationPlayerState

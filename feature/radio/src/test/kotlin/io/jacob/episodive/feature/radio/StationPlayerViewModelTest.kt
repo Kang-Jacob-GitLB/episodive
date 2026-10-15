@@ -9,19 +9,23 @@ import io.jacob.episodive.core.domain.usecase.caption.ObserveStationCaptionUseCa
 import io.jacob.episodive.core.domain.usecase.caption.StationCaption
 import io.jacob.episodive.core.domain.usecase.caption.ToggleCaptionUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetFavoriteStationsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetRecentStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationDetailsUseCase
+import io.jacob.episodive.core.domain.usecase.station.GetStationUseCase
 import io.jacob.episodive.core.domain.usecase.station.GetStationsUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveScheduleUseCase
 import io.jacob.episodive.core.domain.usecase.station.ToggleFavoriteStationUseCase
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationKind
+import io.jacob.episodive.core.model.StationListing
 import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
 import io.jacob.episodive.core.model.caption.CaptionLanguage
 import io.jacob.episodive.core.model.caption.LiveCaptionState
 import io.jacob.episodive.core.testing.model.bareOnAirProgramTestData
 import io.jacob.episodive.core.testing.model.codecOnlyStationDetailsTestData
+import io.jacob.episodive.core.testing.model.curatedStationListingTestData
 import io.jacob.episodive.core.testing.model.kbsFirstRadioStationTestData
 import io.jacob.episodive.core.testing.model.kbsHappyRadioStationTestData
 import io.jacob.episodive.core.testing.model.onAirProgramTestData
@@ -33,9 +37,13 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -46,6 +54,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.io.IOException
 
 class StationPlayerViewModelTest {
 
@@ -56,6 +65,8 @@ class StationPlayerViewModelTest {
     private val stationPlaybackController = mockk<StationPlaybackController>(relaxed = true)
     private val getStationsUseCase = mockk<GetStationsUseCase>()
     private val getFavoriteStationsUseCase = mockk<GetFavoriteStationsUseCase>()
+    private val getRecentStationsUseCase = mockk<GetRecentStationsUseCase>()
+    private val getStationUseCase = mockk<GetStationUseCase>()
     private val toggleFavoriteStationUseCase = mockk<ToggleFavoriteStationUseCase>(relaxed = true)
     private val getStationDetailsUseCase = mockk<GetStationDetailsUseCase>()
     private val observeOnAirProgramUseCase = mockk<ObserveOnAirProgramUseCase>()
@@ -76,6 +87,10 @@ class StationPlayerViewModelTest {
     private val isBuffering = MutableStateFlow(false)
     private val favorites = MutableStateFlow<List<Station>>(emptyList())
     private val stations = MutableStateFlow(listOf(a, b, c))
+    private val recents = MutableStateFlow<List<Station>>(emptyList())
+    private var listingFlow: Flow<StationListing>? = null
+    /** 저장소가 아는 스테이션(카탈로그·메모리·Room). 현재 국가의 목록과 별개다. */
+    private val knownStations = mutableMapOf<String, Station>()
     private val sleepRemaining = MutableStateFlow<Long?>(null)
     private val captionState = MutableStateFlow(StationCaption(null, LiveCaptionState.Initial))
     private val captionFailures = MutableSharedFlow<CaptionDownloadFailure>(extraBufferCapacity = 1)
@@ -88,7 +103,10 @@ class StationPlayerViewModelTest {
         every { playerRepository.isBuffering } returns isBuffering
         every { stationPlaybackController.pendingStationId } returns pendingStationId
         every { getFavoriteStationsUseCase() } returns favorites
-        every { getStationsUseCase(StationKind.RADIO) } returns stations
+        every { getStationsUseCase(StationKind.RADIO) } returns
+            (listingFlow ?: stations.map { curatedStationListingTestData.copy(stations = it) })
+        every { getRecentStationsUseCase(any()) } returns recents
+        coEvery { getStationUseCase(any()) } coAnswers { knownStations[firstArg()] }
         every { sleepTimer.remainingMs } returns sleepRemaining
         every { observeOnAirProgramUseCase(any()) } returns flowOf(null)
         every { observeScheduleUseCase(any()) } returns flowOf(StationSchedule(0L, emptyList()))
@@ -101,6 +119,8 @@ class StationPlayerViewModelTest {
             stationPlaybackController = stationPlaybackController,
             getStationsUseCase = getStationsUseCase,
             getFavoriteStationsUseCase = getFavoriteStationsUseCase,
+            getRecentStationsUseCase = getRecentStationsUseCase,
+            getStationUseCase = getStationUseCase,
             toggleFavoriteStationUseCase = toggleFavoriteStationUseCase,
             getStationDetailsUseCase = getStationDetailsUseCase,
             observeOnAirProgramUseCase = observeOnAirProgramUseCase,
@@ -161,6 +181,97 @@ class StationPlayerViewModelTest {
         assertEquals(b, s.station)
         assertTrue(s.isPending)
         assertNull(s.streamTitle)
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 현재 국가 목록에 없는 최근 스테이션을 받는 중, Then 최근에서 찾아 Loading 에 고착되지 않는다`() = runTest {
+        val abroad = radioStationTestData.copy(id = "rb:u9", name = "Abroad", broadcaster = "", language = "en")
+        recents.value = listOf(abroad)
+        pendingStationId.value = abroad.id
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+
+        val s = viewModel.activeState()
+        assertEquals(abroad, s.station)
+        assertTrue(s.isPending)
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 목록에도 즐겨찾기에도 최근에도 없는 스테이션을 받는 중, Then 저장소 조회로 찾는다`() = runTest {
+        // 순위 변동으로 목록에서 빠진 해외 스테이션처럼 현재 목록 사본으로는 못 찾는 경우다.
+        val dropped = radioStationTestData.copy(id = "rb:u8", name = "Dropped", broadcaster = "", language = "en")
+        knownStations[dropped.id] = dropped
+        pendingStationId.value = dropped.id
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+
+        val s = viewModel.activeState()
+        assertEquals(dropped, s.station)
+        assertTrue(s.isPending)
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 해외 전체 목록이 아직 오지 않음, Then 목록을 기다리지 않고 재생 중인 스테이션으로 시트가 선다`() = runTest {
+        listingFlow = flow { awaitCancellation() }
+        nowPlayingStation.value = a
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+
+        assertEquals(a, viewModel.activeState().station)
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 기준이 현재 국가 목록에 없고 최근에 있음, Then 이전과 다음은 최근 목록을 돈다`() = runTest {
+        val abroad1 = radioStationTestData.copy(id = "rb:u1", name = "Abroad 1", broadcaster = "")
+        val abroad2 = radioStationTestData.copy(id = "rb:u2", name = "Abroad 2", broadcaster = "")
+        nowPlayingStation.value = abroad1
+        recents.value = listOf(abroad1, abroad2)
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+
+        val s = viewModel.activeState()
+        assertEquals(abroad2, s.next)
+        assertEquals(abroad2, s.previous)
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 최근 목록이 재생마다 앞으로 옮겨짐, When Next 를 연달아, Then 최근 세 방송을 모두 돈다`() = runTest {
+        val r1 = radioStationTestData.copy(id = "rb:u1", name = "Abroad 1", broadcaster = "")
+        val r2 = radioStationTestData.copy(id = "rb:u2", name = "Abroad 2", broadcaster = "")
+        val r3 = radioStationTestData.copy(id = "rb:u3", name = "Abroad 3", broadcaster = "")
+        nowPlayingStation.value = r1
+        recents.value = listOf(r1, r2, r3)
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+        // 재생하면 markPlayed 처럼 그 스테이션이 최근의 맨 앞으로 간다.
+        every { stationPlaybackController.play(any()) } answers {
+            val id = firstArg<String>()
+            pendingStationId.value = id
+            recents.value = recents.value.sortedByDescending { it.id == id }
+        }
+
+        repeat(3) { viewModel.sendAction(StationPlayerAction.Next) }
+
+        verify(exactly = 1) { stationPlaybackController.play(r2.id) }
+        verify(exactly = 1) { stationPlaybackController.play(r3.id) }
+        verify(exactly = 1) { stationPlaybackController.play(r1.id) }
+        job.cancel()
+    }
+
+    @Test
+    fun `Given 전체 목록을 받지 못함, Then 시트는 죽지 않고 즐겨찾기에서 찾는다`() = runTest {
+        listingFlow = flow { throw IOException("offline") }
+        favorites.value = listOf(b)
+        pendingStationId.value = b.id
+        val viewModel = createViewModel()
+        val job = launchCollect(viewModel)
+
+        assertEquals(b, viewModel.activeState().station)
         job.cancel()
     }
 
@@ -229,6 +340,8 @@ class StationPlayerViewModelTest {
     fun `Given Next 를 두 번, Then 두 번째는 받는 중인 스테이션을 기준으로 다음으로 간다`() = runTest {
         nowPlayingStation.value = a
         val viewModel = createViewModel()
+        // 시트가 열려 state 를 수집해야 공유 전체 목록이 채워진다(실제로 이전/다음은 시트에서만 눌린다).
+        val job = launchCollect(viewModel)
 
         viewModel.sendAction(StationPlayerAction.Next)
         viewModel.sendAction(StationPlayerAction.Next)
@@ -236,16 +349,20 @@ class StationPlayerViewModelTest {
         // 재생 중(a)을 기준으로 하면 두 번 다 b 로 간다.
         verify(exactly = 1) { stationPlaybackController.play(b.id) }
         verify(exactly = 1) { stationPlaybackController.play(c.id) }
+        job.cancel()
     }
 
     @Test
     fun `Given 첫 스테이션, When Previous, Then 반대 끝으로 순환한다`() = runTest {
         nowPlayingStation.value = a
         val viewModel = createViewModel()
+        // 시트가 열려 state 를 수집해야 공유 전체 목록이 채워진다(실제로 이전/다음은 시트에서만 눌린다).
+        val job = launchCollect(viewModel)
 
         viewModel.sendAction(StationPlayerAction.Previous)
 
         verify(exactly = 1) { stationPlaybackController.play(c.id) }
+        job.cancel()
     }
 
     @Test

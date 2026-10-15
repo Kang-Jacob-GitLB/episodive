@@ -162,7 +162,8 @@ internal fun StationBarContent(
                         text = state.program?.song?.takeIf { it.isNotBlank() }
                             ?: state.streamTitle?.takeIf { it.isNotBlank() }
                             ?: state.program?.title?.takeIf { it.isNotBlank() }
-                            ?: station.broadcaster,
+                            // 방송사를 모르는 해외 스테이션은 지역으로 대신한다(둘 다 없으면 빈 문자열).
+                            ?: station.broadcaster.ifBlank { station.region.orEmpty() },
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.72f),
                         maxLines = 1,
