@@ -4,6 +4,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
 import androidx.media3.common.MediaItem
@@ -15,6 +17,8 @@ import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
+import coil.Coil
+import coil.request.ImageRequest
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -29,22 +33,31 @@ import io.jacob.episodive.core.domain.usecase.player.GetNowPlayingUseCase
 import io.jacob.episodive.core.domain.usecase.player.WidgetPlayPauseUseCase
 import io.jacob.episodive.core.domain.usecase.station.ObserveOnAirProgramUseCase
 import io.jacob.episodive.core.model.Episode
+import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.Station
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.ByteArrayOutputStream
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @UnstableApi
 @AndroidEntryPoint
@@ -82,6 +95,10 @@ class MediaNotificationService : MediaSessionService() {
 
     companion object {
         private const val NOTIFICATION_ID = 1001
+
+        // 알림 큰 아이콘용 프로그램 이미지. 원본(최대 1280px)을 그대로 세션에 싣지 않는다.
+        private const val ARTWORK_SIZE_PX = 512
+        private const val ARTWORK_JPEG_QUALITY = 85
         private const val CHANNEL_ID = "episodive_playback_channel"
 
         // ServiceActions.kt (:feature:widget) 에서 하드코딩된 복제본이 동기화되어야 함.
@@ -95,7 +112,9 @@ class MediaNotificationService : MediaSessionService() {
 
         createNotificationChannel()
 
-        val player = playerRepository.getPlayer()
+        // 스테이션 재생 중에는 세션이 읽는 메타데이터만 프로그램 기준으로 덧씌운다. 재생 중인 항목은 건드리지 않는다.
+        val player = OnAirMetadataPlayer(playerRepository.getPlayer())
+        observeOnAirOverlay(player)
 
         mediaSession = MediaSession.Builder(this, player)
             .setCallback(MediaSessionCallback())
@@ -148,10 +167,13 @@ class MediaNotificationService : MediaSessionService() {
     }
 
     /**
-     * 재생 중인 스테이션의 프로그램 제목. 일시정지 중에는 구독하지 않는다 — 멈춘 위젯 제목 때문에 편성 루프(5분 TTL
-     * 재조회)를 돌릴 이유가 없고, 다시 재생하면 그때 현재 제목을 새로 받는다.
+     * 재생 중인 스테이션과 지금 방송 중인 프로그램. 일시정지 중에는 구독하지 않는다 — 멈춘 화면 때문에 편성 루프(5분 TTL
+     * 재조회)를 돌릴 이유가 없고, 다시 재생하면 그때 현재 프로그램을 새로 받는다. 곡은 빼고(includeSong = false) 받는다 —
+     * 백그라운드 재생 내내 곡 폴링이 돌면 안 된다.
+     *
+     * 위젯 갱신 트리거와 세션 메타데이터 덧씌움이 함께 쓰므로 하나로 공유한다(구독이 둘이어도 편성 루프는 하나).
      */
-    private fun currentProgramTitleFlow(): Flow<String?> =
+    private val playingProgram: Flow<Pair<Station, OnAirProgram?>> by lazy {
         combine(
             playerRepository.nowPlayingStation,
             playerRepository.isPlaying,
@@ -161,10 +183,96 @@ class MediaNotificationService : MediaSessionService() {
                 if (station == null) {
                     emptyFlow()
                 } else {
-                    observeOnAirProgramUseCase(station.id, includeSong = false).map { it?.title }
+                    observeOnAirProgramUseCase(station.id, includeSong = false).map { station to it }
                 }
             }
+            .shareIn(
+                scope = serviceScope,
+                started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
+                replay = 1,
+            )
+    }
+
+    /** 위젯 부제가 바뀌는 신호: 프로그램 제목과 이미지. */
+    private fun currentProgramTitleFlow(): Flow<Pair<String?, String?>> =
+        playingProgram
+            .map { (_, program) -> program?.title to program?.imageUrl }
             .distinctUntilChanged()
+
+    /**
+     * 프로그램이 바뀔 때마다 세션 메타데이터 덧씌움을 바꾼다. 프로그램을 모르면(null) 덧씌우지 않아 원래 값이 그대로다.
+     *
+     * - 같은 스테이션이 일시정지로 구독이 멎었다가 재개되면 마지막 덧씌움을 유지한 채 편성을 새로 평가한다 — 멈춘 알림에도
+     *   프로그램이 보이는 게 맞다.
+     * - 스테이션이 바뀌거나 멈추면(null) 덧씌움을 곧바로 지운다. [OnAirMetadataPlayer] 도 항목과 대조하지만, 재개했을 때 지난
+     *   프로그램이 잠깐 보이지 않게 여기서 비운다.
+     * - 프로그램 이미지는 먼저 텍스트만 덧씌운 뒤 받아서 바이트로 싣는다. 받기 전·실패 때는 이니셜 아트가 그대로다.
+     */
+    private fun observeOnAirOverlay(player: OnAirMetadataPlayer) = serviceScope.launch {
+        playerRepository.nowPlayingStation
+            .map { it?.id }
+            .distinctUntilChanged()
+            .flatMapLatest { id ->
+                if (id == null) {
+                    flowOf<Pair<Station, OnAirProgram?>?>(null)
+                } else {
+                    playingProgram
+                        .filter { (station, _) -> station.id == id }
+                        .map<Pair<Station, OnAirProgram?>, Pair<Station, OnAirProgram?>?> { it }
+                        .onStart { emit(null) }
+                }
+            }
+            .collectLatest { entry ->
+                val (station, program) = entry ?: run { player.setOverlay(null); return@collectLatest }
+                if (program == null) {
+                    player.setOverlay(null)
+                    return@collectLatest
+                }
+                val url = program.imageUrl?.takeIf { it.startsWith("https://") }
+                val cached = url?.let { u -> programArtwork?.takeIf { it.url == u } }
+                player.setOverlay(station.toOverlay(program, cached))
+                if (url != null && cached == null) {
+                    val loaded = loadProgramArtwork(url) ?: return@collectLatest
+                    programArtwork = loaded
+                    player.setOverlay(station.toOverlay(program, loaded))
+                }
+            }
+    }
+
+    // 마지막으로 받은 프로그램 이미지. 같은 프로그램이 다시 덧씌워질 때 아트가 한 번 비지 않게 한다.
+    private var programArtwork: OnAirMetadataPlayer.Artwork? = null
+
+    private fun Station.toOverlay(program: OnAirProgram, artwork: OnAirMetadataPlayer.Artwork?) =
+        OnAirMetadataPlayer.Overlay(
+            station = this,
+            artist = program.host?.takeIf { it.isNotBlank() }?.let { "${program.title} · $it" } ?: program.title,
+            artwork = artwork,
+        )
+
+    /** Coil 로 받아 알림 큰 아이콘에 알맞은 크기로 줄여 JPEG 바이트로 만든다. 실패하면 null. */
+    private suspend fun loadProgramArtwork(url: String): OnAirMetadataPlayer.Artwork? {
+        return try {
+            val request = ImageRequest.Builder(applicationContext)
+                .data(url)
+                .size(ARTWORK_SIZE_PX)
+                .allowHardware(false)
+                .build()
+            val result = Coil.imageLoader(applicationContext).execute(request)
+            val bitmap = (result.drawable as? BitmapDrawable)?.bitmap ?: return null
+            val bytes = withContext(Dispatchers.Default) {
+                ByteArrayOutputStream().use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, ARTWORK_JPEG_QUALITY, out)
+                    out.toByteArray()
+                }
+            }
+            OnAirMetadataPlayer.Artwork(url, bytes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "program artwork load failed: $url")
+            null
+        }
+    }
 
     @UnstableApi
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

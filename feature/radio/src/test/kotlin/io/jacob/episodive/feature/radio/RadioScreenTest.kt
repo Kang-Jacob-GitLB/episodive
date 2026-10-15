@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -14,6 +15,7 @@ import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.radioStationsTestData
+import io.jacob.episodive.core.ui.StationCoverImageTag
 import io.jacob.episodive.core.ui.R as uiR
 import org.junit.Rule
 import org.junit.Test
@@ -36,6 +38,7 @@ class RadioScreenTest {
         nowPlayingStationId: String? = null,
         isPlaying: Boolean = false,
         pendingStationId: String? = null,
+        programImages: Map<String, String> = emptyMap(),
     ) {
         composeTestRule.setContent {
             EpisodiveTheme {
@@ -51,6 +54,7 @@ class RadioScreenTest {
                         isBuffering = false,
                         pendingStationId = pendingStationId,
                     ),
+                    programImages = programImages,
                     onBackClick = {},
                     onStationClick = {},
                     onToggleFavorite = {},
@@ -115,5 +119,26 @@ class RadioScreenTest {
             .onAllNodesWithContentDescription(context.getString(uiR.string.core_ui_station_favorite_add))
             .onFirst()
             .assertExists()
+    }
+
+    @Test
+    fun `Given 프로그램 이미지가 있는 스테이션만, Then 그 행만 이미지를 요청하고 나머지는 이니셜 아트다`() {
+        setScreen(programImages = mapOf(a.id to "https://img.example.com/a.jpg"))
+
+        composeTestRule.onAllNodes(hasTestTag(StationCoverImageTag), useUnmergedTree = true).assertCountEquals(1)
+    }
+
+    @Test
+    fun `Given 프로그램 이미지가 없음, Then 이미지를 요청하지 않는다`() {
+        setScreen()
+
+        composeTestRule.onAllNodes(hasTestTag(StationCoverImageTag), useUnmergedTree = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun `Given 즐겨찾기에도 있는 스테이션의 이미지, Then 캐러셀과 목록 모두에 쓰인다`() {
+        setScreen(favorites = listOf(a), programImages = mapOf(a.id to "https://img.example.com/a.jpg"))
+
+        composeTestRule.onAllNodes(hasTestTag(StationCoverImageTag), useUnmergedTree = true).assertCountEquals(2)
     }
 }

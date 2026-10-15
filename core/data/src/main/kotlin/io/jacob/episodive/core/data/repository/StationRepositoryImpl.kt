@@ -8,6 +8,7 @@ import io.jacob.episodive.core.database.dao.StationDao
 import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.model.OnAirProgram
+import io.jacob.episodive.core.model.OnAirRefresh
 import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationKind
@@ -187,9 +188,13 @@ class StationRepositoryImpl internal constructor(
     // 스테이션별 락. 전역 락이면 느린 방송사 하나가 다른 스테이션의 갱신까지 막는다.
     private val scheduleMutexes = ConcurrentHashMap<String, Mutex>()
 
-    override fun observeOnAir(stationId: String, includeSong: Boolean): Flow<OnAirProgram?> {
+    override fun observeOnAir(
+        stationId: String,
+        includeSong: Boolean,
+        refresh: OnAirRefresh,
+    ): Flow<OnAirProgram?> {
         val source = stationsById[stationId]?.onAirSource ?: return flowOf(null)
-        val programs = onAirPrograms(stationId, source)
+        val programs = onAirPrograms(stationId, source, refresh)
         // 곡은 프로그램 경계와 상관없이 바뀌므로 따로 폴링해 얹는다. 곡을 주는 방송사는 MBC 뿐이다.
         val flow = if (includeSong && source is OnAirSource.Mbc) {
             // 곡 응답을 기다리느라 프로그램이 늦지 않게 null 로 시작한다.
@@ -204,9 +209,14 @@ class StationRepositoryImpl internal constructor(
         return flow.distinctUntilChanged()
     }
 
-    private fun onAirPrograms(stationId: String, source: OnAirSource): Flow<OnAirProgram?> = flow {
+    private fun onAirPrograms(
+        stationId: String,
+        source: OnAirSource,
+        refresh: OnAirRefresh,
+    ): Flow<OnAirProgram?> = flow {
+        val boundaryOnly = refresh == OnAirRefresh.Boundary
         while (true) {
-            val schedule = loadSchedule(stationId, source)
+            val schedule = loadSchedule(stationId, source, allowStale = boundaryOnly)
             val nowMillis = now()
             val current = schedule?.currentAt(nowMillis)
             emit(current)
@@ -218,7 +228,9 @@ class StationRepositoryImpl internal constructor(
                 current != null -> (current.endMillis ?: Long.MAX_VALUE) - nowMillis
                 else -> (schedule.nextStartAfter(nowMillis) ?: (nowMillis + ONAIR_FAILURE_RETRY_MILLIS)) - nowMillis
             }
-            delay(untilChange.coerceIn(ONAIR_MIN_WAIT_MILLIS, SCHEDULE_TTL_MILLIS))
+            // Boundary 는 TTL 로 깨지 않고 프로그램 끝까지 잔다. 하루를 넘기지는 않는다(날짜가 바뀌면 편성표를 새로 받는다).
+            val maxWait = if (boundaryOnly) DAY_MILLIS else SCHEDULE_TTL_MILLIS
+            delay(untilChange.coerceIn(ONAIR_MIN_WAIT_MILLIS, maxWait))
         }
     }
 
@@ -276,11 +288,15 @@ class StationRepositoryImpl internal constructor(
     }
 
     /**
-     * 편성표를 캐시에서 주거나 받아 온다. 날짜가 바뀌었거나 [SCHEDULE_TTL_MILLIS] 가 지났거나, 캐시에 지금 시각의
+     * 편성표를 캐시에서 주거나 받아 온다. 날짜가 바뀌었거나 [SCHEDULE_TTL_MILLIS] 가 지났거나([allowStale] 이면 TTL 은 보지 않는다), 캐시에 지금 시각의
      * 항목이 없는데 마지막으로 받은 지 [SCHEDULE_REFETCH_MIN_MILLIS] 가 지났으면 다시 받는다. 다시 받다 실패해도
      * 같은 날짜의 캐시가 있으면 그것을 쓰고, 어제 캐시라도 지금 시각의 프로그램이 걸려 있으면 그것을 쓴다(실패 자체는 캐시하지 않으므로 다음에 다시 시도한다). 그도 없으면 null.
      */
-    private suspend fun loadSchedule(stationId: String, source: OnAirSource): List<OnAirProgram>? {
+    private suspend fun loadSchedule(
+        stationId: String,
+        source: OnAirSource,
+        allowStale: Boolean = false,
+    ): List<OnAirProgram>? {
         return scheduleMutexes.getOrPut(stationId) { Mutex() }.withLock {
             val nowMillis = now()
             val dateKey = Instant.ofEpochMilli(nowMillis).atZone(SEOUL).toLocalDate().toString()
@@ -288,7 +304,8 @@ class StationRepositoryImpl internal constructor(
             val cached = previous?.takeIf { it.dateKey == dateKey }
             if (cached != null) {
                 val age = nowMillis - cached.fetchedAtMillis
-                val fresh = age < SCHEDULE_TTL_MILLIS &&
+                // allowStale 이면 TTL 이 지나도 지금 프로그램이 캐시에 있는 한 그대로 쓴다.
+                val fresh = (allowStale || age < SCHEDULE_TTL_MILLIS) &&
                     (cached.programs.currentAt(nowMillis) != null || age < SCHEDULE_REFETCH_MIN_MILLIS)
                 if (fresh) return@withLock cached.programs
             }

@@ -12,6 +12,7 @@ import io.jacob.episodive.core.database.dao.StationDao
 import io.jacob.episodive.core.database.model.RecentStationEntity
 import io.jacob.episodive.core.domain.repository.StationRepository
 import io.jacob.episodive.core.model.OnAirProgram
+import io.jacob.episodive.core.model.OnAirRefresh
 import io.jacob.episodive.core.model.StationKind
 import io.jacob.episodive.core.model.StationSchedule
 import io.jacob.episodive.core.model.StationStream
@@ -864,5 +865,69 @@ class StationRepositoryImplTest {
             assertEquals(dayStart + 24 * hour, awaitItem().dayStartMillis)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `Given Boundary refresh, When time passes within the program, Then schedule is not refetched on TTL`() = runTest {
+        nowMillis = tenAm
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(morning)
+
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id, includeSong = false, refresh = OnAirRefresh.Boundary).test {
+            assertEquals(morning, awaitItem())
+            // Live 라면 5분마다 다시 받는다. Boundary 는 프로그램 끝(30분 뒤)까지 자므로 요청이 늘지 않는다.
+            advance(5 * minute)
+            advance(5 * minute)
+            advance(15 * minute)
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 1) { onAirDataSource.schedule(any(), any()) }
+    }
+
+    @Test
+    fun `Given Boundary refresh, When the program ends, Then next program comes from the cache without a request`() = runTest {
+        nowMillis = tenAm
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(morning, noon)
+
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id, includeSong = false, refresh = OnAirRefresh.Boundary).test {
+            assertEquals(morning, awaitItem())
+            advance(30 * minute)
+            assertEquals(noon, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 1) { onAirDataSource.schedule(any(), any()) }
+    }
+
+    @Test
+    fun `Given stale cache past TTL with the current program, When Boundary subscribes, Then it uses the cache`() = runTest {
+        nowMillis = tenAm
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(morning)
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id).test {
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        nowMillis = tenAm + 10 * minute
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id, includeSong = false, refresh = OnAirRefresh.Boundary).test {
+            assertEquals(morning, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 1) { onAirDataSource.schedule(any(), any()) }
+    }
+
+    @Test
+    fun `Given no cache, When Boundary subscribes, Then it fetches once`() = runTest {
+        nowMillis = tenAm
+        coEvery { onAirDataSource.schedule(any(), any()) } returns listOf(morning)
+
+        onAirRepository.observeOnAir(kbsFirstRadioStationTestData.id, includeSong = false, refresh = OnAirRefresh.Boundary).test {
+            assertEquals(morning, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 1) { onAirDataSource.schedule(any(), any()) }
     }
 }

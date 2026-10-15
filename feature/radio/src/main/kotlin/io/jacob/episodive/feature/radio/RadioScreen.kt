@@ -65,6 +65,7 @@ internal fun RadioRoute(
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val programImages by viewModel.programImages.collectAsStateWithLifecycle()
 
     val favoritedMessage = stringResource(R.string.feature_radio_snackbar_favorited)
     val unfavoritedMessage = stringResource(R.string.feature_radio_snackbar_unfavorited)
@@ -94,6 +95,7 @@ internal fun RadioRoute(
     RadioScreen(
         modifier = modifier.fillMaxSize(),
         state = state,
+        programImages = programImages,
         onBackClick = { viewModel.sendAction(RadioAction.ClickBack) },
         onStationClick = { viewModel.sendAction(RadioAction.ClickStation(it)) },
         onToggleFavorite = { viewModel.sendAction(RadioAction.ToggleFavorite(it)) },
@@ -105,6 +107,7 @@ internal fun RadioRoute(
 internal fun RadioScreen(
     modifier: Modifier = Modifier,
     state: RadioState,
+    programImages: Map<String, String> = emptyMap(),
     onBackClick: () -> Unit,
     onStationClick: (Station) -> Unit,
     onToggleFavorite: (String) -> Unit,
@@ -131,6 +134,7 @@ internal fun RadioScreen(
                 paddingValues = paddingValues,
                 nestedScrollConnection = nestedScrollConnection,
                 state = state,
+                programImages = programImages,
                 onStationClick = onStationClick,
                 onToggleFavorite = onToggleFavorite,
             )
@@ -149,6 +153,7 @@ private fun RadioList(
     paddingValues: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
     state: RadioState.Success,
+    programImages: Map<String, String>,
     onStationClick: (Station) -> Unit,
     onToggleFavorite: (String) -> Unit,
 ) {
@@ -190,6 +195,7 @@ private fun RadioList(
                         stations = state.favorites,
                         statusOf = statusOf,
                         onStationClick = onStationClick,
+                        imageUrlOf = { programImages[it.id] },
                     )
                 }
             }
@@ -201,6 +207,7 @@ private fun RadioList(
                         stations = state.recents,
                         statusOf = statusOf,
                         onStationClick = onStationClick,
+                        imageUrlOf = { programImages[it.id] },
                     )
                 }
             }
@@ -211,6 +218,7 @@ private fun RadioList(
                 stations = state.nationwide,
                 state = state,
                 statusOf = statusOf,
+                programImages = programImages,
                 onStationClick = onStationClick,
                 onToggleFavorite = onToggleFavorite,
             )
@@ -221,6 +229,7 @@ private fun RadioList(
                 stations = state.regional,
                 state = state,
                 statusOf = statusOf,
+                programImages = programImages,
                 onStationClick = onStationClick,
                 onToggleFavorite = onToggleFavorite,
             )
@@ -257,6 +266,7 @@ private fun LazyListScope.stationGroup(
     @StringRes title: Int,
     stations: List<Station>,
     state: RadioState.Success,
+    programImages: Map<String, String>,
     statusOf: (Station) -> StationCardStatus,
     onStationClick: (Station) -> Unit,
     onToggleFavorite: (String) -> Unit,
@@ -276,6 +286,7 @@ private fun LazyListScope.stationGroup(
             station = station,
             status = statusOf(station),
             isFavorite = station.id in state.favoriteIds,
+            imageUrl = programImages[station.id],
             onClick = { onStationClick(station) },
             onToggleFavorite = { onToggleFavorite(station.id) },
         )

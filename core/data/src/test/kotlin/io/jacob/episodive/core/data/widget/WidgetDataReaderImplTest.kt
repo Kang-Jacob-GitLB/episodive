@@ -151,14 +151,40 @@ class WidgetDataReaderImplTest {
             every { observeOnAirProgram(radioStationTestData.id, false) } returns program
 
             reader.nowPlayingFlow().test {
-                assertEquals(radioStationTestData.broadcaster, awaitItem()!!.feedTitle)
+                val initial = awaitItem()!!
+                assertEquals(radioStationTestData.broadcaster, initial.feedTitle)
+                assertNull(initial.imageUrl)
 
                 program.value = onAirProgramTestData
-                assertEquals(onAirProgramTestData.title, awaitItem()!!.feedTitle)
+                val withProgram = awaitItem()!!
+                assertEquals(onAirProgramTestData.title, withProgram.feedTitle)
+                // 프로그램 이미지가 이니셜 아트 대신 썸네일이 된다. 위젯은 에피소드와 같은 경로로 비트맵화한다.
+                assertEquals(onAirProgramTestData.imageUrl, withProgram.imageUrl)
 
                 // 곡만 바뀌면 스냅샷은 그대로다.
                 program.value = onAirProgramTestData.copy(song = "곡 - 가수")
                 expectNoEvents()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `Given same title but image changes, when nowPlayingFlow collected, then new snapshot is emitted`() =
+        runTest {
+            val program = MutableStateFlow<OnAirProgram?>(onAirProgramTestData)
+            every { playerRepository.nowPlayingStation } returns MutableStateFlow(radioStationTestData)
+            every { playerRepository.isPlaying } returns MutableStateFlow(true)
+            every { observeOnAirProgram(radioStationTestData.id, false) } returns program
+
+            reader.nowPlayingFlow().test {
+                // 첫 응답을 기다리지 않고 null 로 시작하므로 초기 발행이 한두 번일 수 있다. 마지막 것을 기준으로 삼는다.
+                assertEquals(onAirProgramTestData.imageUrl, expectMostRecentItem()!!.imageUrl)
+                program.value = onAirProgramTestData.copy(imageUrl = "https://img.example.com/other.jpg")
+                assertEquals("https://img.example.com/other.jpg", awaitItem()!!.imageUrl)
+
+                // 이미지가 사라지면 이니셜 아트로 돌아간다.
+                program.value = onAirProgramTestData.copy(imageUrl = null)
+                assertNull(awaitItem()!!.imageUrl)
                 cancelAndIgnoreRemainingEvents()
             }
         }

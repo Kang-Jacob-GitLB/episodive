@@ -72,16 +72,14 @@ class EpisodiveWidget : GlanceAppWidget() {
             val artKey = artUrl to nowPlayingPx
             val isStation = snapshot?.isStation == true
             val artworkLoaded by produceState<ArtworkResult?>(null, artUrl, nowPlayingPx, isStation) {
-                // 스테이션은 비트맵도 Palette 추출도 없다. 배경은 아래에서 이니셜 아트 색으로 정한다.
-                if (isStation) {
-                    value = null
-                    return@produceState
-                }
                 val bitmap = artUrl?.let {
                     WidgetImageLoader.loadWidgetBitmap(context, it, nowPlayingPx)
                 }
-                val colors = withContext(Dispatchers.Default) {
-                    WidgetColorExtractor.colors(bitmap)
+                // 스테이션 배경은 아래에서 이니셜 아트 색으로 정하므로 Palette 를 돌리지 않는다.
+                val colors = if (isStation) {
+                    WidgetColorExtractor.colors(null)
+                } else {
+                    withContext(Dispatchers.Default) { WidgetColorExtractor.colors(bitmap) }
                 }
                 value = ArtworkResult(artKey, bitmap, colors)
             }
@@ -127,7 +125,8 @@ class EpisodiveWidget : GlanceAppWidget() {
             // 그동안 placeholder 가 부분적으로 깜빡이지 않도록, 로드 대상이 있는데 아직 현재 key 의
             // 결과가 준비되지 않았으면 위젯 전체를 원형 프로그레스로 덮는다(빈 상태는 제외).
             val isLoading =
-                (artUrl != null && readyArtwork == null) ||
+                // 스테이션은 비트맵이 늦거나 실패해도 이니셜 아트가 이미 있다. 위젯 전체를 스피너로 덮지 않는다.
+                (!isStation && artUrl != null && readyArtwork == null) ||
                     (visibleFeed.isNotEmpty() && !feedReady)
 
             EpisodiveGlanceTheme {

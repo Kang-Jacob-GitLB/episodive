@@ -122,6 +122,7 @@ internal fun HomeRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val radio by radioViewModel.state.collectAsStateWithLifecycle()
+    val radioImages by radioViewModel.programImages.collectAsStateWithLifecycle()
 
     val unsavedMessage = stringResource(uiR.string.core_ui_snackbar_unsaved)
     val undoLabel = stringResource(uiR.string.core_ui_snackbar_undo)
@@ -171,6 +172,7 @@ internal fun HomeRoute(
                     pendingId = r?.pendingStationId,
                 )
             },
+            radioImageOf = { radioImages[it.id] },
             onStationClick = { radioViewModel.sendAction(HomeRadioAction.ClickStation(it)) },
             onRadioMore = onRadioClick,
             onPlayEpisode = { viewModel.sendAction(HomeAction.PlayEpisode(it)) },
@@ -210,6 +212,7 @@ internal fun HomeScreen(
     // 기본값은 "섹션 없음" 이다. 라디오를 모르는 호출부는 이 섹션이 아예 보이지 않는다.
     radio: SectionState<Station> = SectionState.Success(emptyList()),
     radioStatusOf: (Station) -> StationCardStatus = { StationCardStatus.Idle },
+    radioImageOf: (Station) -> String? = { null },
     onStationClick: (Station) -> Unit = {},
     onRadioMore: () -> Unit = {},
     onPlayEpisode: (Episode) -> Unit,
@@ -418,6 +421,7 @@ internal fun HomeScreen(
                                 statusOf = radioStatusOf,
                                 onStationClick = onStationClick,
                                 onMore = onRadioMore,
+                                imageUrlOf = radioImageOf,
                             )
                         }
 
