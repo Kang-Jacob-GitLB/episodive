@@ -77,15 +77,31 @@ abstract class RemoteUpdater<Query : CacheableQuery, Response, Entity, Output : 
         // `WhileSubscribed` 가 걷히며 요청이 잘린다. 돌아와도 처음부터 다시 시작해 다시
         // 잘리므로, 탭을 오가는 동안 첫 데이터를 **영영** 받지 못한 채 스켈레톤에 갇힌다.
         // refreshAndWait 는 앱 스코프에서 돌리고 대기만 여기에 건다.
+        // 보여줄 캐시가 없으니 실패는 화면이 다루도록 올린다.
+        awaitRefresh()
+    }
+
+    /**
+     * 만료와 무관하게 지금 갱신하고 끝날 때까지 기다린다. 사용자가 당겨서 새로고침할 때 쓴다.
+     *
+     * [refreshIfNeeded] 와 같은 [BackgroundRefresher] 키를 쓴다. 만료로 뒤에서 이미 돌고 있는 갱신이
+     * 있으면 새로 띄우지 않고 그것을 기다린다 — 당기기 직전에 시작된 요청이라면 그 결과로 끝난다. 같은 키에
+     * 요청을 겹쳐 띄우지 않는다는 [BackgroundRefresher] 의 약속을 깨지 않기 위해서다. 실패는 [DataErrorException]
+     * 으로 올린다. 캐시는 그대로 남으므로 화면은 목록을 유지한 채 실패만 알리면 된다.
+     */
+    suspend fun forceRefresh() = awaitRefresh()
+
+    /**
+     * 갱신을 앱 스코프에서 돌리고 끝날 때까지 기다린다. 실패의 원인은 여기서 한 번만 판별해 실어 보낸다 —
+     * 화면마다 예외 종류를 다시 들여다보게 하면 판별 규칙이 여러 벌로 갈라진다.
+     */
+    private suspend fun awaitRefresh() {
         try {
             backgroundRefresher.refreshAndWait(query.key) { refresh() }
         } catch (e: CancellationException) {
             // 취소는 실패가 아니다. 여기서 삼키면 코루틴 취소가 전파되지 않는다.
             throw e
         } catch (e: Throwable) {
-            // 보여줄 캐시가 없으니 화면이 오류를 다루도록 올린다. 이때 원인을 여기서 한 번만
-            // 판별해 실어 보낸다 — 화면마다 예외 종류를 다시 들여다보게 하면 판별 규칙이
-            // 여러 벌로 갈라진다.
             throw DataErrorException(e.toDataError(), e)
         }
     }

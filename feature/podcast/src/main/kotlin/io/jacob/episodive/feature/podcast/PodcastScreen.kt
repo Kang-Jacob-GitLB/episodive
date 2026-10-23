@@ -24,12 +24,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +45,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -76,6 +81,7 @@ import io.jacob.episodive.core.testing.model.podcastTestData
 import io.jacob.episodive.core.ui.EpisodeItem
 import io.jacob.episodive.core.ui.EpisodeItemSkeleton
 import io.jacob.episodive.core.ui.asUiMessage
+import io.jacob.episodive.core.ui.messageRes
 import io.jacob.episodive.core.ui.pagingAppendState
 import io.jacob.episodive.core.ui.pagingRefreshState
 import io.jacob.episodive.core.ui.share.rememberShareLauncher
@@ -103,6 +109,8 @@ internal fun PodcastRoute(
     onShowSnackbar: suspend (message: String, actionLabel: String?) -> Boolean,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // 이펙트 수집은 한 번만 시작하므로 구성 변경 뒤에도 지금의 Resources 로 문장을 고르게 한다.
+    val resources by rememberUpdatedState(LocalResources.current)
 
     val followedMessage = stringResource(uiR.string.core_ui_snackbar_followed)
     val unfollowedMessage = stringResource(uiR.string.core_ui_snackbar_unfollowed)
@@ -118,6 +126,7 @@ internal fun PodcastRoute(
         // 이펙트 수집 전체를 collectLatest 로 바꾸지 않는다. 저장 해제는 에피소드마다 다른 되돌리기라,
         // 뒤에 온 무관한 이펙트(다른 저장 해제, 팔로우)가 앞 스낵바를 취소하면 그 되돌리기가 사라진다.
         var followSnackbar: Job? = null
+        var refreshFailedSnackbar: Job? = null
         viewModel.effect.collect { effect ->
             when (effect) {
                 is PodcastEffect.ShowFollowSnackbar -> {
@@ -132,6 +141,14 @@ internal fun PodcastRoute(
                     val undone = onShowSnackbar(unsavedMessage, undoLabel)
                     if (undone) viewModel.sendAction(PodcastAction.ToggleSavedEpisode(effect.episode))
                 }
+                // 팔로우처럼 따로 띄우고 최신 것 하나만 남긴다. 여기서 기다리면 스낵바가 닫힐 때까지 수집이 막혀,
+                // 오프라인에서 연달아 당길 때 뒤 이펙트의 emit 이 버퍼에 걸려 새로고침 표시가 내려가지 않는다.
+                is PodcastEffect.ShowRefreshFailedSnackbar -> {
+                    refreshFailedSnackbar?.cancel()
+                    refreshFailedSnackbar = launch {
+                        onShowSnackbar(resources.getString(effect.error.messageRes), null)
+                    }
+                }
             }
         }
     }
@@ -144,6 +161,8 @@ internal fun PodcastRoute(
                 modifier = modifier,
                 podcast = s.podcast,
                 episodes = viewModel.episodesPaging,
+                isRefreshing = s.isRefreshing,
+                onRefresh = { viewModel.sendAction(PodcastAction.Refresh) },
                 onFollowClick = { viewModel.sendAction(PodcastAction.ToggleFollowed) },
                 onEpisodeClick = { episode, visibleEpisodes ->
                     viewModel.sendAction(PodcastAction.PlayEpisode(episode, visibleEpisodes))
@@ -173,6 +192,8 @@ internal fun PodcastScreen(
     modifier: Modifier = Modifier,
     podcast: Podcast,
     episodes: Flow<PagingData<Episode>>,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
     onFollowClick: () -> Unit,
     onEpisodeClick: (Episode, List<Episode>) -> Unit,
     onToggleLikedEpisode: (Episode) -> Unit,
@@ -193,6 +214,7 @@ internal fun PodcastScreen(
 
     // 상단 그라디언트는 커버 아트에서 뽑은 색에서 시작해 화면 배경으로 흘러 내려간다.
     var dominantColor by remember { mutableStateOf(PodcastHeaderGradientFallback) }
+    val pullToRefreshState = rememberPullToRefreshState()
 
     FadeTopBarLayout(
         modifier = modifier,
@@ -201,119 +223,137 @@ internal fun PodcastScreen(
         title = podcast.title,
         onBack = onBackClick
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            state = listState,
-            // 커버가 상태바 시계와 겹치지 않도록 위를, 마지막 에피소드가 미니플레이어에
-            // 가리지 않도록 아래를 띄운다.
-            contentPadding = PaddingValues(
-                top = statusBarTop,
-                bottom = dimension.playerBarSpace,
-            ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item {
-                PodcastHeader(
-                    // 그라디언트를 리스트 뒤에 따로 깔지 않고 헤더 항목이 직접 그린다.
-                    // 그래야 스크롤할 때 커버와 같이 위로 올라간다. 항목 높이와 무관하게
-                    // 리스트 최상단(상태바 뒤)부터 정해진 높이만큼 칠하고, 뒤따르는 항목들이
-                    // 그 위에 그려지므로 넘치는 부분이 콘텐츠를 가리지 않는다.
+        // 위에서 당기면 에피소드 목록을 원격에서 다시 받는다. 목록은 DB 에서 오므로 갱신이 끝나면 paging 이
+        // 알아서 다시 읽는다. 표시기는 상태바 아래에서 내려온다 — 리스트가 상태바 뒤까지 그려지기 때문이다.
+        PullToRefreshBox(
+            modifier = Modifier.fillMaxSize(),
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            state = pullToRefreshState,
+            indicator = {
+                PullToRefreshDefaults.Indicator(
                     modifier = Modifier
-                        .drawWithCache {
-                            val topOffset = -statusBarTop.toPx()
-                            val gradientHeight = PodcastHeaderGradientHeight.toPx()
-                            val brush = Brush.verticalGradient(
-                                0f to dominantColor,
-                                0.46f to lerp(dominantColor, backgroundColor, 0.62f),
-                                0.86f to backgroundColor,
-                                startY = topOffset,
-                                endY = topOffset + gradientHeight,
-                            )
-                            onDrawBehind {
-                                drawRect(
-                                    brush = brush,
-                                    topLeft = Offset(0f, topOffset),
-                                    size = Size(size.width, gradientHeight),
+                        .align(Alignment.TopCenter)
+                        .padding(top = statusBarTop),
+                    state = pullToRefreshState,
+                    isRefreshing = isRefreshing,
+                )
+            },
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize(),
+                state = listState,
+                // 커버가 상태바 시계와 겹치지 않도록 위를, 마지막 에피소드가 미니플레이어에
+                // 가리지 않도록 아래를 띄운다.
+                contentPadding = PaddingValues(
+                    top = statusBarTop,
+                    bottom = dimension.playerBarSpace,
+                ),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                item {
+                    PodcastHeader(
+                        // 그라디언트를 리스트 뒤에 따로 깔지 않고 헤더 항목이 직접 그린다.
+                        // 그래야 스크롤할 때 커버와 같이 위로 올라간다. 항목 높이와 무관하게
+                        // 리스트 최상단(상태바 뒤)부터 정해진 높이만큼 칠하고, 뒤따르는 항목들이
+                        // 그 위에 그려지므로 넘치는 부분이 콘텐츠를 가리지 않는다.
+                        modifier = Modifier
+                            .drawWithCache {
+                                val topOffset = -statusBarTop.toPx()
+                                val gradientHeight = PodcastHeaderGradientHeight.toPx()
+                                val brush = Brush.verticalGradient(
+                                    0f to dominantColor,
+                                    0.46f to lerp(dominantColor, backgroundColor, 0.62f),
+                                    0.86f to backgroundColor,
+                                    startY = topOffset,
+                                    endY = topOffset + gradientHeight,
                                 )
+                                onDrawBehind {
+                                    drawRect(
+                                        brush = brush,
+                                        topLeft = Offset(0f, topOffset),
+                                        size = Size(size.width, gradientHeight),
+                                    )
+                                }
                             }
-                        }
-                        .padding(horizontal = dimension.screenPadding),
-                    podcast = podcast,
-                    onFollowClick = onFollowClick,
-                    onShareClick = { shareLauncher.share(podcast) },
-                    onDominantColorExtracted = { dominantColor = it },
-                )
-            }
-
-            item {
-                HorizontalDivider(
-                    modifier = Modifier.padding(
-                        start = dimension.screenPadding,
-                        end = dimension.screenPadding,
-                        top = 20.dp,
-                        bottom = 16.dp,
-                    )
-                )
-            }
-
-            item {
-                Text(
-                    modifier = Modifier.padding(
-                        start = dimension.screenPadding,
-                        end = dimension.screenPadding,
-                        bottom = 14.dp,
-                    ),
-                    text = stringResource(R.string.feature_podcast_all_episodes_format).format(
-                        podcast.episodeCount
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-
-            pagingRefreshState(
-                items = episodesPaging,
-                key = "podcast:episodes",
-                loading = {
-                    // 팟캐스트 메타데이터의 episodeCount 로 상한을 둔다. 실제 로드될 줄 수보다
-                    // 많이 그리면 목록이 채워지는 순간 그만큼 줄어들며 튄다.
-                    // 에피소드가 몇 개 올지 알면 그만큼만 그려 전환할 때 덜 튄다. 다만 피드가
-                    // episodeCount 를 0 으로 주는 경우가 있어 최소 한 줄은 남긴다 — 로딩 중에
-                    // 아무것도 없으면 멈춘 화면으로 보인다.
-                    EpisodeListSkeleton(count = podcast.episodeCount.coerceIn(1, 6))
-                },
-                empty = { EpisodesEmptyMessage() },
-                error = { EpisodesErrorMessage() },
-            )
-
-            items(
-                count = episodesPaging.itemCount,
-                key = { episodesPaging.peek(it)?.id ?: it },
-                contentType = { "episode" }
-            ) { index ->
-                episodesPaging[index]?.let { episode ->
-                    EpisodeItem(
-                        modifier = Modifier.padding(horizontal = dimension.screenPadding),
-                        episode = episode,
-                        onClick = {
-                            val visibleEpisodes = episodesPaging.itemSnapshotList.items
-                            onEpisodeClick(episode, visibleEpisodes)
-                        },
-                        onToggleLiked = { onToggleLikedEpisode(episode) },
-                        onToggleSaved = { onToggleSavedEpisode(episode) },
+                            .padding(horizontal = dimension.screenPadding),
+                        podcast = podcast,
+                        onFollowClick = onFollowClick,
+                        onShareClick = { shareLauncher.share(podcast) },
+                        onDominantColorExtracted = { dominantColor = it },
                     )
                 }
-            }
 
-            pagingAppendState(
-                items = episodesPaging,
-                key = "podcast:episodes",
-                loading = { EpisodeListSkeleton(count = 2) },
-            )
+                item {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(
+                            start = dimension.screenPadding,
+                            end = dimension.screenPadding,
+                            top = 20.dp,
+                            bottom = 16.dp,
+                        )
+                    )
+                }
 
-            item {
-                Spacer(modifier = Modifier.height(dimension.playerBarHeight))
+                item {
+                    Text(
+                        modifier = Modifier.padding(
+                            start = dimension.screenPadding,
+                            end = dimension.screenPadding,
+                            bottom = 14.dp,
+                        ),
+                        text = stringResource(R.string.feature_podcast_all_episodes_format).format(
+                            podcast.episodeCount
+                        ),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+
+                pagingRefreshState(
+                    items = episodesPaging,
+                    key = "podcast:episodes",
+                    loading = {
+                        // 팟캐스트 메타데이터의 episodeCount 로 상한을 둔다. 실제 로드될 줄 수보다
+                        // 많이 그리면 목록이 채워지는 순간 그만큼 줄어들며 튄다.
+                        // 에피소드가 몇 개 올지 알면 그만큼만 그려 전환할 때 덜 튄다. 다만 피드가
+                        // episodeCount 를 0 으로 주는 경우가 있어 최소 한 줄은 남긴다 — 로딩 중에
+                        // 아무것도 없으면 멈춘 화면으로 보인다.
+                        EpisodeListSkeleton(count = podcast.episodeCount.coerceIn(1, 6))
+                    },
+                    empty = { EpisodesEmptyMessage() },
+                    error = { EpisodesErrorMessage() },
+                )
+
+                items(
+                    count = episodesPaging.itemCount,
+                    key = { episodesPaging.peek(it)?.id ?: it },
+                    contentType = { "episode" }
+                ) { index ->
+                    episodesPaging[index]?.let { episode ->
+                        EpisodeItem(
+                            modifier = Modifier.padding(horizontal = dimension.screenPadding),
+                            episode = episode,
+                            onClick = {
+                                val visibleEpisodes = episodesPaging.itemSnapshotList.items
+                                onEpisodeClick(episode, visibleEpisodes)
+                            },
+                            onToggleLiked = { onToggleLikedEpisode(episode) },
+                            onToggleSaved = { onToggleSavedEpisode(episode) },
+                        )
+                    }
+                }
+
+                pagingAppendState(
+                    items = episodesPaging,
+                    key = "podcast:episodes",
+                    loading = { EpisodeListSkeleton(count = 2) },
+                )
+
+                item {
+                    Spacer(modifier = Modifier.height(dimension.playerBarHeight))
+                }
             }
         }
 
@@ -661,6 +701,8 @@ private fun PodcastScreenPreview() {
         PodcastScreen(
             podcast = podcastTestData,
             episodes = flowOf(PagingData.from(episodeTestDataList)),
+            isRefreshing = false,
+            onRefresh = {},
             onFollowClick = {},
             onEpisodeClick = { _, _ -> },
             onToggleLikedEpisode = {},

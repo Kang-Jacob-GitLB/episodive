@@ -12,11 +12,14 @@ import io.jacob.episodive.core.domain.usecase.episode.SaveEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.RefreshPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.model.DataError
 import io.jacob.episodive.core.model.Episode
 import io.jacob.episodive.core.model.Podcast
 import io.jacob.episodive.core.model.asDataError
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,6 +27,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -41,6 +45,7 @@ class PodcastViewModel @AssistedInject constructor(
     private val playEpisodeUseCase: PlayEpisodeUseCase,
     private val toggleLikedEpisodeUseCase: ToggleLikedEpisodeUseCase,
     private val saveEpisodeUseCase: SaveEpisodeUseCase,
+    private val refreshPodcastUseCase: RefreshPodcastUseCase,
     @Assisted("id") val id: Long,
 ) : ViewModel() {
     @AssistedFactory
@@ -54,6 +59,9 @@ class PodcastViewModel @AssistedInject constructor(
     // 재구독해도 부작용이 없다.
     private val retryTrigger = MutableStateFlow(0)
 
+    // 당겨서 새로고침의 표시 상태. 목록·정보는 DB 에서 오므로 갱신이 끝나면 각 Flow 가 알아서 다시 읽는다.
+    private val isRefreshing = MutableStateFlow(false)
+
     val state: StateFlow<PodcastState> = retryTrigger.flatMapLatest {
         getPodcastUseCase(id)
             .map { podcast ->
@@ -66,6 +74,8 @@ class PodcastViewModel @AssistedInject constructor(
                 Timber.e(e, "팟캐스트 상세를 불러오지 못했다 (id=$id)")
                 emit(PodcastState.Error(e.asDataError()))
             }
+    }.combine(isRefreshing) { state, refreshing ->
+        if (state is PodcastState.Success) state.copy(isRefreshing = refreshing) else state
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -89,6 +99,7 @@ class PodcastViewModel @AssistedInject constructor(
                 is PodcastAction.ToggleLikedEpisode -> toggleLikedEpisode(action.episode)
                 is PodcastAction.ToggleSavedEpisode -> toggleSavedEpisode(action.episode)
                 is PodcastAction.Retry -> retry()
+                is PodcastAction.Refresh -> refresh()
             }
         }
     }
@@ -133,6 +144,27 @@ class PodcastViewModel @AssistedInject constructor(
         }
     }
 
+    private var refreshJob: Job? = null
+
+    /** 도는 중에 다시 당기면 무시한다 — 표시가 하나뿐이라 겹친 요청을 구분해 보여줄 수 없다. */
+    private fun refresh() {
+        if (refreshJob?.isActive == true) return
+        refreshJob = viewModelScope.launch {
+            isRefreshing.value = true
+            try {
+                refreshPodcastUseCase(id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                // 캐시는 그대로 남아 목록이 유지되므로 실패만 알린다.
+                Timber.w(e, "에피소드 목록을 새로 받지 못했다 (id=$id)")
+                _effect.emit(PodcastEffect.ShowRefreshFailedSnackbar(e.asDataError()))
+            } finally {
+                isRefreshing.value = false
+            }
+        }
+    }
+
     private fun retry() {
         retryTrigger.update { it + 1 }
     }
@@ -141,12 +173,14 @@ class PodcastViewModel @AssistedInject constructor(
 sealed interface PodcastEffect {
     data class ShowFollowSnackbar(val isFollowed: Boolean) : PodcastEffect
     data class ShowUnsaveSnackbar(val episode: Episode) : PodcastEffect
+    data class ShowRefreshFailedSnackbar(val error: DataError) : PodcastEffect
 }
 
 sealed interface PodcastState {
     data object Loading : PodcastState
     data class Success(
         val podcast: Podcast,
+        val isRefreshing: Boolean = false,
     ) : PodcastState
 
     data class Error(val error: DataError) : PodcastState
@@ -161,4 +195,5 @@ sealed interface PodcastAction {
     data class ToggleLikedEpisode(val episode: Episode) : PodcastAction
     data class ToggleSavedEpisode(val episode: Episode) : PodcastAction
     data object Retry : PodcastAction
+    data object Refresh : PodcastAction
 }

@@ -15,6 +15,12 @@ interface PodcastRepository {
 
     fun getPodcastByFeedId(feedId: Long): Flow<Podcast?>
 
+    /**
+     * [getPodcastByFeedId] 의 캐시를 만료와 무관하게 원격에서 다시 받는다. 끝날 때까지 기다리고,
+     * 실패하면 [io.jacob.episodive.core.model.DataErrorException] 을 던진다(캐시는 그대로 남는다).
+     */
+    suspend fun refreshPodcastByFeedId(feedId: Long)
+
     fun getPodcastByFeedUrl(feedUrl: String): Flow<Podcast?>
 
     fun getPodcastByGuid(guid: String): Flow<Podcast?>

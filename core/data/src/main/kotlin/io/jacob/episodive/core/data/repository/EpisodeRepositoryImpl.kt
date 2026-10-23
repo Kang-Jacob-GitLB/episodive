@@ -99,6 +99,10 @@ class EpisodeRepositoryImpl @Inject constructor(
             }
     }
 
+    override suspend fun refreshEpisodesByFeedId(feedId: Long) {
+        remoteUpdater.create(EpisodeQuery.FeedId(feedId)).forceRefresh()
+    }
+
     override fun getEpisodesByFeedUrl(
         feedUrl: String,
         max: Int,
