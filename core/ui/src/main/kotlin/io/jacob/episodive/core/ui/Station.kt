@@ -1,5 +1,7 @@
 package io.jacob.episodive.core.ui
 
+import android.graphics.drawable.BitmapDrawable
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
@@ -50,7 +52,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.imageLoader
 import coil.request.ImageRequest
+import coil.request.SuccessResult
+import io.jacob.episodive.core.designsystem.component.EpisodiveDominantColor
 import io.jacob.episodive.core.designsystem.component.EpisodiveIconToggleButton
 import io.jacob.episodive.core.designsystem.component.MorphIcon
 import io.jacob.episodive.core.designsystem.component.SectionHeader
@@ -66,6 +71,8 @@ import io.jacob.episodive.core.model.Station
 import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.testing.model.regionalRadioStationTestData
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** 스테이션 카드가 보여 줄 재생 상태. */
 enum class StationCardStatus { Idle, Preparing, Playing, Paused }
@@ -153,6 +160,43 @@ fun StationCover(
         }
     }
 }
+
+/**
+ * [StationCover] 를 따르는 강조색. 프로그램 이미지가 있으면 그 이미지에서 뽑은 색, 없거나 받지 못하면 이니셜 아트 색이다.
+ * 미니바와 플레이어 시트가 함께 쓴다 — 각자 커버 크기로 뽑으면 같은 이미지에서 서로 다른 색이 나온다.
+ *
+ * 프로그램이 바뀌면 새 이미지의 색이 나올 때까지 지금 보이는 색을 유지한다(받는 동안 아트 색으로 깜빡이지 않게).
+ * 색은 지금의 [imageUrl] 로 받은 결과로만 정하므로 지나간 프로그램의 색이 되살아나지 않는다.
+ */
+@Composable
+fun rememberStationCoverColor(
+    station: Station,
+    imageUrl: String?,
+): Color {
+    val artColor = Color(remember(station) { station.art }.colorArgb)
+    var target by remember(station.id) { mutableStateOf(artColor) }
+    val context = LocalContext.current
+    val isInspection = LocalInspectionMode.current
+
+    LaunchedEffect(station.id, imageUrl) {
+        if (imageUrl == null || isInspection) {
+            target = artColor
+            return@LaunchedEffect
+        }
+        // 색만 뽑으면 되므로 작게 받는다. Palette 는 메인 밖에서 돌린다.
+        val request = ImageRequest.Builder(context)
+            .data(imageUrl)
+            .size(StationCoverColorSamplePx)
+            .allowHardware(false)
+            .build()
+        val bitmap = ((context.imageLoader.execute(request) as? SuccessResult)?.drawable as? BitmapDrawable)?.bitmap
+        target = bitmap?.let { withContext(Dispatchers.Default) { EpisodiveDominantColor.extract(it) } } ?: artColor
+    }
+
+    return animateColorAsState(targetValue = target, label = "StationCoverColor").value
+}
+
+private const val StationCoverColorSamplePx = 128
 
 // 플레이어 시트의 큰 커버까지 비율대로 키울 수 있게 넉넉히 둔다. 무한 제약에서 폰트가 발산하는 것만 막으면 된다.
 private val StationArtMaxSide = 480.dp

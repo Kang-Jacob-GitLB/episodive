@@ -89,7 +89,6 @@ import io.jacob.episodive.core.model.OnAirProgram
 import io.jacob.episodive.core.model.SLEEP_TIMER_FADE_OUT_MS
 import io.jacob.episodive.core.model.StationDetails
 import io.jacob.episodive.core.model.StationSchedule
-import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.model.caption.CaptionDownloadFailure
 import io.jacob.episodive.core.model.caption.CaptionSubject
 import io.jacob.episodive.core.model.caption.LiveCaption
@@ -101,6 +100,7 @@ import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.SleepTimerSheet
 import io.jacob.episodive.core.ui.CardSection
 import io.jacob.episodive.core.ui.StationCover
+import io.jacob.episodive.core.ui.rememberStationCoverColor
 import io.jacob.episodive.core.ui.caption.CaptionButtonState
 import io.jacob.episodive.core.ui.caption.CaptionToggleButton
 import io.jacob.episodive.core.ui.caption.RollingCaptionOverlay
@@ -261,9 +261,9 @@ internal fun StationPlayerScreen(
     val dimension = LocalDimensionTheme.current
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
     val station = state.station
-    val art = remember(station) { station.art }
     // 늦게 오는 이전 스테이션의 프로그램은 그리지 않는다.
     val program = onAir?.takeIf { it.stationId == station.id }?.program
+    val backdropTop = rememberStationCoverColor(station, program?.imageUrl)
     var showSleepTimerSheet by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -277,7 +277,7 @@ internal fun StationPlayerScreen(
                     .fillMaxWidth()
                     .fillParentMaxHeight(0.92f)
                     .playerBackdrop(
-                        top = Color(art.colorArgb),
+                        top = backdropTop,
                         background = MaterialTheme.colorScheme.background,
                     ),
             ) {

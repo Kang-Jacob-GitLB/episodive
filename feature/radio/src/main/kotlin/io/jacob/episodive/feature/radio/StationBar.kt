@@ -20,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,10 +35,10 @@ import io.jacob.episodive.core.designsystem.component.MiniBarPlayPauseButton
 import io.jacob.episodive.core.designsystem.icon.EpisodiveIcons
 import io.jacob.episodive.core.designsystem.theme.EpisodiveTheme
 import io.jacob.episodive.core.designsystem.tooling.DevicePreviews
-import io.jacob.episodive.core.model.art
 import io.jacob.episodive.core.testing.model.radioStationTestData
 import io.jacob.episodive.core.ui.LiveBadge
 import io.jacob.episodive.core.ui.StationCover
+import io.jacob.episodive.core.ui.rememberStationCoverColor
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import io.jacob.episodive.core.ui.R as uiR
@@ -116,11 +115,11 @@ internal fun StationBarContent(
     onStop: () -> Unit,
 ) {
     val station = state.station
-    val art = remember(station) { station.art }
+    val accent = rememberStationCoverColor(station, state.program?.imageUrl)
 
     MiniBarContainer(
         modifier = modifier,
-        accent = Color(art.colorArgb),
+        accent = accent,
         onClick = onClick,
     ) {
         Row(
