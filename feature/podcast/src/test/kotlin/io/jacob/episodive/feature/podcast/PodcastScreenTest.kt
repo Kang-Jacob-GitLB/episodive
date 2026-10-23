@@ -65,6 +65,8 @@ class PodcastScreenTest {
                 PodcastScreen(
                     podcast = podcast,
                     episodes = flowOf(PagingData.from(episodes)),
+                    isRefreshing = false,
+                    onRefresh = {},
                     onFollowClick = onFollowClick,
                     onEpisodeClick = onEpisodeClick,
                     onToggleLikedEpisode = onToggleLikedEpisode,
@@ -86,6 +88,8 @@ class PodcastScreenTest {
                 PodcastScreen(
                     podcast = podcast,
                     episodes = flowOf(pagingData),
+                    isRefreshing = false,
+                    onRefresh = {},
                     onFollowClick = {},
                     onEpisodeClick = { _, _ -> },
                     onToggleLikedEpisode = {},

@@ -7,6 +7,7 @@ import io.jacob.episodive.core.domain.usecase.episode.SaveEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.RefreshPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.model.DataError
 import io.jacob.episodive.core.model.DataErrorException
@@ -21,6 +22,9 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -40,6 +44,7 @@ class PodcastViewModelTest {
     private val playEpisodeUseCase = mockk<PlayEpisodeUseCase>(relaxed = true)
     private val toggleLikedEpisodeUseCase = mockk<ToggleLikedEpisodeUseCase>(relaxed = true)
     private val saveEpisodeUseCase = mockk<SaveEpisodeUseCase>(relaxed = true)
+    private val refreshPodcastUseCase = mockk<RefreshPodcastUseCase>(relaxed = true)
 
     private fun createViewModel(id: Long = 1L): PodcastViewModel {
         return PodcastViewModel(
@@ -49,6 +54,7 @@ class PodcastViewModelTest {
             playEpisodeUseCase = playEpisodeUseCase,
             toggleLikedEpisodeUseCase = toggleLikedEpisodeUseCase,
             saveEpisodeUseCase = saveEpisodeUseCase,
+            refreshPodcastUseCase = refreshPodcastUseCase,
             id = id,
         )
     }
@@ -258,5 +264,60 @@ class PodcastViewModelTest {
             viewModel.sendAction(PodcastAction.ToggleLikedEpisode(episode))
 
             coVerify { toggleLikedEpisodeUseCase(episode) }
+        }
+
+    @Test
+    fun `Given Refresh action, When sent, Then episodes are refreshed and isRefreshing returns to false`() =
+        runTest {
+            every { getPodcastUseCase(1L) } returns flowOf(podcastTestData)
+            every { getEpisodesByPodcastIdPagingUseCase(any()) } returns flowOf(PagingData.empty())
+            coEvery { refreshPodcastUseCase(1L) } coAnswers { delay(100) }
+
+            val viewModel = createViewModel()
+
+            viewModel.state.filterIsInstance<PodcastState.Success>().map { it.isRefreshing }.test {
+                assertEquals(false, awaitItem())
+                viewModel.sendAction(PodcastAction.Refresh)
+                assertEquals(true, awaitItem())
+                assertEquals(false, awaitItem())
+            }
+
+            coVerify(exactly = 1) { refreshPodcastUseCase(1L) }
+        }
+
+    @Test
+    fun `Given Refresh while a refresh is running, When sent again, Then it is ignored`() =
+        runTest {
+            every { getPodcastUseCase(1L) } returns flowOf(podcastTestData)
+            every { getEpisodesByPodcastIdPagingUseCase(any()) } returns flowOf(PagingData.empty())
+            coEvery { refreshPodcastUseCase(1L) } coAnswers { delay(100) }
+
+            val viewModel = createViewModel()
+
+            viewModel.state.filterIsInstance<PodcastState.Success>().map { it.isRefreshing }.test {
+                assertEquals(false, awaitItem())
+                viewModel.sendAction(PodcastAction.Refresh)
+                assertEquals(true, awaitItem())
+                viewModel.sendAction(PodcastAction.Refresh)
+                assertEquals(false, awaitItem())
+            }
+
+            coVerify(exactly = 1) { refreshPodcastUseCase(1L) }
+        }
+
+    @Test
+    fun `Given refresh fails, When Refresh is sent, Then a refresh failed effect carries the mapped error`() =
+        runTest {
+            every { getPodcastUseCase(1L) } returns flowOf(podcastTestData)
+            every { getEpisodesByPodcastIdPagingUseCase(any()) } returns flowOf(PagingData.empty())
+            coEvery { refreshPodcastUseCase(1L) } throws
+                DataErrorException(DataError.Offline, RuntimeException("offline"))
+
+            val viewModel = createViewModel()
+            viewModel.effect.test {
+                viewModel.sendAction(PodcastAction.Refresh)
+                assertEquals(PodcastEffect.ShowRefreshFailedSnackbar(DataError.Offline), awaitItem())
+            }
+            assertEquals(false, viewModel.state.filterIsInstance<PodcastState.Success>().first().isRefreshing)
         }
 }

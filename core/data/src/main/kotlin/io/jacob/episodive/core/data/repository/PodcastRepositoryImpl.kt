@@ -63,6 +63,10 @@ class PodcastRepositoryImpl @Inject constructor(
             .map { it.firstOrNull()?.toPodcast() }
     }
 
+    override suspend fun refreshPodcastByFeedId(feedId: Long) {
+        remoteUpdater.create(PodcastQuery.FeedId(feedId)).forceRefresh()
+    }
+
     override fun getPodcastByFeedUrl(feedUrl: String): Flow<Podcast?> {
         val query = PodcastQuery.FeedUrl(feedUrl)
 

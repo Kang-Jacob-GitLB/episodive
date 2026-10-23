@@ -10,6 +10,7 @@ import io.jacob.episodive.core.domain.usecase.episode.SaveEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.episode.ToggleLikedEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.player.PlayEpisodeUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.GetPodcastUseCase
+import io.jacob.episodive.core.domain.usecase.podcast.RefreshPodcastUseCase
 import io.jacob.episodive.core.domain.usecase.podcast.ToggleFollowedUseCase
 import io.jacob.episodive.core.testing.model.episodeTestData
 import io.jacob.episodive.core.testing.model.podcastTestData
@@ -47,6 +48,7 @@ class PodcastRouteTest {
     private val playEpisodeUseCase = mockk<PlayEpisodeUseCase>(relaxed = true)
     private val toggleLikedEpisodeUseCase = mockk<ToggleLikedEpisodeUseCase>(relaxed = true)
     private val saveEpisodeUseCase = mockk<SaveEpisodeUseCase>(relaxed = true)
+    private val refreshPodcastUseCase = mockk<RefreshPodcastUseCase>(relaxed = true)
 
     private val context: Context by lazy { ApplicationProvider.getApplicationContext() }
     private val followedMessage by lazy { context.getString(uiR.string.core_ui_snackbar_followed) }
@@ -81,6 +83,7 @@ class PodcastRouteTest {
             playEpisodeUseCase = playEpisodeUseCase,
             toggleLikedEpisodeUseCase = toggleLikedEpisodeUseCase,
             saveEpisodeUseCase = saveEpisodeUseCase,
+            refreshPodcastUseCase = refreshPodcastUseCase,
             id = id,
         )
     }
